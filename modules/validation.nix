@@ -1,0 +1,357 @@
+{
+  config,
+  inputs,
+  lib,
+  options,
+  ...
+}:
+let
+  # Independent policy oracle: changing host metadata alone must fail validation.
+  expectedTracks = {
+    thinkpad = "unstable";
+    dino = "unstable";
+    racknerd = "stable";
+    bastion = "stable";
+  };
+  tracks = {
+    stable = inputs.nixpkgs-stable;
+    unstable = inputs.nixpkgs-unstable;
+  };
+  modules = config.flake.modules.nixos;
+  report = config.flake.fleet;
+  lock = builtins.fromJSON (builtins.readFile (inputs.self + "/flake.lock"));
+  lockedInput = name: lock.nodes.${lock.nodes.root.inputs.${name}};
+  checkedReport =
+    assert lib.assertMsg (
+      builtins.match "nixos-[0-9]{2}\\.(05|11)" (lockedInput "nixpkgs-stable").original.ref != null
+    ) "Stable must lock a numbered NixOS release branch, not an unstable alias.";
+    assert lib.assertMsg (
+      (lockedInput "nixpkgs-unstable").original.ref == "nixpkgs-unstable"
+    ) "Interactive track must lock nixpkgs-unstable.";
+    assert lib.assertMsg (
+      builtins.attrNames expectedTracks == builtins.attrNames report
+    ) "Update the explicit fleet policy oracle when adding/removing a host.";
+    lib.mapAttrs (
+      name: host:
+      let
+        system = config.flake.fleetConfigurations.${name};
+      in
+      assert lib.assertMsg (host.track == expectedTracks.${name}) "${name}: wrong Nixpkgs track";
+      assert lib.assertMsg (
+        host.nixpkgsPath == host.intendedNixpkgsPath
+        && host.nixpkgsPath == toString tracks.${expectedTracks.${name}}.outPath
+      ) "${name}: actual pkgs source differs from independently required input";
+      assert lib.assertMsg (lib.all
+        (
+          message:
+          lib.hasPrefix "BOOTSTRAP:" message
+          || lib.hasPrefix "Neither the root account nor any wheel user has a password or SSH authorized key." message
+        )
+        host.failedAssertions
+      ) "${name}: unexpected NixOS assertion: ${lib.concatStringsSep "; " host.failedAssertions}";
+      assert lib.assertMsg (
+        host.ready -> host.missing == [ ] && host.failedAssertions == [ ]
+      ) "${name}: commissioned with unresolved requirements";
+      host
+      // {
+        # Force real per-host packages, /etc/services and initrd even before the
+        # final toplevel is permitted. These are evaluations, not real builds.
+        components = {
+          systemPath = system.config.system.path.drvPath;
+          etc = system.config.system.build.etc.drvPath;
+          initrd = system.config.system.build.initialRamdisk.drvPath;
+        };
+      }
+    ) report;
+
+  # Deliberately synthetic EVALUATION fixtures, never installable fleet members.
+  # No fixture scripts are exported as provisioning packages or deploy nodes.
+  allCapabilities = [
+    "os-disk"
+    "persistence"
+    "access"
+    "server"
+    "vps"
+    "workstation"
+    "laptop"
+    "gaming"
+    "nas"
+    "administration"
+  ];
+  fixtureFor =
+    track: bootMode: capabilities:
+    tracks.${track}.lib.nixosSystem {
+      modules = [
+        modules.base
+      ]
+      ++ map (name: modules.${name}) capabilities
+      ++ [
+        ({ lib, pkgs, ... }: {
+          nixpkgs.hostPlatform = "x86_64-linux";
+          networking.hostName = "evaluation-fixture";
+          fleet = {
+            bootstrap.approved = true;
+            installation = {
+              stateVersion = lib.versions.majorMinor pkgs.lib.version;
+              hardwareReviewed = true;
+              networkReviewed = true;
+            };
+            osDisk = {
+              device = "/dev/disk/by-id/TEST-ONLY-NOT-A-REAL-DISK";
+              confirmed = true;
+              inherit bootMode;
+              espSize = if bootMode == "uefi" then "512M" else null;
+              efiCanTouchVariables = false;
+            };
+            access = {
+              admin = "fixture-admin";
+              authorizedKeys = [ "ssh-ed25519 TEST-ONLY-NOT-A-VALID-KEY" ];
+              passwordlessSudo = true;
+            };
+          }
+          // lib.optionalAttrs (lib.elem "workstation" capabilities) {
+            workstation = {
+              desktopReviewed = true;
+              usersReviewed = true;
+            };
+          }
+          // lib.optionalAttrs (lib.elem "gaming" capabilities) {
+            gaming.reviewed = true;
+          }
+          // lib.optionalAttrs (lib.elem "nas" capabilities) {
+            nas.storageReviewed = true;
+          }
+          // lib.optionalAttrs (lib.elem "vps" capabilities) {
+            vps.providerReviewed = true;
+          };
+        })
+      ];
+    };
+  fixtures = lib.genAttrs (builtins.attrNames tracks) (
+    track: fixtureFor track "uefi" allCapabilities
+  );
+  compositionReport = lib.mapAttrs (
+    _: host:
+    let
+      fixture = fixtureFor host.track "uefi" host.capabilities;
+    in
+    {
+      # Also check the exact shipped subsets: a combined fixture alone can mask
+      # a missing dependency by supplying another capability's configuration.
+      toplevel = fixture.config.system.build.toplevel.drvPath;
+    }
+  ) config.fleet.hosts;
+  deploymentPkgs = pkgs: pkgs.extend inputs.deploy-rs.overlays.default;
+  fixtureReport = lib.mapAttrs (
+    track: fixture:
+    let
+      cfg = fixture.config;
+      bios = (fixtureFor track "bios" allCapabilities).config;
+      unconfirmed = fixture.extendModules {
+        modules = [ { fleet.osDisk.confirmed = lib.mkForce false; } ];
+      };
+      partition = fixture.extendModules {
+        modules = [ { fleet.osDisk.device = lib.mkForce "/dev/disk/by-id/TEST-ONLY-part1"; } ];
+      };
+      blank = fixture.extendModules {
+        modules = [ { fleet.osDisk.device = lib.mkForce null; } ];
+      };
+      withEspSize =
+        espSize:
+        (fixture.extendModules {
+          modules = [ { fleet.osDisk.espSize = lib.mkForce espSize; } ];
+        }).config;
+      missingEsp = withEspSize null;
+      espSizes = {
+        accepted = [
+          "512M"
+          "513M"
+          "1024M"
+          "1G"
+          "2G"
+        ];
+        rejected = [
+          "1M"
+          "511M"
+          "0M"
+          "0G"
+          "512"
+          "512MB"
+          "512MiB"
+          "512m"
+          "1.5G"
+        ];
+      };
+      # Reuse the actual host metadata type and its deferred deployment module.
+      # These hosts exist only in this isolated evaluation, never in fleet/deploy outputs.
+      deploymentFor =
+        sshUser:
+        let
+          host =
+            (lib.evalModules {
+              modules = [
+                {
+                  options.hosts = lib.mkOption { type = options.fleet.hosts.type; };
+                  config.hosts.fixture = {
+                    system = "x86_64-linux";
+                    inherit track;
+                    deployment = {
+                      enable = true;
+                      hostname = "evaluation-only.test";
+                      transport = "trusted-user";
+                      inherit sshUser;
+                    };
+                  };
+                }
+              ];
+            }).config.hosts.fixture;
+        in
+        assert lib.assertMsg (
+          host.deployment.profileUser == "root"
+        ) "${track}: system activation must still default to root";
+        fixture.extendModules { modules = [ host.module ]; };
+      deployAdmin = deploymentFor "fixture-admin";
+      deployRoot = (deploymentFor "root").extendModules {
+        modules = [ { users.users.root.openssh.authorizedKeys.keys = cfg.fleet.access.authorizedKeys; } ];
+      };
+      deployNull = deploymentFor null;
+      deployUnknown = deploymentFor "fixture-missing";
+      failedAssertions =
+        system: map (a: a.message) (lib.filter (a: !a.assertion) system.config.assertions);
+      deployLib = (deploymentPkgs fixture.pkgs).deploy-rs.lib;
+    in
+    assert lib.assertMsg (cfg.fleet.bootstrap.missing == [ ]) "${track}: fixture requirements missing";
+    assert lib.assertMsg (lib.all (a: a.assertion) cfg.assertions)
+      "${track}: ${
+        lib.concatStringsSep "; " (map (a: a.message) (lib.filter (a: !a.assertion) cfg.assertions))
+      }";
+    assert lib.assertMsg (
+      cfg.fileSystems."/".fsType == "tmpfs"
+      && cfg.fileSystems."/persist".neededForBoot
+      && cfg.fileSystems."/nix".neededForBoot
+    ) "${track}: ephemeral-root/early persistent mounts regressed";
+    assert lib.assertMsg (
+      !(builtins.tryEval unconfirmed.config.disko.devices.disk.os.device).success
+    ) "Unconfirmed disko device was accepted";
+    assert lib.assertMsg (
+      !(builtins.tryEval partition.config.disko.devices.disk.os.device).success
+    ) "Partition accepted as whole OS disk";
+    assert lib.assertMsg (
+      blank.config.disko.devices.disk == { }
+    ) "Missing device must produce no destructive disk configuration";
+    # Force the actual script derivation, not just the declared option type:
+    # NixOS toplevel assertions alone do not guard direct disko evaluation.
+    assert lib.all (
+      size:
+      lib.assertMsg (
+        !(builtins.tryEval (withEspSize size).system.build.diskoScript.drvPath).success
+      ) "${track}: invalid/undersized ESP '${size}' allowed a disko script"
+    ) espSizes.rejected;
+    assert lib.all (
+      size:
+      let
+        sized = withEspSize size;
+      in
+      lib.assertMsg (
+        sized.disko.devices.disk.os.content.partitions.ESP.size == size
+        && sized.fleet.bootstrap.missing == [ ]
+        && builtins.isString sized.system.build.diskoScript.drvPath
+      ) "${track}: valid ESP '${size}' was rejected or altered"
+    ) espSizes.accepted;
+    assert lib.assertMsg (
+      missingEsp.fleet.osDisk.espSize == null
+      && missingEsp.disko.devices.disk == { }
+      && lib.elem "Size fleet.osDisk.espSize explicitly." missingEsp.fleet.bootstrap.missing
+    ) "${track}: missing ESP size must remain a blocker with no destructive disk configuration";
+    assert lib.assertMsg (
+      bios.fleet.osDisk.espSize == null
+      && !(bios.disko.devices.disk.os.content.partitions ? ESP)
+      && bios.fleet.bootstrap.missing == [ ]
+    ) "${track}: BIOS must not require or create an ESP";
+    assert lib.assertMsg (lib.all
+      (system: system.config.services.openssh.settings.PermitRootLogin == "no")
+      [
+        deployAdmin
+        deployRoot
+        deployNull
+      ]
+    ) "${track}: deployment must not relax the SSH root-login policy";
+    assert lib.assertMsg (
+      deployAdmin.config.fleet.bootstrap.missing == [ ] && failedAssertions deployAdmin == [ ]
+    ) "${track}: keyed non-root deployment user was rejected";
+    assert lib.assertMsg (
+      deployRoot.config.fleet.bootstrap.missing == [ ]
+      &&
+        failedAssertions deployRoot == [
+          "Deployment SSH user must be non-root; SSH root login is disabled."
+        ]
+      && !(builtins.tryEval deployRoot.config.system.build.toplevel.drvPath).success
+    ) "${track}: root deployment SSH user with a public key must fail readiness/toplevel evaluation";
+    assert lib.assertMsg (
+      deployNull.config.fleet.bootstrap.missing == [ "Supply deployment.sshUser and verify elevation." ]
+      && !(builtins.tryEval deployNull.config.system.build.toplevel.drvPath).success
+    ) "${track}: missing deployment SSH user must remain a commissioning blocker";
+    assert lib.assertMsg (
+      failedAssertions deployUnknown == [
+        "Deployment SSH user must have an explicitly configured account and public keys."
+      ]
+      && !(builtins.tryEval deployUnknown.config.system.build.toplevel.drvPath).success
+    ) "${track}: deployment must still reject an unconfigured SSH account";
+    {
+      inherit espSizes;
+      deploymentAccess = {
+        nonRootToplevel = deployAdmin.config.system.build.toplevel.drvPath;
+        rootRejected = true;
+        nullBlocked = true;
+        unknownUserRejected = true;
+      };
+      toplevel = cfg.system.build.toplevel.drvPath;
+      biosToplevel = bios.system.build.toplevel.drvPath;
+      activation = (deployLib.activate.nixos fixture).drvPath;
+      diskScript = cfg.system.build.diskoScript.drvPath;
+      inherit (cfg.fleet.bootstrap) missing;
+    }
+  ) fixtures;
+in
+{
+  flake.validation = {
+    hosts = checkedReport;
+    fixtures = fixtureReport;
+    compositions = compositionReport;
+  };
+  perSystem = { pkgs, ... }: {
+    checks = {
+      # Evaluate drvPaths but do not turn their deep string contexts into build
+      # dependencies. This report is data, never executable or an installation input.
+      fleet-evaluation = pkgs.writeText "fleet-evaluation.json" (
+        builtins.unsafeDiscardStringContext (
+          builtins.toJSON {
+            hosts = checkedReport;
+            fixtures = fixtureReport;
+            compositions = compositionReport;
+          }
+        )
+      );
+    }
+    // lib.concatMapAttrs (
+      track: fixture:
+      let
+        deployLib = (deploymentPkgs fixture.pkgs).deploy-rs.lib;
+        # Exercise real upstream activation checks on tiny, non-system payloads.
+        # The real NixOS activation derivations are evaluated separately above.
+        smoke = deployLib.deployChecks {
+          nodes.fixture = {
+            hostname = "evaluation-only.invalid";
+            profiles.smoke = {
+              user = "root";
+              path = deployLib.activate.custom (fixture.pkgs.runCommand "smoke-payload" { }
+                ''mkdir -p "$out"''
+              ) ":";
+            };
+          };
+        };
+      in
+      lib.mapAttrs' (name: value: lib.nameValuePair "${track}-${name}-smoke" value) smoke
+    ) fixtures;
+  };
+}

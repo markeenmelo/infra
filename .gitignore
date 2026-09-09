@@ -1,0 +1,5 @@
+/result*
+/.direnv/
+/.local/
+*.qcow2
+*.raw
