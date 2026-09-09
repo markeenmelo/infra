@@ -2,6 +2,7 @@
   config,
   inputs,
   lib,
+  options,
   ...
 }:
 let
@@ -181,6 +182,42 @@ let
           "1.5G"
         ];
       };
+      # Reuse the actual host metadata type and its deferred deployment module.
+      # These hosts exist only in this isolated evaluation, never in fleet/deploy outputs.
+      deploymentFor =
+        sshUser:
+        let
+          host =
+            (lib.evalModules {
+              modules = [
+                {
+                  options.hosts = lib.mkOption { type = options.fleet.hosts.type; };
+                  config.hosts.fixture = {
+                    system = "x86_64-linux";
+                    inherit track;
+                    deployment = {
+                      enable = true;
+                      hostname = "evaluation-only.test";
+                      transport = "trusted-user";
+                      inherit sshUser;
+                    };
+                  };
+                }
+              ];
+            }).config.hosts.fixture;
+        in
+        assert lib.assertMsg (
+          host.deployment.profileUser == "root"
+        ) "${track}: system activation must still default to root";
+        fixture.extendModules { modules = [ host.module ]; };
+      deployAdmin = deploymentFor "fixture-admin";
+      deployRoot = (deploymentFor "root").extendModules {
+        modules = [ { users.users.root.openssh.authorizedKeys.keys = cfg.fleet.access.authorizedKeys; } ];
+      };
+      deployNull = deploymentFor null;
+      deployUnknown = deploymentFor "fixture-missing";
+      failedAssertions =
+        system: map (a: a.message) (lib.filter (a: !a.assertion) system.config.assertions);
       deployLib = (deploymentPkgs fixture.pkgs).deploy-rs.lib;
     in
     assert lib.assertMsg (cfg.fleet.bootstrap.missing == [ ]) "${track}: fixture requirements missing";
@@ -231,8 +268,43 @@ let
       && !(bios.disko.devices.disk.os.content.partitions ? ESP)
       && bios.fleet.bootstrap.missing == [ ]
     ) "${track}: BIOS must not require or create an ESP";
+    assert lib.assertMsg (lib.all
+      (system: system.config.services.openssh.settings.PermitRootLogin == "no")
+      [
+        deployAdmin
+        deployRoot
+        deployNull
+      ]
+    ) "${track}: deployment must not relax the SSH root-login policy";
+    assert lib.assertMsg (
+      deployAdmin.config.fleet.bootstrap.missing == [ ] && failedAssertions deployAdmin == [ ]
+    ) "${track}: keyed non-root deployment user was rejected";
+    assert lib.assertMsg (
+      deployRoot.config.fleet.bootstrap.missing == [ ]
+      &&
+        failedAssertions deployRoot == [
+          "Deployment SSH user must be non-root; SSH root login is disabled."
+        ]
+      && !(builtins.tryEval deployRoot.config.system.build.toplevel.drvPath).success
+    ) "${track}: root deployment SSH user with a public key must fail readiness/toplevel evaluation";
+    assert lib.assertMsg (
+      deployNull.config.fleet.bootstrap.missing == [ "Supply deployment.sshUser and verify elevation." ]
+      && !(builtins.tryEval deployNull.config.system.build.toplevel.drvPath).success
+    ) "${track}: missing deployment SSH user must remain a commissioning blocker";
+    assert lib.assertMsg (
+      failedAssertions deployUnknown == [
+        "Deployment SSH user must have an explicitly configured account and public keys."
+      ]
+      && !(builtins.tryEval deployUnknown.config.system.build.toplevel.drvPath).success
+    ) "${track}: deployment must still reject an unconfigured SSH account";
     {
       inherit espSizes;
+      deploymentAccess = {
+        nonRootToplevel = deployAdmin.config.system.build.toplevel.drvPath;
+        rootRejected = true;
+        nullBlocked = true;
+        unknownUserRejected = true;
+      };
       toplevel = cfg.system.build.toplevel.drvPath;
       biosToplevel = bios.system.build.toplevel.drvPath;
       activation = (deployLib.activate.nixos fixture).drvPath;

@@ -97,7 +97,7 @@ deploy --targets .#racknerd .#bastion -- --no-update-lock-file
 just deploy-fleet  # all currently eligible nodes, not all inventory entries
 ```
 
-SSH port/user, activation user, sudo/doas, interactive sudo, timeouts, connection flags, remote builds and closure trust are host metadata. The system profile must activate as root; SSH login defaults to a supplied non-root admin with keys. No blanket `@wheel` Nix trust is granted. Choose root-equivalent `deployment.transport = "trusted-user"` or provision signing trust for `"signed"` explicitly.
+SSH port/user, activation user, sudo/doas, interactive sudo, timeouts, connection flags, remote builds and closure trust are host metadata. The system profile must activate as root; SSH login must use an explicitly supplied non-root account with keys. Enabled deployments reject `deployment.sshUser = "root"` during validation/readiness because the SSH capability disables root login. No blanket `@wheel` Nix trust is granted. Choose root-equivalent `deployment.transport = "trusted-user"` or provision signing trust for `"signed"` explicitly.
 
 Both automatic and magic rollback remain enabled. Never use rollback-disabling flags to “fix” an unreachable machine. [Operations](docs/operations.md#deployment-and-recovery) covers offline hosts, SSH-changing deployments, subset rollback, signing, and console recovery. Deploy-rs does not install an OS or manage data rollback.
 

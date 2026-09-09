@@ -67,7 +67,7 @@ in
             sshUser = mkOption {
               type = types.nullOr (types.strMatching "[a-z_][a-z0-9_-]*");
               default = null;
-              description = "Real SSH account; provision keys and privilege escalation before deployment.";
+              description = "Real non-root SSH account; root SSH login is disabled. Provision keys and privilege escalation to the root activation account before deployment.";
             };
             transport = mkOption {
               type = types.nullOr (
@@ -148,6 +148,10 @@ in
                 {
                   assertion = deployment.profileUser == "root";
                   message = "NixOS system deployment must activate as root.";
+                }
+                {
+                  assertion = deployment.sshUser != "root";
+                  message = "Deployment SSH user must be non-root; SSH root login is disabled.";
                 }
                 {
                   assertion =

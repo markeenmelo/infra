@@ -13,7 +13,7 @@ Expose nodes only when `fleet.hosts.<name>.ready && deployment.enable`. Servers 
 
 Use upstream `activate.nixos` and `deployChecks`. Scope its overlay to each target's package set so activation code and executable use the target track. Build the executable from the same locked upstream source as the library. Preserve automatic and magic rollback, interactive sudo defaults and bounded SSH liveness.
 
-Require explicit closure transport trust: root-equivalent per-user Nix trust, or separately provisioned signing keys. Never broadly trust wheel or embed secrets. NixOS system activation runs as root; the SSH account and elevation mechanism remain separate.
+Require explicit closure transport trust: root-equivalent per-user Nix trust, or separately provisioned signing keys. Never broadly trust wheel or embed secrets. NixOS system activation runs as root; the SSH account and elevation mechanism remain separate. The deployment SSH account must be non-root, matching the SSH capability's `PermitRootLogin = "no"` policy. Enabled deployments assert this even if root has authorized keys; null remains a commissioning blocker. Do not enable SSH root login to accommodate invalid deployment metadata.
 
 ## Consequences
 
