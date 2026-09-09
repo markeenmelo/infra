@@ -7,6 +7,7 @@ default:
 fmt:
     nix fmt --no-update-lock-file
 
+# pkgs.nixfmt-tree provides treefmt with a generated configuration.
 format-check:
     treefmt --ci
 
