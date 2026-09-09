@@ -1,0 +1,105 @@
+# Operations
+
+Run commands from the repository root inside `nix develop --no-update-lock-file`. Consult the matching `.agents/skills/` procedure and [research ledger](research.md) before changing dependency-sensitive APIs.
+
+## Input updates
+
+Never substitute `system.stateVersion` for the current supported release. It is a state migration boundary, not an update knob.
+
+1. Start with a reviewed clean working tree and save the current lock:
+   ```sh
+   before=$(mktemp)
+   cp flake.lock "$before"
+   ```
+2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include disko, impermanence, deploy-rs and flake-parts issues.
+3. Choose **one** update scope:
+   ```sh
+   nix flake update nixpkgs-stable
+   # OR
+   nix flake update nixpkgs-unstable
+   # OR
+   nix flake update
+   ```
+4. Run `just check` for every scope (the fleet is small). Pay special attention to `racknerd`/`bastion` for stable, `thinkpad`/`dino` for unstable. For commissioned targets build their system closures with `just build HOST`. No deployment is implied.
+5. Review **every** changed lock node:
+   ```sh
+   jq -n --slurpfile old "$before" --slurpfile new flake.lock '
+     ($old[0].nodes + $new[0].nodes | keys[]) as $k |
+     select($old[0].nodes[$k].locked != $new[0].nodes[$k].locked) |
+     {input: $k, before: $old[0].nodes[$k].locked, after: $new[0].nodes[$k].locked}'
+   git diff -- flake.nix flake.lock
+   ```
+   Targeted updates must not move the other fleet track or unrelated dependency pins. A dependency following stable uses the new stable packages without changing its own source revision; report this too. Commit only the intended update and compatibility fixes with exact before/after revisions.
+
+Inspect locked branch/revision/hash without evaluating a machine:
+
+```sh
+jq '.nodes as $n | ["nixpkgs-stable", "nixpkgs-unstable"][] as $i |
+  {input:$i, original:$n[$n.root.inputs[$i]].original, locked:$n[$n.root.inputs[$i]].locked}' flake.lock
+```
+
+A **stable release migration** additionally changes the stable URL in `flake.nix` after fresh research, then updates that one input. Do not automatically jump servers to a new release or bump their stateVersion. Update the dated research record and validate database/service compatibility and restores.
+
+## Deployment and recovery
+
+Provisioning/installation is separate: see [bootstrap](bootstrap.md). deploy-rs assumes NixOS, reachable SSH, working elevation and closure trust already exist.
+
+### Preflight
+
+1. `just check`; inspect `just inventory` and `nix eval --json .#deploymentPlan | jq .`.
+2. Use `bash scripts/ready.sh HOST deploy` for deployment-specific readiness, or `just ready HOST` for build readiness. `just deploy HOST` performs the deploy-specific preflight automatically.
+3. Confirm the reported revision/actual package source matches the independent host policy. Check a known-good generation and backup/restore status. Runtime secret paths and signing keys must already exist; pure checks cannot verify them.
+4. Verify host-key fingerprint, reachability, free `/nix`/`/boot` space, admin login, sudo/doas policy and Nix closure trust. Do not put credentials in flake arguments, source files or shell history. For signed transport, securely set `LOCAL_KEY` to the existing signing-key path; the target must already trust its public key.
+5. Keep an independent console and an existing SSH session open for sensitive changes. Consider `--dry-activate` only after authorization: it still contacts/copies to the target and is **not** a purely local check.
+
+### Commands (these really deploy)
+
+```sh
+just deploy racknerd
+
+# Subset: manually preflight each; --targets is the verified upstream API.
+just check
+bash scripts/ready.sh racknerd deploy
+bash scripts/ready.sh bastion deploy
+deploy --targets .#racknerd .#bastion -- --no-update-lock-file
+
+# All currently commissioned and enabled nodes; refuses an empty set.
+just deploy-fleet
+```
+
+`deploy .` means all **eligible** nodes, not all four identities. To include a desktop, explicitly set `fleet.hosts.<name>.deployment.enable = true`, supply metadata/SSH/trust and commission it. Otherwise build/switch locally after authorization. Prefer a named subset for intermittently online targets; an offline desktop is not a reason to remove rollback safeguards.
+
+deploy-rs builds from the locked input. Its default own checks may evaluate/build **all** eligible nodes even when a subset is selected; our `just check` also covers the full fleet. This costs more once real machines are commissioned but does not contact them. `remoteBuild` moves the build to the target only when selected; review resources and trust before enabling it.
+
+### Rollback semantics
+
+- `autoRollback = true`: return to the previous profile if activation fails.
+- `magicRollback = true`: target rolls back if the client does not confirm post-activation reachability in time. Default confirmation is 60 seconds, activation 300 seconds, with SSH liveness limits.
+- In a multi-target invocation, successful earlier profiles can also roll back if a later one fails. The verified override `--rollback-succeeded false` changes that policy; use only deliberately.
+- None of these revert database migrations, `/persist`, user/NAS data, partition changes or secrets. None guarantee the next reboot succeeds.
+
+When a host is unreachable, stop. Check power/network/rescue console and wait for pending rollback to settle. Do not retry blindly, disable magic rollback, delete known_hosts entries, or format disks. An SSH fingerprint change must be explained before accepting a new key.
+
+**SSH-changing deployments:** prefer a two-stage migration keeping old and new access working until separately tested. Port/IP changes can cause the confirmation connection to fail and trigger rollback. If an access-breaking change is unavoidable, use a console and a planned maintenance window. Only with explicit authorization might an operator use:
+
+```sh
+deploy .#racknerd --magic-rollback false -- --no-update-lock-file
+```
+
+This disables the reachability safety mechanism; automatic activation-failure rollback is still on. `deploy .#racknerd --auto-rollback false` is a separate, usually inappropriate override. Neither belongs in repository defaults. Check the **locked** `deploy --help` before relying on flag syntax after updates. `--test` activates without setting boot defaults; `--boot` updates boot selection without a live switch, and therefore requires a reboot plan.
+
+From a real target's console, a standard manual generation recovery is:
+
+```sh
+sudo nixos-rebuild switch --rollback
+```
+
+Or select the previous generation in its bootloader. Inspect the result before reconnecting/deploying again. Do not prune old generations automatically; maintain a deliberate retention policy and monitor disk space. If a service has migrated on-disk formats, restoring its data may be necessary even after reverting NixOS.
+
+## Persistence, observability and backups
+
+`just inventory` lists declared persistent paths. New services must define ownership/mode and state requirements next to their configuration, ideally with a mount dependency so they cannot write into an ephemeral placeholder when their durable filesystem is missing. State outside declared paths is lost at reboot. State deliberately written directly into `/persist` remains even if not listed in the bind-mount inventory.
+
+Servers retain a bounded journal; interactive hosts use volatile logs. No monitoring endpoint, exporter, database, NAS share, unattended backup or automatic garbage collection is silently enabled. Before production services, add separately reviewed backup/restore and observability features with runtime credentials and tested failure handling. A Btrfs subvolume and a persistent root policy are **not backups**. Removing an impermanence declaration leaves backing data; inspect it, do not automatically delete it.
+
+Recommended future work, not implemented: encrypted laptop storage, a researched secret-delivery backend, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Add only what the fleet actually needs.
