@@ -1,0 +1,11 @@
+# Verified recipients from the previous repository; no catch-all host rule.
+keys:
+  - &operator age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht
+  - &thinkpad age15r7mf8n0ah32y9xf8jxjvj4yrzsf3y52cucqeyr6hlxtkw63vs0qjz7wgm
+
+creation_rules:
+  - path_regex: ^secrets/hosts/thinkpad\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *thinkpad

@@ -9,9 +9,9 @@
         authorizedKeys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAYdnogT40vOG0eZn4guvWq33q6VANCYXEYsxOSIsVbc"
         ];
-        # Desired runtime delivery contract, NOT an observed/provisioned file.
-        # Existing sops-managed passwords must be migrated securely, outside Git.
-        passwordFile = "/persist/secrets/marcos-password-hash";
+        # Missing host ciphertext/identity remains a blocker. ThinkPad's verified
+        # encrypted source is supplied separately; never reuse it on other hosts.
+        passwordSecrets.marcos = lib.mkDefault null;
         passwordlessSudo = false;
       };
       users.users.marcos.uid = 1000;

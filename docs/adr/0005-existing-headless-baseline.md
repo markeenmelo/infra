@@ -3,6 +3,7 @@
 - Status: accepted
 - Date: 2026-09-09
 - Amends ADR 0003 for the current fleet and ADR 0004's desktop deployment policy
+- Password-delivery update: [ADR 0006](0006-sops-password-delivery.md) replaces manual runtime-file contracts with SOPS and explicit missing-credential/identity gates.
 
 ## Context
 

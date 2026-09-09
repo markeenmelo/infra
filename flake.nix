@@ -20,6 +20,11 @@
       inputs.nixpkgs.follows = "";
       inputs.home-manager.follows = "";
     };
+    sops-nix = {
+      # Reuse the existing credential backend pin; see docs/research.md.
+      url = "github:Mic92/sops-nix/fbf759290e0cb0a98dfc813a4eb7d53ad1dacb57";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
     deploy-rs = {
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs-stable";

@@ -10,6 +10,7 @@
       };
       persistence.rootSize = "2G";
       workstation.homePersistence = "filesystem";
+      access.passwordSecrets.ian = null;
     };
     boot.initrd.availableKernelModules = [
       "nvme"
@@ -28,7 +29,6 @@
     users.users.ian = {
       isNormalUser = true;
       uid = 1001;
-      hashedPasswordFile = "/persist/secrets/ian-password-hash";
     };
     users.users.marcos.extraGroups = [ "networkmanager" ];
     time.timeZone = "America/Toronto";

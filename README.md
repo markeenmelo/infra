@@ -26,7 +26,7 @@ just check
 just ready racknerd  # correctly refuses until transition review is complete
 ```
 
-The locked development shell supplies official nixfmt/nixfmt-tree, statix, deadnix, just, jq, Git, OpenSSH, ShellCheck and source-matched deploy-rs. Entry performs no deployment, secret retrieval or disk action. **Stage intended new files before evaluation:** Git flakes ignore untracked files. Do not stage credentials or unrelated work.
+The locked development shell supplies official nixfmt/nixfmt-tree, statix, deadnix, just, jq, SOPS, age, yq, Git, OpenSSH, ShellCheck and source-matched deploy-rs. Entry performs no deployment, secret retrieval or disk action. **Stage intended new files before evaluation:** Git flakes ignore untracked files. Only reviewed encrypted SOPS files/public recipients may be staged; never plaintext credentials, private identities or unrelated work.
 
 ## Preservation, not provisioning
 
@@ -34,7 +34,7 @@ Each host composes `existing-storage`: disko `nodev` descriptions derive mounts 
 
 - `/` becomes tmpfs on thinkpad/racknerd/bastion; dino already uses it. No old Btrfs root-reset/deletion script is retained. Existing root subvolumes are not erased.
 - Existing `/nix`, `/persist` and laptop `/home` remain durable, early-mounted filesystems. Laptop `/home` is **not** also an impermanence bind.
-- Thinkpad's existing encryption, LVM and swap remain. No secrets enter the Nix store.
+- Thinkpad's existing encryption, LVM and swap remain. No plaintext secrets or private identities enter the Nix store.
 - Bastion's NVMe OS `/persist` is **not** its ZFS data. The observed `/srv` datasets stay outside disko. No pools/datasets/properties are created or upgraded; import policy and restore require review.
 - Persist scoped machine identity, SSH identities, NixOS allocation state, random seed, timers/time sync and feature-owned state. Server journals are bounded; workstation `/home` deliberately preserves user data. Removing declarations does not erase backing data. Persistence and mirroring are not backups.
 
@@ -47,7 +47,7 @@ The original **fresh-install-only** `os-disk` capability is retained with its de
 
 ## Access and deployment
 
-Target policy: `marcos`, the explicitly selected existing public key, password-based sudo, immutable users, locked root, no root/password SSH. Runtime password files under `/persist/secrets/` are a delivery contract, **not provisioned credentials** or a secret-management backend. Dino also retains `ian` without wheel rights.
+Target policy: `marcos`, the explicitly selected existing public key, password-based sudo, immutable users, locked root, no root/password SSH. **SOPS delivers encrypted password hashes before account creation** using `neededForUsers` and a dedicated persistent age identity. ThinkPad reuses its existing ciphertext; other hosts retain null credential/identity blockers. No keys or passwords were generated, decrypted or rotated. Dino also retains `ian` without wheel rights. See [secret inventory and procedure](secrets/README.md) and [ADR 0006](docs/adr/0006-sops-password-delivery.md); live decryption/access review remains pending.
 
 Both servers currently have **root-only SSH**. A separately authorized staged transition must first establish and test non-root login/elevation while retaining recovery access. Do not deploy this final baseline straight through root-only access. Also verify networking without the existing VPN before removing it. [The transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized) details these requirements.
 
@@ -75,7 +75,7 @@ Class-checked `flake.modules.nixos.<capability>` and per-host `fleet.hosts.<name
 - `modules/machines/`: explicit capability compositions and deployment intent.
 - `modules/hardware/`, `modules/networking/`, `modules/access/`: observed facts and deliberate target choices.
 - `modules/storage/existing.nix`, host storage/data modules: existing-installation mount/boot boundary.
-- `modules/{headless,ssh,access,server,vps,workstation,laptop}.nix`: cohesive reusable features; `logging.nix` contributes to persistence.
+- `modules/{headless,ssh,access,secrets,server,vps,workstation,laptop}.nix`: cohesive reusable features; `logging.nix` contributes to persistence.
 - `modules/deployment.nix`: metadata, SSH integration, target-track activation and upstream checks.
 - `modules/{tooling,validation}.nix`: locked shell, source checks, both-track safety/composition fixtures.
 
@@ -90,7 +90,7 @@ nix eval --json .#fleet | jq 'map_values({track,revision,ready,missing})'
 just revisions
 ```
 
-`just check` runs formatting, statix, deadnix, ShellCheck, every real host report and package/`/etc`/initrd derivation, independent track checks, both-track synthetic compositions/storage/security fixtures and built upstream deploy schema/activation smoke checks. No target contact or activation occurs. **Evaluation fixtures are not tested installations.** Actual host toplevel builds remain gated. [Validation scope/results](docs/validation.md) distinguishes evaluation, builds and runtime acceptance.
+`just check` first checks encrypted payload shape/public recipients without decryption, then runs formatting, statix, deadnix, ShellCheck, every real host report and package/`/etc`/initrd derivation, independent track checks, both-track synthetic compositions/storage/security/SOPS fixtures, built SOPS users manifests and upstream deploy schema/activation smoke checks. No target contact or activation occurs. **Evaluation fixtures are not tested installations.** Actual host toplevel builds remain gated. [Validation scope/results](docs/validation.md) distinguishes evaluation, builds and runtime acceptance.
 
 Updates are separate, researched operations and never change stateVersion automatically:
 

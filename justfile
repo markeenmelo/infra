@@ -16,11 +16,18 @@ lint:
     deadnix --fail .
     shellcheck scripts/*.sh
 
-evaluate:
-    nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing})), fixtures, compositions, existingInstallations}'
+secret-check:
+    bash scripts/check-secrets.sh
 
+secret-check-tests:
+    bash scripts/test-secret-check.sh
+
+evaluate:
+    nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing})), fixtures, compositions, existingInstallations, sops}'
+
+# Check ciphertext before Nix evaluates/builds secret manifests; never decrypt.
 # Canonical non-destructive validation; does not install, mount or deploy.
-check: format-check lint evaluate
+check: secret-check format-check lint evaluate
     nix flake check --no-update-lock-file -L
 
 inventory:
