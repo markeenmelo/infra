@@ -11,7 +11,7 @@ For each host, record outside public Git if sensitive:
 - Verified **whole OS disk** by-id identifier, model/serial/capacity and an explicit list of valuable data disks that are **not** that disk. Stable by-id may not be available on some providers: do not invent one; adapt the storage capability after obtaining an equally stable, independently verified identifier.
 - Networking, provider requirements, IPv4/IPv6/DNS/routing, public/private interface firewall policy, SSH reachability and rescue-console access. The base deliberately disables implicit DHCP; supply the actual policy. Workstations use NetworkManager but still need their network policy reviewed.
 - Real administration and interactive account names, public-key fingerprints, privilege policy, password-hash provisioning, closure trust.
-- Intended session/software scope. The current baseline is deliberately headless on laptops too; desktop, GPU gaming stack, launchers/licensing and controllers are deferred, not acknowledged as tested. Nothing selects a DE, Steam, Gamescope or performance tweaks implicitly.
+- Intended session/software scope. ThinkPad explicitly selects the [new Hyprland/Noctalia desktop](desktop.md); all other hosts remain headless. GPU gaming stack, launchers/licensing and controllers are deferred, not acknowledged as tested. No Steam, Gamescope, NVIDIA driver or performance tweak is selected implicitly.
 - For `bastion`: independent NAS data inventory, existing filesystem/topology facts, restore plan and future service mount requirements. A functioning OS must not imply approval to alter NAS storage.
 
 On the **target**, read-only inventory commands include:
@@ -71,7 +71,7 @@ Future service secrets may use the same SOPS capability, with separately researc
 
 ## 3. Resolve capability-specific blockers
 
-`just inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement; future gaming capability review is separate.
+`just inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement. ThinkPad's graphical capability requires genuine `fleet.desktop.reviewed` acceptance of login/locking/sleep, portals, audio and the mobile display; follow [its checklist](desktop.md#pre-activation-and-acceptance-checklist). This flag does not certify future eGPU/HDR or gaming behavior.
 
 Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Racknerd, bastion and dino opt in after commissioning; thinkpad remains local-only. Keep `ready = false` during discovery. Once every fact is supplied, run:
 

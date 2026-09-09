@@ -11,11 +11,16 @@ let
     stable = inputs.nixpkgs-stable;
     unstable = inputs.nixpkgs-unstable;
   };
+  homeManagers = {
+    stable = inputs.home-manager-stable;
+    unstable = inputs.home-manager-unstable;
+  };
   evaluated = lib.mapAttrs (
     name: host:
     tracks.${host.track}.lib.nixosSystem {
       modules = [
         config.flake.modules.nixos.base
+        homeManagers.${host.track}.nixosModules.home-manager
         host.module
         {
           networking.hostName = name;

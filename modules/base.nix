@@ -70,6 +70,8 @@
         };
         # Upgrades and generation pruning are deliberate operations, not background jobs.
         system.autoUpgrade.enable = false;
+        services.timesyncd.enable = true;
+        documentation.nixos.enable = false;
         networking.firewall.enable = true;
         networking.useDHCP = lib.mkDefault false;
         boot.initrd.systemd.enable = true;

@@ -11,7 +11,7 @@ Never substitute `system.stateVersion` for the current supported release. It is 
    before=$(mktemp)
    cp flake.lock "$before"
    ```
-2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include disko, impermanence, sops-nix, deploy-rs and flake-parts issues. SOPS currently has an explicit reused revision in `flake.nix`; advancing it requires a researched URL revision edit, not just `nix flake update`.
+2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include both Home Manager branches, disko, impermanence, sops-nix, deploy-rs and flake-parts issues. Desktop updates must review the actual target-packaged Hyprland/Noctalia APIs and new profile behavior, not legacy Noctalia Shell 4.x instructions. SOPS currently has an explicit reused revision in `flake.nix`; advancing it requires a researched URL revision edit, not just `nix flake update`.
 3. Choose **one** update scope:
    ```sh
    nix flake update nixpkgs-stable
@@ -38,7 +38,9 @@ jq '.nodes as $n | ["nixpkgs-stable", "nixpkgs-unstable"][] as $i |
   {input:$i, original:$n[$n.root.inputs[$i]].original, locked:$n[$n.root.inputs[$i]].locked}' flake.lock
 ```
 
-A **stable release migration** additionally changes the stable URL in `flake.nix` after fresh research, then updates that one input. Do not automatically jump servers to a new release or bump their stateVersion. Update the dated research record and validate database/service compatibility and restores.
+Home Manager can be updated independently with `nix flake update home-manager-stable` or `nix flake update home-manager-unstable`; validate both-track desktop fixtures and generated configs and keep unrelated pins unchanged. Updating a Nixpkgs track changes the packages used by its following Home Manager without automatically moving the Home Manager source.
+
+A **stable release migration** additionally changes both the numbered stable Nixpkgs URL and the matching `home-manager-stable` release URL in `flake.nix` after fresh research, then updates those two inputs. Do not automatically jump servers to a new release or bump their stateVersion. Update the dated research record and validate database/service compatibility and restores.
 
 ## Deployment and recovery
 
@@ -102,4 +104,4 @@ Or select the previous generation in its bootloader. Inspect the result before r
 
 Servers retain a bounded journal; interactive hosts use volatile logs. No monitoring endpoint, exporter, application database, NAS share, unattended backup or automatic garbage collection is silently enabled. Racknerd's fail2ban database persists; bastion retains its observed monthly `tank` scrub schedule, which is not a backup. Before production services, add separately reviewed backup/restore and observability features with runtime credentials and tested failure handling. A Btrfs subvolume and a persistent root policy are **not backups**. Removing an impermanence declaration leaves backing data; inspect it, do not automatically delete it.
 
-Recommended future work, not implemented here: review dino's unencrypted storage and boot filesystem, complete per-host SOPS identity/credential provisioning and acceptance, VPN access, gaming/desktop capabilities, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Thinkpad's existing LUKS encryption is preserved, not newly provisioned. Add only what the fleet actually needs.
+Recommended future work, not implemented here: review dino's unencrypted storage and boot filesystem, complete per-host SOPS identity/credential provisioning and acceptance, VPN access, ThinkPad's hardware-verified NVIDIA/Samsung HDR/VRR profile and desktop runtime acceptance, optional Dino desktop/gaming capabilities, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Thinkpad's existing LUKS encryption is preserved, not newly provisioned. Add only what the fleet actually needs.

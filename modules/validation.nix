@@ -17,6 +17,10 @@ let
     stable = inputs.nixpkgs-stable;
     unstable = inputs.nixpkgs-unstable;
   };
+  homeManagers = {
+    stable = inputs.home-manager-stable;
+    unstable = inputs.home-manager-unstable;
+  };
   modules = config.flake.modules.nixos;
   report = config.flake.fleet;
   lock = builtins.fromJSON (builtins.readFile (inputs.self + "/flake.lock"));
@@ -28,6 +32,13 @@ let
     assert lib.assertMsg (
       (lockedInput "nixpkgs-unstable").original.ref == "nixpkgs-unstable"
     ) "Interactive track must lock nixpkgs-unstable.";
+    assert lib.assertMsg (
+      (lockedInput "home-manager-stable").original.ref
+      == "release-${lib.removePrefix "nixos-" (lockedInput "nixpkgs-stable").original.ref}"
+      && (lockedInput "home-manager-unstable").original.ref == "master"
+      && (lockedInput "home-manager-stable").inputs.nixpkgs == [ "nixpkgs-stable" ]
+      && (lockedInput "home-manager-unstable").inputs.nixpkgs == [ "nixpkgs-unstable" ]
+    ) "Home Manager branches and follows must match the independent Nixpkgs tracks.";
     assert lib.assertMsg (
       builtins.attrNames expectedTracks == builtins.attrNames report
     ) "Update the explicit fleet policy oracle when adding/removing a host.";
@@ -82,8 +93,6 @@ let
       assert lib.assertMsg (
         !cfg.services.tailscale.enable
         && !cfg.services.xserver.enable
-        && !cfg.services.displayManager.enable
-        && !cfg.services.greetd.enable
         && !cfg.programs.steam.enable
         && cfg.systemd.enableEmergencyMode
         && cfg.services.openssh.settings.PermitRootLogin == "no"
@@ -92,7 +101,31 @@ let
         && !cfg.fleet.access.passwordlessSudo
         && cfg.networking.firewall.allowedTCPPorts == [ 22 ]
         && cfg.networking.firewall.allowedUDPPorts == [ ]
-      ) "${name}: headless SSH-only baseline or recovery policy regressed";
+      ) "${name}: SSH/firewall/no-VPN/recovery policy regressed";
+      assert lib.assertMsg (
+        if name == "thinkpad" then
+          cfg.programs.hyprland.enable
+          && cfg.programs.hyprland.withUWSM
+          && cfg.services.greetd.enable
+          && cfg.services.displayManager.enable
+          && !(cfg.services.greetd.settings ? initial_session)
+          && builtins.attrNames cfg.home-manager.users == [ "marcos" ]
+          && cfg.home-manager.useGlobalPkgs
+          && cfg.home-manager.useUserPackages
+          && cfg.home-manager.users.marcos.home.stateVersion == "26.05"
+          && !cfg.home-manager.users.marcos.home.version.isReleaseBranch
+          && cfg.home-manager.users.marcos.warnings == [ ]
+          && !cfg.hardware.graphics.enable32Bit
+          && !(lib.elem "nvidia" cfg.services.xserver.videoDrivers)
+          &&
+            lib.hasInfix "1920x1200@60.003"
+              cfg.home-manager.users.marcos.xdg.configFile."hypr/hyprland.lua".text
+        else
+          !cfg.programs.hyprland.enable
+          && !cfg.services.displayManager.enable
+          && !cfg.services.greetd.enable
+          && cfg.home-manager.users == { }
+      ) "${name}: only ThinkPad may opt into the new Intel-first desktop; other hosts remain headless";
       assert lib.assertMsg (
         cfg.sops.age.keyFile == cfg.fleet.secrets.ageKeyFile
         && !cfg.sops.age.generateKey
@@ -130,6 +163,9 @@ let
           systemPath = system.config.system.path.drvPath;
           etc = system.config.system.build.etc.drvPath;
           initrd = system.config.system.build.initialRamdisk.drvPath;
+        }
+        // lib.optionalAttrs (name == "thinkpad") {
+          home = cfg.home-manager.users.marcos.home.activationPackage.drvPath;
         };
       }
     ) report;
@@ -154,6 +190,7 @@ let
     tracks.${track}.lib.nixosSystem {
       modules = [
         modules.base
+        homeManagers.${track}.nixosModules.home-manager
       ]
       ++ map (name: modules.${name}) capabilities
       ++ [
@@ -200,6 +237,9 @@ let
           // lib.optionalAttrs (lib.elem "workstation" capabilities) {
             workstation.usersReviewed = true;
           }
+          // lib.optionalAttrs (lib.elem "hyprland" capabilities) {
+            desktop.reviewed = true;
+          }
           // lib.optionalAttrs (lib.elem "gaming" capabilities) {
             gaming.reviewed = true;
           }
@@ -208,6 +248,9 @@ let
           }
           // lib.optionalAttrs (lib.elem "vps" capabilities) {
             vps.providerReviewed = true;
+          };
+          home-manager.users = lib.optionalAttrs (lib.elem "hyprland" capabilities) {
+            fixture-admin.home.stateVersion = "26.05";
           };
           # Parse the shipped ciphertext with a synthetic consumer. There is no
           # matching fixture identity, decryption, install or exported target.
@@ -459,6 +502,108 @@ let
       unsafeOverridesRejected = true;
     }
   ) fixtures;
+  desktopFixtures = lib.genAttrs (builtins.attrNames tracks) (
+    track:
+    fixtureFor track "uefi" [
+      "os-disk"
+      "ssh"
+      "hyprland"
+      "persistence"
+      "access"
+      "workstation"
+      "laptop"
+    ]
+  );
+  desktopReport = lib.mapAttrs (
+    track: fixture:
+    let
+      cfg = fixture.config;
+      home = cfg.home-manager.users.fixture-admin;
+      rejected =
+        module:
+        !(builtins.tryEval
+          (fixture.extendModules { modules = [ module ]; }).config.system.build.toplevel.drvPath
+        ).success;
+    in
+    assert lib.assertMsg (
+      cfg.fleet.bootstrap.missing == [ ]
+      && lib.all (a: a.assertion) cfg.assertions
+      && home.warnings == [ ]
+      && cfg.home-manager.useGlobalPkgs
+      && cfg.home-manager.useUserPackages
+      && cfg.home-manager.backupFileExtension == null
+      && builtins.attrNames cfg.home-manager.extraSpecialArgs == [ "nixosConfig" ]
+      && home.home.version.isReleaseBranch == (track == "stable")
+      && lib.elem fixture.pkgs.noctalia home.home.packages
+      && cfg.programs.hyprland.package.version == fixture.pkgs.hyprland.version
+      && cfg.hardware.graphics.enable
+      && !cfg.hardware.graphics.enable32Bit
+      && cfg.programs.hyprland.withUWSM
+      && cfg.programs.uwsm.enable
+      &&
+        cfg.programs.uwsm.waylandCompositors.hyprland.binPath == "/run/current-system/sw/bin/start-hyprland"
+      && cfg.services.greetd.enable
+      && cfg.services.greetd.useTextGreeter
+      && !(cfg.services.greetd.settings ? initial_session)
+      && !cfg.services.xserver.enable
+      && cfg.systemd.enableEmergencyMode
+      && cfg.services.pipewire.enable
+      && cfg.services.pipewire.pulse.enable
+      && cfg.services.gnome.gnome-keyring.enable
+      && cfg.xdg.portal.config.hyprland."org.freedesktop.impl.portal.FileChooser" == "gtk"
+      && home.systemd.user.services.noctalia.Unit.PartOf == [ "graphical-session.target" ]
+      && home.systemd.user.services.noctalia.Service.ExecStart == [ (lib.getExe fixture.pkgs.noctalia) ]
+      &&
+        home.systemd.user.services.noctalia.Service.Environment == [
+          "NOCTALIA_CONFIG_HOME=${home.xdg.configHome}/fleet-desktop"
+          "NOCTALIA_STATE_HOME=${home.xdg.stateHome}/fleet-desktop"
+          "NOCTALIA_DATA_HOME=${home.xdg.dataHome}/fleet-desktop"
+        ]
+      && !(home.xdg.configFile ? "noctalia/config.toml")
+      && !(home.systemd.user.services ? hyprland)
+      && !(home.systemd.user.services ? hypridle)
+      && !(lib.hasInfix "AQ_DRM_DEVICES" home.xdg.configFile."hypr/hyprland.lua".text)
+      && !(lib.hasInfix "__GLX_VENDOR_LIBRARY_NAME" home.xdg.configFile."hypr/hyprland.lua".text)
+    ) "${track}: desktop/Home Manager package, session or security policy regressed";
+    assert lib.assertMsg (
+      rejected { fleet.desktop.reviewed = lib.mkForce false; }
+      && rejected {
+        services.greetd.settings.initial_session = {
+          command = "false";
+          user = "fixture-admin";
+        };
+      }
+    ) "${track}: desktop review and authenticated login must not be bypassed";
+    {
+      toplevel = cfg.system.build.toplevel.drvPath;
+      homeActivation = home.home.activationPackage.drvPath;
+      hyprland = cfg.programs.hyprland.package.version;
+      noctalia = fixture.pkgs.noctalia.version;
+      homeManagerRevision = homeManagers.${track}.rev;
+      unreviewedDesktopRejected = true;
+      autologinRejected = true;
+    }
+  ) desktopFixtures;
+  desktopConfigCheck =
+    name: system: user:
+    let
+      cfg = system.config;
+      home = cfg.home-manager.users.${user};
+    in
+    system.pkgs.runCommand "${name}-desktop-config" { } ''
+      export HOME="$TMPDIR/home"
+      export XDG_RUNTIME_DIR="$TMPDIR/runtime"
+      export XDG_CONFIG_HOME="$HOME/.config"
+      mkdir -p "$HOME" "$XDG_RUNTIME_DIR"
+      chmod 700 "$XDG_RUNTIME_DIR"
+      # This upstream mode parses the config without starting a compositor.
+      ${lib.getExe cfg.programs.hyprland.package} --verify-config --config ${
+        home.xdg.configFile."hypr/hyprland.lua".source
+      }
+      # Building the source runs the target Noctalia validator (warnings fail too).
+      test -s ${home.xdg.configFile."fleet-desktop/noctalia/config.toml".source}
+      touch "$out"
+    '';
   deploymentPkgs = pkgs: pkgs.extend inputs.deploy-rs.overlays.default;
   fixtureReport = lib.mapAttrs (
     track: fixture:
@@ -638,6 +783,7 @@ in
     compositions = compositionReport;
     existingInstallations = existingReport;
     sops = sopsReport;
+    desktop = desktopReport;
   };
   perSystem = { pkgs, ... }: {
     checks = {
@@ -651,10 +797,18 @@ in
             compositions = compositionReport;
             existingInstallations = existingReport;
             sops = sopsReport;
+            desktop = desktopReport;
           }
         )
       );
+      thinkpad-desktop-config =
+        desktopConfigCheck "thinkpad" config.flake.fleetConfigurations.thinkpad
+          "marcos";
     }
+    // lib.mapAttrs' (
+      track: fixture:
+      lib.nameValuePair "${track}-desktop-config" (desktopConfigCheck track fixture "fixture-admin")
+    ) desktopFixtures
     // lib.mapAttrs' (
       track: fixture:
       lib.nameValuePair "${track}-sops-users-manifest" fixture.config.system.build.sops-nix-users-manifest

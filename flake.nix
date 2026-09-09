@@ -9,6 +9,15 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs-stable";
     };
+    # Match Home Manager's module API to each independently selected host track.
+    home-manager-stable = {
+      url = "github:nix-community/home-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
+    home-manager-unstable = {
+      url = "github:nix-community/home-manager/master";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
     disko = {
       url = "github:nix-community/disko";
       # Only upstream tools use this input. The NixOS module uses its caller's pkgs/lib.

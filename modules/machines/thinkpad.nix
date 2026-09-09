@@ -4,7 +4,8 @@
     track = "unstable";
     capabilities = [
       "existing-storage"
-      "headless"
+      "ssh"
+      "hyprland"
       "persistence"
       "access"
       "workstation"

@@ -21,17 +21,19 @@ Read `../../../AGENTS.md`, `../../../flake.nix`, `../../../flake.lock`, `../../.
    cp flake.lock "$before"
    just revisions
    ```
-2. **Stable update:** inspect stable/security release notes and relevant long-running service changes. Confirm the current numbered branch remains supported. For a new stable release, explicitly change only the stable input URL after a migration decision; otherwise retain it. Run:
+2. **Stable update:** inspect stable/security release notes and relevant long-running service changes. Confirm the current numbered branch remains supported. For a new stable release, deliberately change both the stable Nixpkgs URL and matching `home-manager-stable` release URL, then update those two inputs; otherwise retain both URLs. For a refresh within the same release, run:
    ```sh
    nix flake update nixpkgs-stable
    ```
+   For the separately agreed release migration, use `nix flake update nixpkgs-stable home-manager-stable` instead.
    Focus on `racknerd` and `bastion`, including storage/boot/service compatibility. Stable developer tools and dependencies following stable also use the new packages; unstable must not move.
 3. **Unstable update (alternative scope):** inspect notable NixOS/module, driver, kernel, desktop and gaming changes since the pin. Keep the required `nixpkgs-unstable` branch rather than silently switching to `nixos-unstable`. Run:
    ```sh
    nix flake update nixpkgs-unstable
    ```
    Focus on `thinkpad` and `dino`; stable and unrelated dependency source pins must not move.
-4. **Full update (alternative scope):** research all significant inputs, especially disko destructive behavior, impermanence early boot, flake-parts merging and deploy-rs activation/check API. Run `nix flake update`. Review upstream transitive-lock changes as well as direct inputs; do not casually alter follows relationships.
+4. **Full update (alternative scope):** research all significant inputs, especially disko destructive behavior, impermanence early boot, both Home Manager branches and target-packaged Hyprland/Noctalia APIs, flake-parts merging and deploy-rs activation/check API. Run `nix flake update`. Review upstream transitive-lock changes as well as direct inputs; do not casually alter follows relationships.
+   An explicitly scoped Home Manager-only update may use `nix flake update home-manager-stable` or `nix flake update home-manager-unstable`. Preserve matching follows relationships; moving Nixpkgs changes Home Manager's packages without moving its source revision. Report these effects and run both-track desktop/generated-config checks.
 5. For **every** scope, use `validate`: `just fmt` if code changed, then `just check` (both tracks/all host evaluations, policy and deployment checks). Build affected commissioned hosts via `just build HOST`. Missing hardware prevents real system builds, not both-track fixture checks; report that distinction.
 6. Review exact before/after locked values with the jq diff command in `docs/operations.md#input-updates` and `git diff -- flake.nix flake.lock`. Confirm no unrelated source revisions changed for a targeted update. If they did, investigate/revert only this task's changes; do not blindly recreate the whole lock.
 7. For compatibility fixes, keep generic features track-agnostic or add one verified localized API branch. Never import another track's packages as a general escape hatch. Update `docs/research.md` for architectural findings and ADRs if strategy changes.

@@ -4,6 +4,7 @@
 - Date: 2026-09-09
 - Amends ADR 0003 for the current fleet and ADR 0004's desktop deployment policy
 - Password-delivery update: [ADR 0006](0006-sops-password-delivery.md) replaces manual runtime-file contracts with SOPS and explicit missing-credential/identity gates.
+- Desktop update: [ADR 0007](0007-thinkpad-desktop.md) adds a fresh ThinkPad-only Hyprland/Noctalia desktop; other hosts and preservation/deployment protections retain this policy.
 
 ## Context
 

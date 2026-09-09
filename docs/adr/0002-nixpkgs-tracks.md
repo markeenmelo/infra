@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-09-09
+- Extended by [ADR 0007](0007-thinkpad-desktop.md) for track-matched Home Manager integration using each host's packages.
 
 ## Context
 
