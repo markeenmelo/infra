@@ -1,140 +1,104 @@
 # NixOS fleet
 
-A small, dendritic flake for four `x86_64-linux` machines. **This is a safe commissioning scaffold, not an install image. No real disk, network, GPU, account, or provider facts have been fabricated.**
+A small dendritic flake for four **already-installed** `x86_64-linux` hosts. This branch proposes a secure **headless baseline**, not a reinstall. Read-only discovery and the remaining transition gates are in [docs/hosts.md](docs/hosts.md).
 
-| Host | Composition (in addition to base, OS disk, persistence, access) | Primary Nixpkgs | Deployment policy |
+**Nothing has been deployed, formatted, repaired or migrated. All hosts remain unready until access, persistent state, boot and recovery are reviewed.** Standard NixOS/deploy outputs are therefore still empty; all real compositions are inspectable under `fleetConfigurations`.
+
+| Host | Baseline beyond SSH, access, disko existing mounts, tmpfs root and impermanence | Nixpkgs | Deploy-rs intent |
 |---|---|---|---|
-| `thinkpad` | workstation, laptop, administration | `nixpkgs-unstable` | opt-in; may be offline |
-| `racknerd` | server, VPS | `nixpkgs-stable` | enabled after commissioning |
-| `bastion` | server, NAS | `nixpkgs-stable` | enabled after commissioning |
-| `dino` | workstation, gaming | `nixpkgs-unstable` | opt-in; may be offline |
+| `thinkpad` | NetworkManager, laptop power management, Intel thermald, Thunderbolt authorization, administration; preserve LUKS/LVM/swap and `/home` | `nixpkgs-unstable` | local-only |
+| `racknerd` | server hardening, nftables, persistent journal, SSH fail2ban, observed KVM/network configuration | numbered stable | `marcos@72.11.150.242`, after commissioning |
+| `bastion` | server hardening, nftables, persistent journal; preserve existing ZFS `tank` legacy data mounts separately from OS persistence | numbered stable | `marcos@192.168.2.2`, after commissioning |
+| `dino` | NetworkManager, laptop power management; preserve `/home`, `marcos`/`ian`, existing tmpfs root and zram | `nixpkgs-unstable` | `marcos@192.168.20.2`, after commissioning; may be offline |
 
-Servers use a numbered, supported stable NixOS branch for conservative service upgrades. Interactive systems use **`nixpkgs-unstable`**, not `nixos-unstable`, for newer desktop/driver/gaming packages. This channel has different Hydra gating from the NixOS channel; validate before upgrading. Kernels come from each track's defaults; selecting a newer kernel remains an explicit hardware decision. No package-channel mixing is provided.
+All four target **Limine** (racknerd BIOS; others UEFI). Headless means no desktop, **not** removal of consoles/emergency recovery. VPN/Tailscale, gaming applications/drivers beyond ordinary hardware support, reverse proxy, shares and other applications are deferred. Thinkpad's eGPU was disconnected; no driver is inferred. Dino's original stateVersion and EFI policy remain unknown, and its boot filesystem needs review.
 
-The stable branch researched at implementation time and source evidence are recorded in [docs/research.md](docs/research.md). The current repository branch selections live in `flake.nix`, not an evergreen release number here.
+Servers use a supported numbered stable NixOS branch. Laptops use **`nixpkgs-unstable`**, not `nixos-unstable`, for future interactive/gaming software; its different Hydra gating warrants validation before upgrades. No package-channel mixing or implicit newer-kernel selection is provided. Branch selections are in `flake.nix`; pins and dated API evidence are in [research](docs/research.md).
 
 ## Start here
 
-Requires Nix with `nix-command` and `flakes` enabled; developed with Nix 2.34.8. The documented targeted update syntax needs Nix 2.19 or newer.
+Requires Nix with `nix-command` and `flakes`; developed with Nix 2.34.8.
 
 ```sh
 nix develop --no-update-lock-file
 just inventory
 just check
-just ready thinkpad    # deliberately fails until commissioning is complete
+just ready racknerd  # correctly refuses until transition review is complete
 ```
 
-The development shell uses stable Nixpkgs: official `nixfmt`/`nixfmt-tree`, maintained Nixpkgs `statix`, `deadnix`, `just`, `jq`, Git, OpenSSH, ShellCheck, and the locked deploy-rs source. Nix itself must already be available. No automatic hooks, channel updates, secret downloads, deployments, or disk actions occur on shell entry.
+The locked development shell supplies official nixfmt/nixfmt-tree, statix, deadnix, just, jq, SOPS, age, yq, Git, OpenSSH, ShellCheck and source-matched deploy-rs. Entry performs no deployment, secret retrieval or disk action. **Stage intended new files before evaluation:** Git flakes ignore untracked files. Only reviewed encrypted SOPS files/public recipients may be staged; never plaintext credentials, private identities or unrelated work.
 
-**Initially `nixosConfigurations` and `deploy.nodes` are empty.** All four *real compositions* are evaluated under `fleetConfigurations`. `fleet` provides a JSON-safe report with revisions, missing facts, persistence and failed assertions. Setting `fleet.hosts.<name>.ready = true` publishes that host as a normal NixOS configuration; unresolved requirements still fail its build. This avoids both fake buildable hardware and a permanently broken bootstrap `nix flake check`.
+## Preservation, not provisioning
 
-Follow [docs/bootstrap.md](docs/bootstrap.md) to commission a host. Never mark a checklist acknowledgement true without doing the work.
+Each host composes `existing-storage`: disko `nodev` descriptions derive mounts for existing UUIDs or the existing LVM mapper. All disk/GPT/LVM-create/ZFS-create collections are closed; disko scripts and image/install-test outputs are rejected even after readiness. **`just disk-plan HOST` is unavailable for these installations.** This is a runtime mount description, not an installer layout.
 
-## Architecture and navigation
-
-`flake.nix` is the only Nix entry point. Its small, sorted discovery expression imports every `.nix` file under `modules/` into **one top-level flake-parts/Nixpkgs module evaluation**. No symlinks are followed. All other repository Nix files must live there and be top-level modules, including tests and future hardware facts.
-
-- `modules/fleet.nix`: typed identity/composition metadata, host evaluation and inventory.
-- `modules/machines/`: identities with explicit track, architecture and named capabilities; **not** NixOS import roots.
-- `modules/{workstation,laptop,gaming,server,vps,access,ssh,administration}.nix`: cohesive capabilities.
-- `modules/storage/`: OS destructive boundary, ephemeral root/persistence, NAS review boundary.
-- `modules/logging.nix`: contributes logging to the *same* deferred persistence value; localized journald API compatibility.
-- `modules/deployment.nix`: deployment metadata, SSH integration, target-track activation, upstream deploy checks and CLI package.
-- `modules/{tooling,validation}.nix`: shell, source checks and both-track evaluation/safety fixtures.
-- `docs/`: commissioning, operating procedures, research and [ADRs](docs/adr/).
-- `.agents/skills/`: standard, repository-local procedural agent skills.
-
-`flake.modules.nixos.<capability>` is a class-checked **`deferredModule`** value. Features can contribute to the same value; evaluation happens only when a host composes it. `fleet.hosts.<name>.module` is another deferred value, allowing storage assignments, hardware, user choices and deployment concerns to be supplied independently. Paths name concerns; moving a file within `modules/` does not change its meaning. Nothing passes flake inputs through `specialArgs`.
-
-### Which revision evaluates a host?
-
-`modules/fleet.nix` maps required metadata `track = "stable" | "unstable"` to exactly one input and calls **that input's** `lib.nixosSystem`. NixOS creates its own `pkgs`; the development shell's package set is never injected. `validation.nix` independently checks the required host-to-track mapping, the actual `pkgs.path`, and locked branch names.
+- `/` becomes tmpfs on thinkpad/racknerd/bastion; dino already uses it. No old Btrfs root-reset/deletion script is retained. Existing root subvolumes are not erased.
+- Existing `/nix`, `/persist` and laptop `/home` remain durable, early-mounted filesystems. Laptop `/home` is **not** also an impermanence bind.
+- Thinkpad's existing encryption, LVM and swap remain. No plaintext secrets or private identities enter the Nix store.
+- Bastion's NVMe OS `/persist` is **not** its ZFS data. The observed `/srv` datasets stay outside disko. No pools/datasets/properties are created or upgraded; import policy and restore require review.
+- Persist scoped machine identity, SSH identities, NixOS allocation state, random seed, timers/time sync and feature-owned state. Server journals are bounded; workstation `/home` deliberately preserves user data. Removing declarations does not erase backing data. Persistence and mirroring are not backups.
 
 ```sh
-nix eval --json .#fleet.thinkpad | jq '{input,revision,nixpkgsPath,nixosVersion}'
-nix eval --json .#fleet | jq 'map_values({track,revision})'
-nix flake metadata
-just revisions
+nix eval --json .#fleet.bastion.filesystems | jq .
+nix eval --json .#fleet.thinkpad.persistence | jq .
 ```
 
-## Updating inputs
+The original **fresh-install-only** `os-disk` capability is retained with its destructive-boundary/ESP tests, but no current host composes it. Its [installation runbook](docs/bootstrap.md#storage-and-installation) is not a migration procedure. See [ADR 0005](docs/adr/0005-existing-headless-baseline.md).
 
-Start with a clean, reviewed Git state. Read relevant release notes/issues first. Lock updates do **not** change `system.stateVersion`.
+## Access and deployment
 
-```sh
-nix flake update nixpkgs-stable    # server track only
-nix flake update nixpkgs-unstable  # interactive track only
-nix flake update                  # all inputs
-just check
-git diff -- flake.lock
-```
+Target policy: `marcos`, the explicitly selected existing public key, password-based sudo, immutable users, locked root, no root/password SSH. **SOPS delivers encrypted password hashes before account creation** using `neededForUsers` and a dedicated persistent age identity. ThinkPad reuses its existing ciphertext; other hosts retain null credential/identity blockers. No keys or passwords were generated, decrypted or rotated. Dino also retains `ian` without wheel rights. See [secret inventory and procedure](secrets/README.md) and [ADR 0006](docs/adr/0006-sops-password-delivery.md); live decryption/access review remains pending.
 
-Stable updates within the existing branch do not advance to the next release. At stable-release migration time, research the currently supported branch, change **only** the stable URL, and review service migrations before updating its lock. `follows` consumers also move when their parent input moves: stable developer tools are intentionally affected by stable updates. Neither targeted update changes the other fleet track. See [operations](docs/operations.md#input-updates) for exact revision diffs and independent-update precautions.
+Both servers currently have **root-only SSH**. A separately authorized staged transition must first establish and test non-root login/elevation while retaining recovery access. Do not deploy this final baseline straight through root-only access. Also verify networking without the existing VPN before removing it. [The transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized) details these requirements.
 
-## Validation and builds
+Only `ready && deployment.enable` hosts enter deploy-rs. Root activates the system; a non-root account connects via SSH. Closure transport remains nullable until signing trust or explicit root-equivalent per-user Nix trust is chosen and provisioned. No blanket wheel trust or passwordless sudo. Automatic and magic rollback remain enabled.
 
-```sh
-just fmt       # modifies Nix formatting
-just check     # canonical non-destructive pre-commit/CI/pre-deployment command
-just build thinkpad  # after real facts + readiness approval
-```
-
-`just check` runs formatter check, static/dead-code analysis, ShellCheck, all host reports and independent track assertions, then `nix flake check`. Checks force real per-host package, `/etc` and initrd derivations; evaluate each exact capability composition and combined UEFI/BIOS fixtures; evaluate NixOS toplevels/deploy activators on both tracks; test disk rejection; and build upstream deploy schema/activation smoke checks. Fixtures are synthetic evaluation data, **never real fleet hardware**. Their NixOS systems are not built or booted by the normal checks. Actual deployment activation checks build full closures once hosts are enabled.
-
-Expected bootstrap diagnostics: NixOS warns that unset `stateVersion` defaults to its release, and `fleet.failedAssertions` includes commissioning/access blockers. Such defaults are **not accepted for deployment**. Custom flake outputs produce benign “unknown flake output” warnings; their contents are explicitly validated by our checks. [Validation scope/results](docs/validation.md) distinguishes evaluation from runtime testing.
-
-The GitHub workflow runs the same command on Linux without deployment credentials or deployment steps. **Stage new files with `git add` before evaluating**: Git flakes ignore untracked files even though local linters can see them.
-
-## Deployment
-
-Only `ready && deployment.enable` hosts enter `deploy.nodes`. Addresses/users are nullable placeholders, not invented DNS names. Desktops are deliberately excluded until explicitly opted in.
+After commissioning, **with separate deployment authorization**:
 
 ```sh
 just ready racknerd
-just deploy racknerd
-# Subset (after just check and readiness checks):
+just build racknerd       # local build; no deployment
+just deploy racknerd      # really activates remotely
+# Approved subset, after each target's preflight:
 deploy --targets .#racknerd .#bastion -- --no-update-lock-file
-just deploy-fleet  # all currently eligible nodes, not all inventory entries
 ```
 
-SSH port/user, activation user, sudo/doas, interactive sudo, timeouts, connection flags, remote builds and closure trust are host metadata. The system profile must activate as root; SSH login must use an explicitly supplied non-root account with keys. Enabled deployments reject `deployment.sshUser = "root"` during validation/readiness because the SSH capability disables root login. No blanket `@wheel` Nix trust is granted. Choose root-equivalent `deployment.transport = "trusted-user"` or provision signing trust for `"signed"` explicitly.
+`--dry-activate` also contacts/copies to targets. Rollback does not restore data, secrets, storage layouts or guarantee the next boot. See [operations and recovery](docs/operations.md#deployment-and-recovery).
 
-Both automatic and magic rollback remain enabled. Never use rollback-disabling flags to “fix” an unreachable machine. [Operations](docs/operations.md#deployment-and-recovery) covers offline hosts, SSH-changing deployments, subset rollback, signing, and console recovery. Deploy-rs does not install an OS or manage data rollback.
+## Architecture
 
-## Disk provisioning and impermanence
+`flake.nix` is the sole Nix entry point. Its sorted discovery imports every `.nix` under `modules/` into **one top-level flake-parts evaluation**; no symlinks are followed. All other repository Nix files, including hardware facts and tests, are top-level modules.
 
-**Disko can irreversibly erase disks. Nothing in `just check` runs it.** `just disk-plan HOST` only builds a script for inspection, after readiness preflight.
+Class-checked `flake.modules.nixos.<capability>` and per-host `fleet.hosts.<name>.module` are deferred values. Concerns may contribute to the same value; paths organize concerns, not host import roots. No flake inputs are injected through `specialArgs`. SSH has a stable module key to deduplicate diamond imports.
 
-The optional baseline uses one confirmed **whole OS disk by-id**, GPT, an explicitly selected UEFI/BIOS boot mode, and Btrfs subvolumes for `/nix` and `/persist` (plus `/boot` for BIOS). UEFI requires an explicitly sized ESP of at least `512M` (512 MiB) and a reviewed `efiCanTouchVariables` choice: permit NVRAM writes, or verify firmware fallback boot. ESP sizes use `M`/`G` for MiB/GiB; the minimum is only a safety floor, so review space for the actual kernel/initrd and retained generations. Btrfs is used only to share capacity without guessing a Nix/state partition split; there is no RAID, snapshot-rollback hook, LVM, ZFS, encryption or NAS formatting. Root is tmpfs with a configurable 25% memory ceiling, mounted by disko during installation and recreated on every boot. Root, `/nix` and `/persist` are `neededForBoot` with systemd initrd.
+- `modules/fleet.nix`: required identity/architecture/track, evaluation boundary, inventory.
+- `modules/machines/`: explicit capability compositions and deployment intent.
+- `modules/hardware/`, `modules/networking/`, `modules/access/`: observed facts and deliberate target choices.
+- `modules/storage/existing.nix`, host storage/data modules: existing-installation mount/boot boundary.
+- `modules/{headless,ssh,access,secrets,server,vps,workstation,laptop}.nix`: cohesive reusable features; `logging.nix` contributes to persistence.
+- `modules/deployment.nix`: metadata, SSH integration, target-track activation and upstream checks.
+- `modules/{tooling,validation}.nix`: locked shell, source checks, both-track safety/composition fixtures.
 
-**For `bastion`, this layout owns only the OS disk. NAS data topology, mounts, shares and backup jobs are intentionally absent.** The OS disk list is closed with `mkForce`; extra ordinary disk definitions would be discarded, not provisioned. Do not extend it with valuable data disks. A different OS layout needs a separately reviewed capability. Read [the storage runbook](docs/bootstrap.md#storage-and-installation) before even preparing a destructive command.
+Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. Validation independently checks required tracks, actual package-source paths and locked branch names. See [ADRs](docs/adr/0001-dendritic-composition.md).
 
-Audit what survives:
+## Validation and updates
 
 ```sh
-nix eval --json .#fleet.bastion.persistence | jq .
+just fmt
+just check
+nix eval --json .#fleet | jq 'map_values({track,revision,ready,missing})'
+just revisions
 ```
 
-Baseline: `/nix` (separate subvolume), machine ID, random seed, NixOS identity allocation state and systemd timer stamps. SSH adds its explicit host-key files. Servers add a bounded persistent journal; workstations persist `/home` and NetworkManager state. **Keeping all of `/home` is a deliberate user-data policy, not minimal application persistence.** `/persist` itself is durable; the inventory lists declared bind/symlink paths, not arbitrary files an operator has placed there. Removed declarations do not erase old backing data. Persistence is not a backup or encryption.
+`just check` first checks encrypted payload shape/public recipients without decryption, then runs formatting, statix, deadnix, ShellCheck, every real host report and package/`/etc`/initrd derivation, independent track checks, both-track synthetic compositions/storage/security/SOPS fixtures, built SOPS users manifests and upstream deploy schema/activation smoke checks. No target contact or activation occurs. **Evaluation fixtures are not tested installations.** Actual host toplevel builds remain gated. [Validation scope/results](docs/validation.md) distinguishes evaluation, builds and runtime acceptance.
 
-Add persisted state next to the service that owns it, for example in a new top-level feature:
+Updates are separate, researched operations and never change stateVersion automatically:
 
-```nix
-{
-  flake.modules.nixos.my-service = {
-    environment.persistence."/persist".directories = [
-      { directory = "/var/lib/my-service"; user = "my-service"; group = "my-service"; mode = "0700"; }
-    ];
-  };
-}
+```sh
+nix flake update nixpkgs-stable
+# OR: nix flake update nixpkgs-unstable
+# OR: nix flake update
+just check
 ```
 
-This fragment also needs the real service/account definitions. Compose `my-service` on its hosts; evaluate both tracks and review first-install migration. Do not persist `/etc` or `/var` wholesale. Runtime secrets live outside the repository/Nix store; see [the secrets boundary](docs/bootstrap.md#access-and-secrets).
-
-## Growing the fleet
-
-**Add a host:** create a top-level module defining `fleet.hosts.<name>` with required architecture, explicit track and capability names. Supply independently reviewed fact modules, storage, persistence and deployment metadata. Add it to the independent track oracle in `modules/validation.nix`; do not copy another machine's hardware. Keep it unready until commissioning is complete.
-
-**Add a capability:** create a discovered top-level module contributing a deferred NixOS value (or merge into a cohesive existing value). Use the lower-level `pkgs`/`lib`, not a direct input reference. A genuinely version-dependent API belongs in one documented compatibility branch, preferably probing available options as logging does. A module imported through multiple routes may need an explicit deduplication `key` (see SSH).
-
-See `AGENTS.md` and the [agent skill index](.agents/skills/README.md) for step-by-step procedures.
+Targeted updates must not move the other track. Follow [input operations](docs/operations.md#input-updates), [AGENTS.md](AGENTS.md) and the [skill index](.agents/skills/README.md). Add only the capabilities the fleet actually needs; keep service state and mount requirements beside their owner.

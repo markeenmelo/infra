@@ -11,7 +11,7 @@ Never substitute `system.stateVersion` for the current supported release. It is 
    before=$(mktemp)
    cp flake.lock "$before"
    ```
-2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include disko, impermanence, deploy-rs and flake-parts issues.
+2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include disko, impermanence, sops-nix, deploy-rs and flake-parts issues. SOPS currently has an explicit reused revision in `flake.nix`; advancing it requires a researched URL revision edit, not just `nix flake update`.
 3. Choose **one** update scope:
    ```sh
    nix flake update nixpkgs-stable
@@ -42,13 +42,13 @@ A **stable release migration** additionally changes the stable URL in `flake.nix
 
 ## Deployment and recovery
 
-Provisioning/installation is separate: see [bootstrap](bootstrap.md). deploy-rs assumes NixOS, reachable SSH, working elevation and closure trust already exist.
+All four hosts are already installed; follow the [baseline transition checklist](hosts.md) before commissioning. Their disko provisioning outputs are disabled, including `disk-plan`; [bootstrap's installation section](bootstrap.md#storage-and-installation) is fresh-install-only. deploy-rs assumes NixOS, reachable non-root SSH, working elevation and closure trust already exist. Servers currently have root-only access, so a separate staged access transition is required. Baseline removes Tailscale: validate alternate routing/recovery before activation.
 
 ### Preflight
 
 1. `just check`; inspect `just inventory` and `nix eval --json .#deploymentPlan | jq .`.
 2. Use `bash scripts/ready.sh HOST deploy` for deployment-specific readiness, or `just ready HOST` for build readiness. `just deploy HOST` performs the deploy-specific preflight automatically. The SSH user must be non-root with configured public keys; root is rejected to match the SSH root-login restriction. Keep the system activation `profileUser` as root and verify the chosen elevation path.
-3. Confirm the reported revision/actual package source matches the independent host policy. Check a known-good generation and backup/restore status. Runtime secret paths and signing keys must already exist; pure checks cannot verify them.
+3. Confirm the reported revision/actual package source matches the independent host policy. Check a known-good generation and backup/restore status. The persistent SOPS identity, intended ciphertext/recipients and early-decryption path must be verified, alongside signing keys; pure checks cannot verify them. SOPS creates runtime password files during activation, not during builds. Follow the [secret procedure](../secrets/README.md).
 4. Verify host-key fingerprint, reachability, free `/nix`/`/boot` space, admin login, sudo/doas policy and Nix closure trust. Do not put credentials in flake arguments, source files or shell history. For signed transport, securely set `LOCAL_KEY` to the existing signing-key path; the target must already trust its public key.
 5. Keep an independent console and an existing SSH session open for sensitive changes. Consider `--dry-activate` only after authorization: it still contacts/copies to the target and is **not** a purely local check.
 
@@ -67,7 +67,7 @@ deploy --targets .#racknerd .#bastion -- --no-update-lock-file
 just deploy-fleet
 ```
 
-`deploy .` means all **eligible** nodes, not all four identities. To include a desktop, explicitly set `fleet.hosts.<name>.deployment.enable = true`, supply metadata/SSH/trust and commission it. Otherwise build/switch locally after authorization. Prefer a named subset for intermittently online targets; an offline desktop is not a reason to remove rollback safeguards.
+`deploy .` means all **eligible** nodes, not all four identities. Dino now has explicit deployment intent but remains unready; thinkpad remains local-only. To include another offline workstation, explicitly set `fleet.hosts.<name>.deployment.enable = true`, supply metadata/SSH/trust and commission it. Otherwise build/switch locally after authorization. Prefer a named subset for intermittently online targets; an offline desktop is not a reason to remove rollback safeguards.
 
 deploy-rs builds from the locked input. Its default own checks may evaluate/build **all** eligible nodes even when a subset is selected; our `just check` also covers the full fleet. This costs more once real machines are commissioned but does not contact them. `remoteBuild` moves the build to the target only when selected; review resources and trust before enabling it.
 
@@ -100,6 +100,6 @@ Or select the previous generation in its bootloader. Inspect the result before r
 
 `just inventory` lists declared persistent paths. New services must define ownership/mode and state requirements next to their configuration, ideally with a mount dependency so they cannot write into an ephemeral placeholder when their durable filesystem is missing. State outside declared paths is lost at reboot. State deliberately written directly into `/persist` remains even if not listed in the bind-mount inventory.
 
-Servers retain a bounded journal; interactive hosts use volatile logs. No monitoring endpoint, exporter, database, NAS share, unattended backup or automatic garbage collection is silently enabled. Before production services, add separately reviewed backup/restore and observability features with runtime credentials and tested failure handling. A Btrfs subvolume and a persistent root policy are **not backups**. Removing an impermanence declaration leaves backing data; inspect it, do not automatically delete it.
+Servers retain a bounded journal; interactive hosts use volatile logs. No monitoring endpoint, exporter, application database, NAS share, unattended backup or automatic garbage collection is silently enabled. Racknerd's fail2ban database persists; bastion retains its observed monthly `tank` scrub schedule, which is not a backup. Before production services, add separately reviewed backup/restore and observability features with runtime credentials and tested failure handling. A Btrfs subvolume and a persistent root policy are **not backups**. Removing an impermanence declaration leaves backing data; inspect it, do not automatically delete it.
 
-Recommended future work, not implemented: encrypted laptop storage, a researched secret-delivery backend, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Add only what the fleet actually needs.
+Recommended future work, not implemented here: review dino's unencrypted storage and boot filesystem, complete per-host SOPS identity/credential provisioning and acceptance, VPN access, gaming/desktop capabilities, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Thinkpad's existing LUKS encryption is preserved, not newly provisioned. Add only what the fleet actually needs.

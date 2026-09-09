@@ -8,7 +8,7 @@ This is infrastructure for real machines and valuable storage. Read `README.md`,
 - Never invent hardware facts, usernames/keys, network endpoints, UUIDs, firmware, GPUs or NAS topology. Incomplete values are typed nulls/checklist blockers, not plausible fake paths.
 - Never set `ready`, `confirmed` or a `*Reviewed` flag just to pass validation. They record real review. Never suppress bootstrap/NixOS assertions, use `allowNoPasswordLogin`, or disable rollback to make a broken setup look usable.
 - `bastion` OS storage is **not** its NAS data. No unknown data disks, pools, shares or destructive migration. Backups/restore and device serial verification precede any storage action.
-- No secret contents or private keys in Git, Nix expressions, Nix store inputs or logs. Runtime paths/public keys are a boundary, not a secret-delivery implementation. Nix trusted-user and passwordless sudo access are root-equivalent.
+- No plaintext secret contents/hashes or private keys in Git, Nix expressions, Nix store inputs or logs. Only reviewed SOPS ciphertext/public recipients belong in Git/store inputs; see `secrets/README.md`. Runtime paths/public keys do not prove decryption or credential readiness. Nix trusted-user and passwordless sudo access are root-equivalent.
 
 ## Architecture invariants
 
@@ -24,7 +24,7 @@ This is infrastructure for real machines and valuable storage. Read `README.md`,
 
 1. Research dependency-sensitive code using `nix-research`; record consequential findings in `docs/research.md` with date, URL, pin and consequence.
 2. Make the smallest coherent change. Use existing typed abstractions; avoid unnecessary dependencies or package mixing.
-3. Stage intended new files before evaluation: Git flakes ignore untracked files. Do not stage credentials or unrelated user work. Do not make a Git commit unless asked.
+3. Stage intended new files before evaluation: Git flakes ignore untracked files. Do not stage plaintext credentials, private identities or unrelated user work; run `just secret-check` before staging intended encrypted SOPS files. Do not make a Git commit unless asked.
 4. Enter `nix develop --no-update-lock-file`; run `just fmt`, then **`just check`**. Check includes formatting, statix, deadnix, ShellCheck, every host report, actual track assertions, both-track fixtures and upstream deploy checks.
 5. For a commissioned target, also run `just ready HOST` and `just build HOST`; these are not authorization to deploy. Pure checks do not verify devices, credentials, networking, hardware boot or backups.
 6. Review the diff and report exactly what ran, what failed, and what remains unknown. Never call evaluation-only fixtures a tested installation. Document architectural changes and keep procedures in sync.

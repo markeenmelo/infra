@@ -1,6 +1,13 @@
 {
   flake.modules.nixos.laptop = {
     services.upower.enable = true;
-    # No vendor, CPU, firmware, suspend, power-daemon or kernel assumptions.
+    services.power-profiles-daemon.enable = true;
+    # One power manager: no TLP/auto-cpufreq, forced performance, blanket USB
+    # autosuspend, speculative hibernation or battery charge thresholds.
+    environment.persistence."/persist".directories = [
+      "/var/lib/power-profiles-daemon"
+      "/var/lib/systemd/backlight"
+      "/var/lib/systemd/rfkill"
+    ];
   };
 }

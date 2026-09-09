@@ -19,6 +19,9 @@
           pkgs.deadnix
           pkgs.just
           pkgs.jq
+          pkgs.sops
+          pkgs.age
+          pkgs.yq-go
           pkgs.git
           pkgs.openssh
           pkgs.shellcheck

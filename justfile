@@ -16,11 +16,18 @@ lint:
     deadnix --fail .
     shellcheck scripts/*.sh
 
-evaluate:
-    nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing})), fixtures, compositions}'
+secret-check:
+    bash scripts/check-secrets.sh
 
+secret-check-tests:
+    bash scripts/test-secret-check.sh
+
+evaluate:
+    nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing})), fixtures, compositions, existingInstallations, sops}'
+
+# Check ciphertext before Nix evaluates/builds secret manifests; never decrypt.
 # Canonical non-destructive validation; does not install, mount or deploy.
-check: format-check lint evaluate
+check: secret-check format-check lint evaluate
     nix flake check --no-update-lock-file -L
 
 inventory:
@@ -36,9 +43,10 @@ build host:
     bash scripts/ready.sh "$1"
     nix build --no-update-lock-file ".#nixosConfigurations.$1.config.system.build.toplevel"
 
+# Fresh-install capability only; existing installations must refuse this.
 # Builds a script for review. NEVER executes it or touches disks.
 disk-plan host:
-    bash scripts/ready.sh "$1"
+    bash scripts/ready.sh "$1" disk-plan
     nix build --no-update-lock-file --out-link "result-disko-$1" ".#nixosConfigurations.$1.config.system.build.diskoScript"
 
 deploy host: check

@@ -24,6 +24,12 @@
           directories = [
             "/var/lib/nixos"
             "/var/lib/systemd/timers"
+            {
+              directory = "/var/lib/systemd/timesync";
+              user = "systemd-timesync";
+              group = "systemd-timesync";
+              mode = "0755";
+            }
           ];
           files = [
             "/etc/machine-id"

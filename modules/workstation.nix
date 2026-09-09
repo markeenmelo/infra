@@ -8,10 +8,13 @@
     }:
     {
       options.fleet.workstation = {
-        desktopReviewed = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "An actual desktop/session and graphics configuration has been chosen and tested.";
+        homePersistence = lib.mkOption {
+          type = lib.types.enum [
+            "bind"
+            "filesystem"
+          ];
+          default = "bind";
+          description = "Preserve /home through impermanence, or retain an existing separate early-mounted filesystem without a duplicate bind.";
         };
         usersReviewed = lib.mkOption {
           type = lib.types.bool;
@@ -20,24 +23,36 @@
         };
       };
       config = {
+        # A workstation can be deliberately headless; desktop/gaming software
+        # is not a prerequisite for this baseline's commissioning.
         fleet.bootstrap.missing =
-          lib.optional (!config.fleet.workstation.desktopReviewed)
-            "Choose and configure a desktop/session and graphics; acknowledge fleet.workstation.desktopReviewed."
-          ++ lib.optional (
-            !config.fleet.workstation.usersReviewed
-          ) "Configure interactive users; acknowledge fleet.workstation.usersReviewed.";
+          lib.optional (!config.fleet.workstation.usersReviewed)
+            "Configure interactive users and migrate credentials; acknowledge fleet.workstation.usersReviewed.";
+        assertions = [
+          {
+            assertion =
+              config.fleet.workstation.homePersistence == "filesystem"
+              -> (
+                config.fileSystems ? "/home"
+                && config.fileSystems."/home".neededForBoot
+                && config.fileSystems."/home".fsType != "tmpfs"
+              );
+            message = "Separate workstation /home must be durable and neededForBoot.";
+          }
+        ];
         networking.networkmanager.enable = true;
         environment.systemPackages = [ pkgs.git ];
         # Deliberate user-data boundary: games, saves, documents and credentials survive.
         # No claim that /home is minimal per-application persistence or encrypted.
-        environment.persistence."/persist".directories = [
-          "/home"
-          {
-            directory = "/etc/NetworkManager/system-connections";
-            mode = "0700";
-          }
-          "/var/lib/NetworkManager"
-        ];
+        environment.persistence."/persist".directories =
+          lib.optional (config.fleet.workstation.homePersistence == "bind") "/home"
+          ++ [
+            {
+              directory = "/etc/NetworkManager/system-connections";
+              mode = "0700";
+            }
+            "/var/lib/NetworkManager"
+          ];
       };
     };
 }
