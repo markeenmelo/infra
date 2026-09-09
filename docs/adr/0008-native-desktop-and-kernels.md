@@ -1,0 +1,29 @@
+# ADR 0008 — Native desktop modules, private Wi-Fi and stock 7.x kernels
+
+- Status: accepted
+- Date: 2026-09-09
+- Amends [ADR 0007](0007-thinkpad-desktop.md), [track policy](0002-nixpkgs-tracks.md) and the earlier kernel recommendation in [research](../research.md)
+
+## Context
+
+The user now explicitly requests reusing the current Ghostty, Herdr, Zed, Zen, Pi and Bitwarden preferences, replacing Foot/Firefox and the text greeter, fingerprint login/locking/sudo, SOPS-managed home/campus Wi-Fi and latest available 7.x kernels. The approved optional tools are file/archive/document/image utilities, system/audio/network controls, Bluetooth, KDE Connect, printing/scanning and shell conveniences. No media player was selected. This does not authorize activation, enrollment, secret decryption, connecting networks or changing storage.
+
+## Decision
+
+Remove unused stable Home Manager. `modules/fleet.nix` imports the existing unstable HM pin only for the explicit `hyprland` capability and rejects that capability on stable. Stable Nixpkgs remains required for servers; Dino also has no HM evaluation. Retain class-checked deferred modules, host `pkgs`, `useGlobalPkgs`, `useUserPackages`, release checks and file-collision detection. Use native HM Hyprland Lua settings, Noctalia, Ghostty, Herdr, Zed and Pi options. Lua dispatcher expressions still require the native inline-value escape hatch. Preserve Noctalia's isolated profile and one session owner.
+
+Use native NixOS Noctalia Greeter with greetd underneath and the UWSM session. Narrow fingerprint PAM to a dedicated graphical stack and sudo, ordered **password first**. Greeter empty submission requests an alternative authenticator; it never permits an empty account password. Retain deny rules, ordinary console/SSH policy and keyring handling. Noctalia's lockscreen drives fprintd independently alongside password entry. Fingerprint templates and greeter/Bluetooth/printer system state have scoped persistence; `/home` needs no duplicate binds.
+
+Port reviewed application preferences and public pinned extension manifests, not credentials, vaults, browser profiles or arbitrary old desktop settings. Zen is absent from the locked Nixpkgs: add its previously used, exact-revision **source-only** recipe input and instantiate it with the host's own `pkgs`; do not use upstream flake packages or overlays. Retain its small, researched Firefox-wrapper passthru adapter and existing pinned XPIs. Pi retains the pinned extension bundle and safe project-trust/rewind settings; its existing providers require a two-package unfree allowance, not blanket unfree policy.
+
+Use native NetworkManager `ensureProfiles` with system-owned, root-only runtime secrets (`*-flags = 0`), avoiding competition between two secret agents or a Noctalia patch. A small offline-tested adapter escapes raw SOPS scalars for both the private systemd environment file and GLib keyfiles. Reuse MN-Home's existing encrypted PSK/profile UUID. SenecaNET uses PEAP/MSCHAPv2, the system CA bundle and `senecapolytechnic.ca` certificate-name validation. Missing encrypted identity/password are an explicit typed-null provisioning blocker; no insecure placeholder campus profile is installed.
+
+Select `pkgs.linuxPackages_latest` from **each host's own locked track**, with a major-7 assertion and independent validation. This deliberately supersedes the earlier explicit-minor recommendation in response to the latest-7.x request: stable currently provides 7.2.3, unstable 7.2.4. Keep upstream ZFS incompatibility failures enabled and evaluate Bastion's actual kernel module; a future incompatible update must stop. Do not silently pin an EOL kernel, allow broken packages or cross to 8.x. Retain native `i915` for observed Alder Lake-P, not experimental `xe` force-probing or an unobserved NVIDIA driver.
+
+## Consequences
+
+Desktop tests now cover only its supported unstable track and actual ThinkPad. Infrastructure/storage/SOPS/deployment fixtures still cover both tracks. Add offline secret-escaping tests, actual Wi-Fi manifest key-selection checks, native configuration checks and kernel/ZFS derivations. None establishes successful authentication, secret decryption, network/certificate acceptance, fingerprint enrollment, boot or hardware behavior.
+
+KDE Connect opens TCP/UDP 1714–1764 and device discovery opens UDP 5353 on ThinkPad only. CUPS remains localhost-only with no shared queues. Preserve pairing control and review public-network exposure. Native greeter configuration replaces its system-owned TOML during a future authorized activation; Home Manager's no-force guarantee does not replace a system-state backup.
+
+All commissioning/recovery/storage gates remain. Follow the [desktop acceptance procedure](../desktop.md) and [credential procedure](../../secrets/README.md). Record actual review before acknowledging any flag. No commit, activation or deployment follows from successful checks.

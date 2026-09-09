@@ -1,0 +1,26 @@
+{
+  "name": "OLED Graphite",
+  "noctaliaName": "OLED-Graphite",
+  "colors": {
+    "background": "#07090D",
+    "surface": "#10151C",
+    "raised": "#171E27",
+    "elevated": "#202A36",
+    "outline": "#3B4552",
+    "text": "#E6EDF3",
+    "muted": "#8B98A8",
+    "accent": "#5AD7C4",
+    "accentBright": "#79E3D4",
+    "attention": "#F2CC60",
+    "red": "#F07178",
+    "green": "#A6D189",
+    "blue": "#82AAFF",
+    "magenta": "#C099FF",
+    "white": "#FFFFFF",
+    "brightRed": "#FF8A91",
+    "brightGreen": "#B8E0A8",
+    "brightYellow": "#F7D97A",
+    "brightBlue": "#9AB8FF",
+    "brightMagenta": "#D2B0FF"
+  }
+}

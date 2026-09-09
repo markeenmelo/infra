@@ -11,7 +11,9 @@
     hardware.enableRedistributableFirmware = true;
     hardware.cpu.intel.updateMicrocode = true;
     # Hardware scan needs privileged completion; hardwareReviewed stays false.
-    # Do not select a new kernel or load a disconnected eGPU's driver.
+    # modules/kernel.nix selects the requested stock 7.x kernel. Retain native
+    # i915 probing for Alder Lake-P, not experimental xe/force_probe overrides;
+    # never load a disconnected eGPU's unverified driver.
     services.thermald.enable = true;
     services.hardware.bolt.enable = true;
     environment.persistence."/persist".directories = [ "/var/lib/boltd" ];

@@ -1,12 +1,8 @@
 {
-  # Contribute shell state/config to the same desktop value on both tracks. The
-  # stable Home Manager pin has no programs.noctalia module; these ordinary HM
-  # interfaces need neither an upstream module backport nor another package set.
+  # Native unstable Home Manager owns Noctalia configuration and its one service.
   flake.modules.homeManager.hyprland =
     {
       config,
-      lib,
-      pkgs,
       ...
     }:
     let
@@ -52,7 +48,7 @@
         lockscreen = {
           enabled = true;
           allow_empty_password = false;
-          fingerprint = false;
+          fingerprint = true;
           lock_before_suspend = true;
         };
         idle.behavior = {
@@ -68,46 +64,22 @@
           };
         };
       };
-      rawConfig = (pkgs.formats.toml { }).generate "noctalia-config.toml" settings;
     in
     {
-      home.packages = [ pkgs.noctalia ];
-      xdg.configFile."fleet-desktop/noctalia/config.toml".source =
-        pkgs.runCommand "noctalia-checked-config.toml" { }
-          ''
-            export HOME="$TMPDIR/home"
-            export XDG_STATE_HOME="$HOME/.local/state"
-            mkdir -p "$HOME"
-            if ! ${lib.getExe pkgs.noctalia} config validate ${rawConfig} > validation.log 2>&1; then
-              cat validation.log
-              exit 1
-            fi
-            cat validation.log
-            # Upstream exits zero for warnings, including ignored/obsolete settings.
-            if grep -E 'WARN|ERROR' validation.log; then
-              exit 1
-            fi
-            cp ${rawConfig} "$out"
-          '';
-      systemd.user.services.noctalia = {
-        Unit = {
-          Description = "Noctalia desktop shell, lock screen and idle manager";
-          PartOf = [ "graphical-session.target" ];
-          After = [ "graphical-session.target" ];
-        };
-        Service = {
-          ExecStart = lib.getExe pkgs.noctalia;
-          # A new profile: old GUI overrides, plugins and source fragments must
-          # not bleed into this desktop. Do not redirect child applications' XDG.
-          Environment = [
-            "NOCTALIA_CONFIG_HOME=${config.xdg.configHome}/fleet-desktop"
-            "NOCTALIA_STATE_HOME=${config.xdg.stateHome}/fleet-desktop"
-            "NOCTALIA_DATA_HOME=${config.xdg.dataHome}/fleet-desktop"
-          ];
-          Restart = "on-failure";
-        };
-        Install.WantedBy = [ "graphical-session.target" ];
+      programs.noctalia = {
+        enable = true;
+        systemd.enable = true;
+        checkConfig = true;
+        inherit settings;
       };
+      # Keep native generation/validation, but retain the isolated fresh shell
+      # profile. Existing app preferences are reused only by their own modules.
+      xdg.configFile."noctalia/config.toml".target = "fleet-desktop/noctalia/config.toml";
+      systemd.user.services.noctalia.Service.Environment = [
+        "NOCTALIA_CONFIG_HOME=${config.xdg.configHome}/fleet-desktop"
+        "NOCTALIA_STATE_HOME=${config.xdg.stateHome}/fleet-desktop"
+        "NOCTALIA_DATA_HOME=${config.xdg.dataHome}/fleet-desktop"
+      ];
       # /home is already durable on ThinkPad; no duplicate impermanence binds.
       # Future GUI changes in this profile's state still override the TOML base.
       # Existing Noctalia directories are neither read nor deleted by this service.

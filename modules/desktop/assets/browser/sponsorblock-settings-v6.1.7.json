@@ -1,0 +1,59 @@
+{
+  "autoSkipOnMusicVideos": true,
+  "categorySelections": [
+    {
+      "name": "sponsor",
+      "option": 2
+    },
+    {
+      "name": "selfpromo",
+      "option": 2
+    },
+    {
+      "name": "exclusive_access",
+      "option": 0
+    },
+    {
+      "name": "interaction",
+      "option": 2
+    },
+    {
+      "name": "poi_highlight",
+      "option": 2
+    },
+    {
+      "name": "intro",
+      "option": 2
+    },
+    {
+      "name": "outro",
+      "option": 2
+    },
+    {
+      "name": "preview",
+      "option": 2
+    },
+    {
+      "name": "hook",
+      "option": 2
+    },
+    {
+      "name": "filler",
+      "option": 2
+    },
+    {
+      "name": "chapter",
+      "option": 0
+    },
+    {
+      "name": "music_offtopic",
+      "option": 2
+    }
+  ],
+  "disableSkipping": false,
+  "fullVideoSegments": true,
+  "manualSkipOnFullVideo": false,
+  "minDuration": 0,
+  "muteSegments": true,
+  "skipNonMusicOnlyOnYoutubeMusic": false
+}

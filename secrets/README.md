@@ -6,11 +6,11 @@ Only SOPS ciphertext and verified **public** recipients belong here. Never add p
 
 | Host | Ciphertext | Dedicated identity | Status |
 |---|---|---|---|
-| thinkpad | `hosts/thinkpad.yaml`, byte-for-byte reused from the previous repository and matching its running activation manifest input | `/persist/var/lib/sops-nix/key.txt`, previously provisioned | Password declaration restored; fresh custody, recipient/decryption, recovery and boot review pending |
+| thinkpad | `hosts/thinkpad.yaml`, byte-for-byte reused from the previous repository and matching its running activation manifest input | `/persist/var/lib/sops-nix/key.txt`, previously provisioned | Password/PSK declarations restored; campus credentials absent; fresh custody, recipient/decryption, recovery and boot review pending |
 | racknerd / bastion | None supplied | No identity observed at the previous prepared path | Null facts and commissioning blockers; no new account password invented |
 | dino | None supplied | Unverified; unreachable during this follow-up | Both marcos and ian bindings remain null and block commissioning |
 
-The ThinkPad file contains encrypted `marcos-password-hash` **and** `wifi-psk`. Keep it intact: removing entries without authorized SOPS editing invalidates its MAC. Only the password is declared for decryption. This does not implement the old NetworkManager file-secret agent or resolve Wi-Fi migration.
+The ThinkPad file contains encrypted `marcos-password-hash` **and** `wifi-psk`. Keep it intact: removing entries without authorized SOPS editing invalidates its MAC. Both are now declared: the password remains early/root-only; `wifi-psk` supplies native root-owned runtime NetworkManager profiles through a private environment adapter. The old file-secret agent and Noctalia patch are not imported. SenecaNET identity/password are still absent and block campus provisioning; see [Wi-Fi procedure](../docs/desktop.md#wi-fi-credentials). Do not delete/edit ciphertext fields by hand.
 
 `.sops.yaml` preserves the previous exact ThinkPad rule (operator + dedicated host recipient), without the unrelated OpenTofu/Tailscale rule or a catch-all granting every host access. No recipient or identity was generated, rotated or re-encrypted for this integration.
 
@@ -18,9 +18,17 @@ The ThinkPad file contains encrypted `marcos-password-hash` **and** `wifi-psk`. 
 
 `fleet.access.passwordSecrets` maps known accounts to declared `sops.secrets` names. A null or undeclared name locks that candidate account and **blocks commissioning**, rather than pointing to a nonexistent manual hash file. The candidate must not be activated in that state; installed passwords are untouched.
 
-Declare password hashes with `neededForUsers = true`. Account `hashedPasswordFile` values come from the secret's `.path`, normally `/run/secrets-for-users/NAME`, root-only mode `0400`, in SOPS' default ramfs. Password values/hashes are never evaluated by Nix. The ordinary activation-script account backend installs these secrets before creating immutable users. Password sudo and key-only non-root SSH remain mandatory fleet policy.
+Declare password hashes with `neededForUsers = true`. Account `hashedPasswordFile` values come from the secret's `.path`, normally `/run/secrets-for-users/NAME`, root-only mode `0400`, in SOPS' default ramfs. Password values/hashes are never evaluated by Nix. The ordinary activation-script account backend installs these secrets before creating immutable users. Authenticated sudo with password fallback and key-only non-root SSH remain mandatory fleet policy; ThinkPad additionally permits explicitly requested fingerprint sudo without changing server/SSH/recovery policy.
 
 The private age identity is a **runtime string path**, directly on early-mounted `/persist`. Parent must be root-owned `0700`, key root-owned `0600` (or stricter), with protected recovery copies outside Git. Do not bind `/var/lib/sops-nix` merely to reach it, persist `/run/secrets*`, auto-generate keys or import SSH identities implicitly. Disk persistence is not encryption: review physical access/backups on each host.
+
+## Wi-Fi provisioning boundary
+
+`wifi-psk` is root-owned `0400` under `/run/secrets`; the native profiles and escaped environment remain root-only under `/run`. Never persist these outputs or inspect them with `nmcli --show-secrets`, agent logs or shell tracing. Secret changes request ordered restarts of the environment/profile units during a later authorized activation.
+
+To provision campus access, use the secure interactive workflow below to add **`seneca-identity`** (username before `@`) and **`seneca-password`** to the existing ThinkPad YAML, preserving its other fields and recipients. Use nonempty single-line scalars, not literal blocks with trailing newlines. Set `fleet.wifi.senecaSopsFile` to that reviewed encrypted file in a top-level ThinkPad contribution only after the fields exist. Its default `null` emits no incomplete SenecaNET profile and adds a commissioning blocker. The actual Wi-Fi manifest check validates selected encrypted keys without decryption; the separate campus template fixture is explicitly not a credential/decryption test.
+
+Never disable Seneca's CA/domain validation to compensate for missing credentials. Back up/reconcile duplicate old profiles deliberately before activation, then test password delivery and server-certificate rejection on the real network under separate authorization.
 
 ## Safe operator workflow
 

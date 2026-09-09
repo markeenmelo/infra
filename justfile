@@ -23,7 +23,7 @@ secret-check-tests:
     bash scripts/test-secret-check.sh
 
 evaluate:
-    nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing})), fixtures, compositions, existingInstallations, sops, desktop}'
+    nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing, components})), fixtures, compositions, existingInstallations, sops, desktop, wifi}'
 
 # Check ciphertext before Nix evaluates/builds secret manifests; never decrypt.
 # Canonical non-destructive validation; does not install, mount or deploy.

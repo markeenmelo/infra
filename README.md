@@ -6,14 +6,14 @@ A small dendritic flake for four **already-installed** `x86_64-linux` hosts. Thi
 
 | Host | Baseline beyond SSH, access, disko existing mounts, tmpfs root and impermanence | Nixpkgs | Deploy-rs intent |
 |---|---|---|---|
-| `thinkpad` | Hyprland/Noctalia with Home Manager, Intel-first graphics, NetworkManager, laptop power/thermald, Thunderbolt authorization, administration; preserve LUKS/LVM/swap and `/home` | `nixpkgs-unstable` | local-only |
+| `thinkpad` | Hyprland/Noctalia/Greeter, desktop-only HM, Ghostty/Zen and approved apps, fingerprint fallback, SOPS Wi-Fi, laptop power/thermald, reviewed Thunderbolt authorization; preserve LUKS/LVM/swap and `/home` | `nixpkgs-unstable` | local-only |
 | `racknerd` | server hardening, nftables, persistent journal, SSH fail2ban, observed KVM/network configuration | numbered stable | `marcos@72.11.150.242`, after commissioning |
 | `bastion` | server hardening, nftables, persistent journal; preserve existing ZFS `tank` legacy data mounts separately from OS persistence | numbered stable | `marcos@192.168.2.2`, after commissioning |
 | `dino` | NetworkManager, laptop power management; preserve `/home`, `marcos`/`ian`, existing tmpfs root and zram | `nixpkgs-unstable` | `marcos@192.168.20.2`, after commissioning; may be offline |
 
-All four target **Limine** (racknerd BIOS; others UEFI). Headless means no desktop, **not** removal of consoles/emergency recovery. VPN/Tailscale, gaming applications/drivers beyond ordinary hardware support, reverse proxy, shares and other applications are deferred. Thinkpad's eGPU/Samsung display were disconnected; NVIDIA driver and docked HDR/VRR policy await verification. Its internal-panel desktop is a fresh configuration, not imported dotfiles. Dino's original stateVersion and EFI policy remain unknown, and its boot filesystem needs review.
+All four target **Limine** (racknerd BIOS; others UEFI). Headless means no desktop, **not** removal of consoles/emergency recovery. VPN/Tailscale, gaming applications/drivers beyond ordinary hardware support, reverse proxy, shares and other applications are deferred. Thinkpad's eGPU/Samsung display were disconnected; NVIDIA driver and docked HDR/VRR policy await verification. Its display/layout/shell policy is fresh; requested application preferences are now deliberately reused without copying private profiles or credentials. Dino's original stateVersion and EFI policy remain unknown, and its boot filesystem needs review.
 
-Servers use a supported numbered stable NixOS branch. Laptops use **`nixpkgs-unstable`**, not `nixos-unstable`, for future interactive/gaming software; its different Hydra gating warrants validation before upgrades. No package-channel mixing or implicit newer-kernel selection is provided. Branch selections are in `flake.nix`; pins and dated API evidence are in [research](docs/research.md).
+Servers use a supported numbered stable NixOS branch. Laptops use **`nixpkgs-unstable`**, not `nixos-unstable`, for future interactive/gaming software; its different Hydra gating warrants validation before upgrades. There is no package-channel mixing. The explicit [stock 7.x kernel policy](docs/desktop.md#kernels-and-intel-driver) selects each track's latest locked kernel (7.2.4 unstable, 7.2.3 stable), with ZFS compatibility and major-version guards. Branch selections are in `flake.nix`; pins and dated API evidence are in [research](docs/research.md).
 
 ## Start here
 
@@ -47,7 +47,7 @@ The original **fresh-install-only** `os-disk` capability is retained with its de
 
 ## Access and deployment
 
-Target policy: `marcos`, the explicitly selected existing public key, password-based sudo, immutable users, locked root, no root/password SSH. **SOPS delivers encrypted password hashes before account creation** using `neededForUsers` and a dedicated persistent age identity. ThinkPad reuses its existing ciphertext; other hosts retain null credential/identity blockers. No keys or passwords were generated, decrypted or rotated. Dino also retains `ian` without wheel rights. See [secret inventory and procedure](secrets/README.md) and [ADR 0006](docs/adr/0006-sops-password-delivery.md); live decryption/access review remains pending.
+Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers encrypted password hashes before account creation** using `neededForUsers` and a dedicated persistent age identity. ThinkPad reuses its existing ciphertext; other hosts retain null credential/identity blockers. No keys or passwords were generated, decrypted or rotated. Dino also retains `ian` without wheel rights. See [secret inventory and procedure](secrets/README.md) and [ADR 0006](docs/adr/0006-sops-password-delivery.md); live decryption/access review remains pending.
 
 Both servers currently have **root-only SSH**. A separately authorized staged transition must first establish and test non-root login/elevation while retaining recovery access. Do not deploy this final baseline straight through root-only access. Also verify networking without the existing VPN before removing it. [The transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized) details these requirements.
 
@@ -76,11 +76,12 @@ Class-checked `flake.modules.nixos.<capability>`, `flake.modules.homeManager.<ca
 - `modules/hardware/`, `modules/networking/`, `modules/access/`: observed facts and deliberate target choices.
 - `modules/storage/existing.nix`, host storage/data modules: existing-installation mount/boot boundary.
 - `modules/{headless,ssh,access,secrets,server,vps,workstation,laptop}.nix`: cohesive reusable features; `logging.nix` contributes to persistence.
-- `modules/desktop/`: cohesive Hyprland/Noctalia NixOS/Home Manager capability and ThinkPad-only user/display contribution.
+- `modules/desktop/`: native Hyprland/Noctalia/Greeter, approved apps, fingerprint and private Wi-Fi; ThinkPad-only facts.
+- `modules/kernel.nix`: explicit host-track latest stock 7.x policy, without suppressing ZFS compatibility failures.
 - `modules/deployment.nix`: metadata, SSH integration, target-track activation and upstream checks.
 - `modules/{tooling,validation}.nix`: locked shell, source checks, both-track safety/composition fixtures.
 
-Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. Matching Home Manager integration is selected at the same boundary and uses the host's packages. Validation independently checks required tracks, actual package-source paths, locked branch names and Home Manager branch/follows policy. See [ADRs](docs/adr/0001-dendritic-composition.md).
+Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. Home Manager is imported at that boundary only for the unstable desktop, using the host's packages; headless hosts have no HM integration. Zen's source-only recipe does not instantiate another package set. Validation independently checks required tracks, actual package-source paths, locked branch names and Home Manager branch/follows policy. See [ADRs](docs/adr/0001-dendritic-composition.md).
 
 ## Validation and updates
 
@@ -91,7 +92,7 @@ nix eval --json .#fleet | jq 'map_values({track,revision,ready,missing})'
 just revisions
 ```
 
-`just check` first checks encrypted payload shape/public recipients without decryption, then runs formatting, statix, deadnix, ShellCheck, every real host report and package/`/etc`/initrd derivation, independent track checks, both-track synthetic compositions/storage/security/SOPS/desktop fixtures, built SOPS users manifests, native generated desktop-config checks and upstream deploy schema/activation smoke checks. No target contact or activation occurs. **Evaluation fixtures are not tested installations.** Actual host toplevel builds remain gated. [Validation scope/results](docs/validation.md) distinguishes evaluation, builds and runtime acceptance.
+`just check` first checks encrypted payload shape/public recipients without decryption, then runs formatting, statix, deadnix, ShellCheck, every real host report and package/`/etc`/initrd derivation, independent track checks, both-track synthetic infrastructure/storage/security/SOPS fixtures, unstable-only desktop fixtures, built SOPS manifests, native generated desktop-config and offline Wi-Fi checks and upstream deploy schema/activation smoke checks. No target contact or activation occurs. **Evaluation fixtures are not tested installations.** Actual host toplevel builds remain gated. [Validation scope/results](docs/validation.md) distinguishes evaluation, builds and runtime acceptance.
 
 Updates are separate, researched operations and never change stateVersion automatically:
 

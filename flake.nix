@@ -9,14 +9,16 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs-stable";
     };
-    # Match Home Manager's module API to each independently selected host track.
-    home-manager-stable = {
-      url = "github:nix-community/home-manager/release-26.05";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
-    };
+    # Only the unstable interactive desktop needs Home Manager; servers do not.
     home-manager-unstable = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    # Zen is not in this Nixpkgs pin. Import only its locked source recipe with
+    # the desktop's own pkgs, never the upstream flake's separate package set.
+    zen-browser-src = {
+      url = "github:youwen5/zen-browser-flake/3aadc420e763a8243aedd2ce925ae1dc13663ed9";
+      flake = false;
     };
     disko = {
       url = "github:nix-community/disko";

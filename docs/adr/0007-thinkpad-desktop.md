@@ -1,6 +1,6 @@
 # ADR 0007 — Fresh ThinkPad desktop with track-matched Home Manager
 
-- Status: accepted
+- Status: accepted; amended by [ADR 0008](0008-native-desktop-and-kernels.md) for native modules, desktop-only HM, requested app reuse, greeter/authentication, Wi-Fi and kernels. The decisions below record the initial implementation.
 - Date: 2026-09-09
 - Amends [ADR 0005](0005-existing-headless-baseline.md) for ThinkPad's desktop scope and extends [ADR 0002](0002-nixpkgs-tracks.md) to Home Manager
 

@@ -9,7 +9,7 @@
       sopsFile = ../../secrets/hosts/thinkpad.yaml;
       neededForUsers = true;
     };
-    # The unchanged encrypted file also carries wifi-psk. It is deliberately not
-    # declared/decrypted here: NetworkManager secret-agent migration is separate.
+    # The unchanged wifi-psk ciphertext is consumed by desktop/wifi.nix. Campus
+    # identity/password remain a separate, explicitly blocked provisioning step.
   };
 }
