@@ -11,7 +11,7 @@ No disk identifiers, firmware modes or data topology are known. Bastion holds va
 
 Offer one understandable OS baseline: confirmed whole-disk by-id, GPT, deliberate UEFI/BIOS and UEFI NVRAM-write/fallback choices, explicitly sized ESP when needed, one Btrfs filesystem with `/nix` and `/persist` subvolumes. BIOS additionally keeps `/boot` there. Use tmpfs `/` with a configurable 25% ceiling; disko mounts it during installation as well as deriving runtime filesystems. Mark persistent and ephemeral mounts `neededForBoot`.
 
-Btrfs is used to share capacity without guessing partition sizes, not to introduce RAID/snapshot machinery. No ZFS/LVM/LUKS stack, root-reset service or NAS data disk is inferred. A different layout is a separately reviewed capability. Confirmation/type checks and the closed OS disk list make the destructive boundary explicit.
+Btrfs is used to share capacity without guessing partition sizes, not to introduce RAID/snapshot machinery. No ZFS/LVM/LUKS stack, root-reset service or NAS data disk is inferred. A different layout is a separately reviewed capability. Confirmation/type checks and the closed OS disk list make the destructive boundary explicit. The ESP has a 512 MiB policy floor (`512M`, with `M`/`G` in MiB/GiB), enforced during option evaluation so direct disko-script derivations cannot bypass it. There is no automatic size or capacity guarantee: actual kernel/initrd sizes and retained generations still require review; BIOS needs no ESP.
 
 Persist machine ID, random seed, NixOS allocation state, timer stamps, SSH identities where enabled, and scoped service state. Workstations deliberately keep `/home` and NetworkManager state; servers retain bounded journal history. Add service state with its owning feature.
 

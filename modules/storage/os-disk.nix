@@ -39,7 +39,18 @@
         espSize = mkOption {
           type = types.nullOr (types.strMatching "[1-9][0-9]*[MG]");
           default = null;
-          description = "Deliberately sized EFI system partition (UEFI only).";
+          # Check the merged option, including when disko scripts are evaluated directly.
+          apply =
+            size:
+            assert lib.assertMsg (
+              size == null || lib.hasSuffix "G" size || lib.toInt (lib.removeSuffix "M" size) >= 512
+            ) "fleet.osDisk.espSize must be at least 512M (512 MiB).";
+            size;
+          description = ''
+            Deliberately sized EFI system partition (UEFI only), at least 512M (512 MiB).
+            M/G denote MiB/GiB. This is a safety floor, not a capacity guarantee:
+            review space for the actual kernel/initrd and retained generations.
+          '';
         };
       };
       config = {

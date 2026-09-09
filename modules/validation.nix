@@ -99,7 +99,7 @@ let
               device = "/dev/disk/by-id/TEST-ONLY-NOT-A-REAL-DISK";
               confirmed = true;
               inherit bootMode;
-              espSize = "512M";
+              espSize = if bootMode == "uefi" then "512M" else null;
               efiCanTouchVariables = false;
             };
             access = {
@@ -155,6 +155,32 @@ let
       blank = fixture.extendModules {
         modules = [ { fleet.osDisk.device = lib.mkForce null; } ];
       };
+      withEspSize =
+        espSize:
+        (fixture.extendModules {
+          modules = [ { fleet.osDisk.espSize = lib.mkForce espSize; } ];
+        }).config;
+      missingEsp = withEspSize null;
+      espSizes = {
+        accepted = [
+          "512M"
+          "513M"
+          "1024M"
+          "1G"
+          "2G"
+        ];
+        rejected = [
+          "1M"
+          "511M"
+          "0M"
+          "0G"
+          "512"
+          "512MB"
+          "512MiB"
+          "512m"
+          "1.5G"
+        ];
+      };
       deployLib = (deploymentPkgs fixture.pkgs).deploy-rs.lib;
     in
     assert lib.assertMsg (cfg.fleet.bootstrap.missing == [ ]) "${track}: fixture requirements missing";
@@ -176,7 +202,37 @@ let
     assert lib.assertMsg (
       blank.config.disko.devices.disk == { }
     ) "Missing device must produce no destructive disk configuration";
+    # Force the actual script derivation, not just the declared option type:
+    # NixOS toplevel assertions alone do not guard direct disko evaluation.
+    assert lib.all (
+      size:
+      lib.assertMsg (
+        !(builtins.tryEval (withEspSize size).system.build.diskoScript.drvPath).success
+      ) "${track}: invalid/undersized ESP '${size}' allowed a disko script"
+    ) espSizes.rejected;
+    assert lib.all (
+      size:
+      let
+        sized = withEspSize size;
+      in
+      lib.assertMsg (
+        sized.disko.devices.disk.os.content.partitions.ESP.size == size
+        && sized.fleet.bootstrap.missing == [ ]
+        && builtins.isString sized.system.build.diskoScript.drvPath
+      ) "${track}: valid ESP '${size}' was rejected or altered"
+    ) espSizes.accepted;
+    assert lib.assertMsg (
+      missingEsp.fleet.osDisk.espSize == null
+      && missingEsp.disko.devices.disk == { }
+      && lib.elem "Size fleet.osDisk.espSize explicitly." missingEsp.fleet.bootstrap.missing
+    ) "${track}: missing ESP size must remain a blocker with no destructive disk configuration";
+    assert lib.assertMsg (
+      bios.fleet.osDisk.espSize == null
+      && !(bios.disko.devices.disk.os.content.partitions ? ESP)
+      && bios.fleet.bootstrap.missing == [ ]
+    ) "${track}: BIOS must not require or create an ESP";
     {
+      inherit espSizes;
       toplevel = cfg.system.build.toplevel.drvPath;
       biosToplevel = bios.system.build.toplevel.drvPath;
       activation = (deployLib.activate.nixos fixture).drvPath;
