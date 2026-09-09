@@ -10,15 +10,15 @@
       inputs.nixpkgs-lib.follows = "nixpkgs-stable";
     };
     # Only the unstable interactive desktop needs Home Manager; servers do not.
-    home-manager-unstable = {
-      url = "github:nix-community/home-manager/master";
+    home-manager = {
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
-    # Zen is not in this Nixpkgs pin. Import only its locked source recipe with
-    # the desktop's own pkgs, never the upstream flake's separate package set.
-    zen-browser-src = {
-      url = "github:youwen5/zen-browser-flake/3aadc420e763a8243aedd2ce925ae1dc13663ed9";
-      flake = false;
+    # Normal default-branch flake, pinned only in flake.lock. The desktop calls
+    # its source recipe with its own pkgs instead of importing another set.
+    zen-browser = {
+      url = "github:youwen5/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     disko = {
       url = "github:nix-community/disko";

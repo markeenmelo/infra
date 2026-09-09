@@ -81,7 +81,7 @@ Class-checked `flake.modules.nixos.<capability>`, `flake.modules.homeManager.<ca
 - `modules/deployment.nix`: metadata, SSH integration, target-track activation and upstream checks.
 - `modules/{tooling,validation}.nix`: locked shell, source checks, both-track safety/composition fixtures.
 
-Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. Home Manager is imported at that boundary only for the unstable desktop, using the host's packages; headless hosts have no HM integration. Zen's source-only recipe does not instantiate another package set. Validation independently checks required tracks, actual package-source paths, locked branch names and Home Manager branch/follows policy. See [ADRs](docs/adr/0001-dendritic-composition.md).
+Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. Home Manager is imported at that boundary only for the unstable desktop, using the host's packages; headless hosts have no HM integration. The `home-manager` and `zen-browser` inputs use default-branch URLs and follow unstable, with their revisions recorded only in `flake.lock`. Zen's recipe is still instantiated with the host's `pkgs`, not its upstream package outputs. Validation independently checks required tracks, actual package-source paths, locked branch names and Home Manager branch/follows policy. See [ADRs](docs/adr/0001-dendritic-composition.md).
 
 ## Validation and updates
 

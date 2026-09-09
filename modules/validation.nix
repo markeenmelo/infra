@@ -28,13 +28,28 @@ let
     assert lib.assertMsg (
       (lockedInput "nixpkgs-unstable").original.ref == "nixpkgs-unstable"
     ) "Interactive track must lock nixpkgs-unstable.";
-    assert lib.assertMsg (
-      !(lock.nodes.root.inputs ? home-manager-stable)
-      && (lockedInput "home-manager-unstable").original.ref == "master"
-      && (lockedInput "home-manager-unstable").inputs.nixpkgs == [ "nixpkgs-unstable" ]
-      && !(lockedInput "zen-browser-src").flake
-      && (lockedInput "zen-browser-src").locked.rev == "3aadc420e763a8243aedd2ce925ae1dc13663ed9"
-    ) "Only the unstable desktop needs Home Manager; Zen must remain a locked source-only recipe.";
+    assert lib.assertMsg
+      (
+        !(lock.nodes.root.inputs ? home-manager-stable)
+        && !(lock.nodes.root.inputs ? home-manager-unstable)
+        &&
+          (lockedInput "home-manager").original == {
+            type = "github";
+            owner = "nix-community";
+            repo = "home-manager";
+          }
+        && ((lockedInput "home-manager").flake or true)
+        && (lockedInput "home-manager").inputs.nixpkgs == [ "nixpkgs-unstable" ]
+        &&
+          (lockedInput "zen-browser").original == {
+            type = "github";
+            owner = "youwen5";
+            repo = "zen-browser-flake";
+          }
+        && ((lockedInput "zen-browser").flake or true)
+        && (lockedInput "zen-browser").inputs.nixpkgs == [ "nixpkgs-unstable" ]
+      )
+      "Home Manager and Zen must be default-branch flakes following unstable, pinned only in flake.lock.";
     assert lib.assertMsg (
       builtins.attrNames expectedTracks == builtins.attrNames report
     ) "Update the explicit fleet policy oracle when adding/removing a host.";
@@ -148,6 +163,20 @@ let
           && !cfg.programs.kdeconnect.enable
       ) "${name}: only ThinkPad may opt into the new Intel-first desktop; other hosts remain headless";
       assert lib.assertMsg (
+        cfg.programs.nh.enable == (name == "thinkpad")
+        && !cfg.programs.nh.clean.enable
+        && !(cfg.systemd.services ? nh-clean)
+        && !(cfg.systemd.timers ? nh-clean)
+        && cfg.programs.nh.flake == (if name == "thinkpad" then "/home/marcos/projects/infra" else null)
+        && (
+          if name == "thinkpad" then
+            cfg.programs.nh.package.drvPath == system.pkgs.nh.drvPath
+            && cfg.environment.variables.NH_FLAKE == "/home/marcos/projects/infra"
+          else
+            !(cfg.environment.variables ? NH_FLAKE)
+        )
+      ) "${name}: nh is ThinkPad-only, uses its own pkgs/checkout and must not schedule cleanup";
+      assert lib.assertMsg (
         cfg.sops.age.keyFile == cfg.fleet.secrets.ageKeyFile
         && !cfg.sops.age.generateKey
         && cfg.sops.age.sshKeyPaths == [ ]
@@ -226,7 +255,7 @@ let
       modules = [
         modules.base
       ]
-      ++ lib.optional (lib.elem "hyprland" capabilities) inputs.home-manager-unstable.nixosModules.home-manager
+      ++ lib.optional (lib.elem "hyprland" capabilities) inputs.home-manager.nixosModules.home-manager
       ++ map (name: modules.${name}) capabilities
       ++ [
         ({ lib, pkgs, ... }: {
@@ -659,7 +688,7 @@ let
       homeActivation = home.home.activationPackage.drvPath;
       hyprland = cfg.programs.hyprland.package.version;
       noctalia = fixture.pkgs.noctalia.version;
-      homeManagerRevision = inputs.home-manager-unstable.rev;
+      homeManagerRevision = inputs.home-manager.rev;
       unreviewedDesktopRejected = true;
       autologinRejected = true;
       unsafePamRejected = true;
@@ -672,6 +701,19 @@ let
       home = cfg.home-manager.users.${user};
       browser = lib.findFirst (package: (package.pname or "") == "zen-browser") null home.home.packages;
     in
+    assert lib.assertMsg
+      (
+        lib.elem system.pkgs.nerd-fonts.jetbrains-mono home.home.packages
+        && !(lib.elem system.pkgs.jetbrains-mono home.home.packages)
+        && !(lib.elem system.pkgs.jetbrains-mono home.programs.zed-editor.extraPackages)
+        && home.fonts.fontconfig.defaultFonts.monospace == [ "JetBrainsMono Nerd Font" ]
+        && home.programs.ghostty.settings.font-family == [ "JetBrainsMono Nerd Font" ]
+        && home.programs.zed-editor.userSettings.buffer_font_family == "JetBrainsMono Nerd Font"
+        && home.programs.zed-editor.userSettings.ui_font_family == "JetBrainsMono Nerd Font"
+        && home.programs.zed-editor.userSettings.terminal.font_family == "JetBrainsMono Nerd Font"
+        && cfg.fonts.fontconfig.defaultFonts.emoji == [ "Noto Color Emoji" ]
+      )
+      "${name}: use only JetBrainsMono Nerd Font for monospace apps; preserve native color-emoji fallback";
     system.pkgs.runCommand "${name}-desktop-config" { } ''
       export HOME="$TMPDIR/home"
       export XDG_RUNTIME_DIR="$TMPDIR/runtime"
@@ -713,22 +755,29 @@ let
       grep -qx 'Hidden=true' ${home.xdg.configFile.autostart.source}/org.kde.kdeconnect.daemon.desktop
       test -x ${browser}/bin/zen
       test -s ${browser}/share/applications/zen.desktop
+      find ${system.pkgs.nerd-fonts.jetbrains-mono} -iname '*Regular.ttf' \
+        -exec ${lib.getExe' system.pkgs.fontconfig "fc-scan"} --format '%{family}\n' {} + > font-families
+      grep -Eq '^JetBrainsMono Nerd Font(,|$)' font-families
+      ${lib.optionalString cfg.programs.nh.enable ''
+        # Help/version only: no rebuild, activation, target contact or cleanup.
+        ${lib.getExe cfg.programs.nh.package} --version
+        ${lib.getExe cfg.programs.nh.package} os build --help > /dev/null
+      ''}
       touch "$out"
     '';
+  # Evaluation-only campus template: encrypted replacement markers are NOT
+  # credentials. Inspect profiles/manifest only, never export this as a host.
+  senecaTemplate =
+    (config.flake.fleetConfigurations.thinkpad.extendModules {
+      modules = [
+        { fleet.wifi.senecaSopsFile = lib.mkForce ../secrets/hosts/thinkpad-senecanet.yaml; }
+      ];
+    }).config;
   wifiReport =
     let
       thinkpad = config.flake.fleetConfigurations.thinkpad;
       cfg = thinkpad.config;
-      # Synthetic TEMPLATE inspection only: this existing ciphertext does NOT
-      # contain campus keys. Do not build its manifest or export this extension.
-      campus =
-        (thinkpad.extendModules {
-          modules = [
-            {
-              fleet.wifi.senecaSopsFile = lib.mkForce ../secrets/hosts/thinkpad.yaml;
-            }
-          ];
-        }).config.networking.networkmanager.ensureProfiles.profiles.SenecaNET;
+      campus = senecaTemplate.networking.networkmanager.ensureProfiles.profiles.SenecaNET;
       absent =
         (thinkpad.extendModules {
           modules = [
@@ -759,6 +808,23 @@ let
         && campus."802-1x".identity == "$SENECA_IDENTITY"
         && campus."802-1x".password == "$SENECA_PASSWORD"
         && campus."802-1x".password-flags == 0
+        && !campus.connection.autoconnect
+        &&
+          lib.all
+            (
+              name:
+              let
+                secret = senecaTemplate.sops.secrets.${name};
+              in
+              secret.mode == "0400"
+              && secret.owner == "root"
+              && secret.group == "root"
+              && secret.sopsFile == ../secrets/hosts/thinkpad-senecanet.yaml
+            )
+            [
+              "seneca-identity"
+              "seneca-password"
+            ]
         && !(absent.networking.networkmanager.ensureProfiles.profiles ? SenecaNET)
         && lib.any (lib.hasInfix "SenecaNET is not provisioned while null") absent.fleet.bootstrap.missing
       )
@@ -975,6 +1041,8 @@ in
       # Parse actual declared home/campus ciphertext keys, never decrypt them.
       thinkpad-wifi-manifest =
         config.flake.fleetConfigurations.thinkpad.config.system.build.sops-nix-manifest;
+      # Placeholder key selection only, not decryption or usable credentials.
+      senecanet-template-manifest = senecaTemplate.system.build.sops-nix-manifest;
       thinkpad-desktop-config =
         desktopConfigCheck "thinkpad" config.flake.fleetConfigurations.thinkpad
           "marcos";

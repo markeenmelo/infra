@@ -237,8 +237,10 @@
         };
       };
 
+      # Upstream's flake package output imports pkgs again, even with follows.
+      # Use this normal flake input's recipe with the consuming home's own pkgs.
       zenBrowserUnwrapped =
-        (import inputs.zen-browser-src { inherit pkgs; }).zen-browser-unwrapped.overrideAttrs
+        (import inputs.zen-browser.outPath { inherit pkgs; }).zen-browser-unwrapped.overrideAttrs
           (previousAttrs: {
             # Nixpkgs' Firefox wrapper renamed these passthru flags under RFC 169.
             # Preserve the pinned Zen flake's declared media and GSSAPI support.

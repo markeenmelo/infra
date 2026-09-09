@@ -6,13 +6,13 @@ Only SOPS ciphertext and verified **public** recipients belong here. Never add p
 
 | Host | Ciphertext | Dedicated identity | Status |
 |---|---|---|---|
-| thinkpad | `hosts/thinkpad.yaml`, byte-for-byte reused from the previous repository and matching its running activation manifest input | `/persist/var/lib/sops-nix/key.txt`, previously provisioned | Password/PSK declarations restored; campus credentials absent; fresh custody, recipient/decryption, recovery and boot review pending |
+| thinkpad | `hosts/thinkpad.yaml`, unchanged password/PSK ciphertext; `hosts/thinkpad-senecanet.yaml`, newly encrypted replacement markers only | `/persist/var/lib/sops-nix/key.txt`, previously provisioned | Password/PSK declarations restored; campus values still unfilled/disabled; fresh custody, recipient/decryption, recovery and boot review pending |
 | racknerd / bastion | None supplied | No identity observed at the previous prepared path | Null facts and commissioning blockers; no new account password invented |
 | dino | None supplied | Unverified; unreachable during this follow-up | Both marcos and ian bindings remain null and block commissioning |
 
-The ThinkPad file contains encrypted `marcos-password-hash` **and** `wifi-psk`. Keep it intact: removing entries without authorized SOPS editing invalidates its MAC. Both are now declared: the password remains early/root-only; `wifi-psk` supplies native root-owned runtime NetworkManager profiles through a private environment adapter. The old file-secret agent and Noctalia patch are not imported. SenecaNET identity/password are still absent and block campus provisioning; see [Wi-Fi procedure](../docs/desktop.md#wi-fi-credentials). Do not delete/edit ciphertext fields by hand.
+The ThinkPad file contains encrypted `marcos-password-hash` **and** `wifi-psk`. Keep it intact: removing entries without authorized SOPS editing invalidates its MAC. Both are now declared: the password remains early/root-only; `wifi-psk` supplies native root-owned runtime NetworkManager profiles through a private environment adapter. The old file-secret agent and Noctalia patch are not imported. SenecaNET identity/password have a separate encrypted placeholder file, but real values are still absent and campus provisioning remains blocked; see [Wi-Fi procedure](../docs/desktop.md#wi-fi-credentials). Do not delete/edit ciphertext fields by hand.
 
-`.sops.yaml` preserves the previous exact ThinkPad rule (operator + dedicated host recipient), without the unrelated OpenTofu/Tailscale rule or a catch-all granting every host access. No recipient or identity was generated, rotated or re-encrypted for this integration.
+`.sops.yaml` preserves the previous exact ThinkPad rule and adds one exact rule for `secrets/hosts/thinkpad-senecanet.yaml`, using the **same operator + dedicated ThinkPad public recipients**. There is no catch-all, recipient expansion, new identity or key rotation. Only the public replacement markers were encrypted; the existing password/PSK file was neither decrypted nor modified.
 
 ## Runtime boundary
 
@@ -26,7 +26,32 @@ The private age identity is a **runtime string path**, directly on early-mounted
 
 `wifi-psk` is root-owned `0400` under `/run/secrets`; the native profiles and escaped environment remain root-only under `/run`. Never persist these outputs or inspect them with `nmcli --show-secrets`, agent logs or shell tracing. Secret changes request ordered restarts of the environment/profile units during a later authorized activation.
 
-To provision campus access, use the secure interactive workflow below to add **`seneca-identity`** (username before `@`) and **`seneca-password`** to the existing ThinkPad YAML, preserving its other fields and recipients. Use nonempty single-line scalars, not literal blocks with trailing newlines. Set `fleet.wifi.senecaSopsFile` to that reviewed encrypted file in a top-level ThinkPad contribution only after the fields exist. Its default `null` emits no incomplete SenecaNET profile and adds a commissioning blocker. The actual Wi-Fi manifest check validates selected encrypted keys without decryption; the separate campus template fixture is explicitly not a credential/decryption test.
+### Fill the SenecaNET placeholders locally
+
+The separate `hosts/thinkpad-senecanet.yaml` contains encrypted **public markers**, not usable credentials:
+
+| Key | Replace this marker with |
+|---|---|
+| `seneca-identity` | Replace `__SET_SENECA_IDENTITY_LOCALLY__` with your username **before `@`**, without whitespace |
+| `seneca-password` | Replace `__SET_SENECA_PASSWORD_LOCALLY__` with your campus password |
+
+From the repository root in the locked shell, use your reviewed identity and a **private interactive terminal**, not agent tools:
+
+```sh
+sops edit secrets/hosts/thinkpad-senecanet.yaml
+```
+
+Follow the secure editor/identity workflow below: protected temporary storage, no swap/backups, no AI/cloud editor integration or plaintext repository files. Preserve the keys, recipients and SOPS metadata; let SOPS update encryption and its MAC. Use nonempty single-line scalars, not literal blocks with trailing newlines. Do not change the existing password/PSK YAML or relax private-identity permissions to make editing work.
+
+After **both** markers have been replaced and the file reviewed, add this inside the existing `fleet.hosts.thinkpad.module` body in `modules/desktop/thinkpad.nix`:
+
+```nix
+fleet.wifi.senecaSopsFile = ../../secrets/hosts/thinkpad-senecanet.yaml;
+```
+
+Until then, leave the option's default **`null`**: no campus profile is emitted and commissioning remains blocked. The runtime adapter also rejects either marker in any credential field if the file is selected prematurely; the shared environment/profile preparation then fails, including MN-Home delivery. Do not select an unfilled file just to remove the null blocker. Run `just secret-check` before staging and `just check` after the reviewed change.
+
+The actual Wi-Fi manifest and separate `senecanet-template-manifest` checks validate encrypted key selection only. The latter can pass against **markers** and is never proof of valid credentials, decryption or readiness.
 
 Never disable Seneca's CA/domain validation to compensate for missing credentials. Back up/reconcile duplicate old profiles deliberately before activation, then test password delivery and server-certificate rejection on the real network under separate authorization.
 
@@ -41,4 +66,4 @@ The locked shell supplies `sops`, `age` and `yq` for reviewed maintenance. Shell
 5. **Before staging**, run `just secret-check` and inspect the diff securely; stage only intended ciphertext/public rules/code. The structural check rejects ambiguous YAML (multiple documents/duplicate keys), accidental plaintext payloads and recipient-rule drift, not an invalid MAC/hash, missing private identity or broken login. `just secret-check-tests` exercises malformed copies in a temporary local directory without touching host state. Nix's both-track manifest builds check selected keys without decrypting. Never add a Git textconv that reveals secrets during agent diff review.
 6. With independent console/recovery access and separate host-operation authorization, verify identity permissions/custody, early decryption, preserved password sudo, login and reboot behavior. Only then acknowledge `fleet.secrets.identityReviewed` and the other real migration/access/boot flags. Servers first need a staged non-root access transition on their current configuration. This integration is not that transition.
 
-No plaintext passwords/hashes or private identities were copied into this repository. No SOPS decrypt/edit/updatekeys, host mutation, deployment or reboot was run.
+No plaintext passwords/hashes or private identities were copied into this repository. Only the public campus replacement markers were newly encrypted, with an isolated empty home and the existing public recipients. No SOPS decrypt/edit/updatekeys, host mutation, deployment or reboot was run.

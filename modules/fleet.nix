@@ -29,7 +29,7 @@ let
           fleet.bootstrap.approved = host.ready;
         }
       ]
-      ++ lib.optional desktop inputs.home-manager-unstable.nixosModules.home-manager
+      ++ lib.optional desktop inputs.home-manager.nixosModules.home-manager
       ++ map (capability: config.flake.modules.nixos.${capability}) host.capabilities;
     }
   ) hosts;

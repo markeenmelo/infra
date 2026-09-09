@@ -55,15 +55,22 @@ with tempfile.TemporaryDirectory() as directory:
         result = subprocess.run([sys.argv[3]], input="[wifi-security]\npsk=$HOME_WIFI_PSK\n", env=environment, text=True, capture_output=True, check=True)
         assert get_string(result.stdout, "wifi-security", "psk") == value
 
-    for name, value in [("HOME_WIFI_PSK", ""), ("HOME_WIFI_PSK", "TEST\nINJECTION=yes"), ("HOME_WIFI_PSK", "TEST\0ONLY"), ("HOME_WIFI_PSK", "TEST\aONLY"), ("HOME_WIFI_PSK", "TEST\x7fONLY"), ("SENECA_IDENTITY", "TEST-ONLY@example.invalid"), ("SENECA_IDENTITY", "TEST ONLY")]:
+    invalid = [("HOME_WIFI_PSK", ""), ("HOME_WIFI_PSK", "TEST\nINJECTION=yes"), ("HOME_WIFI_PSK", "TEST\0ONLY"), ("HOME_WIFI_PSK", "TEST\aONLY"), ("HOME_WIFI_PSK", "TEST\x7fONLY"), ("SENECA_IDENTITY", "TEST-ONLY@example.invalid"), ("SENECA_IDENTITY", "TEST ONLY")]
+    invalid += [(name, marker) for name in ("HOME_WIFI_PSK", "SENECA_IDENTITY", "SENECA_PASSWORD") for marker in ("__SET_SENECA_IDENTITY_LOCALLY__", "__SET_SENECA_PASSWORD_LOCALLY__")]
+    previous = output.read_bytes()
+    valid = root / "synthetic-valid-secret"
+    valid.write_text("TEST-ONLY-valid-home-secret")
+    for name, value in invalid:
         source.write_text(value)
-        result = subprocess.run([sys.executable, sys.argv[1], str(output), f"{name}={source}"], capture_output=True, text=True)
+        # A valid earlier field must not be published before later validation.
+        result = subprocess.run([sys.executable, sys.argv[1], str(output), f"HOME_WIFI_PSK={valid}", f"{name}={source}"], capture_output=True, text=True)
         assert result.returncode != 0 and result.stdout == ""
         assert result.stderr == "Wi-Fi credential preparation failed; review the root-owned SOPS files privately.\n"
+        assert output.read_bytes() == previous  # No partial output on rejection.
 
     source.write_text("TEST-ONLY-campus-user")
     helper.prepare(output, [("SENECA_IDENTITY", source), ("SENECA_PASSWORD", source)])
     assert len(output.read_text().splitlines()) == 2
     assert not (root / "INJECTION").exists()
 
-print("Synthetic Wi-Fi environment/GLib round trips, permissions and fail-closed diagnostics passed.")
+print("Synthetic Wi-Fi environment/GLib round trips, permissions, placeholder rejection and fail-closed diagnostics passed.")

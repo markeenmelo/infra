@@ -26,12 +26,12 @@
       options.fleet.wifi.senecaSopsFile = lib.mkOption {
         type = lib.types.nullOr lib.types.path;
         default = null;
-        description = "Reviewed encrypted SOPS YAML containing seneca-identity and seneca-password. Null blocks campus provisioning; never place credentials in Nix.";
+        description = "Reviewed encrypted SOPS YAML containing filled seneca-identity and seneca-password (no replacement markers). Null blocks campus provisioning; never place credentials in Nix.";
       };
       config = {
         fleet.bootstrap.missing =
           lib.optional (!campus)
-            "Provision SOPS seneca-identity (username before @) and seneca-password locally, then set fleet.wifi.senecaSopsFile; SenecaNET is not provisioned while null.";
+            "Replace both encrypted markers in secrets/hosts/thinkpad-senecanet.yaml using SOPS locally, then set fleet.wifi.senecaSopsFile to the reviewed file; SenecaNET is not provisioned while null.";
         sops.secrets = {
           wifi-psk = secret ../../secrets/hosts/thinkpad.yaml;
         }

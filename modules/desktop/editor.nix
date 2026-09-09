@@ -282,7 +282,6 @@
           pkgs.biome
           pkgs.clang-tools
           pkgs.cmake
-          pkgs.jetbrains-mono
           pkgs.neocmakelsp
           pkgs.nixd
           pkgs.nixfmt
@@ -295,7 +294,7 @@
           # Nixpkgs owns this build; an in-app update would fight the store copy.
           auto_update = false;
           base_keymap = "Zed";
-          buffer_font_family = "JetBrains Mono";
+          buffer_font_family = "JetBrainsMono Nerd Font";
           buffer_font_size = 15;
           cli_default_open_behavior = "existing_window";
           file_types = {
@@ -367,11 +366,11 @@
             metrics = false;
           };
           terminal = {
-            font_family = "JetBrains Mono";
+            font_family = "JetBrainsMono Nerd Font";
             font_size = 14;
           };
           theme = theme.name;
-          ui_font_family = "JetBrains Mono";
+          ui_font_family = "JetBrainsMono Nerd Font";
           ui_font_size = 16;
           vim_mode = false;
         };

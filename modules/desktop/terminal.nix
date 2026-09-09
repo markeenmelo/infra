@@ -14,14 +14,11 @@
       inherit (theme) colors;
     in
     {
-      home.packages = [
-        pkgs.jetbrains-mono
-        pkgs.nerd-fonts.jetbrains-mono
-      ];
-      # Ghostty and Zed both request this family by name; the Nerd Font variant
-      # supplies the shell/prompt glyphs. Sans/serif/emoji policy is not decided
-      # here, so only the monospace default is claimed by this concern.
-      fonts.fontconfig.defaultFonts.monospace = [ "JetBrains Mono" ];
+      home.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
+      # One patched family for Ghostty, Zed and prompt icons; no regular variant.
+      # Keep native sans/serif/emoji defaults, including Noto Color Emoji: Nerd
+      # Font symbols are not a replacement for a color-emoji font.
+      fonts.fontconfig.defaultFonts.monospace = [ "JetBrainsMono Nerd Font" ];
 
       programs = {
         ghostty = {
@@ -31,10 +28,7 @@
             # Herdr owns panes/sessions inside the terminal, as it does today.
             command = "direct:${lib.getExe pkgs.herdr}";
             theme = theme.name;
-            font-family = [
-              "JetBrains Mono"
-              "JetBrainsMono Nerd Font"
-            ];
+            font-family = "JetBrainsMono Nerd Font";
             font-size = 13;
             background-opacity = 1.0;
             bold-is-bright = false;

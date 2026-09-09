@@ -38,13 +38,29 @@ jq '.nodes as $n | ["nixpkgs-stable", "nixpkgs-unstable"][] as $i |
   {input:$i, original:$n[$n.root.inputs[$i]].original, locked:$n[$n.root.inputs[$i]].locked}' flake.lock
 ```
 
-Only the unstable desktop uses Home Manager. Update it independently with `nix flake update home-manager-unstable`; validate the unstable desktop/actual ThinkPad configs and all both-track infrastructure checks. Updating unstable Nixpkgs changes HM's packages without moving HM's source revision; stable updates have no HM dependency.
+Only the unstable desktop uses Home Manager. The input is named `home-manager`, with URL `github:nix-community/home-manager`. Update it independently with `nix flake update home-manager`; validate the unstable desktop/actual ThinkPad configs and all both-track infrastructure checks. Updating unstable Nixpkgs changes HM's packages without moving HM's source revision; stable updates have no HM dependency.
 
-Zen's source-only input is exact-revision pinned: advancing it requires an explicit URL revision edit plus lock update, review of its recipe/wrapper adapter and extension XPI pins, and deliberate update of validation's independent source-pin assertion. Pi's extension manifest/lock, npm hash, pi-review revision and small compatibility patch are separately pinned; update and test them together, without credentials or provider settings drift. Preserve HM file-collision checks and the isolated Noctalia profile. See [desktop ownership](desktop.md).
+Zen is a normal `zen-browser` flake input with URL `github:youwen5/zen-browser-flake` and an unstable follows link. Both Zen and Home Manager use default-branch URLs; exact revisions live only in `flake.lock`. A scoped Zen update uses `nix flake update zen-browser`, with review of its recipe/wrapper adapter and extension XPI pins. Continue passing the consuming host's `pkgs` into the recipe instead of importing upstream's separately instantiated package outputs. Validation checks input identity, flake status and follows policy, not a hardcoded Zen commit. Pi's extension manifest/lock, npm hash, pi-review revision and small compatibility patch are separately pinned; update and test them together, without credentials or provider settings drift. Preserve HM file-collision checks and the isolated Noctalia profile. See [desktop ownership](desktop.md).
 
 Every host uses its track's latest **stock 7.x** kernel. Check kernel EOL/release changes and Bastion's actual `kernelPackages.${boot.zfs.package.kernelModuleAttribute}` derivation. Never use the removed `.zfs` alias, allow broken packages, mix tracks or silently cross the major-version guard. Preserve recovery generations/ESP headroom and arrange boot/pool acceptance separately; a compatible derivation is not a tested boot.
 
 A **stable release migration** changes the numbered stable Nixpkgs URL in `flake.nix` after fresh research, then updates that input; there is no stable HM URL to maintain. Do not automatically jump servers to a new release or bump their stateVersion. Update the dated research record and validate database/service compatibility and restores.
+
+## ThinkPad Nix Helper (nh)
+
+`modules/nh.nix` enables native NixOS `programs.nh` **only on ThinkPad**, using its own `pkgs.nh` (currently 4.4.2). `programs.nh.flake = "/home/marcos/projects/infra"` sets **`NH_FLAKE`** at this Nixpkgs pin. This is the observed checkout path, not a store copy or guessed server path. An explicit installable or `NH_OS_FLAKE` can override it; update the declaration if the checkout moves. Settings take effect during a separately authorized activation, not by editing this repository.
+
+`programs.nh.clean.enable = false`: no nh cleanup service/timer, generation pruning, automatic input updates or rebuild aliases. Keep recovery generations and use the reviewed input-update procedure above. Home Manager is integrated into NixOS; there is no standalone output for `nh home`.
+
+`just check` remains canonical and `just ready thinkpad` must still pass before a system build. **After genuine commissioning**, a build-only helper invocation is:
+
+```sh
+just check
+just ready thinkpad
+nh os build --hostname thinkpad --no-update-lock-file
+```
+
+This cannot select the currently uncommissioned ThinkPad from `nixosConfigurations`. Do not bypass that gate, validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization; none was executed here. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
 
 ## Deployment and recovery
 

@@ -30,6 +30,10 @@ def prepare(output, entries):
         # spaces and punctuation: do not silently change a user's password.
         if not value or any((ord(c) < 32 and c != "\t") or ord(c) == 127 for c in value):
             raise ValueError("Expected a nonempty single-line credential")
+        # These public markers are encrypted in the separate campus template.
+        # Reject either marker in any field, including accidental cross-pastes.
+        if value in ("__SET_SENECA_IDENTITY_LOCALLY__", "__SET_SENECA_PASSWORD_LOCALLY__"):
+            raise ValueError("Campus credential placeholder has not been replaced")
         if name == "SENECA_IDENTITY" and ("@" in value or any(c.isspace() for c in value)):
             raise ValueError("Expected the campus username before @")
         lines.append(f"{name}={encode(value)}\n")
