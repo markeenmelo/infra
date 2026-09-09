@@ -78,11 +78,11 @@ in
       in
       assert lib.assertMsg
         (
-          (cfg.fleet ? osDisk)
+          ((cfg.fleet ? osDisk) || (cfg.fleet ? existingStorage))
           && (cfg.environment ? persistence)
           && (cfg.environment.persistence ? "/persist")
         )
-        "${name}: the fleet inventory requires an OS-disk interface and /persist persistence capability; compose them or adapt the inventory with a new storage design.";
+        "${name}: the fleet inventory requires an existing-storage or OS-disk interface and /persist persistence capability; compose them or adapt the inventory with a new storage design.";
       {
         inherit (host)
           system
@@ -97,7 +97,17 @@ in
         nixosVersion = cfg.system.nixos.version;
         missing = cfg.fleet.bootstrap.missing;
         failedAssertions = map (a: a.message) (lib.filter (a: !a.assertion) cfg.assertions);
-        osDisk = cfg.fleet.osDisk.device;
+        storageMode = if cfg.fleet ? existingStorage then "existing" else "provision";
+        osDisk =
+          if cfg.fleet ? existingStorage then cfg.fleet.existingStorage.osDevice else cfg.fleet.osDisk.device;
+        filesystems = lib.mapAttrs (_: fs: {
+          inherit (fs)
+            device
+            fsType
+            options
+            neededForBoot
+            ;
+        }) cfg.fileSystems;
         persistence = {
           directories = map (d: d.dirPath) cfg.environment.persistence."/persist".directories;
           files = map (f: f.filePath) cfg.environment.persistence."/persist".files;

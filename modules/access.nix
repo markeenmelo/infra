@@ -36,6 +36,7 @@
             cfg.passwordFile == null && !cfg.passwordlessSudo
           ) "Supply a runtime admin password hash file or explicitly approve passwordlessSudo.";
         users.mutableUsers = false;
+        security.sudo.wheelNeedsPassword = true;
         users.users = {
           root.hashedPassword = "!";
         }

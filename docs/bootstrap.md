@@ -1,6 +1,6 @@
 # Commissioning a host
 
-This runbook turns existing compositions into real configurations. **It is not authorization to touch disks or deploy.** Work from a rescue environment/local console when installing or changing boot, storage or networking. Preserve an independently tested backup and a recovery path.
+This runbook covers commissioning and the original **fresh-install** scaffold. **It is not authorization to touch disks or deploy.** All four current hosts are already installed and instead compose `existing-storage`; use [their inventory/transition checklist](hosts.md) first. Their disko script/image outputs are blocked even after readiness, and the installation commands below do not apply to them. Never swap in the fresh-disk layout to bypass this boundary. Work from a rescue environment/local console for separately authorized boot/storage/network changes, with verified backup/restore and recovery access.
 
 ## 1. Gather facts before editing
 
@@ -11,7 +11,7 @@ For each host, record outside public Git if sensitive:
 - Verified **whole OS disk** by-id identifier, model/serial/capacity and an explicit list of valuable data disks that are **not** that disk. Stable by-id may not be available on some providers: do not invent one; adapt the storage capability after obtaining an equally stable, independently verified identifier.
 - Networking, provider requirements, IPv4/IPv6/DNS/routing, public/private interface firewall policy, SSH reachability and rescue-console access. The base deliberately disables implicit DHCP; supply the actual policy. Workstations use NetworkManager but still need their network policy reviewed.
 - Real administration and interactive account names, public-key fingerprints, privilege policy, password-hash provisioning, closure trust.
-- Desktop/session, GPU/driver and firmware choices for interactive hosts; gaming software/licensing/controllers for `dino`. Nothing selects a DE, GPU vendor, Steam, Gamescope, launchers or performance tweaks implicitly.
+- Intended session/software scope. The current baseline is deliberately headless on laptops too; desktop, GPU gaming stack, launchers/licensing and controllers are deferred, not acknowledged as tested. Nothing selects a DE, Steam, Gamescope or performance tweaks implicitly.
 - For `bastion`: independent NAS data inventory, existing filesystem/topology facts, restore plan and future service mount requirements. A functioning OS must not imply approval to alter NAS storage.
 
 On the **target**, read-only inventory commands include:
@@ -23,7 +23,7 @@ ls -l /dev/disk/by-id/
 test -d /sys/firmware/efi && echo UEFI || echo 'Verify BIOS/provider boot mode'
 ```
 
-Do not publish captured output indiscriminately. Before a new install, `nixos-generate-config --no-filesystems --root /mnt` can generate hardware information **after mounting the intended target**; it writes configuration files but does not partition disks. Review it outside `modules/` first. This agent has not run it against any fleet machine.
+Do not publish captured output indiscriminately. Before a new install, `nixos-generate-config --no-filesystems --root /mnt` can generate hardware information **after mounting the intended target**; it writes configuration files but does not partition disks. Review it outside `modules/` first. During existing-host discovery, only `--show-hardware-config --no-filesystems` (stdout-only) was used; it wrote no configuration files. See [discovery limitations](hosts.md).
 
 ## 2. Add facts as top-level modules
 
@@ -67,13 +67,13 @@ No one-time value comes from the dev shell's Nixpkgs, another host, or a hardwar
    - `signed`: provision an operator signing key outside this repository, add its public counterpart to the target's `nix.settings.trusted-public-keys`, and supply `LOCAL_KEY` when deploying. Do not disable signature checking. Verify this path before relying on it remotely.
 6. Default escalation is interactive `sudo -u`. For automation use an explicitly reviewed passwordless elevation policy and `interactiveSudo = false`. `doas -u` requires separately configuring doas; selecting a command does not configure authorization. No secrets-management backend is claimed or included.
 
-Future service secrets belong in runtime files delivered by a separately researched secret-management capability. Keep that boundary distinct from Nix expressions, source paths and public-key metadata. LUKS is **not** implemented in the baseline: before storing laptop credentials or sensitive server state, deliberately accept that risk or replace the OS layout with a reviewed encrypted design and recovery-key plan.
+Future service secrets belong in runtime files delivered by a separately researched secret-management capability. Keep that boundary distinct from Nix expressions, source paths and public-key metadata. The fresh-install `os-disk` layout has no LUKS support. Current thinkpad adoption **preserves its existing LUKS/LVM encryption**, while dino/server OS storage was observed unencrypted. Do not silently remove encryption or retrofit it through a formatting script; encryption changes need a separately reviewed migration and recovery-key plan.
 
 ## 3. Resolve capability-specific blockers
 
-`just inventory` explains every unresolved field. Hardware/network review, OS disk confirmation, desktop/user/gaming choices and provider/NAS acknowledgement fields are human review barriers, not automatic discovery.
+`just inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement; future gaming capability review is separate.
 
-Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Servers opt in already; desktops do not. Keep `ready = false` during discovery. Once every fact is supplied, run:
+Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Racknerd, bastion and dino opt in after commissioning; thinkpad remains local-only. Keep `ready = false` during discovery. Once every fact is supplied, run:
 
 ```sh
 git add flake.nix flake.lock modules
@@ -85,6 +85,8 @@ nix eval --json .#fleet.thinkpad | jq '{missing,failedAssertions}'
 An unready host still has its commissioning assertion. Only after resolving all other issues set `fleet.hosts.thinkpad.ready = true` in a commissioning/identity module, then rerun `just check` and `just ready thinkpad`. Merely setting ready with missing fields makes validation fail; it never overrides them. Source-control facts before installing; retain the exact lock file and recovery generation.
 
 ## Storage and installation
+
+**Fresh-install `os-disk` capability only; none of the current hosts use this layout.** For current installations use [hosts.md](hosts.md) and do not run these commands.
 
 **Everything below the explicit execution boundary is a manual maintenance-window operation. Disko may erase the entire selected disk, including existing partitions and boot entries. It is not a migration tool. Never run it during ordinary deployment.**
 

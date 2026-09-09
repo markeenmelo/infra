@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-09-09
+- Policy update: [ADR 0005](0005-existing-headless-baseline.md) opts dino into remote deployment after commissioning; thinkpad remains local-only. Known endpoints do not remove migration/readiness gates.
 
 ## Context
 

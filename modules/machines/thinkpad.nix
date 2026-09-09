@@ -3,7 +3,8 @@
     system = "x86_64-linux";
     track = "unstable";
     capabilities = [
-      "os-disk"
+      "existing-storage"
+      "headless"
       "persistence"
       "access"
       "workstation"

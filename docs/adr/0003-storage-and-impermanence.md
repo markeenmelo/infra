@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-09-09
+- Scope update: [ADR 0005](0005-existing-headless-baseline.md) adopts existing installations. This original fresh-disk design remains separately tested but is **not composed by any current host**.
 
 ## Context
 

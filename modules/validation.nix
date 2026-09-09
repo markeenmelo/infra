@@ -35,6 +35,7 @@ let
       name: host:
       let
         system = config.flake.fleetConfigurations.${name};
+        cfg = system.config;
       in
       assert lib.assertMsg (host.track == expectedTracks.${name}) "${name}: wrong Nixpkgs track";
       assert lib.assertMsg (
@@ -52,6 +53,57 @@ let
       assert lib.assertMsg (
         host.ready -> host.missing == [ ] && host.failedAssertions == [ ]
       ) "${name}: commissioned with unresolved requirements";
+      assert lib.assertMsg (
+        host.storageMode == "existing"
+        && cfg.disko.devices.disk == { }
+        && cfg.disko.devices.zpool == { }
+        && cfg.fileSystems."/".fsType == "tmpfs"
+        && cfg.fileSystems."/nix".neededForBoot
+        && cfg.fileSystems."/persist".neededForBoot
+        && cfg.boot.loader.limine.enable
+        && !cfg.boot.loader.limine.force
+        && !cfg.boot.loader.grub.enable
+        && !cfg.boot.loader.systemd-boot.enable
+      ) "${name}: real hosts must preserve existing storage and use Limine";
+      assert lib.all
+        (
+          output:
+          lib.assertMsg (
+            !(builtins.tryEval cfg.system.build.${output}.drvPath).success
+          ) "${name}: real host exposed provisioning output ${output}"
+        )
+        [
+          "diskoScript"
+          "destroyFormatMount"
+          "format"
+          "mount"
+          "diskoImages"
+        ];
+      assert lib.assertMsg (
+        !cfg.services.tailscale.enable
+        && !cfg.services.xserver.enable
+        && !cfg.services.displayManager.enable
+        && !cfg.services.greetd.enable
+        && !cfg.programs.steam.enable
+        && cfg.systemd.enableEmergencyMode
+        && cfg.services.openssh.settings.PermitRootLogin == "no"
+        && cfg.services.openssh.settings.AllowUsers == [ "marcos" ]
+        && cfg.security.sudo.wheelNeedsPassword
+        && !cfg.fleet.access.passwordlessSudo
+        && cfg.networking.firewall.allowedTCPPorts == [ 22 ]
+        && cfg.networking.firewall.allowedUDPPorts == [ ]
+      ) "${name}: headless SSH-only baseline or recovery policy regressed";
+      assert lib.assertMsg (
+        (lib.elem name [
+          "thinkpad"
+          "dino"
+        ])
+        -> (
+          cfg.fileSystems."/home".neededForBoot
+          && !(lib.elem "/home" host.persistence.directories)
+          && cfg.services.power-profiles-daemon.enable
+        )
+      ) "${name}: preserve laptop home mounts and power management";
       host
       // {
         # Force real per-host packages, /etc/services and initrd even before the
@@ -68,6 +120,7 @@ let
   # No fixture scripts are exported as provisioning packages or deploy nodes.
   allCapabilities = [
     "os-disk"
+    "headless"
     "persistence"
     "access"
     "server"
@@ -96,6 +149,17 @@ let
               hardwareReviewed = true;
               networkReviewed = true;
             };
+            access = {
+              admin = "fixture-admin";
+              authorizedKeys = [ "ssh-ed25519 TEST-ONLY-NOT-A-VALID-KEY" ];
+              # Exercise the selected password-file branch for existing hosts;
+              # no runtime secret is present or required for evaluation.
+              passwordFile =
+                if lib.elem "existing-storage" capabilities then "/persist/secrets/TEST-ONLY-password" else null;
+              passwordlessSudo = !(lib.elem "existing-storage" capabilities);
+            };
+          }
+          // lib.optionalAttrs (lib.elem "os-disk" capabilities) {
             osDisk = {
               device = "/dev/disk/by-id/TEST-ONLY-NOT-A-REAL-DISK";
               confirmed = true;
@@ -103,17 +167,19 @@ let
               espSize = if bootMode == "uefi" then "512M" else null;
               efiCanTouchVariables = false;
             };
-            access = {
-              admin = "fixture-admin";
-              authorizedKeys = [ "ssh-ed25519 TEST-ONLY-NOT-A-VALID-KEY" ];
-              passwordlessSudo = true;
+          }
+          // lib.optionalAttrs (lib.elem "existing-storage" capabilities) {
+            existingStorage = {
+              osDevice = "/dev/disk/by-id/TEST-ONLY-NOT-A-REAL-DISK";
+              inherit bootMode;
+              efiCanTouchVariables = false;
+              biosPartitionIndex = if bootMode == "bios" then 1 else null;
+              bootReviewed = true;
+              migrationReviewed = true;
             };
           }
           // lib.optionalAttrs (lib.elem "workstation" capabilities) {
-            workstation = {
-              desktopReviewed = true;
-              usersReviewed = true;
-            };
+            workstation.usersReviewed = true;
           }
           // lib.optionalAttrs (lib.elem "gaming" capabilities) {
             gaming.reviewed = true;
@@ -123,6 +189,23 @@ let
           }
           // lib.optionalAttrs (lib.elem "vps" capabilities) {
             vps.providerReviewed = true;
+          };
+          disko.devices.nodev = lib.optionalAttrs (lib.elem "existing-storage" capabilities) {
+            "/boot" = {
+              device = "/dev/disk/by-uuid/TEST-ONLY-ESP";
+              fsType = "vfat";
+              mountOptions = [ "umask=0077" ];
+            };
+            "/nix" = {
+              device = "/dev/disk/by-uuid/TEST-ONLY-STATE";
+              fsType = "btrfs";
+              mountOptions = [ "subvol=nix" ];
+            };
+            "/persist" = {
+              device = "/dev/disk/by-uuid/TEST-ONLY-STATE";
+              fsType = "btrfs";
+              mountOptions = [ "subvol=persist" ];
+            };
           };
         })
       ];
@@ -141,6 +224,142 @@ let
       toplevel = fixture.config.system.build.toplevel.drvPath;
     }
   ) config.fleet.hosts;
+  existingReport = lib.genAttrs (builtins.attrNames tracks) (
+    track:
+    let
+      capabilities = [ "existing-storage" ] ++ lib.filter (name: name != "os-disk") allCapabilities;
+      fixture = fixtureFor track "uefi" capabilities;
+      cfg = fixture.config;
+      bios = (fixtureFor track "bios" capabilities).config;
+      pending = fixture.extendModules {
+        modules = [
+          {
+            fleet = {
+              bootstrap.approved = lib.mkForce false;
+              existingStorage.bootReviewed = lib.mkForce false;
+              existingStorage.migrationReviewed = lib.mkForce false;
+            };
+          }
+        ];
+      };
+      missingReview = fixture.extendModules {
+        modules = [
+          {
+            fleet.existingStorage.migrationReviewed = lib.mkForce false;
+          }
+        ];
+      };
+      home =
+        (fixture.extendModules {
+          modules = [
+            {
+              fleet.workstation.homePersistence = "filesystem";
+              disko.devices.nodev."/home" = {
+                device = "/dev/disk/by-uuid/TEST-ONLY-STATE";
+                fsType = "btrfs";
+                mountOptions = [ "subvol=home" ];
+              };
+              fileSystems."/home".neededForBoot = true;
+            }
+          ];
+        }).config;
+      injected =
+        (fixture.extendModules {
+          modules = [
+            {
+              disko.devices.disk.unwanted = {
+                type = "disk";
+                device = "/dev/disk/by-id/TEST-ONLY-DATA";
+              };
+            }
+          ];
+        }).config;
+      scriptNames = builtins.attrNames (cfg.disko.devices._scripts { inherit (fixture) pkgs; }) ++ [
+        "disko"
+        "diskoNoDeps"
+        "installTest"
+        "vmWithDisko"
+        "diskoImages"
+        "diskoImagesScript"
+      ];
+    in
+    assert lib.assertMsg (
+      cfg.fleet.bootstrap.missing == [ ] && lib.all (a: a.assertion) cfg.assertions
+    ) "${track}: existing-installation fixture failed";
+    assert lib.assertMsg (
+      cfg.fileSystems."/".fsType == "tmpfs"
+      && cfg.fileSystems."/nix".neededForBoot
+      && cfg.fileSystems."/persist".neededForBoot
+      && cfg.fileSystems."/nix".device == "/dev/disk/by-uuid/TEST-ONLY-STATE"
+      && lib.elem "subvol=persist" cfg.fileSystems."/persist".options
+    ) "${track}: existing mounts must retain identities and early persistence";
+    assert lib.assertMsg (
+      injected.disko.devices.disk == { }
+      && cfg.disko.devices.zpool == { }
+      && cfg.disko.devices.lvm_vg == { }
+      && cfg.disko.devices.mdadm == { }
+    ) "${track}: existing installs must not expose destructive device nodes";
+    assert lib.all (
+      name:
+      lib.assertMsg (
+        !(builtins.tryEval cfg.system.build.${name}.drvPath).success
+        && !(builtins.tryEval pending.config.system.build.${name}.drvPath).success
+      ) "${track}: existing install exposed ${name}"
+    ) scriptNames;
+    assert lib.assertMsg (
+      !(builtins.tryEval missingReview.config.system.build.toplevel.drvPath).success
+    ) "${track}: ready alone must not bypass migration review";
+    assert lib.assertMsg (
+      cfg.boot.loader.limine.enable
+      && cfg.boot.loader.limine.efiSupport
+      && !cfg.boot.loader.limine.biosSupport
+      && !cfg.boot.loader.limine.enableEditor
+      && !cfg.boot.loader.limine.force
+      && cfg.boot.loader.limine.validateChecksums
+      && !cfg.boot.loader.grub.enable
+      && !cfg.boot.loader.systemd-boot.enable
+      && bios.boot.loader.limine.biosSupport
+      && !bios.boot.loader.limine.efiSupport
+      && bios.boot.loader.limine.partitionIndex == 1
+      && bios.fileSystems."/boot".fsType == "vfat"
+    ) "${track}: Limine EFI/BIOS policy regressed";
+    assert lib.assertMsg (
+      !(lib.elem "/home" (map (d: d.dirPath) home.environment.persistence."/persist".directories))
+      && home.fileSystems."/home".neededForBoot
+    ) "${track}: separate /home must not also be an impermanence bind";
+    assert lib.assertMsg (
+      cfg.services.openssh.settings.PermitRootLogin == "no"
+      && cfg.services.openssh.settings.AuthenticationMethods == "publickey"
+      && cfg.services.openssh.settings.AllowUsers == [ "fixture-admin" ]
+      && cfg.networking.firewall.allowedTCPPorts == [ 22 ]
+      && cfg.networking.firewall.allowedUDPPorts == [ ]
+      && cfg.services.fail2ban.enable
+      && cfg.services.fail2ban.banaction == "nftables-multiport"
+      && lib.elem "/var/lib/fail2ban" (
+        map (d: d.dirPath) cfg.environment.persistence."/persist".directories
+      )
+      && cfg.services.fail2ban.jails.DEFAULT.settings.backend == "systemd"
+      && !cfg.fleet.access.passwordlessSudo
+      && cfg.security.sudo.wheelNeedsPassword
+      && cfg.users.users.fixture-admin.hashedPasswordFile == "/persist/secrets/TEST-ONLY-password"
+      && cfg.nix.settings.trusted-users == [ "root" ]
+      && cfg.services.power-profiles-daemon.enable
+      && !cfg.services.tlp.enable
+      && !cfg.services.xserver.enable
+      && !cfg.services.tailscale.enable
+      && !cfg.programs.steam.enable
+      && cfg.systemd.enableEmergencyMode
+    ) "${track}: headless security/power/recovery baseline regressed";
+    {
+      toplevel = cfg.system.build.toplevel.drvPath;
+      biosToplevel = bios.system.build.toplevel.drvPath;
+      homeToplevel = home.system.build.toplevel.drvPath;
+      bootloader = cfg.system.build.installBootLoader.drvPath;
+      inherit scriptNames;
+      provisioningBlocked = true;
+      migrationReviewRequired = true;
+    }
+  );
   deploymentPkgs = pkgs: pkgs.extend inputs.deploy-rs.overlays.default;
   fixtureReport = lib.mapAttrs (
     track: fixture:
@@ -318,6 +537,7 @@ in
     hosts = checkedReport;
     fixtures = fixtureReport;
     compositions = compositionReport;
+    existingInstallations = existingReport;
   };
   perSystem = { pkgs, ... }: {
     checks = {
@@ -329,6 +549,7 @@ in
             hosts = checkedReport;
             fixtures = fixtureReport;
             compositions = compositionReport;
+            existingInstallations = existingReport;
           }
         )
       );

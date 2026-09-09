@@ -3,12 +3,17 @@
     system = "x86_64-linux";
     track = "unstable";
     capabilities = [
-      "os-disk"
+      "existing-storage"
+      "headless"
       "persistence"
       "access"
       "workstation"
-      "gaming"
+      "laptop"
     ];
-    deployment.enable = false;
+    deployment = {
+      enable = true;
+      hostname = "192.168.20.2";
+      sshUser = "marcos";
+    };
   };
 }
