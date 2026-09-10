@@ -9,6 +9,12 @@ creation_rules:
       - age:
           - *operator
           - *thinkpad
+  # Single-use ThinkPad enrollment key; no new identity or recipient.
+  - path_regex: ^secrets/hosts/thinkpad-tailscale\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *thinkpad
   # Separate campus placeholders; the existing password/PSK file stays intact.
   - path_regex: ^secrets/hosts/thinkpad-senecanet\.yaml$
     key_groups:

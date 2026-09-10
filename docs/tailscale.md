@@ -4,7 +4,7 @@ See [ADR 0009](adr/0009-tailscale-and-opentofu.md) and [dated API evidence](rese
 
 ## Current status — 2026-09-10
 
-**Policy applied (operator-reported); clients not enrolled.** The operator confirmed a separate minimally scoped write client and a fresh, fully reviewed plan changing only `tailscale_acl.policy`, then reported **Apply complete: 0 added, 1 changed, 0 destroyed** under the explicit policy-only authorization. DNS was excluded from the reviewed change. Live readback/no-drift and post-apply recovery checks remain pending; a successful apply is not client enrollment or traffic acceptance. See the [apply evidence record](validation.md#operator-reported-policy-apply-and-non-saving-verification--2026-09-10).
+**Policy maintenance complete (operator-reported); clients not enrolled.** The operator confirmed a separate minimally scoped write client and a fresh, fully reviewed plan changing only `tailscale_acl.policy`, then reported **Apply complete: 0 added, 1 changed, 0 destroyed** under the explicit policy-only authorization. DNS was excluded from the reviewed change. The operator subsequently reported **No changes** from verification and confirmed post-apply independent recovery access and checked protected backups. These completed policy checks are not client enrollment or traffic acceptance. See the [apply evidence record](validation.md#operator-reported-policy-apply-and-non-saving-verification--2026-09-10).
 
 Before application, the operator confirmed the intended tailnet, scopes, exclusive writer control, unused/uniquely correct fleet tags, independent administrative access and tested offline policy/DNS/state-backup recovery. The prior plan remains at `$TAILSCALE_STATE_DIR/reviewed-plan-71i6d10m/change.tfplan`; the freshly applied plan is retained at `$TAILSCALE_STATE_DIR/change.tfplan`. After the apply report, the agent checked only tailnet binding, ownership/permissions (`0700` directory, `0600` state/plan files) and encrypted envelopes, without decryption, mutations or API access. Preserve these files and use the [non-saving verification workflow](#post-apply-verification), not another apply.
 
@@ -149,7 +149,60 @@ just tailnet verify
 
 `verify` reuses all wrapper guards and runs a normal refreshing `tofu plan -input=false -lock-timeout=60s -detailed-exitcode`, **without `-out`**. It reads the managed live policy and MagicDNS preference but does not apply changes or create/replace a saved plan. The detailed result is **0 = no changes**, **2 = differences proposed**, **1 = error**; `just` reports a failed recipe for either nonzero result. A guard/input failure also remains a failure. Do not convert differences/errors into a passing check, use `-refresh=false`/targeting, or apply a proposed correction without reviewing it and obtaining new authorization.
 
-Expect **No changes**. Report only that result (or sanitized differences/errors), and separately confirm the intended live policy/MagicDNS plus administrative and out-of-band recovery access still work after the update. Keep raw plans, policy contents and credentials private. Verification covers only managed configuration, not real allowed/denied traffic, tag cardinality over time, node identity durability or hardware boot. Update protected state backups after success and retain the applied plan until deliberate archival; exit the private shell to drop its credential environment. The real post-apply verification has not yet been completed or confirmed.
+Expect **No changes**. Report only that result (or sanitized differences/errors), and separately confirm the intended live policy/MagicDNS plus administrative and out-of-band recovery access still work after the update. Keep raw plans, policy contents and credentials private. Verification covers only managed configuration, not real allowed/denied traffic, tag cardinality over time, node identity durability or hardware boot. Update protected state backups after success and retain the applied plan until deliberate archival; exit the private shell to drop its credential environment. For this maintenance task, the operator has reported **No changes** and confirmed post-update administrative/out-of-band access plus updated, checked protected backups. Do not repeat completed checks just to update status documentation.
+
+## ThinkPad auth-key preparation
+
+The operator reports deleting the nodes in the control plane. ThinkPad's retained profile is therefore **not proof of a reusable login**, even though its saved `LoggedOut` is false. Its live state path is absent; the backing directory/file were operator-confirmed as root-owned `0700`/`0600`. The private projection showed one selected profile with an old non-fleet tag, shields-up enabled, and no saved routing, Serve, SSH, operator or remote-management features. Preserve that backing file; do not erase it or restore a deleted control-plane identity. Its protected host-state backup is a separate prerequisite from OpenTofu backups and has not yet been confirmed.
+
+The exact rule for `secrets/hosts/thinkpad-tailscale.yaml` uses the **existing operator and dedicated ThinkPad public recipients**. No auth-key ciphertext, declaration or client enablement is supplied by this preparation. Complete these steps privately:
+
+1. In the intended tailnet **`Td9HdopnWQ11CNTRL`**, create an **auth key**, not an OAuth client/API key: short-lived, **Reusable off**, **Ephemeral off**, and only **`tag:fleet-thinkpad`** (not the old tag). Leave **Preauthorized off** if offered and approve the device after first contact if required; do not broaden permissions or turn off tailnet approval to speed up enrollment. The key is for this ThinkPad only. Keep its value out of chat and do not run `tailscale up` manually.
+2. From the repository root, use the clean private development shell described in operator setup. No tailnet OAuth credentials or OpenTofu passphrase are needed. Run the following block. It prompts without echo, encrypts through stdin, verifies decryption/MAC and exact value with the **existing dedicated ThinkPad age identity** in an isolated empty HOME, then creates only ciphertext with no overwrite. `sudo` authenticates privately; no key value enters command arguments, environment variables, logs or plaintext files.
+
+   ```sh
+   python3 - <<'PY'
+   import getpass, json, os, re, resource, shutil, subprocess, sys, tempfile, warnings
+   from pathlib import Path
+
+   os.umask(0o077)
+   resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+   warnings.simplefilter("error", getpass.GetPassWarning)
+   destination = Path("secrets/hosts/thinkpad-tailscale.yaml")
+   try:
+       if os.path.lexists(destination):
+           raise RuntimeError("Refuse overwrite")
+       key = getpass.getpass("ThinkPad single-use auth key (hidden): ")
+       if not re.fullmatch(r"tskey-auth-[A-Za-z0-9-]+", key):
+           raise RuntimeError("Expected an auth key")
+       payload = {"tailscale-auth-key": key}
+       sops = shutil.which("sops")
+       encrypted = subprocess.run(
+           [sops, "encrypt", "--filename-override", str(destination),
+            "--input-type", "json", "--output-type", "yaml"],
+           input=json.dumps(payload), text=True, capture_output=True, check=True,
+       ).stdout
+       with tempfile.TemporaryDirectory(prefix="infra-sops-audit-", dir="/tmp") as home:
+           checked = subprocess.run(
+               [shutil.which("sudo"), "--", shutil.which("env"), "-i", "HOME=" + home,
+                "SOPS_AGE_KEY_FILE=/persist/var/lib/sops-nix/key.txt",
+                sops, "decrypt", "--input-type", "yaml", "--output-type", "json"],
+               input=encrypted, text=True, capture_output=True, check=True,
+           ).stdout
+           if json.loads(checked) != payload:
+               raise RuntimeError("Decrypted value mismatch")
+       fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+       with os.fdopen(fd, "w") as output:
+           output.write(encrypted)
+   except (Exception, KeyboardInterrupt):
+       sys.exit("STOP: preparation failed; values withheld. Preserve existing files and investigate privately.")
+   print("ThinkPad enrollment ciphertext created; dedicated-key decryption checked.")
+   PY
+   ```
+
+3. Run `just secret-check` before staging anything and report only success/failure, confirmation of the exact key settings above, and whether the retained **host-state** backup is protected and recoverable. Exit the private shell. Do not paste the key or raw diagnostics, overwrite a failed/existing file automatically, or repeat node deletion.
+
+Once those real prerequisites are confirmed, select this ciphertext in a root-only runtime `tailscale-auth-key` declaration, choose `auth-key` mode and enable only ThinkPad's reviewed candidate. Run canonical checks/readiness/build **once for that substantive change**, review the complete candidate (including the unactivated desktop fix), then obtain activation authorization. If the daemon does not report `NeedsLogin`, the reconciler will not submit the key or force a reset; stop and review instead of bypassing that guard. No other host rollout is implied.
 
 ## Per-host rollout
 
@@ -165,4 +218,4 @@ Expect **No changes**. Report only that result (or sanitized differences/errors)
 
 `just check` covers both-track staged/enabled fixtures, own-track packages, persistence/mount requirements, review/secret/tag/override rejection, native CLI flag availability, offline mocked reconciliation/wrapper behavior, an exact initial-policy oracle with widening regressions, native OpenTofu schema/mock-provider plans and synthetic local encrypted-state/saved-plan tests including non-saving no-change/drift statuses, retained-file preservation and wrong-key/plaintext rejection. The encryption test's `terraform_data` apply writes only a temporary local fixture: **no cloud/tailnet provider, host activation, installer or daemon is run**.
 
-These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. Read-only access/scopes, complete diff review and offline backup recovery are now operator-confirmed, separately from these tests. Exclusive policy-writer control, unused/uniquely correct fleet-tag assignments and independent administrative recovery access are now operator-confirmed for this maintenance task. The minimal write scopes and fresh exact policy-only diff were subsequently operator-confirmed, followed by a successful apply report. These attestations are not blanket authorization for later changes. The report is evidence of API acceptance, not an agent-observed readback or real allowed/denied flow test. Post-apply no-drift and recovery verification remain outstanding. Per-host state/enrollment credentials and remote commissioning remain open; no client review/readiness flag has changed. Deployment and live enrollment are not complete.
+These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. Read-only access/scopes, complete diff review and offline backup recovery are now operator-confirmed, separately from these tests. Exclusive policy-writer control, unused/uniquely correct fleet-tag assignments and independent administrative recovery access are now operator-confirmed for this maintenance task. The minimal write scopes and fresh exact policy-only diff were subsequently operator-confirmed, followed by a successful apply report. These attestations are not blanket authorization for later changes. The report is evidence of API acceptance, not an agent-observed readback or real allowed/denied flow test. The operator subsequently confirmed no-drift verification, post-apply independent recovery and checked protected backups. Host-state backup and newly provisioned enrollment-credential review remain separate. Per-host state/enrollment credentials and remote commissioning remain open; no client review/readiness flag has changed. Deployment and live enrollment are not complete.
