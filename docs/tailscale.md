@@ -8,7 +8,7 @@ See [ADR 0009](adr/0009-tailscale-and-opentofu.md) and [dated API evidence](rese
 
 Before application, the operator confirmed the intended tailnet, scopes, exclusive writer control, unused/uniquely correct fleet tags, independent administrative access and tested offline policy/DNS/state-backup recovery. The prior plan remains at `$TAILSCALE_STATE_DIR/reviewed-plan-71i6d10m/change.tfplan`; the freshly applied plan is retained at `$TAILSCALE_STATE_DIR/change.tfplan`. After the apply report, the agent checked only tailnet binding, ownership/permissions (`0700` directory, `0600` state/plan files) and encrypted envelopes, without decryption, mutations or API access. Preserve these files and use the [non-saving verification workflow](#post-apply-verification), not another apply.
 
-The public tailnet ID **`Td9HdopnWQ11CNTRL`** is recorded in [`tofu/tailscale/tailnet.json`](../tofu/tailscale/tailnet.json). Both OpenTofu and the wrapper read this single source; optional environment confirmation cannot retarget it. **Client rollout remains disabled** while host-specific prerequisites are unresolved. All four compositions include the capability, but `fleet.tailscale.enable = false`: no daemon, enrollment unit, new firewall port or persistence bind is added to a real host. Existing commissioning/review flags are unchanged. `just tailscale-inventory` reports separate rollout prerequisites; `just inventory` still reports OS commissioning.
+The public tailnet ID **`Td9HdopnWQ11CNTRL`** is recorded in [`tofu/tailscale/tailnet.json`](../tofu/tailscale/tailnet.json). Both OpenTofu and the wrapper read this single source; optional environment confirmation cannot retarget it. **ThinkPad's candidate now enables auth-key enrollment; it has not been activated.** Its supplied SOPS key and operator-reviewed retained state, policy/tag intent and protected host-state backup are selected. The candidate adds the daemon/enrollment unit, UDP 41641 and the existing backing-state bind. Racknerd, Bastion and Dino remain disabled with their review blockers intact; OS commissioning flags are unchanged. `just tailscale-inventory` reports separate rollout prerequisites; `just inventory` still reports OS commissioning.
 
 The earlier authorized read-only SSH inventory used previously verified host keys, strict checking and no key updates/forwarding. During that inventory, no deployment, reboot, state read/copy/reset, secret decryption or tailnet API operation occurred:
 
@@ -153,56 +153,20 @@ Expect **No changes**. Report only that result (or sanitized differences/errors)
 
 ## ThinkPad auth-key preparation
 
-The operator reports deleting the nodes in the control plane. ThinkPad's retained profile is therefore **not proof of a reusable login**, even though its saved `LoggedOut` is false. Its live state path is absent; the backing directory/file were operator-confirmed as root-owned `0700`/`0600`. The private projection showed one selected profile with an old non-fleet tag, shields-up enabled, and no saved routing, Serve, SSH, operator or remote-management features. Preserve that backing file; do not erase it or restore a deleted control-plane identity. Its protected host-state backup is a separate prerequisite from OpenTofu backups and has not yet been confirmed.
+The operator reports deleting the nodes in the control plane. ThinkPad's retained profile is therefore **not proof of a reusable login**, even though its saved `LoggedOut` is false. Its live state path is absent; the backing directory/file were operator-confirmed as root-owned `0700`/`0600`. The private projection showed one selected profile with an old non-fleet tag, shields-up enabled, and no saved routing, Serve, SSH, operator or remote-management features. Preserve that backing file; do not erase it or restore a deleted control-plane identity. The operator has now confirmed a protected, recoverable host-state backup, separately from OpenTofu backups.
 
-The exact rule for `secrets/hosts/thinkpad-tailscale.yaml` uses the **existing operator and dedicated ThinkPad public recipients**. No auth-key ciphertext, declaration or client enablement is supplied by this preparation. Complete these steps privately:
+The exact rule for `secrets/hosts/thinkpad-tailscale.yaml` uses the **existing operator and dedicated ThinkPad public recipients**. The operator supplied this ciphertext using `sops edit`; its encrypted auth-key field and exact recipients passed structural checks. ThinkPad's candidate selects it as the root-only runtime secret and enables `auth-key` mode. Decryption/delivery and real enrollment are not proven by those checks. The following is the simple provisioning procedure, not an instruction to regenerate the completed key:
 
 1. In the intended tailnet **`Td9HdopnWQ11CNTRL`**, create an **auth key**, not an OAuth client/API key: short-lived, **Reusable off**, **Ephemeral off**, and only **`tag:fleet-thinkpad`** (not the old tag). Leave **Preauthorized off** if offered and approve the device after first contact if required; do not broaden permissions or turn off tailnet approval to speed up enrollment. The key is for this ThinkPad only. Keep its value out of chat and do not run `tailscale up` manually.
-2. From the repository root, use the clean private development shell described in operator setup. No tailnet OAuth credentials or OpenTofu passphrase are needed. Run the following block. It prompts without echo, encrypts through stdin, verifies decryption/MAC and exact value with the **existing dedicated ThinkPad age identity** in an isolated empty HOME, then creates only ciphertext with no overwrite. `sudo` authenticates privately; no key value enters command arguments, environment variables, logs or plaintext files.
+2. In a private terminal and development shell, use a trusted local editor with swap/backups and AI/cloud integrations disabled. Put the real key in the `tailscale-auth-key` YAML field; let SOPS manage encryption/MACs. No OAuth credential or OpenTofu passphrase is needed:
 
    ```sh
-   python3 - <<'PY'
-   import getpass, json, os, re, resource, shutil, subprocess, sys, tempfile, warnings
-   from pathlib import Path
-
-   os.umask(0o077)
-   resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-   warnings.simplefilter("error", getpass.GetPassWarning)
-   destination = Path("secrets/hosts/thinkpad-tailscale.yaml")
-   try:
-       if os.path.lexists(destination):
-           raise RuntimeError("Refuse overwrite")
-       key = getpass.getpass("ThinkPad single-use auth key (hidden): ")
-       if not re.fullmatch(r"tskey-auth-[A-Za-z0-9-]+", key):
-           raise RuntimeError("Expected an auth key")
-       payload = {"tailscale-auth-key": key}
-       sops = shutil.which("sops")
-       encrypted = subprocess.run(
-           [sops, "encrypt", "--filename-override", str(destination),
-            "--input-type", "json", "--output-type", "yaml"],
-           input=json.dumps(payload), text=True, capture_output=True, check=True,
-       ).stdout
-       with tempfile.TemporaryDirectory(prefix="infra-sops-audit-", dir="/tmp") as home:
-           checked = subprocess.run(
-               [shutil.which("sudo"), "--", shutil.which("env"), "-i", "HOME=" + home,
-                "SOPS_AGE_KEY_FILE=/persist/var/lib/sops-nix/key.txt",
-                sops, "decrypt", "--input-type", "yaml", "--output-type", "json"],
-               input=encrypted, text=True, capture_output=True, check=True,
-           ).stdout
-           if json.loads(checked) != payload:
-               raise RuntimeError("Decrypted value mismatch")
-       fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-       with os.fdopen(fd, "w") as output:
-           output.write(encrypted)
-   except (Exception, KeyboardInterrupt):
-       sys.exit("STOP: preparation failed; values withheld. Preserve existing files and investigate privately.")
-   print("ThinkPad enrollment ciphertext created; dedicated-key decryption checked.")
-   PY
+   sops edit secrets/hosts/thinkpad-tailscale.yaml
    ```
 
 3. Run `just secret-check` before staging anything and report only success/failure, confirmation of the exact key settings above, and whether the retained **host-state** backup is protected and recoverable. Exit the private shell. Do not paste the key or raw diagnostics, overwrite a failed/existing file automatically, or repeat node deletion.
 
-Once those real prerequisites are confirmed, select this ciphertext in a root-only runtime `tailscale-auth-key` declaration, choose `auth-key` mode and enable only ThinkPad's reviewed candidate. Run canonical checks/readiness/build **once for that substantive change**, review the complete candidate (including the unactivated desktop fix), then obtain activation authorization. If the daemon does not report `NeedsLogin`, the reconciler will not submit the key or force a reset; stop and review instead of bypassing that guard. No other host rollout is implied.
+Those preparation prerequisites are now operator-confirmed and selected for ThinkPad only. Run canonical checks/readiness/build **once for the substantive candidate change**, review the complete candidate (including the unactivated desktop fix), then obtain activation authorization. If the daemon does not report `NeedsLogin`, the reconciler will not submit the key or force a reset; stop and review instead of bypassing that guard. No other host rollout is implied.
 
 ## Per-host rollout
 
@@ -218,4 +182,4 @@ Once those real prerequisites are confirmed, select this ciphertext in a root-on
 
 `just check` covers both-track staged/enabled fixtures, own-track packages, persistence/mount requirements, review/secret/tag/override rejection, native CLI flag availability, offline mocked reconciliation/wrapper behavior, an exact initial-policy oracle with widening regressions, native OpenTofu schema/mock-provider plans and synthetic local encrypted-state/saved-plan tests including non-saving no-change/drift statuses, retained-file preservation and wrong-key/plaintext rejection. The encryption test's `terraform_data` apply writes only a temporary local fixture: **no cloud/tailnet provider, host activation, installer or daemon is run**.
 
-These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. Read-only access/scopes, complete diff review and offline backup recovery are now operator-confirmed, separately from these tests. Exclusive policy-writer control, unused/uniquely correct fleet-tag assignments and independent administrative recovery access are now operator-confirmed for this maintenance task. The minimal write scopes and fresh exact policy-only diff were subsequently operator-confirmed, followed by a successful apply report. These attestations are not blanket authorization for later changes. The report is evidence of API acceptance, not an agent-observed readback or real allowed/denied flow test. The operator subsequently confirmed no-drift verification, post-apply independent recovery and checked protected backups. Host-state backup and newly provisioned enrollment-credential review remain separate. Per-host state/enrollment credentials and remote commissioning remain open; no client review/readiness flag has changed. Deployment and live enrollment are not complete.
+These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. Read-only access/scopes, complete diff review and offline backup recovery are now operator-confirmed, separately from these tests. Exclusive policy-writer control, unused/uniquely correct fleet-tag assignments and independent administrative recovery access are now operator-confirmed for this maintenance task. The minimal write scopes and fresh exact policy-only diff were subsequently operator-confirmed, followed by a successful apply report. These attestations are not blanket authorization for later changes. The report is evidence of API acceptance, not an agent-observed readback or real allowed/denied flow test. The operator subsequently confirmed no-drift verification, post-apply independent recovery and checked protected backups. ThinkPad's host-state backup and key provisioning are now operator-confirmed; only its state/policy review flags and candidate rollout are enabled. Key validity, dedicated-identity runtime decryption, device approval and enrollment remain runtime gates. Other hosts' state/enrollment credentials and remote commissioning remain open; no OS commissioning flag changed. Deployment and live enrollment are not complete.

@@ -3,7 +3,7 @@ let
   fleet = config;
   # Enable only the individually reviewed host, never all four at once.
   rollout = {
-    thinkpad = false;
+    thinkpad = true;
     racknerd = false;
     bastion = false;
     dino = false;

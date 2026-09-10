@@ -13,6 +13,12 @@ let
     racknerd = "stable";
     bastion = "stable";
   };
+  expectedTailscaleRollout = {
+    thinkpad = true;
+    dino = false;
+    racknerd = false;
+    bastion = false;
+  };
   tracks = {
     stable = inputs.nixpkgs-stable;
     unstable = inputs.nixpkgs-unstable;
@@ -58,6 +64,7 @@ let
       let
         system = config.flake.fleetConfigurations.${name};
         cfg = system.config;
+        tailscaleEnabled = expectedTailscaleRollout.${name};
       in
       assert lib.assertMsg (host.track == expectedTracks.${name}) "${name}: wrong Nixpkgs track";
       assert lib.assertMsg
@@ -110,7 +117,7 @@ let
           "diskoImages"
         ];
       assert lib.assertMsg (
-        !cfg.services.tailscale.enable
+        cfg.services.tailscale.enable == tailscaleEnabled
         && !cfg.services.xserver.enable
         && !cfg.programs.steam.enable
         && cfg.systemd.enableEmergencyMode
@@ -119,7 +126,9 @@ let
         && cfg.security.sudo.wheelNeedsPassword
         && !cfg.fleet.access.passwordlessSudo
         && cfg.networking.firewall.allowedTCPPorts == [ 22 ]
-        && cfg.networking.firewall.allowedUDPPorts == (if name == "thinkpad" then [ 5353 ] else [ ])
+        &&
+          lib.sort builtins.lessThan cfg.networking.firewall.allowedUDPPorts
+          == (lib.optional (name == "thinkpad") 5353 ++ lib.optional tailscaleEnabled 41641)
         &&
           cfg.networking.firewall.allowedTCPPortRanges == (
             if name == "thinkpad" then
@@ -133,15 +142,41 @@ let
               [ ]
           )
         && cfg.networking.firewall.allowedUDPPortRanges == cfg.networking.firewall.allowedTCPPortRanges
-        && !cfg.fleet.tailscale.enable
+        && cfg.fleet.tailscale.enable == tailscaleEnabled
         && cfg.fleet.tailscale.tag == "tag:fleet-${name}"
-        && cfg.fleet.tailscale.enrollmentMode == null
-        && !cfg.fleet.tailscale.stateReviewed
-        && !cfg.fleet.tailscale.policyReviewed
-        && cfg.fleet.tailscale.missing != [ ]
-        && !(cfg.systemd.services ? fleet-tailscale)
-        && !(lib.elem "/var/lib/tailscale" host.persistence.directories)
-      ) "${name}: SSH/firewall/disabled-Tailscale-rollout/recovery policy regressed";
+        && (
+          if tailscaleEnabled then
+            let
+              key = cfg.sops.secrets.tailscale-auth-key;
+            in
+            cfg.fleet.tailscale.enrollmentMode == "auth-key"
+            && cfg.fleet.tailscale.authKeySecret == "tailscale-auth-key"
+            && cfg.fleet.tailscale.stateReviewed
+            && cfg.fleet.tailscale.policyReviewed
+            && cfg.fleet.tailscale.missing == [ ]
+            && cfg.systemd.services ? fleet-tailscale
+            && lib.elem "/var/lib/tailscale" host.persistence.directories
+            && cfg.services.tailscale.package.drvPath == system.pkgs.tailscale.drvPath
+            && cfg.services.tailscale.authKeyFile == null
+            && !(lib.elem "tailscale0" cfg.networking.firewall.trustedInterfaces)
+            && key.sopsFile == ../secrets/hosts/thinkpad-tailscale.yaml
+            && key.key == "tailscale-auth-key"
+            && key.path == "/run/secrets/tailscale-auth-key"
+            && key.owner == "root"
+            && key.group == "root"
+            && key.mode == "0400"
+            && !key.neededForUsers
+            && key.restartUnits == [ "fleet-tailscale.service" ]
+          else
+            cfg.fleet.tailscale.enrollmentMode == null
+            && cfg.fleet.tailscale.authKeySecret == null
+            && !cfg.fleet.tailscale.stateReviewed
+            && !cfg.fleet.tailscale.policyReviewed
+            && cfg.fleet.tailscale.missing != [ ]
+            && !(cfg.systemd.services ? fleet-tailscale)
+            && !(lib.elem "/var/lib/tailscale" host.persistence.directories)
+        )
+      ) "${name}: SSH/firewall/reviewed-Tailscale-rollout/recovery policy regressed";
       assert lib.assertMsg (
         if name == "thinkpad" then
           cfg.programs.hyprland.enable
@@ -247,6 +282,7 @@ let
                   "seneca-identity"
                   "seneca-password"
                 ]
+                ++ lib.optional tailscaleEnabled "tailscale-auth-key"
                 ++ [ "wifi-psk" ]
               )
           )

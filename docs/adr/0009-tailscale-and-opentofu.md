@@ -1,6 +1,6 @@
 # ADR 0009 — Staged Tailscale clients and OpenTofu tailnet ownership
 
-- Status: accepted design; rollout disabled pending verified bootstrap facts
+- Status: accepted design; ThinkPad candidate enabled, other rollouts disabled
 - Date: 2026-09-10
 - Amends the VPN deferral in ADR 0005 and the Tailscale exclusion in ADR 0006
 
@@ -10,7 +10,7 @@ The operator wants declarative enrollment for all four fleet machines, plus a pe
 
 ## Decision
 
-- Keep the daemon and private persistence in a cohesive class-checked deferred `tailscale` capability, using each host's own Nixpkgs. Every host composes it, but its explicit `fleet.tailscale.enable` is **false**. This intentional staged-rollout exception to enable-on-import preserves commissioned ThinkPad's existing behavior while missing feature prerequisites remain visible separately in `tailscalePlan`. Enabling enforces genuine state/policy review and a selected enrollment mode through normal bootstrap assertions; no host-ready/review flag is changed to pass evaluation.
+- Keep the daemon and private persistence in a cohesive class-checked deferred `tailscale` capability, using each host's own Nixpkgs. Every host composes it; `fleet.tailscale.enable` is now **true only for ThinkPad's unactivated candidate**, after operator-reviewed state/backup and exact-tag key provisioning. This intentional staged-rollout exception to enable-on-import preserves commissioned ThinkPad's existing behavior while missing feature prerequisites remain visible separately in `tailscalePlan`. Enabling enforces genuine state/policy review and a selected enrollment mode through normal bootstrap assertions; review flags record actual operator review, not a shortcut to pass evaluation; no OS commissioning flag is changed.
 - Persist only `/var/lib/tailscale`, with root-only backing and explicit mount dependencies. Authentication uses per-host SOPS-delivered keys via the CLI's file-reference API, not secret values in argv/store inputs. Preserve running identities, reconnect stopped identities without resubmitting keys, fail for pending approval or unreviewed/missing enrollment, and reconcile explicit non-routing/non-SSH preferences. No blanket trusted interface or forced state reset. Existing private state is neither read nor migrated by evaluation/activation code.
 - Use plain OpenTofu HCL and a separate policy file under `tofu/tailscale/`; no Terranix layer, new flake inputs, host package mixing or second policy publisher. Stable development tooling provides OpenTofu and a Nix-pinned offline provider mirror. `tofu/tailscale/tailnet.json` is the shared public target identity; environment confirmation cannot retarget the provider or its state wrapper. Only the whole policy and MagicDNS are initially managed. Existing resources must be imported/reviewed, destruction/reset protections remain, and native publisher/editor conflicts require explicit reconciliation.
 - Allow only ThinkPad to initiate TCP 22 and ICMP toward Racknerd, Bastion and Dino. No other peer access, including family/self-device access. Use individual administrator-controlled fleet tags; administrators must ensure each tag identifies exactly one intended device. Tags are not unique hardware identities; keys/tag administration are security-sensitive. Ordinary OpenSSH/account/privilege rules remain unchanged.
