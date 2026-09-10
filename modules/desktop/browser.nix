@@ -17,9 +17,9 @@
       };
 
       youtubeEnhancerXpi = pkgs.fetchurl {
-        name = "youtube-enhancer-1.34.2.xpi";
-        url = "https://addons.mozilla.org/firefox/downloads/file/4973377/youtube_enhancer_vc-1.34.2.xpi";
-        hash = "sha256-9GCDlsZZFvHxwFXaMW+oF8cBCweZ8Jj5loEdqrkV7F0=";
+        name = "youtube-enhancer-1.35.0.xpi";
+        url = "https://addons.mozilla.org/firefox/downloads/file/5008750/youtube_enhancer_vc-1.35.0.xpi";
+        hash = "sha256-lDFZDCYVqES5UGBg8lcl+dNH2Tv9dWNqsa+m6NBZiiw=";
       };
 
       sponsorBlockXpi = pkgs.fetchurl {

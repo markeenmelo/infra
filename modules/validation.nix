@@ -148,6 +148,12 @@ let
           && !cfg.home-manager.users.marcos.home.version.isReleaseBranch
           && cfg.home-manager.users.marcos.warnings == [ ]
           && !cfg.hardware.graphics.enable32Bit
+          && cfg.hardware.bluetooth.enable
+          && cfg.hardware.bluetooth.powerOnBoot
+          && cfg.home-manager.users.marcos.wayland.windowManager.hyprland.settings.config.input.touchpad.disable_while_typing
+          && !cfg.home-manager.users.marcos.programs.noctalia.settings.bar.main.auto_hide
+          && cfg.home-manager.users.marcos.programs.pi-coding-agent.settings.defaultProvider == "openai-codex"
+          && cfg.home-manager.users.marcos.programs.pi-coding-agent.settings.defaultModel == "gpt-6-astra"
           && lib.all (module: lib.elem module cfg.boot.initrd.availableKernelModules) [
             "xhci_pci"
             "thunderbolt"
@@ -160,8 +166,15 @@ let
           && lib.elem "kvm-intel" cfg.boot.kernelModules
           && !(lib.elem "nvidia" cfg.services.xserver.videoDrivers)
           &&
-            lib.hasInfix "1920x1200@60.003"
-              cfg.home-manager.users.marcos.xdg.configFile."hypr/hyprland.lua".text
+            lib.all
+              (marker: lib.hasInfix marker cfg.home-manager.users.marcos.xdg.configFile."hypr/hyprland.lua".text)
+              [
+                "1920x1200@60.003"
+                "fleet-output-policy"
+                "switch:on:Lid Switch"
+                "switch:off:Lid Switch"
+                "hyprland.start"
+              ]
         else
           !cfg.programs.hyprland.enable
           && !cfg.services.displayManager.enable
@@ -673,6 +686,7 @@ let
         && home.services.kdeconnect.enable
         && !home.services.network-manager-applet.enable
         && lib.all (file: !file.force) (lib.attrValues home.home.file)
+        && home.home.fileActivator == "legacy"
         && !(home.systemd.user.services ? hyprland)
         && !(home.systemd.user.services ? hypridle)
         && !(lib.hasInfix "AQ_DRM_DEVICES" home.xdg.configFile."hypr/hyprland.lua".text)
@@ -711,19 +725,18 @@ let
       home = cfg.home-manager.users.${user};
       browser = lib.findFirst (package: (package.pname or "") == "zen-browser") null home.home.packages;
     in
-    assert lib.assertMsg
-      (
-        lib.elem system.pkgs.nerd-fonts.jetbrains-mono home.home.packages
-        && !(lib.elem system.pkgs.jetbrains-mono home.home.packages)
-        && !(lib.elem system.pkgs.jetbrains-mono home.programs.zed-editor.extraPackages)
-        && home.fonts.fontconfig.defaultFonts.monospace == [ "JetBrainsMono Nerd Font" ]
-        && home.programs.ghostty.settings.font-family == [ "JetBrainsMono Nerd Font" ]
-        && home.programs.zed-editor.userSettings.buffer_font_family == "JetBrainsMono Nerd Font"
-        && home.programs.zed-editor.userSettings.ui_font_family == "JetBrainsMono Nerd Font"
-        && home.programs.zed-editor.userSettings.terminal.font_family == "JetBrainsMono Nerd Font"
-        && cfg.fonts.fontconfig.defaultFonts.emoji == [ "Noto Color Emoji" ]
-      )
-      "${name}: use only JetBrainsMono Nerd Font for monospace apps; preserve native color-emoji fallback";
+    assert lib.assertMsg (
+      lib.elem system.pkgs.nerd-fonts.jetbrains-mono home.home.packages
+      && !(lib.elem system.pkgs.jetbrains-mono home.home.packages)
+      && !(lib.elem system.pkgs.jetbrains-mono home.programs.zed-editor.extraPackages)
+      && home.fonts.fontconfig.defaultFonts.monospace == [ "JetBrainsMono Nerd Font" ]
+      && home.programs.ghostty.settings.font-family == [ "JetBrainsMono Nerd Font" ]
+      && home.programs.zed-editor.userSettings.buffer_font_family == "JetBrainsMono Nerd Font"
+      && home.programs.zed-editor.userSettings.ui_font_family == "JetBrainsMono Nerd Font"
+      && home.programs.zed-editor.userSettings.terminal.font_family == "JetBrainsMono Nerd Font"
+      && !home.programs.zed-editor.userSettings.search.search_on_type
+      && cfg.fonts.fontconfig.defaultFonts.emoji == [ "Noto Color Emoji" ]
+    ) "${name}: font policy or explicit-submit Zed search behavior regressed";
     system.pkgs.runCommand "${name}-desktop-config" { } ''
       export HOME="$TMPDIR/home"
       export XDG_RUNTIME_DIR="$TMPDIR/runtime"
@@ -747,6 +760,8 @@ let
       ${lib.getExe system.pkgs.ghostty} +validate-config --config-file=${
         home.xdg.configFile."ghostty/config".source
       }
+      HERDR_CONFIG_PATH=${home.xdg.configFile."herdr/config.toml".source} \
+        ${lib.getExe system.pkgs.herdr} config check
       ${lib.getExe system.pkgs.python3} - <<'PY'
       import json, tomllib
       with open("${
@@ -759,7 +774,6 @@ let
         home.home.file."${home.programs.pi-coding-agent.configDir}/settings.json".source
       }"]:
           with open(filename) as stream: json.load(stream)
-      with open("${home.xdg.configFile."herdr/config.toml".source}", "rb") as stream: tomllib.load(stream)
       PY
       grep -qx 'Hidden=true' ${home.xdg.configFile.autostart.source}/nm-applet.desktop
       grep -qx 'Hidden=true' ${home.xdg.configFile.autostart.source}/org.kde.kdeconnect.daemon.desktop

@@ -36,7 +36,7 @@
         pname = "infra-pi-extensions";
         version = "1.0.0";
         src = ./assets/pi-extensions;
-        npmDepsHash = "sha256-uZZv7Q2+v9BCeH25U8Q8phHgS84iH+RueRwYHmh0URc=";
+        npmDepsHash = "sha256-xPpQx0fyabZDxzg2vYHIA8XhLelEXYS3CEdKR9+5qCE=";
         npmFlags = [ "--legacy-peer-deps" ];
         dontNpmBuild = true;
 
@@ -98,6 +98,9 @@
               allowOtherProviders = true;
               searchMode = "auto";
               searchContextSize = "medium";
+              # pi-codex-api 0.4 defaults to Images 2.5 Flare. Preserve the
+              # previously reviewed backend unless it is changed deliberately.
+              imageModel = "gpt-image-2";
               imageQuality = "auto";
               usageStatus = true;
               usagePollInterval = 5;
@@ -132,7 +135,7 @@
           lastChangelogVersion = pkgs.pi-coding-agent.version;
           theme = "dark";
           defaultProvider = "openai-codex";
-          defaultModel = "gpt-5.6-sol";
+          defaultModel = "gpt-6-astra";
           defaultThinkingLevel = "xhigh";
           # Never trust a checkout implicitly; the agent must ask per project.
           defaultProjectTrust = "ask";

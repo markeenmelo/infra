@@ -27,7 +27,7 @@
         wallpaper.enabled = false;
         bar.main = {
           position = "top";
-          auto_hide = true;
+          auto_hide = false;
           start = [
             "launcher"
             "workspaces"

@@ -361,6 +361,9 @@
               arguments = [ "--stdio" ];
             };
           };
+          # Zed 1.19 enabled project search while typing by default. Preserve
+          # the previously reviewed explicit-submit behavior across the update.
+          search.search_on_type = false;
           telemetry = {
             diagnostics = false;
             metrics = false;

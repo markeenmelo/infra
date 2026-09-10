@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@99percentpeople/pi-codex-api": "0.3.2",
+    "@99percentpeople/pi-codex-api": "0.4.0",
     "@akepka/pi-cursor-cli-provider": "0.10.1",
     "@ayulab/pi-rewind": "0.4.6",
     "@juicesharp/rpiv-ask-user-question": "2.9.0",

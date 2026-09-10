@@ -33,7 +33,7 @@
     };
     sops-nix = {
       # Reuse the existing credential backend pin; see docs/research.md.
-      url = "github:Mic92/sops-nix/fbf759290e0cb0a98dfc813a4eb7d53ad1dacb57";
+      url = "github:Mic92/sops-nix/13616fff713a9f94055c66f15687ebdc17a335df";
       inputs.nixpkgs.follows = "nixpkgs-stable";
     };
     deploy-rs = {
