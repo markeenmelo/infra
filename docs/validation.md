@@ -156,6 +156,10 @@ Executed: locked-shell **`just fmt` and full `just check` passed**. Changed flee
 
 The operator authorized the completion sequence: no new backup (verified mitigations in [hosts](hosts.md#commissioning-decisions-2026-09-10-utc)), first-boot state regeneration, a one-time AccountsService backing-mode correction, and `networkReviewed`/`desktopReviewed` recorded as pre-activation reviews whose live behavior is the mandatory first-boot acceptance with the old generation as fallback. These reviews claim evaluated configuration correctness — manifests, ordering, PAM/policy fixtures, greeter/session settings — not a tested boot or connection. Anchor generation: clean `0810200`.
 
+## ThinkPad readiness — 2026-09-10
+
+After the verified AccountsService correction, `fleet.existingStorage.migrationReviewed` and `fleet.hosts.thinkpad.ready` are recorded with the chosen migration stance documented in [hosts](hosts.md#commissioning-decisions-2026-09-10-utc). Full `just check` passes with thinkpad in `nixosConfigurations` as a local activation target; `deploy.nodes` stays empty (local-only intent, `deployment.enable = false`). This records completed reviews, not a tested boot: the boot switch, reboot and first-boot acceptance are separate operator steps with the old generation as fallback.
+
 ## Not claimed / remaining acceptance
 
 No real host is commissioned for this baseline yet. Fixtures' derivations were evaluated, not full NixOS systems built or booted. No disko script, install, mount, repair, VM boot, remote dry activation, deployment, reboot, backup restore or production mutation was executed. Authorized read-only host inventory did contact the targets.
