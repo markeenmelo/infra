@@ -148,6 +148,16 @@ let
           && !cfg.home-manager.users.marcos.home.version.isReleaseBranch
           && cfg.home-manager.users.marcos.warnings == [ ]
           && !cfg.hardware.graphics.enable32Bit
+          && lib.all (module: lib.elem module cfg.boot.initrd.availableKernelModules) [
+            "xhci_pci"
+            "thunderbolt"
+            "nvme"
+            "usb_storage"
+            "usbhid"
+            "sd_mod"
+          ]
+          && lib.elem "dm-snapshot" cfg.boot.initrd.kernelModules
+          && lib.elem "kvm-intel" cfg.boot.kernelModules
           && !(lib.elem "nvidia" cfg.services.xserver.videoDrivers)
           &&
             lib.hasInfix "1920x1200@60.003"
@@ -765,8 +775,9 @@ let
       ''}
       touch "$out"
     '';
-  # Evaluation-only campus template: encrypted replacement markers are NOT
-  # credentials. Inspect profiles/manifest only, never export this as a host.
+  # Evaluation-only campus profile/manifest branch, never an exported host.
+  # Key selection alone can pass on encrypted markers; actual credential/MAC
+  # verification is a separate private operation, not performed by checks.
   senecaTemplate =
     (config.flake.fleetConfigurations.thinkpad.extendModules {
       modules = [
@@ -1041,7 +1052,7 @@ in
       # Parse actual declared home/campus ciphertext keys, never decrypt them.
       thinkpad-wifi-manifest =
         config.flake.fleetConfigurations.thinkpad.config.system.build.sops-nix-manifest;
-      # Placeholder key selection only, not decryption or usable credentials.
+      # Key selection can pass on markers; no decryption or credential acceptance.
       senecanet-template-manifest = senecaTemplate.system.build.sops-nix-manifest;
       thinkpad-desktop-config =
         desktopConfigCheck "thinkpad" config.flake.fleetConfigurations.thinkpad

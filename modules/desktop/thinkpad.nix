@@ -1,5 +1,8 @@
 {
   fleet.hosts.thinkpad.module = { lib, ... }: {
+    # Operator-run private audit, 2026-09-10: MAC/decryption and filled scalar
+    # checks passed with the dedicated identity. No campus connection tested.
+    fleet.wifi.senecaSopsFile = ../../secrets/hosts/thinkpad-senecanet.yaml;
     home-manager.users.marcos = {
       # Deliberate initial compatibility baseline for this NEW home configuration;
       # it is not derived from the moving Home Manager or Nixpkgs version.
