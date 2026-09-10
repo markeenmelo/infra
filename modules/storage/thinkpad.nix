@@ -3,7 +3,11 @@
     fleet.existingStorage = {
       osDevice = "/dev/disk/by-id/nvme-eui.00a075013a594e93";
       bootMode = "uefi";
-      efiCanTouchVariables = true; # Existing installation policy; review before activation.
+      efiCanTouchVariables = true; # Preserve the verified existing NVRAM policy.
+      # 2026-09-10: active/first EFI entry matches this ESP and Limine; capacity,
+      # health metadata and operator-confirmed console/rescue recovery reviewed.
+      # This is preflight, not a new boot test or storage-operation permission.
+      bootReviewed = true;
     };
     # Preserve the existing LUKS2 container, mapper name, LVM and swap. No
     # formatting definition or passphrase/key input is part of the Nix store.
