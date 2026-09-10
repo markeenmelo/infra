@@ -27,7 +27,11 @@ root = pathlib.Path(os.environ['MOCK_ROOT'])
 with (root / 'calls').open('a') as output:
     output.write(' '.join(sys.argv[1:]) + '\\n')
 if sys.argv[1] == 'plan':
-    pathlib.Path(next(a[5:] for a in sys.argv if a.startswith('-out='))).write_text('TEST-ONLY-PLAN')
+    destination = next((a[5:] for a in sys.argv if a.startswith('-out=')), None)
+    if destination is not None:
+        pathlib.Path(destination).write_text('TEST-ONLY-PLAN')
+    if '-detailed-exitcode' in sys.argv:
+        sys.exit(int(os.environ.get('MOCK_VERIFY_EXIT', '0')))
 """)
         executable.chmod(0o755)
         self.state = self.root / "private-state"
@@ -56,6 +60,41 @@ if sys.argv[1] == 'plan':
         self.assertTrue(self.calls()[-1].startswith("apply -input=false -lock-timeout=60s "))
         self.assertNotEqual(self.run_command("plan").returncode, 0)
         self.assertNotIn(self.env["TF_VAR_state_passphrase"], "\n".join(self.calls()))
+
+    def test_verify_preserves_retained_files_and_exit_codes(self):
+        self.assertEqual(self.run_command("init").returncode, 0)
+        self.assertEqual(self.run_command("plan").returncode, 0)
+        plan = self.state / "change.tfplan"
+        plan.write_text("TEST-ONLY-RETAINED-APPLIED-PLAN")
+        state = self.state / "terraform.tfstate"
+        state.write_text("TEST-ONLY-MOCK-STATE")
+        before = {path: path.read_bytes() for path in (plan, state)}
+        for code in (0, 1, 2):
+            with self.subTest(code=code):
+                result = self.run_command("verify", {"MOCK_VERIFY_EXIT": str(code)})
+                self.assertEqual(result.returncode, code, result.stderr)
+                self.assertEqual(self.calls()[-1], "plan -input=false -lock-timeout=60s -detailed-exitcode")
+                self.assertEqual({path: path.read_bytes() for path in before}, before)
+        self.assertFalse(any(call.startswith("apply") for call in self.calls()))
+
+    def test_verify_does_not_create_a_saved_plan(self):
+        self.assertEqual(self.run_command("init").returncode, 0)
+        self.assertEqual(self.run_command("verify").returncode, 0)
+        self.assertFalse((self.state / "change.tfplan").exists())
+        self.assertEqual(self.calls()[-1], "plan -input=false -lock-timeout=60s -detailed-exitcode")
+
+    def test_verify_cannot_bypass_runtime_guards(self):
+        self.assertEqual(self.run_command("init").returncode, 0)
+        before = self.calls()
+        for env in [{"TAILSCALE_TAILNET": "TEST-ONLY-DIFFERENT"},
+                    {"TF_VAR_state_passphrase": ""}, {"TF_CLI_ARGS_plan": "-refresh=false"},
+                    {"TF_LOG": "TRACE"}, {"TF_ENCRYPTION": "TEST-ONLY-override"}]:
+            with self.subTest(env=env):
+                self.assertNotEqual(self.run_command("verify", env).returncode, 0)
+                self.assertEqual(self.calls(), before)
+        (self.state / "tailnet-id").write_text("TEST-ONLY-DIFFERENT\n")
+        self.assertNotEqual(self.run_command("verify").returncode, 0)
+        self.assertEqual(self.calls(), before)
 
     def test_uses_checked_in_identity_without_environment(self):
         self.env.pop("TAILSCALE_TAILNET")

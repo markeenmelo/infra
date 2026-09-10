@@ -36,6 +36,20 @@ for file in "$SCRATCH/smoke-state/terraform.tfstate" "$SCRATCH/smoke-state/chang
     exit 1
   fi
 done
+# Normal non-saving plans must report 0 for no changes and 2 for drift,
+# without replacing the retained encrypted plan or updating this local state.
+cp "$SCRATCH/smoke-state/change.tfplan" "$SCRATCH/retained-plan"
+cp "$SCRATCH/smoke-state/terraform.tfstate" "$SCRATCH/retained-state"
+cp main.tf "$SCRATCH/original-smoke-config"
+tofu plan -input=false -lock-timeout=60s -detailed-exitcode
+printf '%s\n' 'resource "terraform_data" "canary" { input = "TEST-ONLY-DRIFT-CANARY" }' > main.tf
+result=0
+tofu plan -input=false -lock-timeout=60s -detailed-exitcode > "$SCRATCH/drift.log" 2>&1 || result=$?
+[[ $result == 2 ]] || { printf 'Synthetic drift must return exit 2, got %s.\n' "$result" >&2; exit 1; }
+cp "$SCRATCH/original-smoke-config" main.tf
+cmp "$SCRATCH/retained-plan" "$SCRATCH/smoke-state/change.tfplan"
+cmp "$SCRATCH/retained-state" "$SCRATCH/smoke-state/terraform.tfstate"
+printf 'Native non-saving no-change/drift exit codes and retained-file checks passed.\n'
 if TF_VAR_state_passphrase='TEST-ONLY-WRONG-PASSPHRASE-0123456789012345' tofu plan -input=false > "$SCRATCH/wrong-key.log" 2>&1; then
   printf 'Wrong encryption key unexpectedly accepted.\n' >&2; exit 1
 fi

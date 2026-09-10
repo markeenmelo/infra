@@ -42,7 +42,7 @@ tailscale-inventory:
 tailscale-check:
     bash scripts/check-tailscale.sh
 
-# Operator-only: plan/import contact the API; apply changes the LIVE tailnet.
+# Operator-only: plan/verify/import contact the API; apply changes the LIVE tailnet.
 # Never a dependency of check, build, deploy or shell entry.
 tailnet operation:
     bash scripts/tailscale-tofu.sh "$1"

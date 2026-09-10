@@ -4,8 +4,8 @@ set -euo pipefail
 set +x
 umask 077
 fail() { printf '%s\n' "$1" >&2; exit 1; }
-[[ $# == 1 ]] || fail 'Usage: tailscale-tofu.sh init|plan|apply|import-policy|import-dns'
-case "$1" in init|plan|apply|import-policy|import-dns) ;; *) fail 'Unsupported operation.' ;; esac
+[[ $# == 1 ]] || fail 'Usage: tailscale-tofu.sh init|plan|verify|apply|import-policy|import-dns'
+case "$1" in init|plan|verify|apply|import-policy|import-dns) ;; *) fail 'Unsupported operation.' ;; esac
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 expected_tailnet=$(jq -er '.id | select(type == "string") | select(length > 0 and . != "-" and (test("\\s") | not))' "$root/tofu/tailscale/tailnet.json") \
   || fail 'The checked-in public tailnet identity is missing or invalid.'
@@ -48,6 +48,11 @@ case "$1" in
   init) tofu init -input=false -lockfile=readonly ;;
   import-policy) tofu import -input=false -lock-timeout=60s tailscale_acl.policy acl ;;
   import-dns) tofu import -input=false -lock-timeout=60s tailscale_dns_preferences.tailnet dns_preferences ;;
+  verify)
+    # Read live resources without saving or replacing the retained apply plan.
+    # Preserve native exit codes: 0 = no changes, 2 = drift, 1 = error.
+    tofu plan -input=false -lock-timeout=60s -detailed-exitcode
+    ;;
   plan)
     # Never leave an older plan available when a new plan attempt fails.
     [[ ! -e "$state/change.tfplan" ]] || fail 'A saved plan already exists. Review/archive it outside Git before creating another.'
