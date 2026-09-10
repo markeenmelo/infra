@@ -52,7 +52,7 @@ A **stable release migration** changes the numbered stable Nixpkgs URL in `flake
 
 `programs.nh.clean.enable = false`: no nh cleanup service/timer, generation pruning, automatic input updates or rebuild aliases. Keep recovery generations and use the reviewed input-update procedure above. Home Manager is integrated into NixOS; there is no standalone output for `nh home`.
 
-`just check` remains canonical and `just ready thinkpad` must still pass before a system build. **After genuine commissioning**, a build-only helper invocation is:
+`just check` remains canonical and `just ready thinkpad` must still pass before a system build. ThinkPad is commissioned (`ready = true`) and exported as `nixosConfigurations.thinkpad`. A build-only helper invocation is:
 
 ```sh
 just check
@@ -60,7 +60,7 @@ just ready thinkpad
 nh os build --hostname thinkpad --no-update-lock-file
 ```
 
-This cannot select the currently uncommissioned ThinkPad from `nixosConfigurations`. Do not bypass that gate, validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization; none was executed here. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
+This selects the commissioned ThinkPad output; the other three hosts remain unready and absent from `nixosConfigurations`. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
 
 ## Deployment and recovery
 

@@ -66,7 +66,7 @@
 
   # Endpoint recovered from the current printer configuration, not a discovered
   # scanner URI or a certificate-verification claim. Verify after authorization.
-  fleet.hosts.thinkpad.module = {
+  fleet.hosts.thinkpad.module = { lib, ... }: {
     hardware.printers = {
       ensureDefaultPrinter = "Epson_ET-3850";
       ensurePrinters = [
@@ -80,8 +80,11 @@
       ];
     };
     systemd.services.ensure-printers = {
-      wants = [ "network-online.target" ];
-      after = [ "network-online.target" ];
+      # `-m everywhere` queries the printer even when its queue already exists.
+      # Keep native provisioning explicit; ordinary boots use persisted CUPS
+      # queues/PPDs without needing the home network. Never retry it on rebuild.
+      wantedBy = lib.mkForce [ ];
+      restartIfChanged = false;
     };
   };
 

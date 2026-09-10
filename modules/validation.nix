@@ -185,6 +185,25 @@ let
           && !cfg.services.printing.enable
           && !cfg.programs.kdeconnect.enable
       ) "${name}: only ThinkPad may opt into the new Intel-first desktop; other hosts remain headless";
+      assert lib.assertMsg
+        (
+          name != "thinkpad"
+          || (
+            cfg.systemd.services.ensure-printers.wantedBy == [ ]
+            && cfg.systemd.services.ensure-printers.requiredBy == [ ]
+            && cfg.systemd.services.ensure-printers.startAt == [ ]
+            && !cfg.systemd.services.ensure-printers.restartIfChanged
+            && !(cfg.systemd.timers ? ensure-printers)
+            && !(cfg.systemd.services ? ensure-printer-classes)
+            && lib.all (unit: !(lib.elem "ensure-printers.service" (unit.wants ++ unit.requires))) (
+              lib.attrValues cfg.systemd.services ++ lib.attrValues cfg.systemd.targets
+            )
+            && !cfg.services.printing.stateless
+            && lib.elem "/var/lib/cups" host.persistence.directories
+            && cfg.hardware.printers.ensureDefaultPrinter == "Epson_ET-3850"
+          )
+        )
+        "${name}: printer provisioning must be manual, with persistent queues/PPDs and no boot/rebuild network dependency";
       assert lib.assertMsg (
         cfg.programs.nh.enable == (name == "thinkpad")
         && !cfg.programs.nh.clean.enable
@@ -779,6 +798,9 @@ let
       grep -qx 'Hidden=true' ${home.xdg.configFile.autostart.source}/org.kde.kdeconnect.daemon.desktop
       test -x ${browser}/bin/zen
       test -s ${browser}/share/applications/zen.desktop
+      # The sandbox has no system fontconfig file; use the package's supplied
+      # config for this direct TTF inspection, not the machine's /etc.
+      export FONTCONFIG_FILE=${system.pkgs.fontconfig.out}/etc/fonts/fonts.conf
       find ${system.pkgs.nerd-fonts.jetbrains-mono} -iname '*Regular.ttf' \
         -exec ${lib.getExe' system.pkgs.fontconfig "fc-scan"} --format '%{family}\n' {} + > font-families
       grep -Eq '^JetBrainsMono Nerd Font(,|$)' font-families
@@ -1058,6 +1080,38 @@ in
           }
         )
       );
+      thinkpad-printer-provisioning =
+        let
+          thinkpad = config.flake.fleetConfigurations.thinkpad;
+          cfg = thinkpad.config;
+        in
+        thinkpad.pkgs.runCommand "thinkpad-printer-provisioning" { } ''
+          ${lib.getExe thinkpad.pkgs.python3} ${./desktop/assets/test-printer-provisioning.py} \
+            ${lib.trim cfg.systemd.services.ensure-printers.serviceConfig.ExecStart} \
+            ${thinkpad.pkgs.cups}/bin/lpadmin \
+            ${cfg.systemd.units."ensure-printers.service".unit}/ensure-printers.service
+          touch "$out"
+        '';
+      thinkpad-output-policy =
+        let
+          targetPkgs = config.flake.fleetConfigurations.thinkpad.pkgs;
+        in
+        targetPkgs.runCommand "thinkpad-output-policy"
+          {
+            nativeBuildInputs = with targetPkgs; [
+              bash
+              coreutils
+              jq
+              python3
+              shellcheck
+              util-linux
+            ];
+          }
+          ''
+            shellcheck ${./desktop/assets/output-policy.sh}
+            python3 ${./desktop/assets/test-output-policy.py} ${./desktop/assets/output-policy.sh}
+            touch "$out"
+          '';
       wifi-secret-environment = pkgs.runCommand "wifi-secret-environment" { } ''
         ${lib.getExe pkgs.python3} ${./desktop/assets/test-wifi-environment.py} \
           ${./desktop/assets/wifi-environment.py} ${lib.getLib pkgs.glib}/lib/libglib-2.0.so ${lib.getExe pkgs.envsubst}

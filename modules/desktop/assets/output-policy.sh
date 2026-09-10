@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+shopt -s inherit_errexit nullglob
 
 internal_output="eDP-1"
 internal_mode="1920x1200@60.003"
@@ -10,48 +11,76 @@ usage() {
   exit 2
 }
 
-lid_is_closed() {
-  local state
+read_lid_state() {
+  local state contents
 
   for state in /proc/acpi/button/lid/*/state; do
-    [[ -r "$state" ]] || continue
-    if grep -Eq 'state:[[:space:]]+closed' "$state"; then
-      return 0
+    IFS= read -r contents <"$state"
+    if [[ "$contents" =~ ^state:[[:space:]]+closed$ ]]; then
+      printf 'closed\n'
+      return
+    fi
+    if [[ ! "$contents" =~ ^state:[[:space:]]+open$ ]]; then
+      printf 'fleet-output-policy: invalid lid state in %s\n' "$state" >&2
+      return 1
     fi
   done
 
-  return 1
+  # No lid switch means the internal panel must stay enabled.
+  printf 'open\n'
 }
 
 supports_hdr() {
-  local connector decoded edid output=$1
+  local connector decoded status output=$1
 
   for connector in /sys/class/drm/card*-"$output"; do
-    edid="$connector/edid"
-    [[ -r "$edid" ]] || continue
-    decoded=$(edid-decode "$edid" 2>/dev/null) || continue
-    grep -F 'BT2020RGB' <<<"$decoded" >/dev/null || continue
-    grep -F 'SMPTE ST2084' <<<"$decoded" >/dev/null || continue
-    grep -F 'HDR Static Metadata Data Block:' <<<"$decoded" >/dev/null || continue
-    return 0
+    IFS= read -r status <"$connector/status"
+    [[ "$status" == connected ]] || continue
+    decoded=$(edid-decode "$connector/edid")
+    if [[ "$decoded" == *BT2020RGB* && "$decoded" == *'SMPTE ST2084'* &&
+      "$decoded" == *'HDR Static Metadata Data Block:'* ]]; then
+      printf 'true\n'
+      return
+    fi
   done
 
-  return 1
+  printf 'false\n'
 }
 
 external_rows() {
-  jq -r --arg internal "$internal_output" '
-    map(
-      select(.name != $internal)
+  local connector name status
+  local -a connected=()
+
+  # Hyprland 0.56 has no virtual flag in monitor JSON. Only connected DRM
+  # connectors may replace the panel, never FALLBACK or named headless outputs.
+  for connector in /sys/class/drm/card*-*/status; do
+    IFS= read -r status <"$connector"
+    [[ "$status" == connected ]] || continue
+    name=${connector%/status}
+    name=${name##*/}
+    connected+=("${name#*-}")
+  done
+
+  jq -nr --arg internal "$internal_output" --slurpfile monitors "$1" '
+    $monitors
+    | if length == 1 and (.[0] | type == "array") then .[0]
+      else error("expected one monitor array") end
+    | map(
+      if (.name | type == "string" and length > 0) then .
+      else error("invalid monitor name") end
+      | select(.name as $name | $name != $internal and ($ARGS.positional | index($name)) != null)
       | (
-          if ((.availableModes // []) | length) > 0 then
-            .availableModes[0]
+          if (.availableModes | type) != "array" then error("invalid availableModes")
+          elif (.availableModes | length) > 0 then .availableModes[0]
           else
             ((.width | tostring) + "x" + (.height | tostring) + "@" + (.refreshRate | tostring))
           end
         ) as $rawMode
       | ($rawMode | sub("Hz$"; "")) as $mode
-      | ($mode | capture("^(?<width>[0-9]+)x(?<height>[0-9]+)")) as $size
+      | ($mode | capture("^(?<width>[0-9]+)x(?<height>[0-9]+)@[0-9]+(\\.[0-9]+)?$")
+          // error("invalid monitor mode")) as $size
+      | if ($size.width | tonumber) > 0 and ($size.height | tonumber) > 0 then .
+        else error("invalid monitor dimensions") end
       | {
           name: .name,
           mode: $mode,
@@ -63,7 +92,7 @@ external_rows() {
     | .[]
     | [.name, .mode, .width, .height]
     | @tsv
-  ' "$1"
+  ' --args "${connected[@]}"
 }
 
 apply_rule() {
@@ -81,13 +110,19 @@ sync_outputs_unlocked() {
   local external_count=0
   local external_height=0
   local external_width=0
-  local height mode name rule width
+  local hdr height lid mode name rows rule width
+
+  # Decode the complete snapshot before any modeset; process substitution hides
+  # producer failures. Keep these calls out of conditionals so errexit applies.
+  rows=$(external_rows "$monitors")
+  lid=$(read_lid_state)
 
   while IFS=$'\t' read -r name mode width height; do
     [[ -n "$name" ]] || continue
 
     rule="$name,$mode,${external_width}x0,1,bitdepth,8,cm,srgb,vrr,0"
-    if supports_hdr "$name"; then
+    hdr=$(supports_hdr "$name")
+    if [[ "$hdr" == true ]]; then
       rule="$name,$mode,${external_width}x0,1,bitdepth,10,cm,hdredid,vrr,0"
     fi
     apply_rule "$dry_run" "$rule"
@@ -97,9 +132,9 @@ sync_outputs_unlocked() {
     if ((height > external_height)); then
       external_height=$height
     fi
-  done < <(external_rows "$monitors")
+  done <<<"$rows"
 
-  if ((external_count > 0)) && lid_is_closed; then
+  if ((external_count > 0)) && [[ "$lid" == closed ]]; then
     apply_rule "$dry_run" "$internal_output,disable"
   else
     local internal_x=0
@@ -125,7 +160,6 @@ sync_outputs() (
   exec 9>"$lock"
   flock -x 9
   hyprctl monitors all -j >"$monitors_file"
-  jq -e 'type == "array"' "$monitors_file" >/dev/null
   sync_outputs_unlocked "$dry_run" "$monitors_file"
 )
 
@@ -136,28 +170,21 @@ watch_outputs() {
   : "${HYPRLAND_INSTANCE_SIGNATURE:?HYPRLAND_INSTANCE_SIGNATURE is required}"
   socket="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
-  sync_outputs false
-
-  while true; do
-    if [[ ! -S "$socket" ]]; then
-      sleep 1
-      continue
-    fi
+  # pipefail preserves socket failures; a failed sync terminates the watcher
+  # instead of continuing with later rules/events after a partial update.
+  socat -u "UNIX-CONNECT:$socket" - | {
+    sync_outputs false
 
     while IFS= read -r event; do
-      case "$event" in
-        monitoradded* | monitorremoved*)
+      case "${event%%>>*}" in
+        monitoradded | monitoraddedv2 | monitorremoved | monitorremovedv2 | configreloaded)
           # Let Hyprland finish publishing the new output set before querying it.
           sleep 0.2
-          if ! sync_outputs false; then
-            printf 'fleet-output-policy: failed to process %s\n' "$event" >&2
-          fi
+          sync_outputs false
           ;;
       esac
-    done < <(socat -u "UNIX-CONNECT:$socket" - || true)
-
-    sleep 1
-  done
+    done
+  }
 }
 
 case "${1:-}" in

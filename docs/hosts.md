@@ -11,7 +11,7 @@ Read-only discovery: **2026-09-09 UTC**. All four machines were already installe
 - Explicit latest stock **7.x kernels from each host's own track**: ThinkPad/Dino 7.2.4, Racknerd/Bastion 7.2.3 at current pins. OpenZFS 2.4.4 supports 7.2; compatibility failures stay enabled. Derivations, not boots, are tested; no pool features or driver force-probes change.
 - **No VPN/Tailscale**, per user decision. Previously persisted VPN/service state is left on backing storage, not deleted; do not treat service removal as key revocation.
 - Deploy-rs intent: racknerd, bastion and dino, using `marcos`, root activation and interactive sudo. Thinkpad stays local-only. Closure transport/trust remains unresolved rather than granting root-equivalent Nix access automatically.
-- Every host remains **`ready = false`**. This is a configuration/transition plan, not permission to activate it. `nixosConfigurations` and `deploy.nodes` remain empty until real review is complete.
+- ThinkPad is **`ready = true`** and exported as `nixosConfigurations.thinkpad`, with its [earlier two-boot acceptance](#first-boot-acceptance-2026-09-10-utc) recorded. The later maintenance candidate still needs separately authorized activation/runtime acceptance. The other hosts remain `ready = false`; `deploy.nodes` stays empty because ThinkPad is local-only and the remote-intent hosts are unready. Historical preflight statuses below describe their respective stages, not current build gates.
 
 ## Storage representation
 

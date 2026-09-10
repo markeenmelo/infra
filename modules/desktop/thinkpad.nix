@@ -20,7 +20,6 @@
           runtimeInputs = [
             pkgs.coreutils
             pkgs.edid-decode
-            pkgs.gnugrep
             pkgs.hyprland
             pkgs.jq
             pkgs.socat
