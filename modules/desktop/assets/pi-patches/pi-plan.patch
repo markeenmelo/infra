@@ -1,0 +1,86 @@
+--- a/node_modules/pi-plan/extensions/plan/index.ts
++++ b/node_modules/pi-plan/extensions/plan/index.ts
+@@ -20,2 +20 @@
+-} from "@mariozechner/pi-coding-agent";
+-import { checkCommand } from "../../src/safety.js";
++} from "@earendil-works/pi-coding-agent";
+@@ -29,2 +28,2 @@
+-const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls"];
+-const NORMAL_MODE_TOOLS = ["read", "bash", "edit", "write"];
++// Shell allowlists are not a sandbox; no shell or delegated execution in plan mode.
++const PLAN_MODE_TOOLS = ["read", "grep", "find", "ls", "ask_user_question"];
+@@ -34,0 +34,11 @@
++  let toolsBeforePlan: string[] | undefined;
++
++  function enterPlanTools(): void {
++    toolsBeforePlan ??= pi.getActiveTools();
++    pi.setActiveTools(PLAN_MODE_TOOLS.filter((name) => toolsBeforePlan!.includes(name)));
++  }
++
++  function restoreTools(): void {
++    if (toolsBeforePlan) pi.setActiveTools(toolsBeforePlan);
++    toolsBeforePlan = undefined;
++  }
+@@ -39 +49 @@
+-    pi.appendEntry("pi-plan", { mode: planMode, steps });
++    pi.appendEntry("pi-plan", { mode: planMode, steps, toolsBeforePlan });
+@@ -52 +62 @@
+-            ctx.ui.theme.muted(ctx.ui.theme.strikethrough(item.text))
++            ctx.ui.theme.fg("muted", ctx.ui.theme.strikethrough(item.text))
+@@ -70 +80 @@
+-      pi.setActiveTools(NORMAL_MODE_TOOLS);
++      restoreTools();
+@@ -76 +86 @@
+-      pi.setActiveTools(PLAN_MODE_TOOLS);
++      enterPlanTools();
+@@ -124,2 +134,2 @@
+-    // Block write/edit tools entirely
+-    if (event.toolName === "write" || event.toolName === "edit") {
++    // Also reject stale calls or tools re-enabled by another extension.
++    if (!PLAN_MODE_TOOLS.includes(event.toolName)) {
+@@ -132,8 +141,0 @@
+-    // Bash safety: multi-layer check
+-    if (event.toolName === "bash") {
+-      const command = event.input.command as string;
+-      const result = checkCommand(command);
+-      if (!result.safe) {
+-        return { block: true, reason: result.reason };
+-      }
+-    }
+@@ -177,3 +179,3 @@
+-- You can only use: read, bash, grep, find, ls
+-- You CANNOT use: edit, write (file modifications are disabled)
+-- Bash is restricted to an allowlist of read-only commands
++- You can only use: read, grep, find, ls, ask_user_question (if already enabled)
++- Shells, file modifications and subagent delegation are disabled
++- Executing a plan never authorizes deployment or other separately gated operations
+@@ -252 +254 @@
+-        pi.setActiveTools(NORMAL_MODE_TOOLS);
++        restoreTools();
+@@ -296 +297,0 @@
+-      steps.length > 0 ? "Execute the plan" : "Execute the plan (no steps detected)",
+@@ -297,0 +299 @@
++      steps.length > 0 ? "Execute the plan" : "Execute the plan (no steps detected)",
+@@ -303 +305 @@
+-      pi.setActiveTools(NORMAL_MODE_TOOLS);
++      restoreTools();
+@@ -325 +327,4 @@
+-  pi.on("session_start", async (_event, ctx) => {
++  const restoreState = async (_event: unknown, ctx: ExtensionContext) => {
++    restoreTools();
++    planMode = "normal";
++    steps = [];
+@@ -337 +342 @@
+-        const data = (entry as { data?: PlanState }).data;
++        const data = (entry as { data?: PlanState & { toolsBeforePlan?: string[] } }).data;
+@@ -340,0 +346,2 @@
++          toolsBeforePlan = data.toolsBeforePlan?.filter((name) =>
++            pi.getAllTools().some((tool) => tool.name === name));
+@@ -384 +391 @@
+-      pi.setActiveTools(PLAN_MODE_TOOLS);
++      enterPlanTools();
+@@ -387 +394,3 @@
+-  });
++  };
++  pi.on("session_start", restoreState);
++  pi.on("session_tree", restoreState);

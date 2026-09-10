@@ -1,0 +1,56 @@
+--- a/node_modules/pi-lsp-extension/src/lsp-manager.ts
++++ b/node_modules/pi-lsp-extension/src/lsp-manager.ts
+@@ -38,0 +39,3 @@
++  nix: { command: "nil", args: [], settings: { nil: { nix: { flake: { autoArchive: false, autoEvalInputs: false } } } } },
++  c: { command: "clangd", args: [] },
++  cpp: { command: "clangd", args: [] },
+--- a/node_modules/pi-lsp-extension/src/shared/language-map.ts
++++ b/node_modules/pi-lsp-extension/src/shared/language-map.ts
+@@ -20,0 +21 @@
++  ".nix": "nix",
+@@ -23,0 +25,3 @@
++  ".cxx": "cpp",
++  ".hxx": "cpp",
++  ".hh": "cpp",
+--- a/node_modules/pi-lsp-extension/src/index.ts
++++ b/node_modules/pi-lsp-extension/src/index.ts
+@@ -103,12 +103,3 @@
+-  // Prevent EPIPE errors from LSP server exits from crashing the host process.
+-  // When an LSP server exits unexpectedly, in-flight writes to its stdin pipe
+-  // can produce EPIPE errors that escape all connection-level error handlers.
+-  const origListeners = process.listeners("uncaughtException");
+-  process.on("uncaughtException", (err: any) => {
+-    if (err?.code === "EPIPE") return; // swallow — LSP server exited, harmless
+-    // Re-throw for other handlers
+-    for (const listener of origListeners) (listener as any)(err);
+-    if (origListeners.length === 0) {
+-      console.error("[LSP] Uncaught exception:", err);
+-    }
+-  });
++  // Do not install a process-wide uncaughtException handler: it suppresses
++  // unrelated fatal failures and accumulates on reload. Connection errors
++  // belong to the LSP client's own transport/lifecycle handlers.
+@@ -279 +270 @@
+-    projectConfig = loadProjectConfig(ctx.cwd);
++    projectConfig = ctx.isProjectTrusted() ? loadProjectConfig(ctx.cwd) : null;
+@@ -354 +344,0 @@
+-  pi.registerTool(createCodeActionsTool(managerProxy, treeSitterProxy));
+--- a/node_modules/pi-lsp-extension/src/lsp-client.ts
++++ b/node_modules/pi-lsp-extension/src/lsp-client.ts
+@@ -22 +22 @@
+-} from "vscode-languageserver-protocol/node.js";
++} from "vscode-languageserver-protocol/node";
+@@ -345 +345 @@
+-    this.connection.sendNotification("initialized", {});
++    await this.connection.sendNotification("initialized", {});
+@@ -372 +372,6 @@
+-    this.connection.sendNotification(method, params);
++    void this.connection.sendNotification(method, params).catch((err) => {
++      if (!this._disposed) {
++        this._initialized = false;
++        console.error(`[LSP ${this.languageId}] Notification failed: ${err.message}`);
++      }
++    });
+@@ -424 +429 @@
+-        try { this.connection.sendNotification("exit"); } catch {}
++        try { await this.connection.sendNotification("exit"); } catch {}

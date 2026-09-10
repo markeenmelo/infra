@@ -1,0 +1,10 @@
+--- a/node_modules/@dietrichgebert/ponytail/pi-extension/index.js
++++ b/node_modules/@dietrichgebert/ponytail/pi-extension/index.js
+@@ -183 +183 @@
+-  pi.on("session_start", async (_event, ctx) => {
++  const restoreSession = async (_event, ctx) => {
+@@ -192 +192,3 @@
+-  });
++  };
++  pi.on("session_start", restoreSession);
++  pi.on("session_tree", restoreSession);
