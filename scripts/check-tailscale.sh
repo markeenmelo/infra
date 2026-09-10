@@ -16,7 +16,7 @@ printf '%s\n' 'resource "terraform_data" "canary" { input = "TEST-ONLY-ENCRYPTIO
 env -i PATH="$PATH" HOME="$scratch/home" SCRATCH="$scratch" \
   HTTP_PROXY=http://127.0.0.1:1 HTTPS_PROXY=http://127.0.0.1:1 NO_PROXY='' \
   TF_VAR_state_passphrase='TEST-ONLY-PASSPHRASE-NO-REAL-CREDENTIAL-0123456789' \
-  TF_VAR_state_directory="$scratch/state" TF_VAR_tailnet='TEST-ONLY-NOT-A-TAILNET' \
+  TF_VAR_state_directory="$scratch/state" \
   TF_IN_AUTOMATION=1 bash <<'CHECK'
 set -euo pipefail
 cd "$SCRATCH/config"

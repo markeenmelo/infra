@@ -18,6 +18,7 @@ class Wrapper(unittest.TestCase):
         self.repo = self.root / "repo"
         (self.repo / "scripts").mkdir(parents=True)
         (self.repo / "tofu/tailscale").mkdir(parents=True)
+        (self.repo / "tofu/tailscale/tailnet.json").write_text('{"id": "TEST-ONLY-TAILNET"}\n')
         self.script = self.repo / "scripts/tailscale-tofu.sh"
         shutil.copyfile(SCRIPT, self.script)
         executable = self.root / "tofu"
@@ -56,6 +57,20 @@ if sys.argv[1] == 'plan':
         self.assertNotEqual(self.run_command("plan").returncode, 0)
         self.assertNotIn(self.env["TF_VAR_state_passphrase"], "\n".join(self.calls()))
 
+    def test_uses_checked_in_identity_without_environment(self):
+        self.env.pop("TAILSCALE_TAILNET")
+        result = self.run_command("init")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.state / "tailnet-id").read_text(), "TEST-ONLY-TAILNET\n")
+
+    def test_invalid_checked_in_identity_never_initializes_state(self):
+        for content in ['{}', '{"id": null}', '{"id": ""}', '{"id": "-"}', '{"id": "bad id"}', '{invalid']:
+            with self.subTest(content=content):
+                (self.repo / "tofu/tailscale/tailnet.json").write_text(content)
+                self.assertNotEqual(self.run_command("init").returncode, 0)
+                self.assertEqual(self.calls(), [])
+                self.assertFalse(self.state.exists())
+
     def test_missing_or_unsafe_inputs_never_invoke_tofu(self):
         for env in [{"TAILSCALE_TAILNET": ""}, {"TAILSCALE_TAILNET": "-"},
                     {"TAILSCALE_TAILNET": "bad\nid"}, {"TF_VAR_state_passphrase": ""},
@@ -79,6 +94,8 @@ if sys.argv[1] == 'plan':
         self.assertNotEqual(self.run_command("plan", {"TAILSCALE_TAILNET": "TEST-ONLY-DIFFERENT"}).returncode, 0)
         self.assertNotEqual(self.run_command("apply", confirmation="TEST-ONLY-TAILNET\n").returncode, 0)
         self.assertNotEqual(self.run_command("destroy").returncode, 0)
+        (self.state / "tailnet-id").write_text("TEST-ONLY-DIFFERENT\n")
+        self.assertNotEqual(self.run_command("plan").returncode, 0)
         self.assertEqual(self.calls(), before)
 
     def test_ignored_variables_cannot_override_confirmation(self):

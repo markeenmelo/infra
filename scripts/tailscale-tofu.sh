@@ -7,7 +7,11 @@ fail() { printf '%s\n' "$1" >&2; exit 1; }
 [[ $# == 1 ]] || fail 'Usage: tailscale-tofu.sh init|plan|apply|import-policy|import-dns'
 case "$1" in init|plan|apply|import-policy|import-dns) ;; *) fail 'Unsupported operation.' ;; esac
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
-[[ -n ${TAILSCALE_TAILNET:-} && ${TAILSCALE_TAILNET} != - && ! ${TAILSCALE_TAILNET} =~ [[:space:]] ]] || fail 'Set TAILSCALE_TAILNET to the verified existing tailnet ID.'
+expected_tailnet=$(jq -er '.id | select(type == "string") | select(length > 0 and . != "-" and (test("\\s") | not))' "$root/tofu/tailscale/tailnet.json") \
+  || fail 'The checked-in public tailnet identity is missing or invalid.'
+[[ ${TAILSCALE_TAILNET-$expected_tailnet} == "$expected_tailnet" ]] \
+  || fail 'TAILSCALE_TAILNET must match tailnet.json; it cannot select another tailnet.'
+export TAILSCALE_TAILNET="$expected_tailnet"
 [[ ${TAILSCALE_STATE_DIR:-} == /* ]] || fail 'Set TAILSCALE_STATE_DIR to an absolute private path outside Git.'
 state=$(realpath -m -- "$TAILSCALE_STATE_DIR")
 [[ "$state" != "$root" && "$state" != "$root/"* && "$state" != /nix/store && "$state" != /nix/store/* ]] \

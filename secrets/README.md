@@ -61,7 +61,7 @@ The [Tailscale procedure](../docs/tailscale.md#per-host-rollout) adds no plainte
 
 Use ordinary `/run/secrets/NAME`, root-only `0400`, `neededForUsers = false`, and `restartUnits = [ "fleet-tailscale.service" ]`. Select the secret by name in `fleet.tailscale.authKeySecret`; arbitrary runtime/store key paths are not accepted. The owning unit passes only a file reference to the CLI. Preserve daemon identity in the reviewed root-only `/persist/var/lib/tailscale` backing. A consumed key need not remain delivered once durable identity has been verified and the host is switched to `preserve`; never hand-edit encrypted payloads/MACs.
 
-Tailnet API credentials and the OpenTofu recovery passphrase are separate operator-runtime secrets, not NixOS/SOPS host inputs. Keep local state/plans/provider working data outside Git/Nix store with enforced encryption and independent recovery. No actual tailnet ID, API credential, enrollment key or new host recipient has yet been supplied. The synthetic fixture's encrypted Wi-Fi key selection is **not** a Tailscale credential or enrollment test.
+Tailnet API credentials and the OpenTofu recovery passphrase are separate operator-runtime secrets, not NixOS/SOPS host inputs. Keep local state/plans/provider working data outside Git/Nix store with enforced encryption and independent recovery. The operator-supplied public tailnet ID is recorded in `tofu/tailscale/tailnet.json`; this is not a secret or proof of API access. No API credential, enrollment key or new host recipient has yet been supplied. The synthetic fixture's encrypted Wi-Fi key selection is **not** a Tailscale credential or enrollment test.
 
 ## Safe operator workflow
 

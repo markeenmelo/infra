@@ -8,19 +8,24 @@ terraform {
   }
 }
 
+locals {
+  # Public operator-supplied identity, not proof of API access or live review.
+  tailnet = jsondecode(file("${path.module}/tailnet.json")).id
+}
+
 # Authentication comes from narrowly scoped runtime provider environment
 # variables; no OAuth/API secret is a Terraform variable or Nix input.
 provider "tailscale" {
-  tailnet = var.tailnet
+  tailnet = local.tailnet
 }
 
 variable "tailnet" {
   type        = string
-  nullable    = false
-  description = "Verified existing tailnet ID. Intentionally has no default."
+  default     = null
+  description = "Optional confirmation of the checked-in tailnet ID, never a way to select another tailnet."
   validation {
-    condition     = length(trimspace(var.tailnet)) > 0 && var.tailnet != "-" && !can(regex("\\s", var.tailnet))
-    error_message = "Supply the explicit tailnet ID; implicit credential-selected tailnets are forbidden."
+    condition     = var.tailnet == null || var.tailnet == local.tailnet
+    error_message = "The confirmation must match tailnet.json; retargeting requires a reviewed configuration change."
   }
 }
 

@@ -1,12 +1,13 @@
 # Synthetic, offline provider. Never authenticates to a real tailnet.
 mock_provider "tailscale" {}
 
-variables {
-  tailnet = "TEST-ONLY-NOT-A-TAILNET"
-}
-
+# The real public ID is read locally, but the provider remains fully mocked.
 run "policy_and_dns" {
   command = plan
+  assert {
+    condition     = local.tailnet == "Td9HdopnWQ11CNTRL" && var.tailnet == null
+    error_message = "The provider must select the operator-supplied ID without requiring an environment selector."
+  }
   assert {
     condition     = !tailscale_acl.policy.overwrite_existing_content && !tailscale_acl.policy.reset_acl_on_destroy
     error_message = "Policy adoption/reset protection must remain enabled."
@@ -25,6 +26,14 @@ run "reject_implicit_tailnet" {
   command = plan
   variables {
     tailnet = "-"
+  }
+  expect_failures = [var.tailnet]
+}
+
+run "reject_different_tailnet" {
+  command = plan
+  variables {
+    tailnet = "TEST-ONLY-DIFFERENT-TAILNET"
   }
   expect_failures = [var.tailnet]
 }

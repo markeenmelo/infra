@@ -4,7 +4,7 @@ See [ADR 0009](adr/0009-tailscale-and-opentofu.md) and [dated API evidence](rese
 
 ## Current status — 2026-09-10
 
-**Prepared, not enrolled or applied.** The user explicitly selected disabled rollout while bootstrap facts are unresolved. All four compositions include the capability, but `fleet.tailscale.enable = false`: no daemon, enrollment unit, new firewall port or persistence bind is added to a real host. Existing commissioning/review flags are unchanged. `just tailscale-inventory` reports separate rollout prerequisites; `just inventory` still reports OS commissioning.
+**Prepared, not enrolled or applied.** The user supplied the public tailnet ID **`Td9HdopnWQ11CNTRL`**, recorded in [`tofu/tailscale/tailnet.json`](../tofu/tailscale/tailnet.json). Both OpenTofu and the operator wrapper read this single source; an optional environment confirmation cannot select another tailnet. This records operator intent, not verified API access, ownership or live policy review. The user explicitly selected disabled rollout while the remaining bootstrap facts are unresolved. All four compositions include the capability, but `fleet.tailscale.enable = false`: no daemon, enrollment unit, new firewall port or persistence bind is added to a real host. Existing commissioning/review flags are unchanged. `just tailscale-inventory` reports separate rollout prerequisites; `just inventory` still reports OS commissioning.
 
 Authorized read-only SSH used previously verified host keys, strict checking and no key updates/forwarding. No deployment, reboot, state read/copy/reset, secret decryption or tailnet API operation occurred:
 
@@ -47,14 +47,14 @@ It deliberately does **not** create auth keys, OAuth clients, family accounts/de
 
 These are future operator steps, not commands run by checks or permission to apply now:
 
-1. Supply the exact existing tailnet ID. Independently verify administrator recovery and export/review its existing policy and DNS settings. Disable any prior GitOps publisher/other OpenTofu state managing the policy. Prefer the admin console's **Prevent edits** setting plus a repository reference; it permits emergency overrides, which must be reconciled into Git before the next apply. Provider updates replace the whole document without optimistic concurrency. Local locking protects only this state, not another writer.
+1. Independently confirm that the recorded tailnet ID names the intended tailnet, verify administrator recovery and export/review its existing policy and DNS settings. Disable any prior GitOps publisher/other OpenTofu state managing the policy. Prefer the admin console's **Prevent edits** setting plus a repository reference; it permits emergency overrides, which must be reconciled into Git before the next apply. Provider updates replace the whole document without optimistic concurrency. Local locking protects only this state, not another writer.
 2. Create/review narrowly scoped automation credentials for policy/DNS read/write. Supply `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_CLIENT_SECRET` privately via the provider environment. Do not use enrollment keys as API credentials, put secrets in `.tfvars`, enable TF debug logging or paste them into an agent conversation. See [secret handling](../secrets/README.md#safe-operator-workflow).
 3. Create a high-entropy encryption/recovery passphrase in protected storage, with an independent recovery copy. Keep encrypted state/backups and the recovery key independently recoverable. A path/key prompt is not proof of tested recovery. State and saved plans use enforced PBKDF2/AES-GCM with **no plaintext fallback**; the passphrase is an ephemeral variable. Backend working metadata is not secret storage. Encryption does not hide values from an authorized CLI operator or protect against lost/corrupted/stale state.
 4. In the locked shell, use a private terminal to supply runtime inputs, without entering values into shell history:
 
    ```sh
-   read -r -p 'Verified tailnet ID: ' TAILSCALE_TAILNET
-   export TAILSCALE_TAILNET
+   # The public tailnet ID is read from the checked-in tailnet.json.
+   # If TAILSCALE_TAILNET is already set, it must match that ID exactly.
    export TAILSCALE_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/infra-tailnet"
    read -r -s -p 'Recovery passphrase: ' TF_VAR_state_passphrase; printf '\n'
    export TF_VAR_state_passphrase
@@ -90,4 +90,4 @@ Raw OpenTofu can bypass the wrapper's workflow guards. Keep the checked configur
 
 `just check` covers both-track staged/enabled fixtures, own-track packages, persistence/mount requirements, review/secret/tag/override rejection, native CLI flag availability, offline mocked reconciliation/wrapper behavior, an exact initial-policy oracle with widening regressions, native OpenTofu schema/mock-provider plans and synthetic local encrypted-state/saved-plan tests including wrong-key/plaintext rejection. The encryption test's `terraform_data` apply writes only a temporary local fixture: **no cloud/tailnet provider, host activation, installer or daemon is run**.
 
-These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. Tailnet ID, scoped API credentials, encrypted-state recovery, per-host state/credential reviews and remote commissioning remain open. Deployment and live enrollment are not complete.
+These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. The intended public ID is recorded; API/ownership confirmation, scoped API credentials, encrypted-state recovery, per-host state/credential reviews and remote commissioning remain open. Deployment and live enrollment are not complete.
