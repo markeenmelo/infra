@@ -158,7 +158,7 @@ The operator authorized the completion sequence: no new backup (verified mitigat
 
 ## ThinkPad readiness — 2026-09-10
 
-After the verified AccountsService correction, `fleet.existingStorage.migrationReviewed` and `fleet.hosts.thinkpad.ready` are recorded with the chosen migration stance documented in [hosts](hosts.md#commissioning-decisions-2026-09-10-utc). Full `just check` passes with thinkpad in `nixosConfigurations` as a local activation target; `deploy.nodes` stays empty (local-only intent, `deployment.enable = false`). This records completed reviews, not a tested boot: the boot switch, reboot and first-boot acceptance are separate operator steps with the old generation as fallback.
+After the verified AccountsService correction, `fleet.existingStorage.migrationReviewed` and `fleet.hosts.thinkpad.ready` are recorded with the chosen migration stance documented in [hosts](hosts.md#commissioning-decisions-2026-09-10-utc). Full `just check` passes with thinkpad in `nixosConfigurations` as a local activation target; `deploy.nodes` stays empty (local-only intent, `deployment.enable = false`). `just ready thinkpad` passes (no missing items, no failed assertions) and `just build thinkpad` built the real toplevel `nixos-system-thinkpad-26.11.20260908.422d1ae` locally with kernel, initrd and boot files — a build, not an activation or boot test. This records completed reviews, not a tested boot: the boot switch, reboot and first-boot acceptance are separate operator steps with the old generation as fallback.
 
 ## Not claimed / remaining acceptance
 
