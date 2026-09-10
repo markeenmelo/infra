@@ -5,6 +5,13 @@
     fleet.installation = {
       stateVersion = "26.05";
       hardwareReviewed = true;
+      # Pre-activation network review, 2026-09-10: system-owned MN-Home (same
+      # UUID, psk-flags 0, autoconnect) and PEAP/MSCHAPv2 SenecaNET (system CA
+      # bundle, suffix match, empty anonymous identity, autoconnect off) from
+      # root-only 0400 SOPS secrets through the ordered environment and
+      # ensure-profiles units; the legacy helper/agent are absent. Live home/
+      # campus connection is a documented first-boot acceptance test.
+      networkReviewed = true;
     };
     boot = {
       initrd = {

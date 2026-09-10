@@ -152,6 +152,10 @@ Legacy network failures remain real: the helper repeatedly cannot prompt for cre
 
 Executed: locked-shell **`just fmt` and full `just check` passed**. Changed fleet/source-quality/ciphertext-guard outputs built; unchanged desktop, Wi-Fi, SOPS manifests and deploy checks were reused. Only documented custom-output/Dino stateVersion and dirty-tree warnings occurred. `just ready thinkpad` correctly refuses with **three** remaining review requirements; every host is still unready and standard NixOS/deploy output lists remain empty. Whitespace/protected-file/lock scope, **90 local Markdown links/anchors across 27 files** and all **51 Nix file locations** passed. No commissioned host build or runtime operation was attempted.
 
+## Commissioning reviews — 2026-09-10
+
+The operator authorized the completion sequence: no new backup (verified mitigations in [hosts](hosts.md#commissioning-decisions-2026-09-10-utc)), first-boot state regeneration, a one-time AccountsService backing-mode correction, and `networkReviewed`/`desktopReviewed` recorded as pre-activation reviews whose live behavior is the mandatory first-boot acceptance with the old generation as fallback. These reviews claim evaluated configuration correctness — manifests, ordering, PAM/policy fixtures, greeter/session settings — not a tested boot or connection. Anchor generation: clean `0810200`.
+
 ## Not claimed / remaining acceptance
 
 No real host is commissioned for this baseline yet. Fixtures' derivations were evaluated, not full NixOS systems built or booted. No disko script, install, mount, repair, VM boot, remote dry activation, deployment, reboot, backup restore or production mutation was executed. Authorized read-only host inventory did contact the targets.

@@ -1,5 +1,12 @@
 {
   fleet.hosts.thinkpad.module = { lib, ... }: {
+    # Pre-activation desktop review, 2026-09-10: evaluated greeter session
+    # (noctalia-greeter, no autologin), password-first PAM with bounded
+    # fingerprint fallback and keyring hooks, Hyprland 0.56.2/UWSM, portals,
+    # PipeWire, lock/idle policy, scoped KDE Connect exposure and Bluetooth
+    # service with powerOnBoot false. Live session behavior, fingerprint
+    # enrollment and peripherals are documented first-boot acceptance tests.
+    fleet.desktop.reviewed = true;
     # Operator-run private audit, 2026-09-10: MAC/decryption and filled scalar
     # checks passed with the dedicated identity. No campus connection tested.
     fleet.wifi.senecaSopsFile = ../../secrets/hosts/thinkpad-senecanet.yaml;
