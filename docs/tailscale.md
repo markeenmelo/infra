@@ -4,9 +4,11 @@ See [ADR 0009](adr/0009-tailscale-and-opentofu.md) and [dated API evidence](rese
 
 ## Current status — 2026-09-10
 
-**Prepared, not enrolled or applied.** The user supplied the public tailnet ID **`Td9HdopnWQ11CNTRL`**, recorded in [`tofu/tailscale/tailnet.json`](../tofu/tailscale/tailnet.json). Both OpenTofu and the operator wrapper read this single source; an optional environment confirmation cannot select another tailnet. This records operator intent, not verified API access, ownership or live policy review. The user explicitly selected disabled rollout while the remaining bootstrap facts are unresolved. All four compositions include the capability, but `fleet.tailscale.enable = false`: no daemon, enrollment unit, new firewall port or persistence bind is added to a real host. Existing commissioning/review flags are unchanged. `just tailscale-inventory` reports separate rollout prerequisites; `just inventory` still reports OS commissioning.
+**Imported and planned, not applied or enrolled.** The operator reports successful policy/DNS imports and a saved plan with **0 additions, 1 update, 0 deletions**, changing only `tailscale_acl.policy`; no DNS change is proposed. The operator confirmed the intended tailnet, the four read-only OAuth scopes, independent passphrase retrieval, complete diff review and offline recovery of protected original-policy/DNS and encrypted-state backups. The agent independently checked only ownership/permissions (`0700` directory, `0600` state/plan files) and encrypted-envelope structure, without decrypting files or inspecting the private plan. See the [evidence record](validation.md#operator-completed-read-only-tailnet-preflight--2026-09-10).
 
-Authorized read-only SSH used previously verified host keys, strict checking and no key updates/forwarding. No deployment, reboot, state read/copy/reset, secret decryption or tailnet API operation occurred:
+The public tailnet ID **`Td9HdopnWQ11CNTRL`** is recorded in [`tofu/tailscale/tailnet.json`](../tofu/tailscale/tailnet.json). Both OpenTofu and the wrapper read this single source; optional environment confirmation cannot retarget it. **Client rollout remains disabled** while host-specific prerequisites are unresolved. All four compositions include the capability, but `fleet.tailscale.enable = false`: no daemon, enrollment unit, new firewall port or persistence bind is added to a real host. Existing commissioning/review flags are unchanged. `just tailscale-inventory` reports separate rollout prerequisites; `just inventory` still reports OS commissioning.
+
+The earlier authorized read-only SSH inventory used previously verified host keys, strict checking and no key updates/forwarding. During that inventory, no deployment, reboot, state read/copy/reset, secret decryption or tailnet API operation occurred:
 
 | Host | Observation | Remaining requirement |
 |---|---|---|
@@ -45,33 +47,59 @@ It deliberately does **not** create auth keys, OAuth clients, family accounts/de
 
 ### Operator setup (private terminal only)
 
-These are future operator steps, not commands run by checks or permission to apply now:
+This is the repeatable operator procedure; initial read-only completion is recorded above. These commands are never run by checks, and this procedure is not authorization to apply. Preserve the existing state directory/passphrase and do not repeat successful imports merely to restore a shell environment.
 
 1. Independently confirm that the recorded tailnet ID names the intended tailnet, verify administrator recovery and export/review its existing policy and DNS settings. Disable any prior GitOps publisher/other OpenTofu state managing the policy. Prefer the admin console's **Prevent edits** setting plus a repository reference; it permits emergency overrides, which must be reconciled into Git before the next apply. Provider updates replace the whole document without optimistic concurrency. Local locking protects only this state, not another writer.
-2. Create/review narrowly scoped automation credentials for policy/DNS read/write. Supply `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_CLIENT_SECRET` privately via the provider environment. Do not use enrollment keys as API credentials, put secrets in `.tfvars`, enable TF debug logging or paste them into an agent conversation. See [secret handling](../secrets/README.md#safe-operator-workflow).
-3. Create a high-entropy encryption/recovery passphrase in protected storage, with an independent recovery copy. Keep encrypted state/backups and the recovery key independently recoverable. A path/key prompt is not proof of tested recovery. State and saved plans use enforced PBKDF2/AES-GCM with **no plaintext fallback**; the passphrase is an ephemeral variable. Backend working metadata is not secret storage. Encryption does not hide values from an authorized CLI operator or protect against lost/corrupted/stale state.
-4. In the locked shell, use a private terminal to supply runtime inputs, without entering values into shell history:
+2. For the first **read-only preflight**, create an OAuth client in the intended tailnet's admin console: **Trust credentials → Credential → OAuth**. Select only the following **Read** permissions, including the policy scope's required dependencies ([official scopes](https://tailscale.com/docs/reference/trust-credentials#scopes), reviewed 2026-09-10):
+
+   | Scope | Purpose |
+   |---|---|
+   | `policy_file:read` | Read/validate the policy |
+   | `dns:read` | Read DNS preferences/settings |
+   | `devices:core:read` | Required by policy read |
+   | `devices:posture_attributes:read` | Required by policy read |
+
+   Do not select Write, `all`, `all:read`, auth-key creation or device-management permissions. These read scopes do not require enrollment tags; do not edit live tag ownership to create this client. If the UI requires unrelated privileges, stop and review rather than broadening access. Store its client ID and one-time-displayed secret in your trusted password manager ([OAuth setup](https://tailscale.com/docs/features/oauth-clients#setting-up-an-oauth-client)). Supply them only through the runtime environment below. This client cannot apply changes; a future apply requires separately reviewed write credentials and authorization, not an automatic permission escalation after an error. Do not use enrollment keys as API credentials, put secrets in `.tfvars`, enable TF debug logging or paste them into an agent conversation. See [secret handling](../secrets/README.md#safe-operator-workflow).
+3. Generate a separate random single-line passphrase in your trusted password manager (at least **32 characters**; 48 or more recommended). Keep an independent protected recovery copy and verify you can retrieve it without this machine or the tailnet. Do not generate/show the real passphrase through agent tools. Keep encrypted state/backups and the recovery key independently recoverable. A path/key prompt is not proof of tested recovery. State and saved plans use enforced PBKDF2/AES-GCM with **no plaintext fallback**; the passphrase is an ephemeral variable. Backend working metadata is not secret storage. Encryption does not hide values from an authorized CLI operator or protect against lost/corrupted/stale state.
+4. From the repository root in a **private terminal**, first enter a clean locked shell. This avoids inherited API-key/OIDC credentials, alternate API endpoints, debug settings and shell startup integrations; never launch an agent/editor from the later credential-bearing shell:
 
    ```sh
-   # The public tailnet ID is read from the checked-in tailnet.json.
-   # If TAILSCALE_TAILNET is already set, it must match that ID exactly.
-   export TAILSCALE_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/infra-tailnet"
-   read -r -s -p 'Recovery passphrase: ' TF_VAR_state_passphrase; printf '\n'
-   export TF_VAR_state_passphrase
-   # Supply the scoped provider credentials privately, not as command arguments.
-   just tailnet init
+   nix develop --no-update-lock-file --ignore-environment --keep HOME --keep TERM \
+     -c bash --noprofile --norc
    ```
+
+   Paste this **whole brace block** into that shell before entering values at its hidden prompts. Braces retain exports in the current shell and group the pasted commands before reads begin. Never paste values as shell commands or into chat:
+
+   ```sh
+   {
+     set +x
+     set +o history
+     umask 077
+     trap 'unset TAILSCALE_OAUTH_CLIENT_ID TAILSCALE_OAUTH_CLIENT_SECRET TF_VAR_state_passphrase' EXIT
+     # The public tailnet ID is read from the checked-in tailnet.json.
+     # Use the same reviewed persistent location on every invocation.
+     export TAILSCALE_STATE_DIR="$HOME/.local/state/infra-tailnet"
+     for variable in TF_VAR_state_passphrase TAILSCALE_OAUTH_CLIENT_ID TAILSCALE_OAUTH_CLIENT_SECRET; do
+       IFS= read -r -s -p "$variable: " "${variable?}" </dev/tty || exit 1
+       printf '\n'
+       export "${variable?}"
+     done
+     unset variable
+   }
+   ```
+
+   For **first initialization only**, then run `just tailnet init` separately. If already initialized, restoring the exports does not require reinitialization or a new passphrase. Stay in this private shell for the following operations: a fresh clean shell clears these inputs. A missing-variable error stops before API access; it is not an instruction to create replacement state.
 
    The wrapper binds a new empty private `0700` directory to that tailnet. State, backups, saved plans and provider working data stay **outside the checkout/Nix store**. Existing nonempty/unbound directories require recovery review; permissions are never silently repaired. No auto-loaded `.tfvars` or override files, alternative workspaces, TF_CLI_ARGS overrides, debug logging or TF_ENCRYPTION overrides are accepted. The environment is transient: unset credentials/passphrase after use. State and plan output may disclose network metadata, so review privately.
 5. **After authorizing read-only API access**, import both existing singletons into encrypted local state:
 
    ```sh
-   just tailnet import-policy
-   just tailnet import-dns
+   just tailnet import-policy &&
+   just tailnet import-dns &&
    just tailnet plan
    ```
 
-   Imports change local state, not the live tailnet. A plan contacts the API but does not apply. Review the complete policy/DNS diff and policy tests, verify one intended node per privileged tag, preserve out-of-band access, and authorize the exact change separately. A saved plan remains at `$TAILSCALE_STATE_DIR/change.tfplan`; no older plan is silently overwritten. Provider/server validation on apply is still required; offline mocks are not Tailscale's policy engine.
+   Imports change local state, not the live tailnet. A plan contacts the API but does not apply. Review the complete policy/DNS diff and policy tests, verify one intended node per privileged tag, preserve out-of-band access, and authorize the exact change separately. A saved plan remains at `$TAILSCALE_STATE_DIR/change.tfplan`; no older plan is silently overwritten. Expect only updates or no-ops for `tailscale_acl.policy` and `tailscale_dns_preferences.tailnet`; stop for creates, destroys or unrelated addresses. Provider/server validation on apply is still required; offline mocks are not Tailscale's policy engine. At the end of this preflight, **stop without applying and `exit` this private shell** to drop its credential environment. Exporting variables here does not update an already-running agent session. Report only which steps succeeded, the add/change/destroy counts and sanitized blockers; keep raw policy, state, plan, token responses and credential-bearing diagnostics private.
 6. **Only after explicit authorization**, `just tailnet apply` applies that saved plan after an exact tailnet-ID confirmation. It changes the live tailnet, not NixOS. The plan is retained; archive it securely outside Git before making the next plan. Do not reuse old plans after policy/emergency changes; replan against refreshed state and serialize all applies. Never wire apply into `just check`, shell entry, a Nix build or NixOS activation.
 
 Raw OpenTofu can bypass the wrapper's workflow guards. Keep the checked configuration and use the wrapper for real operations; do not remove encryption/import protections to recover from an error. Local state is not a remote/team backend: use one administration environment, maintain backups and deliberately migrate if additional operators/CI need access.
@@ -90,4 +118,4 @@ Raw OpenTofu can bypass the wrapper's workflow guards. Keep the checked configur
 
 `just check` covers both-track staged/enabled fixtures, own-track packages, persistence/mount requirements, review/secret/tag/override rejection, native CLI flag availability, offline mocked reconciliation/wrapper behavior, an exact initial-policy oracle with widening regressions, native OpenTofu schema/mock-provider plans and synthetic local encrypted-state/saved-plan tests including wrong-key/plaintext rejection. The encryption test's `terraform_data` apply writes only a temporary local fixture: **no cloud/tailnet provider, host activation, installer or daemon is run**.
 
-These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. The intended public ID is recorded; API/ownership confirmation, scoped API credentials, encrypted-state recovery, per-host state/credential reviews and remote commissioning remain open. Deployment and live enrollment are not complete.
+These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. Read-only access/scopes, complete diff review and offline backup recovery are now operator-confirmed, separately from these tests. Before a live apply, still confirm exclusive policy-writer control, intended unique fleet-tag assignments and independent administrative recovery access; obtain separately reviewed write credentials and explicit apply authorization, and ensure the reviewed plan remains current. Server policy-engine acceptance and actual allowed/denied flows are not established by the plan. Per-host state/enrollment credentials and remote commissioning remain open; no client review/readiness flag has changed. Deployment and live enrollment are not complete.

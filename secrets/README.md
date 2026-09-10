@@ -55,13 +55,13 @@ The actual Wi-Fi manifest and separate `senecanet-template-manifest` checks vali
 
 Never disable Seneca's CA/domain validation to compensate for missing credentials. Back up/reconcile duplicate old profiles deliberately before activation, then test password delivery and server-certificate rejection on the real network under separate authorization.
 
-## Tailscale enrollment (staged, no credentials supplied)
+## Tailscale enrollment (staged, no host auth keys supplied)
 
 The [Tailscale procedure](../docs/tailscale.md#per-host-rollout) adds no plaintext, generated credentials, ciphertext or recipient rules. Each enabled host will need either a verified existing node identity (`preserve`) or its own reviewed short-lived, single-use, non-ephemeral, exact-tag auth key delivered by a declared SOPS secret (`auth-key`). Host tags are not unique constraints: never issue another device ThinkPad's privileged tag. Do not install tailnet-administration OAuth credentials on a host.
 
 Use ordinary `/run/secrets/NAME`, root-only `0400`, `neededForUsers = false`, and `restartUnits = [ "fleet-tailscale.service" ]`. Select the secret by name in `fleet.tailscale.authKeySecret`; arbitrary runtime/store key paths are not accepted. The owning unit passes only a file reference to the CLI. Preserve daemon identity in the reviewed root-only `/persist/var/lib/tailscale` backing. A consumed key need not remain delivered once durable identity has been verified and the host is switched to `preserve`; never hand-edit encrypted payloads/MACs.
 
-Tailnet API credentials and the OpenTofu recovery passphrase are separate operator-runtime secrets, not NixOS/SOPS host inputs. Keep local state/plans/provider working data outside Git/Nix store with enforced encryption and independent recovery. The operator-supplied public tailnet ID is recorded in `tofu/tailscale/tailnet.json`; this is not a secret or proof of API access. No API credential, enrollment key or new host recipient has yet been supplied. The synthetic fixture's encrypted Wi-Fi key selection is **not** a Tailscale credential or enrollment test.
+Tailnet API credentials and the OpenTofu recovery passphrase are separate operator-runtime secrets, not NixOS/SOPS host inputs. Keep local state/plans/provider working data outside Git/Nix store with enforced encryption and independent recovery. The operator-supplied public tailnet ID is recorded in `tofu/tailscale/tailnet.json`; this is not a secret or proof of API access. The operator privately provisioned a read-only OAuth client and state passphrase, reports successful imports/planning, and confirmed independent passphrase retrieval plus offline backup recovery. The agent checked only private file permissions and encrypted envelopes; no credential value or decrypted state/plan was obtained. No host enrollment key or new host recipient has been supplied, and no write-capable API credential or live apply is authorized. The synthetic fixture's encrypted Wi-Fi key selection is **not** a Tailscale credential or enrollment test.
 
 ## Safe operator workflow
 

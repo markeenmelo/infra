@@ -6,7 +6,7 @@
 
 ## Context
 
-The operator wants declarative enrollment for all four fleet machines, plus a personal/family tailnet with default-deny device-specific access. Native Tailscale GitOps owns only the policy file; OpenTofu also manages supported tailnet settings. The operator supplied public tailnet ID `Td9HdopnWQ11CNTRL` after initial preparation; credentials and live ownership/API verification remain unresolved. Old remote configurations have active, unauthenticated daemons and retained private state. Three hosts still fail OS commissioning; deploying before inspection could lose root-only access or mishandle boot/storage migration.
+The operator wants declarative enrollment for all four fleet machines, plus a personal/family tailnet with default-deny device-specific access. Native Tailscale GitOps owns only the policy file; OpenTofu also manages supported tailnet settings. The operator supplied public tailnet ID `Td9HdopnWQ11CNTRL` after initial preparation and subsequently confirmed read-only imports/planning, scoped credential verification and private diff/backup-recovery review. The saved plan proposes only a policy update; live application and per-host enrollment remain separate, unexecuted operations. Old remote configurations have active, unauthenticated daemons and retained private state. Three hosts still fail OS commissioning; deploying before inspection could lose root-only access or mishandle boot/storage migration.
 
 ## Decision
 
