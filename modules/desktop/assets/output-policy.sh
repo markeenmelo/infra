@@ -170,9 +170,13 @@ watch_outputs() {
   : "${HYPRLAND_INSTANCE_SIGNATURE:?HYPRLAND_INSTANCE_SIGNATURE is required}"
   socket="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
+  # Subscribe before waiting so monitor events are buffered. The Hyprland start
+  # callback can run before initial DRM/output publication; without this delay,
+  # its later static monitor rules can remain active until another event occurs.
   # pipefail preserves socket failures; a failed sync terminates the watcher
   # instead of continuing with later rules/events after a partial update.
   socat -u "UNIX-CONNECT:$socket" - | {
+    sleep 0.5
     sync_outputs false
 
     while IFS= read -r event; do

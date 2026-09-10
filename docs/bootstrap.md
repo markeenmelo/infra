@@ -71,7 +71,7 @@ Future service secrets may use the same SOPS capability, with separately researc
 
 ## 3. Resolve capability-specific blockers
 
-`just inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement. ThinkPad's graphical capability requires genuine `fleet.desktop.reviewed` acceptance of login/locking/sleep, portals, audio and the mobile display; follow [its checklist](desktop.md#pre-activation-and-acceptance-checklist). This flag does not certify future eGPU/HDR or gaming behavior.
+`just inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement. ThinkPad's graphical capability requires genuine `fleet.desktop.reviewed` acceptance of login/locking/sleep, portals, audio and the mobile display; follow [its checklist](desktop.md#activation-and-acceptance-checklist). This flag does not certify future eGPU/HDR or gaming behavior.
 
 Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Racknerd, bastion and dino opt in after commissioning; thinkpad remains local-only. Keep `ready = false` during discovery. Once every fact is supplied, run:
 

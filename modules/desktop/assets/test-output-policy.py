@@ -62,7 +62,9 @@ elif command == "socat":
     sys.stdout.write((root / "events").read_text())
     sys.exit(int(os.environ.get("SOCKET_STATUS", "0")))
 elif command == "sleep":
-    pass
+    connector = os.environ.get("CONNECT_ON_SLEEP")
+    if connector:
+        (root / f"drm/card9-{connector}/status").write_text("connected\n")
 else:
     raise AssertionError(command)
 '''
@@ -165,6 +167,12 @@ class OutputPolicyTests(unittest.TestCase):
         result = self.invoke()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.rules()[0], [1, SDR_RULE.replace("2560x1440@60.00", "1280x720@60")])
+
+    def test_watch_waits_for_initial_output_publication(self):
+        self.connector(connected=False)
+        result = self.invoke("watch", CONNECT_ON_SLEEP="DP-TEST")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules(), [[1, SDR_RULE], [1, "eDP-1,disable"]])
 
     def test_hotplug_last_external_removal_restores_panel(self):
         self.connector()
