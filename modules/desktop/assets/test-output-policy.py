@@ -1,0 +1,270 @@
+"""Synthetic CLI regressions: no real sysfs, lid, compositor or socket access."""
+
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+POLICY = Path(sys.argv.pop(1)).read_text()
+INTERNAL = {
+    "name": "eDP-1", "width": 1920, "height": 1200, "refreshRate": 60.003,
+    "availableModes": ["1920x1200@60.00Hz"], "disabled": True,
+}
+EXTERNAL = {
+    "name": "DP-TEST", "width": 1280, "height": 720, "refreshRate": 60,
+    "availableModes": ["2560x1440@60.00Hz", "1280x720@60.00Hz"], "disabled": False,
+}
+FALLBACK = {
+    "name": "FALLBACK", "width": 1920, "height": 1080, "refreshRate": 60,
+    "availableModes": [], "disabled": False,
+}
+HDR = "BT2020RGB\nSMPTE ST2084\nHDR Static Metadata Data Block:\n"
+PANEL = "eDP-1,1920x1200@60.003,0x0,1,bitdepth,8,cm,srgb,vrr,0"
+SDR_RULE = "DP-TEST,2560x1440@60.00,0x0,1,bitdepth,8,cm,srgb,vrr,0"
+HDR_RULE = "DP-TEST,2560x1440@60.00,0x0,1,bitdepth,10,cm,hdredid,vrr,0"
+
+# Each external command is replaced at the CLI boundary. The policy's functions,
+# errexit contexts, JSON decoding, locks and event loop all execute unchanged.
+MOCK = r'''
+import json
+import os
+from pathlib import Path
+import sys
+
+root = Path(os.environ["FIXTURE"])
+command = Path(sys.argv[0]).name
+args = sys.argv[1:]
+if command == "hyprctl":
+    if args == ["monitors", "all", "-j"]:
+        query = int((root / "queries").read_text()) + 1
+        (root / "queries").write_text(str(query))
+        if query == int(os.environ.get("FAIL_QUERY", "0")):
+            sys.exit(6)
+        snapshots = json.loads((root / "snapshots").read_text())
+        sys.stdout.write(snapshots[min(query - 1, len(snapshots) - 1)])
+    else:
+        assert args[:2] == ["keyword", "monitor"] and len(args) == 3
+        query = int((root / "queries").read_text())
+        with (root / "rules").open("a") as stream:
+            stream.write(json.dumps([query, args[2]]) + "\n")
+        if (query == int(os.environ.get("FAIL_RULE_QUERY", "0"))
+                and args[2].split(",")[0] == os.environ["FAIL_RULE_NAME"]):
+            sys.exit(7)
+elif command == "edid-decode":
+    edid = json.loads(Path(args[0]).read_text())
+    sys.stdout.write(edid["text"])
+    sys.exit(edid["status"])
+elif command == "socat":
+    assert args == ["-u", f"UNIX-CONNECT:{root}/runtime/hypr/TEST-ONLY/.socket2.sock", "-"]
+    sys.stdout.write((root / "events").read_text())
+    sys.exit(int(os.environ.get("SOCKET_STATUS", "0")))
+elif command == "sleep":
+    connector = os.environ.get("CONNECT_ON_SLEEP")
+    if connector:
+        (root / f"drm/card9-{connector}/status").write_text("connected\n")
+else:
+    raise AssertionError(command)
+'''
+
+
+class OutputPolicyTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="output-policy-test-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        (self.root / "runtime").mkdir()
+        (self.root / "drm").mkdir()
+        lid = self.root / "lid/TEST-ONLY"
+        lid.mkdir(parents=True)
+        (lid / "state").write_text("state: closed\n")
+        (self.root / "queries").write_text("0")
+        (self.root / "rules").write_text("")
+        (self.root / "events").write_text("")
+        binaries = self.root / "bin"
+        binaries.mkdir()
+        for name in ["hyprctl", "edid-decode", "socat", "sleep"]:
+            executable = binaries / name
+            executable.write_text(f"#!{sys.executable}\n" + MOCK)
+            executable.chmod(0o755)
+        self.script = self.root / "policy.sh"
+        # Relocate only fixed hardware roots, never replace policy functions.
+        assert "/sys/class/drm/" in POLICY and "/proc/acpi/button/lid/" in POLICY
+        self.script.write_text(POLICY.replace("/sys/class/drm/", f"{self.root}/drm/")
+                               .replace("/proc/acpi/button/lid/", f"{self.root}/lid/"))
+        self.environment = dict(os.environ, FIXTURE=str(self.root),
+                                XDG_RUNTIME_DIR=str(self.root / "runtime"),
+                                HYPRLAND_INSTANCE_SIGNATURE="TEST-ONLY",
+                                PATH=f"{binaries}:{os.environ['PATH']}")
+        self.snapshots([INTERNAL, EXTERNAL])
+
+    def snapshots(self, *snapshots):
+        (self.root / "snapshots").write_text(json.dumps([
+            snapshot if isinstance(snapshot, str) else json.dumps(snapshot)
+            for snapshot in snapshots
+        ]))
+
+    def connector(self, name="DP-TEST", *, connected=True, hdr=False, status=0):
+        connector = self.root / f"drm/card9-{name}"
+        connector.mkdir()
+        (connector / "status").write_text("connected\n" if connected else "disconnected\n")
+        (connector / "edid").write_text(json.dumps({"text": HDR if hdr else "SDR\n", "status": status}))
+
+    def invoke(self, action="sync", **environment):
+        return subprocess.run(["bash", str(self.script), action], text=True,
+                              capture_output=True, timeout=10,
+                              env=dict(self.environment, **environment))
+
+    def rules(self):
+        return [json.loads(line) for line in (self.root / "rules").read_text().splitlines()]
+
+    def test_disabled_panel_and_fallback_restore_panel(self):
+        self.snapshots([INTERNAL, FALLBACK])
+        result = self.invoke()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules(), [[1, PANEL]])
+
+    def test_virtual_and_disconnected_outputs_do_not_replace_panel(self):
+        self.connector(connected=False)
+        self.snapshots([INTERNAL, FALLBACK, EXTERNAL, dict(EXTERNAL, name="TEST-ONLY-VIRTUAL")])
+        result = self.invoke()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules(), [[1, PANEL]])
+
+    def test_closed_lid_with_physical_external(self):
+        self.connector()
+        result = self.invoke()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules(), [[1, SDR_RULE], [1, "eDP-1,disable"]])
+
+    def test_open_lid_preferred_mode_and_hdr_layout(self):
+        self.connector(hdr=True)
+        (self.root / "lid/TEST-ONLY/state").write_text("state: open\n")
+        result = self.invoke("dry-run")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.splitlines(), [f"monitor {HDR_RULE}",
+            "monitor eDP-1,1920x1200@60.003,320x1440,1,bitdepth,8,cm,srgb,vrr,0"])
+        self.assertEqual(self.rules(), [])
+
+    def test_multiple_externals_sorted_above_centered_panel(self):
+        self.connector("DP-A")
+        self.connector("DP-B")
+        (self.root / "lid/TEST-ONLY/state").write_text("state: open\n")
+        self.snapshots([INTERNAL, dict(EXTERNAL, name="DP-B"), dict(EXTERNAL, name="DP-A")])
+        result = self.invoke()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules(), [
+            [1, SDR_RULE.replace("DP-TEST", "DP-A")],
+            [1, SDR_RULE.replace("DP-TEST", "DP-B").replace(",0x0,", ",2560x0,")],
+            [1, PANEL.replace(",0x0,", ",1600x1440,")],
+        ])
+
+    def test_empty_available_modes_uses_current_mode(self):
+        self.connector()
+        self.snapshots([INTERNAL, dict(EXTERNAL, availableModes=[])])
+        result = self.invoke()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules()[0], [1, SDR_RULE.replace("2560x1440@60.00", "1280x720@60")])
+
+    def test_watch_waits_for_initial_output_publication(self):
+        self.connector(connected=False)
+        result = self.invoke("watch", CONNECT_ON_SLEEP="DP-TEST")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules(), [[1, SDR_RULE], [1, "eDP-1,disable"]])
+
+    def test_hotplug_last_external_removal_restores_panel(self):
+        self.connector()
+        self.snapshots([INTERNAL, EXTERNAL], [INTERNAL, FALLBACK])
+        (self.root / "events").write_text("monitorremoved>>DP-TEST\n")
+        result = self.invoke("watch")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules(), [[1, SDR_RULE], [1, "eDP-1,disable"], [2, PANEL]])
+
+    def test_config_reload_reapplies_hdr_and_layout(self):
+        self.connector(hdr=True)
+        (self.root / "lid/TEST-ONLY/state").write_text("state: open\n")
+        (self.root / "events").write_text("workspace>>2\nconfigreloaded>>\n")
+        result = self.invoke("watch")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        panel = PANEL.replace(",0x0,", ",320x1440,")
+        self.assertEqual(self.rules(), [[1, HDR_RULE], [1, panel], [2, HDR_RULE], [2, panel]])
+
+    def test_failed_hotplug_rule_stops_before_panel_and_next_event(self):
+        self.connector()
+        (self.root / "events").write_text("monitoraddedv2>>1,DP-TEST,TEST\nconfigreloaded>>\n")
+        result = self.invoke("watch", FAIL_RULE_QUERY="2", FAIL_RULE_NAME="DP-TEST")
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(self.rules(), [[1, SDR_RULE], [1, "eDP-1,disable"], [2, SDR_RULE]])
+        self.assertEqual((self.root / "queries").read_text(), "2")
+
+    def test_failed_first_rule_stops_before_other_external(self):
+        self.connector("DP-A")
+        self.connector("DP-B")
+        self.snapshots([INTERNAL, dict(EXTERNAL, name="DP-A"), dict(EXTERNAL, name="DP-B")])
+        result = self.invoke(FAIL_RULE_QUERY="1", FAIL_RULE_NAME="DP-A")
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(self.rules(), [[1, SDR_RULE.replace("DP-TEST", "DP-A")]])
+
+    def test_query_failure_propagates(self):
+        result = self.invoke(FAIL_QUERY="1")
+        self.assertEqual(result.returncode, 6)
+        self.assertEqual(self.rules(), [])
+
+    def test_json_and_row_decoding_fail_before_any_rules(self):
+        self.connector()
+        invalid = ["", "[", "{}", "[] []", "[7]"]
+        invalid += [[INTERNAL, dict(EXTERNAL, availableModes=modes)] for modes in
+                    [[123], ["invalid"], ["0x1080@60Hz"], None]]
+        # A valid earlier row must not modeset before a later row fails parsing.
+        self.connector("DP-A")
+        invalid.append([dict(EXTERNAL, name="DP-A"), dict(EXTERNAL, availableModes=[123])])
+        for snapshot in invalid:
+            with self.subTest(snapshot=snapshot):
+                self.snapshots(snapshot)
+                result = self.invoke()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotEqual(result.stderr, "")
+                self.assertEqual(self.rules(), [])
+
+    def test_watch_row_decoding_failure_stops_next_event(self):
+        self.connector()
+        self.snapshots([INTERNAL, EXTERNAL], [INTERNAL, dict(EXTERNAL, availableModes=[123])])
+        (self.root / "events").write_text("monitoradded>>DP-TEST\nconfigreloaded>>\n")
+        result = self.invoke("watch")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotEqual(result.stderr, "")
+        self.assertEqual(self.rules(), [[1, SDR_RULE], [1, "eDP-1,disable"]])
+        self.assertEqual((self.root / "queries").read_text(), "2")
+
+    def test_edid_failure_is_not_treated_as_sdr(self):
+        self.connector(status=9)
+        result = self.invoke()
+        self.assertEqual(result.returncode, 9)
+        self.assertEqual(self.rules(), [])
+
+    def test_disconnected_same_name_connector_is_not_decoded(self):
+        self.connector(hdr=True)
+        disconnected = self.root / "drm/card0-DP-TEST"
+        disconnected.mkdir()
+        (disconnected / "status").write_text("disconnected\n")
+        (disconnected / "edid").write_text("")  # Not an EDID; must never be decoded.
+        result = self.invoke()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rules(), [[1, HDR_RULE], [1, "eDP-1,disable"]])
+
+    def test_lid_read_failure_prevents_rules(self):
+        (self.root / "lid/TEST-ONLY/state").write_text("")
+        result = self.invoke()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.rules(), [])
+
+    def test_socket_failure_propagates_without_reconnect(self):
+        self.snapshots([INTERNAL])
+        result = self.invoke("watch", SOCKET_STATUS="8")
+        self.assertEqual(result.returncode, 8)
+        self.assertEqual((self.root / "queries").read_text(), "1")
+
+
+unittest.main()

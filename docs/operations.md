@@ -11,7 +11,7 @@ Never substitute `system.stateVersion` for the current supported release. It is 
    before=$(mktemp)
    cp flake.lock "$before"
    ```
-2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include disko, impermanence, sops-nix, deploy-rs and flake-parts issues. SOPS currently has an explicit reused revision in `flake.nix`; advancing it requires a researched URL revision edit, not just `nix flake update`.
+2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include unstable Home Manager, the pinned Zen recipe, disko, impermanence, sops-nix, deploy-rs and flake-parts issues. Desktop updates must review the actual target-packaged Hyprland/Noctalia APIs and new profile behavior, not legacy Noctalia Shell 4.x instructions. SOPS currently has an explicit reused revision in `flake.nix`; advancing it requires a researched URL revision edit, not just `nix flake update`.
 3. Choose **one** update scope:
    ```sh
    nix flake update nixpkgs-stable
@@ -38,7 +38,29 @@ jq '.nodes as $n | ["nixpkgs-stable", "nixpkgs-unstable"][] as $i |
   {input:$i, original:$n[$n.root.inputs[$i]].original, locked:$n[$n.root.inputs[$i]].locked}' flake.lock
 ```
 
-A **stable release migration** additionally changes the stable URL in `flake.nix` after fresh research, then updates that one input. Do not automatically jump servers to a new release or bump their stateVersion. Update the dated research record and validate database/service compatibility and restores.
+Only the unstable desktop uses Home Manager. The input is named `home-manager`, with URL `github:nix-community/home-manager`. Update it independently with `nix flake update home-manager`; validate the unstable desktop/actual ThinkPad configs and all both-track infrastructure checks. Updating unstable Nixpkgs changes HM's packages without moving HM's source revision; stable updates have no HM dependency.
+
+Zen is a normal `zen-browser` flake input with URL `github:youwen5/zen-browser-flake` and an unstable follows link. Both Zen and Home Manager use default-branch URLs; exact revisions live only in `flake.lock`. A scoped Zen update uses `nix flake update zen-browser`, with review of its recipe/wrapper adapter and extension XPI pins. Continue passing the consuming host's `pkgs` into the recipe instead of importing upstream's separately instantiated package outputs. Validation checks input identity, flake status and follows policy, not a hardcoded Zen commit. Pi's extension manifest/lock, npm hash, pi-review revision and small compatibility patch are separately pinned; update and test them together, without credentials or provider settings drift. Preserve HM file-collision checks and the isolated Noctalia profile. See [desktop ownership](desktop.md).
+
+Every host uses its track's latest **stock 7.x** kernel. Check kernel EOL/release changes and Bastion's actual `kernelPackages.${boot.zfs.package.kernelModuleAttribute}` derivation. Never use the removed `.zfs` alias, allow broken packages, mix tracks or silently cross the major-version guard. Preserve recovery generations/ESP headroom and arrange boot/pool acceptance separately; a compatible derivation is not a tested boot.
+
+A **stable release migration** changes the numbered stable Nixpkgs URL in `flake.nix` after fresh research, then updates that input; there is no stable HM URL to maintain. Do not automatically jump servers to a new release or bump their stateVersion. Update the dated research record and validate database/service compatibility and restores.
+
+## ThinkPad Nix Helper (nh)
+
+`modules/nh.nix` enables native NixOS `programs.nh` **only on ThinkPad**, using its own `pkgs.nh` (currently 4.4.2). `programs.nh.flake = "/home/marcos/projects/infra"` sets **`NH_FLAKE`** at this Nixpkgs pin. This is the observed checkout path, not a store copy or guessed server path. An explicit installable or `NH_OS_FLAKE` can override it; update the declaration if the checkout moves. Settings take effect during a separately authorized activation, not by editing this repository.
+
+`programs.nh.clean.enable = false`: no nh cleanup service/timer, generation pruning, automatic input updates or rebuild aliases. Keep recovery generations and use the reviewed input-update procedure above. Home Manager is integrated into NixOS; there is no standalone output for `nh home`.
+
+`just check` remains canonical and `just ready thinkpad` must still pass before a system build. ThinkPad is commissioned (`ready = true`) and exported as `nixosConfigurations.thinkpad`. A build-only helper invocation is:
+
+```sh
+just check
+just ready thinkpad
+nh os build --hostname thinkpad --no-update-lock-file
+```
+
+This selects the commissioned ThinkPad output; the other three hosts remain unready and absent from `nixosConfigurations`. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
 
 ## Deployment and recovery
 
@@ -102,4 +124,4 @@ Or select the previous generation in its bootloader. Inspect the result before r
 
 Servers retain a bounded journal; interactive hosts use volatile logs. No monitoring endpoint, exporter, application database, NAS share, unattended backup or automatic garbage collection is silently enabled. Racknerd's fail2ban database persists; bastion retains its observed monthly `tank` scrub schedule, which is not a backup. Before production services, add separately reviewed backup/restore and observability features with runtime credentials and tested failure handling. A Btrfs subvolume and a persistent root policy are **not backups**. Removing an impermanence declaration leaves backing data; inspect it, do not automatically delete it.
 
-Recommended future work, not implemented here: review dino's unencrypted storage and boot filesystem, complete per-host SOPS identity/credential provisioning and acceptance, VPN access, gaming/desktop capabilities, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Thinkpad's existing LUKS encryption is preserved, not newly provisioned. Add only what the fleet actually needs.
+Recommended future work, not implemented here: review dino's unencrypted storage and boot filesystem, complete per-host SOPS identity/credential provisioning and acceptance, VPN access, ThinkPad's hardware-verified NVIDIA/Samsung HDR/VRR profile and desktop runtime acceptance, optional Dino desktop/gaming capabilities, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Thinkpad's existing LUKS encryption is preserved, not newly provisioned. Add only what the fleet actually needs.

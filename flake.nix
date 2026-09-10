@@ -9,6 +9,17 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs-stable";
     };
+    # Only the unstable interactive desktop needs Home Manager; servers do not.
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    # Normal default-branch flake, pinned only in flake.lock. The desktop calls
+    # its source recipe with its own pkgs instead of importing another set.
+    zen-browser = {
+      url = "github:youwen5/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
     disko = {
       url = "github:nix-community/disko";
       # Only upstream tools use this input. The NixOS module uses its caller's pkgs/lib.
@@ -22,7 +33,7 @@
     };
     sops-nix = {
       # Reuse the existing credential backend pin; see docs/research.md.
-      url = "github:Mic92/sops-nix/fbf759290e0cb0a98dfc813a4eb7d53ad1dacb57";
+      url = "github:Mic92/sops-nix/13616fff713a9f94055c66f15687ebdc17a335df";
       inputs.nixpkgs.follows = "nixpkgs-stable";
     };
     deploy-rs = {

@@ -1,0 +1,28 @@
+{
+  "name": "infra-pi-extensions",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@99percentpeople/pi-codex-api": "0.4.0",
+    "@akepka/pi-cursor-cli-provider": "0.10.1",
+    "@ayulab/pi-rewind": "0.4.6",
+    "@juicesharp/rpiv-ask-user-question": "2.9.0",
+    "@juicesharp/rpiv-todo": "2.9.0",
+    "pi-claude-bridge": "0.7.0"
+  },
+  "pi": {
+    "extensions": [
+      "./pi-review/review.ts",
+      "./node_modules/@juicesharp/rpiv-ask-user-question/index.ts",
+      "./node_modules/@juicesharp/rpiv-todo/index.ts",
+      "./node_modules/@ayulab/pi-rewind/index.js",
+      "./node_modules/pi-claude-bridge/src/index.ts",
+      "./node_modules/@akepka/pi-cursor-cli-provider/src/index.ts",
+      "./node_modules/@99percentpeople/pi-codex-api/index.min.js"
+    ],
+    "skills": [
+      "./node_modules/@99percentpeople/pi-codex-api/skills"
+    ]
+  }
+}

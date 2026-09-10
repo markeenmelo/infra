@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-09-09
+- Extended by [ADR 0007](0007-thinkpad-desktop.md), then narrowed by [ADR 0008](0008-native-desktop-and-kernels.md): only the unstable desktop imports Home Manager, using its host's packages; servers retain stable Nixpkgs without HM.
 
 ## Context
 

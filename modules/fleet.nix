@@ -13,6 +13,12 @@ let
   };
   evaluated = lib.mapAttrs (
     name: host:
+    let
+      desktop = lib.elem "hyprland" host.capabilities;
+    in
+    assert lib.assertMsg (
+      !desktop || host.track == "unstable"
+    ) "${name}: the desktop/Home Manager capability is supported only on the unstable track.";
     tracks.${host.track}.lib.nixosSystem {
       modules = [
         config.flake.modules.nixos.base
@@ -23,6 +29,7 @@ let
           fleet.bootstrap.approved = host.ready;
         }
       ]
+      ++ lib.optional desktop inputs.home-manager.nixosModules.home-manager
       ++ map (capability: config.flake.modules.nixos.${capability}) host.capabilities;
     }
   ) hosts;

@@ -1,0 +1,310 @@
+{
+  "automaticTheaterMode": {
+    "enabled": false
+  },
+  "automaticallyDisableAmbientMode": {
+    "enabled": true
+  },
+  "automaticallyDisableAutoPlay": {
+    "enabled": true
+  },
+  "automaticallyDisableClosedCaptions": {
+    "enabled": true
+  },
+  "automaticallyEnableClosedCaptions": {
+    "enabled": false
+  },
+  "automaticallyMaximizePlayer": {
+    "enabled": true
+  },
+  "automaticallyShowMoreVideosOnEndScreen": {
+    "enabled": false
+  },
+  "blockNumberKeySeeking": {
+    "enabled": false
+  },
+  "copyTimestampUrlButton": {
+    "button": {
+      "enabled": false,
+      "fullscreenPlacement": "same",
+      "placement": "player_controls_right"
+    }
+  },
+  "customCSS": {
+    "code": "",
+    "enabled": false
+  },
+  "deepDarkCSS": {
+    "colors": {
+      "colorShadow": "#383c4a4d",
+      "dimmerText": "#cccccc",
+      "hoverBackground": "#4e5467",
+      "mainBackground": "#22242d",
+      "mainColor": "#367bf0",
+      "mainText": "#eeeeee",
+      "secondBackground": "#242730"
+    },
+    "enabled": false,
+    "preset": "Deep-Dark"
+  },
+  "defaultToOriginalAudioTrack": {
+    "enabled": true
+  },
+  "featureMenu": {
+    "openType": "click"
+  },
+  "flipVideoButtons": {
+    "buttons": {
+      "flipVideoHorizontalButton": {
+        "enabled": false,
+        "fullscreenPlacement": "same",
+        "placement": "player_controls_right"
+      },
+      "flipVideoVerticalButton": {
+        "enabled": false,
+        "fullscreenPlacement": "same",
+        "placement": "player_controls_right"
+      }
+    }
+  },
+  "forwardRewindButtons": {
+    "button": {
+      "enabled": false,
+      "fullscreenPlacement": "same",
+      "placement": "player_controls_right"
+    },
+    "time": 5
+  },
+  "globalVolume": {
+    "enabled": false,
+    "volume": 25
+  },
+  "hideArtificialIntelligence": {
+    "enabled": true
+  },
+  "hideEndScreenCards": {
+    "enabled": true
+  },
+  "hideEndScreenCardsButton": {
+    "button": {
+      "enabled": true,
+      "fullscreenPlacement": "same",
+      "placement": "player_controls_right"
+    }
+  },
+  "hideLiveStreamChat": {
+    "enabled": true
+  },
+  "hideMembersOnlyVideos": {
+    "enabled": true
+  },
+  "hideOfficialArtistVideosFromHomePage": {
+    "enabled": true
+  },
+  "hidePaidPromotionBanner": {
+    "enabled": true
+  },
+  "hidePlayables": {
+    "enabled": true
+  },
+  "hidePlaylistRecommendationsFromHomePage": {
+    "enabled": true
+  },
+  "hidePosts": {
+    "enabled": true
+  },
+  "hideScrollBar": {
+    "enabled": true
+  },
+  "hideShorts": {
+    "channel": {
+      "enabled": true
+    },
+    "home": {
+      "enabled": true
+    },
+    "search": {
+      "enabled": true
+    },
+    "sidebar": {
+      "enabled": true
+    },
+    "subscriptions": {
+      "enabled": true
+    },
+    "videos": {
+      "enabled": true
+    }
+  },
+  "hideSidebarRecommendedVideos": {
+    "enabled": true
+  },
+  "hideTranslateComment": {
+    "enabled": true
+  },
+  "language": "en-US",
+  "loopButton": {
+    "button": {
+      "enabled": false,
+      "fullscreenPlacement": "same",
+      "placement": "feature_menu"
+    }
+  },
+  "maximizePlayerButton": {
+    "button": {
+      "enabled": true,
+      "fullscreenPlacement": "same",
+      "placement": "feature_menu"
+    }
+  },
+  "miniPlayer": {
+    "defaultPosition": "bottom_right",
+    "defaultSize": "400x225",
+    "enabled": false
+  },
+  "miniPlayerButton": {
+    "button": {
+      "enabled": false,
+      "fullscreenPlacement": "player_controls_right",
+      "placement": "below_player"
+    }
+  },
+  "monoToStereoButton": {
+    "button": {
+      "enabled": false,
+      "fullscreenPlacement": "same",
+      "placement": "player_controls_left"
+    }
+  },
+  "onScreenDisplay": {
+    "color": "white",
+    "hideTime": 750,
+    "opacity": 75,
+    "padding": 5,
+    "position": "center",
+    "type": "text"
+  },
+  "openSettingsOnMajorOrMinorVersionChange": true,
+  "openTranscriptButton": {
+    "button": {
+      "enabled": false,
+      "fullscreenPlacement": "same",
+      "placement": "feature_menu"
+    }
+  },
+  "openYouTubeSettingsOnHover": {
+    "enabled": false
+  },
+  "pauseBackgroundPlayers": {
+    "enabled": false
+  },
+  "playbackSpeedButtons": {
+    "button": {
+      "enabled": false,
+      "fullscreenPlacement": "same",
+      "placement": "player_controls_left"
+    },
+    "speed": 0.25
+  },
+  "playerQuality": {
+    "enabled": false,
+    "fallbackStrategy": "lower",
+    "fpsPreference": "default",
+    "preferPremium": false,
+    "quality": "hd1080"
+  },
+  "playerSpeed": {
+    "channelSpeeds": "",
+    "enabled": false,
+    "speed": 1
+  },
+  "playlistLength": {
+    "enabled": false,
+    "lengthGetMethod": "api",
+    "watchTimeGetMethod": "youtube"
+  },
+  "playlistManagementButtons": {
+    "removeAllButton": {
+      "enabled": false
+    },
+    "removeButton": {
+      "enabled": false
+    },
+    "resetButton": {
+      "enabled": false
+    }
+  },
+  "playlistReverseButton": {
+    "enabled": false
+  },
+  "remainingTime": {
+    "enabled": true
+  },
+  "rememberVolume": {
+    "enabled": false
+  },
+  "removeRedirect": {
+    "enabled": false
+  },
+  "restoreFullscreenScrolling": {
+    "enabled": false
+  },
+  "saveToWatchLaterButton": {
+    "enabled": false
+  },
+  "screenshotButton": {
+    "button": {
+      "enabled": false,
+      "fullscreenPlacement": "same",
+      "placement": "player_controls_left"
+    },
+    "dateFormat": "iso",
+    "filename": "Screenshot-{video id}-{date}",
+    "format": "png",
+    "saveAs": "file",
+    "timestampFormat": "auto",
+    "timestampSeparator": "auto"
+  },
+  "scrollWheelSpeedControl": {
+    "enabled": false,
+    "modifierKey": "altKey",
+    "steps": 0.25
+  },
+  "scrollWheelVolumeControl": {
+    "enabled": false,
+    "holdModifierKey": false,
+    "holdRightClick": false,
+    "modifierKey": "ctrlKey",
+    "steps": 5
+  },
+  "shareShortener": {
+    "enabled": false
+  },
+  "shortsAutoScroll": {
+    "enabled": false
+  },
+  "skipContinueWatching": {
+    "enabled": true
+  },
+  "timestampPeek": {
+    "enabled": false
+  },
+  "videoHistory": {
+    "enabled": false,
+    "resumeType": "prompt"
+  },
+  "videosPerRow": {
+    "enabled": false,
+    "videosPerRow": 4
+  },
+  "volumeBoost": {
+    "amount": 5,
+    "button": {
+      "fullscreenPlacement": "same",
+      "placement": "player_controls_left"
+    },
+    "enabled": false,
+    "mode": "global"
+  },
+  "youtubeDataApiV3Key": ""
+}

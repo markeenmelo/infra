@@ -9,3 +9,9 @@ creation_rules:
       - age:
           - *operator
           - *thinkpad
+  # Separate campus placeholders; the existing password/PSK file stays intact.
+  - path_regex: ^secrets/hosts/thinkpad-senecanet\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *thinkpad
