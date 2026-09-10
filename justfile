@@ -6,10 +6,12 @@ default:
 
 fmt:
     nix fmt --no-update-lock-file
+    tofu -chdir=tofu/tailscale fmt -recursive
 
 # pkgs.nixfmt-tree provides treefmt with a generated configuration.
 format-check:
     treefmt --ci
+    tofu -chdir=tofu/tailscale fmt -check -recursive
 
 lint:
     statix check .
@@ -23,7 +25,7 @@ secret-check-tests:
     bash scripts/test-secret-check.sh
 
 evaluate:
-    nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing, components})), fixtures, compositions, existingInstallations, sops, desktop, wifi}'
+    nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing, components})), fixtures, compositions, existingInstallations, sops, desktop, wifi, tailscale}'
 
 # Check ciphertext before Nix evaluates/builds secret manifests; never decrypt.
 # Canonical non-destructive validation; does not install, mount or deploy.
@@ -32,6 +34,18 @@ check: secret-check format-check lint evaluate
 
 inventory:
     nix eval --no-update-lock-file --json .#fleet | jq .
+
+# Local intent/blockers only, not a live node query.
+tailscale-inventory:
+    nix eval --no-update-lock-file --json .#tailscalePlan | jq .
+
+tailscale-check:
+    bash scripts/check-tailscale.sh
+
+# Operator-only: plan/import contact the API; apply changes the LIVE tailnet.
+# Never a dependency of check, build, deploy or shell entry.
+tailnet operation:
+    bash scripts/tailscale-tofu.sh "$1"
 
 revisions:
     jq '.nodes | with_entries(select(.value.locked)) | map_values(.locked | {rev, narHash, url})' flake.lock

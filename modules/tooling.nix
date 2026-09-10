@@ -26,6 +26,8 @@
           pkgs.openssh
           pkgs.shellcheck
           config.packages.deploy-rs
+          config.packages.tailscale-tofu
+          pkgs.python3
         ];
       };
       checks.source-quality =
