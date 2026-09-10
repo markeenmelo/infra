@@ -120,8 +120,7 @@
         # hardcodes StateDirectoryMode=0775, which systemd re-enforces on every
         # start and which silently reverted the persisted 0700 backing mode.
         # Force the reviewed private mode; the root daemon needs no group bits.
-        systemd.services.accounts-daemon.serviceConfig.StateDirectoryMode =
-          lib.mkForce "0700";
+        systemd.services.accounts-daemon.serviceConfig.StateDirectoryMode = lib.mkForce "0700";
       };
     };
 }
