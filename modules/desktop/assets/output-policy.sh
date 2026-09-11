@@ -2,9 +2,9 @@
 set -euo pipefail
 shopt -s inherit_errexit nullglob
 
-internal_output="eDP-1"
-internal_mode="1920x1200@60.003"
-internal_width=1920
+internal_output="@internalOutput@"
+internal_mode="@internalMode@"
+internal_width=@internalWidth@
 
 usage() {
   printf 'usage: fleet-output-policy {sync|dry-run|watch}\n' >&2

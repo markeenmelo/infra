@@ -5,7 +5,7 @@
     capabilities = [
       "existing-storage"
       "ssh"
-      "hyprland"
+      "desktop"
       "persistence"
       "access"
       "workstation"

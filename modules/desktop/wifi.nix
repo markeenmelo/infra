@@ -29,6 +29,11 @@
         description = "Reviewed encrypted SOPS YAML containing filled seneca-identity and seneca-password (no replacement markers). Null blocks campus provisioning; never place credentials in Nix.";
       };
       config = {
+        networking.networkmanager.wifi.powersave = true;
+        users.users.marcos.extraGroups = [ "networkmanager" ];
+        # Operator-run private MAC/decryption and filled-scalar audit, 2026-09-10.
+        # No campus connection was tested; this refactor changes no review.
+        fleet.wifi.senecaSopsFile = ../../secrets/hosts/thinkpad-senecanet.yaml;
         fleet.bootstrap.missing =
           lib.optional (!campus)
             "Replace both encrypted markers in secrets/hosts/thinkpad-senecanet.yaml using SOPS locally, then set fleet.wifi.senecaSopsFile to the reviewed file; SenecaNET is not provisioned while null.";

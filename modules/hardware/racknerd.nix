@@ -18,6 +18,5 @@
       "virtio_blk"
     ];
     boot.loader.limine.extraConfig = "graphics: no";
-    time.timeZone = "America/Toronto";
   };
 }

@@ -13,12 +13,6 @@ let
   };
   evaluated = lib.mapAttrs (
     name: host:
-    let
-      desktop = lib.elem "hyprland" host.capabilities;
-    in
-    assert lib.assertMsg (
-      !desktop || host.track == "unstable"
-    ) "${name}: the desktop/Home Manager capability is supported only on the unstable track.";
     tracks.${host.track}.lib.nixosSystem {
       modules = [
         config.flake.modules.nixos.base
@@ -29,7 +23,6 @@ let
           fleet.bootstrap.approved = host.ready;
         }
       ]
-      ++ lib.optional desktop inputs.home-manager.nixosModules.home-manager
       ++ map (capability: config.flake.modules.nixos.${capability}) host.capabilities;
     }
   ) hosts;
@@ -58,7 +51,7 @@ in
             description = "Names of deferred flake.modules.nixos values to compose.";
           };
           module = mkOption {
-            type = types.deferredModule;
+            type = types.deferredModuleWith { staticModules = [ { _class = "nixos"; } ]; };
             default = { };
             description = "Host-specific facts, merged by independent top-level features.";
           };

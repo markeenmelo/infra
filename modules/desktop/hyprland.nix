@@ -1,73 +1,25 @@
-{ config, ... }:
-let
-  desktopHome = config.flake.modules.homeManager.hyprland;
-in
 {
-  flake.modules.nixos.hyprland = { config, lib, ... }: {
-    options.fleet.desktop.reviewed = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Graphical login, fingerprint/password fallback, locking/sleep, portals, audio and mobile displays have been reviewed. Not an eGPU/HDR certification.";
+  flake.modules.nixos.desktop = {
+    programs.hyprland = {
+      enable = true;
+      withUWSM = true;
     };
-    config = {
-      fleet.bootstrap.missing =
-        lib.optional (!config.fleet.desktop.reviewed)
-          "Verify desktop login, fingerprint/password fallback, locking/sleep, portals, audio and mobile display; acknowledge fleet.desktop.reviewed.";
-      assertions = [
-        {
-          assertion = !(config.services.greetd.settings ? initial_session);
-          message = "The fleet desktop requires authenticated login, never greetd autologin.";
-        }
-        {
-          assertion = config.home-manager.useGlobalPkgs && config.home-manager.useUserPackages;
-          message = "The desktop must use its host's packages and NixOS-managed user profiles.";
-        }
+    programs.uwsm.waylandCompositors.hyprland = {
+      prettyName = "Hyprland";
+      binPath = "/run/current-system/sw/bin/start-hyprland";
+    };
+    security.rtkit.enable = true;
+    xdg.portal.config.hyprland = {
+      default = [
+        "hyprland"
+        "gtk"
       ];
-      programs.hyprland = {
-        enable = true;
-        withUWSM = true;
-      };
-      programs.uwsm.waylandCompositors.hyprland = {
-        prettyName = "Hyprland";
-        binPath = "/run/current-system/sw/bin/start-hyprland";
-      };
-      services = {
-        # Noctalia replaces the text frontend, not greetd's PAM/session backend.
-        displayManager.noctalia-greeter = {
-          enable = true;
-          settings = {
-            session.default = "Hyprland (UWSM)";
-            keyboard.layout = "us";
-            cursor.size = 24;
-            # Empty submission starts PAM fingerprint fallback; PAM still
-            # rejects empty-password accounts and the final deny rule remains.
-            auth = {
-              allow_empty_password = true;
-              request_timeout = 60;
-            };
-          };
-        };
-        gnome.gnome-keyring.enable = true;
-      };
-      security.rtkit.enable = true;
-      xdg.portal.config.hyprland = {
-        default = [
-          "hyprland"
-          "gtk"
-        ];
-        "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
-        "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
-      };
-      home-manager = {
-        useGlobalPkgs = true;
-        useUserPackages = true;
-        sharedModules = [ desktopHome ];
-        backupFileExtension = null;
-      };
+      "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+      "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
     };
   };
 
-  flake.modules.homeManager.hyprland =
+  flake.modules.homeManager.desktop =
     { lib, pkgs, ... }:
     let
       inline = lib.generators.mkLuaInline;

@@ -35,12 +35,5 @@
     # modules/kernel.nix selects the requested stock 7.x kernel. Retain native
     # i915 probing for Alder Lake-P, not experimental xe/force_probe overrides;
     # never load a disconnected eGPU's unverified driver.
-    services.thermald.enable = true;
-    services.hardware.bolt.enable = true;
-    environment.persistence."/persist".directories = [ "/var/lib/boltd" ];
-    networking.networkmanager.wifi.powersave = true;
-    fleet.workstation.homePersistence = "filesystem";
-    users.users.marcos.extraGroups = [ "networkmanager" ];
-    time.timeZone = "America/Toronto";
   };
 }

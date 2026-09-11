@@ -2,13 +2,13 @@
   # Bitwarden desktop/CLI and its SSH agent. Vault data, the unlock state and
   # Bitwarden's own autostart entry stay mutable application state: nothing here
   # reads, imports or removes them.
-  flake.modules.nixos.hyprland = {
+  flake.modules.nixos.desktop = {
     # GNOME Keyring keeps providing Secret Service storage for desktop clients,
     # but its SSH agent would race Bitwarden's for signing requests.
     services.gnome.gcr-ssh-agent.enable = false;
   };
 
-  flake.modules.homeManager.hyprland =
+  flake.modules.homeManager.desktop =
     {
       config,
       lib,

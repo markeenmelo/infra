@@ -18,10 +18,10 @@ class Wrapper(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.repo = self.root / "repo"
-        (self.repo / "scripts").mkdir(parents=True)
+        (self.repo / "modules/tailscale").mkdir(parents=True)
         (self.repo / "tofu/tailscale").mkdir(parents=True)
         (self.repo / "tofu/tailscale/tailnet.json").write_text('{"id": "TEST-ONLY-TAILNET"}\n')
-        self.script = self.repo / "scripts/tailscale-tofu.sh"
+        self.script = self.repo / "modules/tailscale/tailscale-tofu.sh"
         shutil.copyfile(SCRIPT, self.script)
         executable = self.root / "tofu"
         executable.write_text(f"#!{sys.executable}\n" + """import os, pathlib, sys

@@ -11,7 +11,7 @@ file="$work/secrets/hosts/thinkpad.yaml"
 cp secrets/hosts/thinkpad.yaml "$file"
 # Store inputs are read-only; only this disposable test copy may be mutated.
 chmod u+w "$file"
-(cd "$work" && bash "$repo/scripts/check-secrets.sh")
+(cd "$work" && bash "$repo/modules/secrets/check-secrets.sh")
 
 for variant in plaintext recipient missing-mac unsupported-backend invalid-yaml multiple-documents duplicate-key merge-key nested-merge; do
   cp "$repo/secrets/hosts/thinkpad.yaml" "$file"
@@ -45,7 +45,7 @@ for variant in plaintext recipient missing-mac unsupported-backend invalid-yaml 
         "$repo/secrets/hosts/thinkpad.yaml" > "$file"
       ;;
   esac
-  if (cd "$work" && bash "$repo/scripts/check-secrets.sh") >"$work/result" 2>&1; then
+  if (cd "$work" && bash "$repo/modules/secrets/check-secrets.sh") >"$work/result" 2>&1; then
     printf 'ERROR: secret guard accepted %s.\n' "$variant" >&2
     exit 1
   fi

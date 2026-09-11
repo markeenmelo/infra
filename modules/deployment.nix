@@ -7,6 +7,7 @@
 let
   inherit (lib) mkOption types;
   hosts = config.fleet.hosts;
+  deployConfig = config.flake.deploy;
   nixosModules = config.flake.modules.nixos;
   # Scoped overlay: never installed into a host's nixpkgs.overlays. The activation
   # helper AND its executable are built with the target's own pkgs, not another track.
@@ -174,9 +175,10 @@ in
       lib.filterAttrs (_: host: host.ready && host.deployment.enable) hosts
     );
     flake.deploymentPlan = lib.mapAttrs (_: host: host.deployment // { inherit (host) ready; }) hosts;
-    perSystem = { pkgs, ... }: {
+    perSystem = { config, pkgs, ... }: {
+      devPackages = [ config.packages.deploy-rs ];
       packages.deploy-rs = (deploymentPkgs pkgs).deploy-rs.deploy-rs;
-      checks = (deployLib pkgs).deployChecks config.flake.deploy;
+      checks = (deployLib pkgs).deployChecks deployConfig;
     };
   };
 }

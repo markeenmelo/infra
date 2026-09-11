@@ -1,6 +1,44 @@
 {
+  flake.modules.nixos.desktop = { config, lib, ... }: {
+    services = {
+      # Noctalia replaces the text frontend, not greetd's PAM/session backend.
+      displayManager.noctalia-greeter = {
+        enable = true;
+        settings = {
+          session.default = "Hyprland (UWSM)";
+          keyboard.layout = "us";
+          cursor.size = 24;
+          # Empty submission starts PAM fingerprint fallback; PAM still
+          # rejects empty-password accounts and the final deny rule remains.
+          auth = {
+            allow_empty_password = true;
+            request_timeout = 60;
+          };
+        };
+      };
+      gnome.gnome-keyring.enable = true;
+    };
+    environment.persistence."/persist".directories = [
+      {
+        directory = "/var/lib/AccountsService";
+        mode = "0700";
+      }
+      {
+        directory = "/var/lib/noctalia-greeter";
+        user = config.services.greetd.settings.default_session.user;
+        group = config.users.users.${config.services.greetd.settings.default_session.user}.group;
+        mode = "0750";
+      }
+    ];
+    # First-boot acceptance 2026-09-10: the upstream accounts-daemon unit
+    # hardcodes StateDirectoryMode=0775, which systemd re-enforces on every
+    # start and which silently reverted the persisted 0700 backing mode.
+    # Force the reviewed private mode; the root daemon needs no group bits.
+    systemd.services.accounts-daemon.serviceConfig.StateDirectoryMode = lib.mkForce "0700";
+  };
+
   # Native unstable Home Manager owns Noctalia configuration and its one service.
-  flake.modules.homeManager.hyprland =
+  flake.modules.homeManager.desktop =
     {
       config,
       ...

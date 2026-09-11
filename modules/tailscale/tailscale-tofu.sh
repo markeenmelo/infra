@@ -6,7 +6,7 @@ umask 077
 fail() { printf '%s\n' "$1" >&2; exit 1; }
 [[ $# == 1 ]] || fail 'Usage: tailscale-tofu.sh init|plan|verify|apply|import-policy|import-dns'
 case "$1" in init|plan|verify|apply|import-policy|import-dns) ;; *) fail 'Unsupported operation.' ;; esac
-root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)
 expected_tailnet=$(jq -er '.id | select(type == "string") | select(length > 0 and . != "-" and (test("\\s") | not))' "$root/tofu/tailscale/tailnet.json") \
   || fail 'The checked-in public tailnet identity is missing or invalid.'
 [[ ${TAILSCALE_TAILNET-$expected_tailnet} == "$expected_tailnet" ]] \

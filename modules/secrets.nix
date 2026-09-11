@@ -71,6 +71,11 @@
     };
 
   perSystem = { pkgs, ... }: {
+    devPackages = [
+      pkgs.sops
+      pkgs.age
+      pkgs.yq-go
+    ];
     checks.secret-files =
       pkgs.runCommand "secret-files"
         {
@@ -82,8 +87,8 @@
         }
         ''
           cd ${inputs.self}
-          bash scripts/check-secrets.sh
-          bash scripts/test-secret-check.sh
+          bash modules/secrets/check-secrets.sh
+          bash modules/secrets/test-secret-check.sh
           touch "$out"
         '';
   };

@@ -2,7 +2,7 @@
   # Pi coding agent and its pinned extension set. Only the manifest, lock file
   # and the Herdr-provided session extension are vendored here; provider
   # credentials, session history and project trust stay mutable in ~/.pi.
-  flake.modules.nixos.hyprland =
+  flake.modules.nixos.desktop =
     { lib, ... }:
     {
       # Pi's pinned bridge/provider extensions shell out to these two unfree
@@ -16,7 +16,7 @@
         ];
     };
 
-  flake.modules.homeManager.hyprland =
+  flake.modules.homeManager.desktop =
     { lib, pkgs, ... }:
     let
       jsonFormat = pkgs.formats.json { };

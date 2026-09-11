@@ -14,6 +14,5 @@
     hardware.enableRedistributableFirmware = true;
     hardware.cpu.intel.updateMicrocode = true;
     boot.loader.limine.extraConfig = "graphics: no";
-    time.timeZone = "America/Toronto";
   };
 }

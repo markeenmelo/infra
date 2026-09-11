@@ -72,16 +72,17 @@ Class-checked `flake.modules.nixos.<capability>`, `flake.modules.homeManager.<ca
 
 - `modules/fleet.nix`: required identity/architecture/track, evaluation boundary, inventory.
 - `modules/machines/`: explicit capability compositions and deployment intent.
-- `modules/hardware/`, `modules/networking/`, `modules/access/`: observed facts and deliberate target choices.
+- `modules/hardware/`: observed hardware only; networking, access, locale and laptop policy live in their own concerns.
 - `modules/storage/existing.nix`, host storage/data modules: existing-installation mount/boot boundary.
 - `modules/{headless,ssh,access,secrets,server,vps,workstation,laptop}.nix`: cohesive reusable features; `logging.nix` contributes to persistence.
-- `modules/desktop/`: native Hyprland/Noctalia/Greeter, approved apps, fingerprint and private Wi-Fi; ThinkPad-only facts.
+- `modules/desktop.nix`: concern-owned native HM bridge and `desktop` bundle. `modules/desktop/` separates compositor, greeter, apps, peripherals, display facts and their tests; applicable NixOS/HM/host contributions stay together.
 - `modules/kernel.nix`: explicit host-track latest stock 7.x policy, without suppressing ZFS compatibility failures.
 - `modules/tailscale/`, `tofu/tailscale/`: review-gated client enrollment/persistence (ThinkPad candidate enabled) plus separate OpenTofu policy/MagicDNS management. `just tailscale-inventory` shows rollout blockers; `just tailnet` is an explicit operator workflow, never part of rebuild/check.
 - `modules/deployment.nix`: metadata, SSH integration, target-track activation and upstream checks.
-- `modules/{tooling,validation}.nix`: locked shell, source checks, both-track safety/composition fixtures.
+- `modules/tooling.nix`: locked shell assembly and source checks; features contribute their own developer tools.
+- `modules/validation.nix`: typed synthetic fixture assembly and independent report/check/track inventories. Feature-owned `checks.nix` files and small inline checks retain the public reports and safety regressions. Scripts/assets stay beside their owner, not in a separate scripts tree.
 
-Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. Home Manager is imported at that boundary only for the unstable desktop, using the host's packages; headless hosts have no HM integration. The `home-manager` and `zen-browser` inputs use default-branch URLs and follow unstable, with their revisions recorded only in `flake.lock`. Zen's recipe is still instantiated with the host's `pkgs`, not its upstream package outputs. Validation independently checks required tracks, actual package-source paths, locked branch names and Home Manager branch/follows policy. See [ADRs](docs/adr/0001-dendritic-composition.md).
+Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. The desktop concern, not the fleet evaluator, imports Home Manager only for its unstable bundle, using the host's packages; headless hosts have no HM integration. The `home-manager` and `zen-browser` inputs use default-branch URLs and follow unstable, with their revisions recorded only in `flake.lock`. Zen's recipe is still instantiated with the host's `pkgs`, not its upstream package outputs. Validation independently checks required tracks, actual package-source paths, locked branch names and Home Manager branch/follows policy. See [ADRs](docs/adr/0001-dendritic-composition.md).
 
 ## Validation and updates
 

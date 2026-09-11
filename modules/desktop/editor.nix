@@ -2,7 +2,7 @@
   # Zed, its language servers and the shared OLED Graphite theme. Settings are
   # the reviewed current preferences; only the Nix formatter changed, so the
   # editor and this repository's canonical `just fmt` cannot disagree.
-  flake.modules.homeManager.hyprland =
+  flake.modules.homeManager.desktop =
     { lib, pkgs, ... }:
     let
       theme = lib.importJSON ./assets/oled-graphite.json;

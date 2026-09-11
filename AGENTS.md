@@ -18,7 +18,8 @@ This is infrastructure for real machines and valuable storage. Read `README.md`,
 - Do not globally overlay or import both package sets. Input selection belongs in `modules/fleet.nix`; independently required tracks belong in `modules/validation.nix`. A legitimate API difference must be isolated, researched and tested (see logging).
 - `fleetConfigurations` evaluates all compositions. Only explicitly ready hosts appear in `nixosConfigurations`; only ready + deployment-enabled hosts appear in deploy-rs. Preserve this bootstrap distinction.
 - Module fixtures are explicitly synthetic evaluation-only data. Never copy their sentinel device/key/review flags into a fleet host. Do not expose their scripts as install/deploy targets.
-- Keep feature pieces cohesive; contributions to the same deferred value are encouraged. Repeated lower-level import paths may need a stable module `key` to prevent duplicated lists (SSH is the example).
+- Each top-level module owns one concern across applicable classes, facts, state and checks. Contributions may share a deliberate destination (the `desktop` bundle); do not confuse that with an omnibus file or require unused per-file capabilities. The desktop concern owns its HM bridge, not the fleet evaluator. Repeated lower-level import paths may need a stable module `key` to prevent duplicated lists (SSH is the example).
+- Feature owners contribute checks, capability-scoped synthetic fixture facts and developer tools. `modules/validation.nix` assembles fixtures and independent inventories, not feature test implementations. Keep independent track/rollout oracles independent from production choices; no fixture contribution may create a real host.
 
 ## Workflow
 

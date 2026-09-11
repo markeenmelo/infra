@@ -53,7 +53,7 @@ sops edit secrets/hosts/thinkpad-senecanet.yaml
 
 Follow the secure editor/identity workflow below: protected temporary storage, no swap/backups, no AI/cloud editor integration or plaintext repository files. Preserve the keys, recipients and SOPS metadata; let SOPS update encryption and its MAC. Use nonempty single-line scalars, not literal blocks with trailing newlines. Do not change the existing password/PSK YAML or relax private-identity permissions to make editing work.
 
-After **both** markers have been replaced and the file reviewed, select it inside the existing `fleet.hosts.thinkpad.module` body in `modules/desktop/thinkpad.nix` (already done for the audited ThinkPad file):
+After **both** markers have been replaced and the file reviewed, select it inside the existing `fleet.hosts.thinkpad.module` body in `modules/desktop/wifi.nix` (already done for the audited ThinkPad file):
 
 ```nix
 fleet.wifi.senecaSopsFile = ../../secrets/hosts/thinkpad-senecanet.yaml;
