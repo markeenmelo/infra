@@ -23,7 +23,6 @@
       programs = {
         ghostty = {
           enable = true;
-          enableZshIntegration = true;
           settings = {
             # Herdr owns panes/sessions inside the terminal, as it does today.
             command = "direct:${lib.getExe pkgs.herdr}";
@@ -100,7 +99,6 @@
         zsh = {
           enable = true;
           autosuggestion.enable = true;
-          enableCompletion = true;
           syntaxHighlighting.enable = true;
           # Home Manager #9349: the stock zoxide hook is ordered before Starship
           # and clobbers its precmd chain, so zoxide is initialised last instead.
@@ -109,17 +107,13 @@
           '';
         };
 
-        starship = {
-          enable = true;
-          enableZshIntegration = true;
-        };
+        starship.enable = true;
 
         fzf = {
           enable = true;
           enableBashIntegration = false;
           enableFishIntegration = false;
           enableNushellIntegration = false;
-          enableZshIntegration = true;
         };
 
         zoxide = {
@@ -136,7 +130,6 @@
         ripgrep.enable = true;
         eza = {
           enable = true;
-          enableZshIntegration = true;
           icons = "auto";
           git = true;
         };

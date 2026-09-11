@@ -39,10 +39,7 @@
       };
       programs = {
         zsh.enable = true;
-        kdeconnect = {
-          enable = true;
-          package = pkgs.kdePackages.kdeconnect-kde;
-        };
+        kdeconnect.enable = true;
       };
       users.users = lib.optionalAttrs (config.fleet.access.admin != null) {
         ${config.fleet.access.admin} = {
@@ -101,7 +98,6 @@
     programs.btop.enable = true;
     services.kdeconnect = {
       enable = true;
-      package = pkgs.kdePackages.kdeconnect-kde;
       indicator = false; # The Noctalia tray is sufficient; one daemon.
     };
     xdg = {

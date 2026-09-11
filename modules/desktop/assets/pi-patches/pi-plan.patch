@@ -47,39 +47,69 @@
 -        return { block: true, reason: result.reason };
 -      }
 -    }
-@@ -177,3 +179,3 @@
+@@ -147,16 +149,3 @@
+-      messages: event.messages.filter((m) => {
+-        const msg = m as { customType?: string; role?: string; content?: unknown };
+-        if (msg.customType === "pi-plan-context") return false;
+-        if (msg.role !== "user") return true;
+-        const content = msg.content;
+-        if (typeof content === "string") {
+-          return !content.includes("[PLAN MODE ACTIVE]");
+-        }
+-        if (Array.isArray(content)) {
+-          return !content.some(
+-            (c: { type?: string; text?: string }) =>
+-              c.type === "text" && c.text?.includes("[PLAN MODE ACTIVE]")
+-          );
+-        }
+-        return true;
+-      }),
++      messages: event.messages.filter(
++        (m) => m.role !== "custom" || m.customType !== "pi-plan-context"
++      ),
+@@ -177,3 +166,3 @@
 -- You can only use: read, bash, grep, find, ls
 -- You CANNOT use: edit, write (file modifications are disabled)
 -- Bash is restricted to an allowlist of read-only commands
 +- You can only use: read, grep, find, ls, ask_user_question (if already enabled)
 +- Shells, file modifications and subagent delegation are disabled
 +- Executing a plan never authorizes deployment or other separately gated operations
-@@ -252 +254 @@
+@@ -252 +241 @@
 -        pi.setActiveTools(NORMAL_MODE_TOOLS);
 +        restoreTools();
-@@ -296 +297,0 @@
+@@ -296 +284,0 @@
 -      steps.length > 0 ? "Execute the plan" : "Execute the plan (no steps detected)",
-@@ -297,0 +299 @@
+@@ -297,0 +286 @@
 +      steps.length > 0 ? "Execute the plan" : "Execute the plan (no steps detected)",
-@@ -303 +305 @@
+@@ -303 +292 @@
 -      pi.setActiveTools(NORMAL_MODE_TOOLS);
 +      restoreTools();
-@@ -325 +327,4 @@
+@@ -325,6 +314,4 @@
 -  pi.on("session_start", async (_event, ctx) => {
+-    // --plan flag
+-    if (pi.getFlag("plan") === true) {
+-      planMode = "plan";
+-    }
+-
 +  const restoreState = async (_event: unknown, ctx: ExtensionContext) => {
 +    restoreTools();
 +    planMode = "normal";
 +    steps = [];
-@@ -337 +342 @@
+@@ -337 +324 @@
 -        const data = (entry as { data?: PlanState }).data;
 +        const data = (entry as { data?: PlanState & { toolsBeforePlan?: string[] } }).data;
-@@ -340,0 +346,2 @@
+@@ -340,0 +328,2 @@
 +          toolsBeforePlan = data.toolsBeforePlan?.filter((name) =>
 +            pi.getAllTools().some((tool) => tool.name === name));
-@@ -384 +391 @@
+@@ -382,0 +372,4 @@
++    // Explicit --plan wins after restoring history, including execution progress.
++    if (pi.getFlag("plan") === true) {
++      planMode = "plan";
++    }
+@@ -384 +377 @@
 -      pi.setActiveTools(PLAN_MODE_TOOLS);
 +      enterPlanTools();
-@@ -387 +394,3 @@
+@@ -387 +380,3 @@
 -  });
 +  };
 +  pi.on("session_start", restoreState);

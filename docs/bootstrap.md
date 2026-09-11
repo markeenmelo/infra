@@ -29,7 +29,7 @@ Do not publish captured output indiscriminately. Before a new install, `nixos-ge
 
 Create files naming their concern, e.g. `modules/hardware/thinkpad.nix`, `modules/storage/thinkpad.nix`, `modules/access/thinkpad.nix`. Paths are organizational, not import rules. Each file contributes to the same deferred `fleet.hosts.thinkpad.module` value. Do not place a raw lower-level generated `.nix` file in the repository and import it from a host; adapt its reviewed contents into the deferred value.
 
-A safe starting fragment (these values intentionally **do not** unblock deployment):
+For an **uncommissioned `existing-storage` composition**, the option shape is below; nulls/false reviews intentionally do not unblock deployment. ThinkPad names the contribution path only: **do not apply this example over its commissioned facts or reset its reviews**. Edit the existing declarations rather than add conflicting definitions.
 
 ```nix
 {
@@ -39,18 +39,19 @@ A safe starting fragment (these values intentionally **do not** unblock deployme
       hardwareReviewed = false;
       networkReviewed = false;
     };
-    fleet.osDisk = {
-      device = null;
-      confirmed = false;
+    fleet.existingStorage = {
+      osDevice = null;
       bootMode = null;
-      espSize = null;
       efiCanTouchVariables = null;
+      biosPartitionIndex = null;
+      bootReviewed = false;
+      migrationReviewed = false;
     };
   };
 }
 ```
 
-Replace `null` only with verified choices. Add actual kernel/initrd/network settings in the appropriate deferred module. Exclude generated filesystem/swap definitions when disko owns them; no partition UUIDs or swap are assumed here. Generated `nixpkgs.hostPlatform` should agree with required host metadata. Keep `stateVersion` in `fleet.installation.stateVersion`, which sets the NixOS option; do not give it a second, conflicting direct definition.
+Replace `null` only with verified choices. Add actual kernel/initrd/network settings in the appropriate deferred module. Preserve the reviewed existing mounts, encryption and swap through their owning modules; do not import duplicate scanner filesystem definitions. Generated `nixpkgs.hostPlatform` should agree with required host metadata. Keep `stateVersion` in `fleet.installation.stateVersion`, which sets the NixOS option; do not give it a second, conflicting direct definition.
 
 No one-time value comes from the dev shell's Nixpkgs, another host, or a hardware scan of the administration machine. User preference settings (timezone, locale, keymap, desktop) should also be deliberate rather than inferred.
 
@@ -73,10 +74,9 @@ Future service secrets may use the same SOPS capability, with separately researc
 
 `just inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement. ThinkPad's graphical capability requires genuine `fleet.desktop.reviewed` acceptance of login/locking/sleep, portals, audio and the mobile display; follow [its checklist](desktop.md#activation-and-acceptance-checklist). This flag does not certify future eGPU/HDR or gaming behavior.
 
-Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Racknerd, bastion and dino opt in after commissioning; thinkpad remains local-only. Keep `ready = false` during discovery. Once every fact is supplied, run:
+Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Racknerd, bastion and dino opt in after commissioning; thinkpad remains local-only. Keep `ready = false` during discovery. Once every fact is supplied, inspect `git status --short`, `git diff` and `git diff --cached`. Stage intended new files **individually**, using `git add -- path/to/reviewed-file`, after reviewing each path; never stage the whole `modules` directory or unrelated work. Run `just secret-check` before staging intended ciphertext/public rules. Inspect `git diff --cached` again, then run in the locked shell:
 
 ```sh
-git add flake.nix flake.lock modules
 just fmt
 just check
 nix eval --json .#fleet.thinkpad | jq '{missing,failedAssertions}'
@@ -92,7 +92,7 @@ An unready host still has its commissioning assertion. Only after resolving all 
 
 The baseline requires OS-disk confirmation, firmware choice and an explicitly sized ESP for UEFI. `fleet.osDisk.espSize` accepts positive whole `M`/`G` sizes (MiB/GiB) with a **512 MiB minimum**: `512M` is the floor, and `1G` is also valid. Smaller values fail option evaluation before a disko script can be generated; `null` remains a commissioning blocker, not a default size. This floor does **not** guarantee capacity: review the actual kernel/initrd sizes, retained boot generations and headroom, and choose a larger ESP when needed. BIOS needs no ESP; leave its size null. UEFI additionally requires `fleet.osDisk.efiCanTouchVariables`: `true` permits bootctl to create/update NVRAM entries; `false` avoids those writes and requires verifying the firmware boots the installed fallback EFI path. Neither is inferred from machine model. It uses a tmpfs `/`, Btrfs `@nix` at `/nix` and `@persist` at `/persist`. BIOS additionally uses `@boot` and a standard GPT BIOS metadata partition; UEFI uses a vfat ESP. No sizes of existing disks/filesystems are asserted. “100%” means the chosen remainder policy, not an observed capacity.
 
-Only `disko.devices.disk.os` is allowed by this capability. NAS data disk definitions, multi-device pools, shares and backup jobs are absent. **For `bastion`, disconnect valuable data disks during initial OS provisioning where practicable**, independently compare serials, and have another person review the boundary. If an OS and valuable data share the same disk, **do not use this baseline**; design a migration that preserves data instead.
+Only `disko.devices.disk.os` is allowed by this capability. Unused `lvm_vg`, `mdadm`, `zpool` and `bcachefs_filesystems` collections are forced empty; foreign contributions cannot expand the generated plan. NAS data disk definitions, multi-device pools, shares and backup jobs are absent. **For `bastion`, disconnect valuable data disks during initial OS provisioning where practicable**, independently compare serials, and have another person review the boundary. If an OS and valuable data share the same disk, **do not use this baseline**; design a migration that preserves data instead.
 
 ### Non-destructive planning
 

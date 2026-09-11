@@ -328,6 +328,31 @@ let
 
   # Deliberately synthetic EVALUATION fixtures, never installable fleet members.
   # No fixture scripts are exported as provisioning packages or deploy nodes.
+  foreignDiskoDevices = {
+    disk.TEST-ONLY-FOREIGN = {
+      type = "disk";
+      device = "/dev/disk/by-id/TEST-ONLY-FOREIGN";
+    };
+    lvm_vg.TEST-ONLY-FOREIGN = {
+      type = "lvm_vg";
+      lvs.unwanted = {
+        size = "1M";
+        content = {
+          type = "filesystem";
+          format = "ext4";
+        };
+      };
+    };
+    mdadm.TEST-ONLY-FOREIGN.type = "mdadm";
+    zpool.TEST-ONLY-FOREIGN.type = "zpool";
+    bcachefs_filesystems.TEST-ONLY-FOREIGN.type = "bcachefs_filesystem";
+  };
+  unusedDiskoCollections = [
+    "bcachefs_filesystems"
+    "lvm_vg"
+    "mdadm"
+    "zpool"
+  ];
   allCapabilities = [
     "os-disk"
     "headless"
@@ -590,14 +615,7 @@ let
         }).config;
       injected =
         (fixture.extendModules {
-          modules = [
-            {
-              disko.devices.disk.unwanted = {
-                type = "disk";
-                device = "/dev/disk/by-id/TEST-ONLY-DATA";
-              };
-            }
-          ];
+          modules = [ { disko.devices = foreignDiskoDevices; } ];
         }).config;
       scriptNames = builtins.attrNames (cfg.disko.devices._scripts { inherit (fixture) pkgs; }) ++ [
         "disko"
@@ -620,9 +638,7 @@ let
     ) "${track}: existing mounts must retain identities and early persistence";
     assert lib.assertMsg (
       injected.disko.devices.disk == { }
-      && cfg.disko.devices.zpool == { }
-      && cfg.disko.devices.lvm_vg == { }
-      && cfg.disko.devices.mdadm == { }
+      && lib.all (collection: injected.disko.devices.${collection} == { }) unusedDiskoCollections
     ) "${track}: existing installs must not expose destructive device nodes";
     assert lib.all (
       name:
@@ -1036,6 +1052,10 @@ let
     track: fixture:
     let
       cfg = fixture.config;
+      injected =
+        (fixture.extendModules {
+          modules = [ { disko.devices = foreignDiskoDevices; } ];
+        }).config;
       bios = (fixtureFor track "bios" allCapabilities).config;
       unconfirmed = fixture.extendModules {
         modules = [ { fleet.osDisk.confirmed = lib.mkForce false; } ];
@@ -1129,6 +1149,11 @@ let
     assert lib.assertMsg (
       blank.config.disko.devices.disk == { }
     ) "Missing device must produce no destructive disk configuration";
+    assert lib.assertMsg (
+      builtins.attrNames injected.disko.devices.disk == [ "os" ]
+      && lib.all (collection: injected.disko.devices.${collection} == { }) unusedDiskoCollections
+      && injected.system.build.diskoScript.drvPath == cfg.system.build.diskoScript.drvPath
+    ) "${track}: foreign storage contributions changed the OS-only disko script";
     # Force the actual script derivation, not just the declared option type:
     # NixOS toplevel assertions alone do not guard direct disko evaluation.
     assert lib.all (
@@ -1199,6 +1224,7 @@ let
       biosToplevel = bios.system.build.toplevel.drvPath;
       activation = (deployLib.activate.nixos fixture).drvPath;
       diskScript = cfg.system.build.diskoScript.drvPath;
+      foreignStorageExcluded = true;
       inherit (cfg.fleet.bootstrap) missing;
     }
   ) fixtures;
@@ -1253,6 +1279,7 @@ in
             nativeBuildInputs = with targetPkgs; [
               bash
               coreutils
+              hyprland
               jq
               python3
               shellcheck

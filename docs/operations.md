@@ -1,6 +1,6 @@
 # Operations
 
-Run commands from the repository root inside `nix develop --no-update-lock-file`. Consult the matching `.agents/skills/` procedure and [research ledger](research.md) before changing dependency-sensitive APIs.
+Run infrastructure commands from the repository root inside `nix develop --no-update-lock-file`. Documentation-only edits use [scoped whitespace/link/status/snippet validation](validation.md#documentation-only-changes), not fleet evaluation/builds. Consult the matching `.agents/skills/` procedure and [research ledger](research.md) before changing dependency-sensitive APIs.
 
 ## Input updates
 
@@ -52,7 +52,7 @@ A **stable release migration** changes the numbered stable Nixpkgs URL in `flake
 
 `programs.nh.clean.enable = false`: no nh cleanup service/timer, generation pruning, automatic input updates or rebuild aliases. Keep recovery generations and use the reviewed input-update procedure above. Home Manager is integrated into NixOS; there is no standalone output for `nh home`.
 
-`just check` remains canonical and `just ready thinkpad` must still pass before a system build. ThinkPad is commissioned (`ready = true`) and exported as `nixosConfigurations.thinkpad`. A build-only helper invocation is:
+`just check` remains canonical for substantive changes and deployment preflight; `just ready thinkpad` must still pass before a system build. [Current status](hosts.md#current-status) records exported hosts and acceptance. A build-only helper invocation is:
 
 ```sh
 just check
@@ -60,15 +60,15 @@ just ready thinkpad
 nh os build --hostname thinkpad --no-update-lock-file
 ```
 
-This selects the commissioned ThinkPad output; Racknerd has a staged but blocked candidate and remains absent from `nixosConfigurations`, while Bastion and Dino remain unready and absent. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
+This selects the commissioned ThinkPad output. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
 
 ## Deployment and recovery
 
 ### Current remote deployment status — 2026-09-11
 
-The operator reports that deployment of `racknerd`, `bastion` and `dino` did not complete. This branch intentionally does not retry remote activation. The work is deferred to another branch/time, and reinstalling those three hosts is likely. Treat the current `ready`/evaluation records as configuration gates only, not successful deployment or boot evidence. Any reinstall requires a separately reviewed and explicitly authorized fresh-install plan; no reinstall or storage action is part of validation.
+See [authoritative current status](hosts.md#current-status) and [the dated deferral](hosts.md#deferred-remote-host-deployment--2026-09-11). Treat `ready`/evaluation records as configuration gates, not successful deployment or boot evidence. Any reinstall requires a separately reviewed and explicitly authorized fresh-install plan; no reinstall or storage action is part of validation.
 
-All four hosts are already installed; follow the [baseline transition checklist](hosts.md) before commissioning. Their disko provisioning outputs are disabled, including `disk-plan`; [bootstrap's installation section](bootstrap.md#storage-and-installation) is fresh-install-only. deploy-rs assumes NixOS, reachable non-root SSH, working elevation and closure trust already exist. Racknerd has a staged marcos key/password-sudo bootstrap but remains blocked before declarative activation; Bastion remains root-only and needs its own staged access transition. ThinkPad's candidate enables Tailscale but remains unactivated; the other three candidates disable it. Validate each host's access, closure trust and routing/recovery state before activation.
+All four hosts are already installed; follow the [baseline transition checklist](hosts.md) before commissioning. Their disko provisioning outputs are disabled, including `disk-plan`; [bootstrap's installation section](bootstrap.md#storage-and-installation) is fresh-install-only. deploy-rs assumes NixOS, reachable non-root SSH, working elevation and closure trust already exist. Consult current access/rollout evidence before planning a staged transition; a disabled Tailscale candidate preserves backing state, not an active daemon. Validate each host's access, closure trust and routing/recovery state before activation.
 
 ### Preflight
 

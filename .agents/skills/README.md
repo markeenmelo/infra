@@ -11,6 +11,6 @@ Standard Agent Skills, verified against Pi 0.84.4 project discovery and [agentsk
 | [impermanence](impermanence/SKILL.md) | Decide, declare and migrate durable state |
 | [deploy](deploy/SKILL.md) | Preflight, deploy deliberately and preserve recovery |
 | [update-inputs](update-inputs/SKILL.md) | Separate stable, unstable and full dependency updates |
-| [validate](validate/SKILL.md) | Run the canonical non-destructive validation |
+| [validate](validate/SKILL.md) | Choose documentation-only checks or full canonical non-destructive validation |
 
-All commands assume the **repository root**, not the skill directory. Resolve repository references from these skill directories via `../../..`. Each procedure remains subordinate to the current user's authorization and `AGENTS.md` safety rules.
+All commands assume the **repository root**, not the skill directory. Resolve repository references from these skill directories via `../../..`. Each procedure remains subordinate to the current user's authorization and `AGENTS.md` safety rules. Their formatting/fleet-check/build steps apply to substantive implementation changes or deployment preflight; prose-only edits to any procedure instead use [documentation-only validation](../../docs/validation.md#documentation-only-changes).

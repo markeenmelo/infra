@@ -91,6 +91,7 @@
         # Mount-only nodev descriptions derive fileSystems but cannot format a
         # disk, create an LV, or create/import a data pool through disko.
         disko.devices = {
+          bcachefs_filesystems = lib.mkForce { };
           disk = lib.mkForce { };
           lvm_vg = lib.mkForce { };
           mdadm = lib.mkForce { };

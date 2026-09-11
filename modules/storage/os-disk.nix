@@ -65,59 +65,65 @@
             cfg.bootMode == "uefi" && cfg.efiCanTouchVariables == null
           ) "Choose fleet.osDisk.efiCanTouchVariables and verify UEFI boot entry/fallback behavior.";
 
-        # This baseline owns ONLY the OS disk. It cannot be extended with NAS disks.
-        # A different layout needs a separately reviewed capability, not another disk here.
-        disko.devices.disk = lib.mkForce (
-          lib.optionalAttrs layoutKnown {
-            os = {
-              type = "disk";
-              device =
-                assert lib.assertMsg cfg.confirmed "Refusing to generate disko scripts: OS disk not confirmed.";
-                assert lib.assertMsg (
-                  builtins.match ".*-part[0-9]+" cfg.device == null
-                ) "OS disk must be a whole disk, not a partition.";
-                cfg.device;
-              content = {
-                type = "gpt";
-                partitions =
-                  lib.optionalAttrs (cfg.bootMode == "uefi") {
-                    ESP = {
-                      type = "EF00";
-                      size = cfg.espSize;
-                      content = {
-                        type = "filesystem";
-                        format = "vfat";
-                        mountpoint = "/boot";
-                        mountOptions = [ "umask=0077" ];
+        # Own every destructive collection, not just disks: standalone groups
+        # can create/format storage too. A different layout needs its own review.
+        disko.devices = {
+          bcachefs_filesystems = lib.mkForce { };
+          lvm_vg = lib.mkForce { };
+          mdadm = lib.mkForce { };
+          zpool = lib.mkForce { };
+          disk = lib.mkForce (
+            lib.optionalAttrs layoutKnown {
+              os = {
+                type = "disk";
+                device =
+                  assert lib.assertMsg cfg.confirmed "Refusing to generate disko scripts: OS disk not confirmed.";
+                  assert lib.assertMsg (
+                    builtins.match ".*-part[0-9]+" cfg.device == null
+                  ) "OS disk must be a whole disk, not a partition.";
+                  cfg.device;
+                content = {
+                  type = "gpt";
+                  partitions =
+                    lib.optionalAttrs (cfg.bootMode == "uefi") {
+                      ESP = {
+                        type = "EF00";
+                        size = cfg.espSize;
+                        content = {
+                          type = "filesystem";
+                          format = "vfat";
+                          mountpoint = "/boot";
+                          mountOptions = [ "umask=0077" ];
+                        };
                       };
-                    };
-                  }
-                  // lib.optionalAttrs (cfg.bootMode == "bios") {
-                    # GPT BIOS boot metadata, not a filesystem or a guessed disk size.
-                    BIOS = {
-                      type = "EF02";
-                      size = "1M";
-                    };
-                  }
-                  // {
-                    state = {
-                      size = "100%";
-                      content = {
-                        type = "btrfs";
-                        subvolumes = {
-                          "@nix".mountpoint = "/nix";
-                          "@persist".mountpoint = "/persist";
-                        }
-                        // lib.optionalAttrs (cfg.bootMode == "bios") {
-                          "@boot".mountpoint = "/boot";
+                    }
+                    // lib.optionalAttrs (cfg.bootMode == "bios") {
+                      # GPT BIOS boot metadata, not a filesystem or a guessed disk size.
+                      BIOS = {
+                        type = "EF02";
+                        size = "1M";
+                      };
+                    }
+                    // {
+                      state = {
+                        size = "100%";
+                        content = {
+                          type = "btrfs";
+                          subvolumes = {
+                            "@nix".mountpoint = "/nix";
+                            "@persist".mountpoint = "/persist";
+                          }
+                          // lib.optionalAttrs (cfg.bootMode == "bios") {
+                            "@boot".mountpoint = "/boot";
+                          };
                         };
                       };
                     };
-                  };
+                };
               };
-            };
-          }
-        );
+            }
+          );
+        };
         boot.loader = {
           # Disko derives GRUB devices from the EF02 partition; do not add it twice.
           grub.enable = cfg.bootMode == "bios";

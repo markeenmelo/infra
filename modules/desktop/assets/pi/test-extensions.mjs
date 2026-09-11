@@ -98,13 +98,47 @@ await invoke(plan, 'turn_end', {
 await invoke(plan, 'agent_end', { messages: [] }, ctx);
 assert.deepEqual(active, original);
 loaded.runtime.flagValues.set('plan', true);
-branch = [];
-await invoke(plan, 'session_start', {}, ctx);
-assert.ok(!active.includes('bash'));
+for (const savedMode of [undefined, 'normal', 'execute']) {
+  branch = savedMode ? [{ type: 'custom', customType: 'pi-plan', data: {
+    mode: savedMode, steps: [{ step: 1, text: 'Inspect files', completed: false }],
+  } }] : [];
+  await invoke(plan, 'session_start', {}, ctx);
+  assert.deepEqual(active, ['read', 'grep', 'find', 'ls', 'ask_user_question'],
+    `--plan must override saved ${savedMode} mode`);
+  for (const toolName of ['write', 'edit', 'bash', 'subagent', 'code_rewrite']) {
+    const results = await invoke(plan, 'tool_call', { toolName, input: {} }, ctx);
+    assert.ok(results.some((r) => r?.block), `--plan with saved ${savedMode} must block ${toolName}`);
+  }
+  const [prompt] = await invoke(plan, 'before_agent_start', {}, ctx);
+  assert.match(prompt.message.content, /^\[PLAN MODE ACTIVE\]/);
+}
 loaded.runtime.flagValues.set('plan', false);
+const preservedMessages = [
+  { role: 'user', content: 'Explain "[PLAN MODE ACTIVE]". Do not deploy.' },
+  { role: 'user', content: [{ type: 'text', text: '[PLAN MODE ACTIVE]' },
+    { type: 'text', text: 'Preserve my constraints.' }, { type: 'image', data: 'TEST-ONLY', mimeType: 'image/png' }] },
+  { role: 'assistant', content: [{ type: 'text', text: '[PLAN MODE ACTIVE]' }] },
+  { role: 'custom', customType: 'another-extension', content: '[PLAN MODE ACTIVE]' },
+  { role: 'custom', customType: 'pi-plan-todo-list', content: 'Plan steps' },
+];
+const staleContext = { role: 'custom', customType: 'pi-plan-context', content: '[PLAN MODE ACTIVE]' };
+for (const savedMode of ['normal', 'execute']) {
+  branch = [{ type: 'custom', customType: 'pi-plan', data: {
+    mode: savedMode, steps: [{ step: 1, text: 'Inspect files', completed: false }],
+  } }];
+  await invoke(plan, 'session_start', {}, ctx);
+  assert.deepEqual(active, original, `Saved ${savedMode} mode must restore without --plan`);
+  assert.ok((await invoke(plan, 'tool_call', { toolName: 'write', input: {} }, ctx)).every((r) => !r?.block));
+  const [filtered] = await invoke(plan, 'context', { messages: [staleContext, ...preservedMessages] }, ctx);
+  assert.deepEqual(filtered.messages, preservedMessages, 'Filter owned context, never user text or other messages');
+}
 branch = [];
 await invoke(plan, 'session_tree', {}, ctx);
 assert.deepEqual(active, original, 'Tree navigation must restore branch-local plan state');
+await plan.commands.get('plan').handler('', ctx);
+assert.deepEqual(await invoke(plan, 'context', { messages: [staleContext, ...preservedMessages] }, ctx),
+  [undefined], 'Active plan context must remain available');
+await plan.commands.get('plan').handler('', ctx);
 console.log('Pi loader, fetch-only registration and plan lifecycle/guards passed');
 
 const jiti = createJiti(import.meta.url, { moduleCache: false });

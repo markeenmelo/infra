@@ -69,6 +69,8 @@ external_rows() {
       if (.name | type == "string" and length > 0) then .
       else error("invalid monitor name") end
       | select(.name as $name | $name != $internal and ($ARGS.positional | index($name)) != null)
+      | if (.name | test("^[A-Za-z0-9_-]+$")) then .
+        else error("invalid DRM output name") end
       | (
           if (.availableModes | type) != "array" then error("invalid availableModes")
           elif (.availableModes | length) > 0 then .availableModes[0]
@@ -96,12 +98,18 @@ external_rows() {
 }
 
 apply_rule() {
-  local dry_run=$1 rule=$2
+  local dry_run=$1 rule="hl.monitor({ $2 })" reply
 
   if [[ "$dry_run" == true ]]; then
-    printf 'monitor %s\n' "$rule"
+    printf '%s\n' "$rule"
   else
-    hyprctl keyword monitor "$rule" >/dev/null
+    # Lua IPC reports rejected operations on stdout even when hyprctl exits 0.
+    # Only the exact success token is acceptance; transport errors propagate.
+    reply=$(hyprctl eval "$rule")
+    if [[ "$reply" != ok ]]; then
+      printf 'fleet-output-policy: monitor update rejected: %s\n' "$reply" >&2
+      return 1
+    fi
   fi
 }
 
@@ -110,7 +118,7 @@ sync_outputs_unlocked() {
   local external_count=0
   local external_height=0
   local external_width=0
-  local hdr height lid mode name rows rule width
+  local bitdepth cm hdr height lid mode name rows width
 
   # Decode the complete snapshot before any modeset; process substitution hides
   # producer failures. Keep these calls out of conditionals so errexit applies.
@@ -120,12 +128,15 @@ sync_outputs_unlocked() {
   while IFS=$'\t' read -r name mode width height; do
     [[ -n "$name" ]] || continue
 
-    rule="$name,$mode,${external_width}x0,1,bitdepth,8,cm,srgb,vrr,0"
+    bitdepth=8
+    cm=srgb
     hdr=$(supports_hdr "$name")
     if [[ "$hdr" == true ]]; then
-      rule="$name,$mode,${external_width}x0,1,bitdepth,10,cm,hdredid,vrr,0"
+      bitdepth=10
+      cm=hdredid
     fi
-    apply_rule "$dry_run" "$rule"
+    apply_rule "$dry_run" \
+      "output = \"$name\", mode = \"$mode\", position = \"${external_width}x0\", scale = 1, bitdepth = $bitdepth, cm = \"$cm\", vrr = 0, disabled = false"
 
     ((external_count += 1))
     ((external_width += width))
@@ -135,7 +146,7 @@ sync_outputs_unlocked() {
   done <<<"$rows"
 
   if ((external_count > 0)) && [[ "$lid" == closed ]]; then
-    apply_rule "$dry_run" "$internal_output,disable"
+    apply_rule "$dry_run" "output = \"$internal_output\", disabled = true"
   else
     local internal_x=0
     local internal_y=0
@@ -145,7 +156,7 @@ sync_outputs_unlocked() {
     fi
 
     apply_rule "$dry_run" \
-      "$internal_output,$internal_mode,${internal_x}x${internal_y},1,bitdepth,8,cm,srgb,vrr,0"
+      "output = \"$internal_output\", mode = \"$internal_mode\", position = \"${internal_x}x${internal_y}\", scale = 1, bitdepth = 8, cm = \"srgb\", vrr = 0, disabled = false"
   fi
 }
 
