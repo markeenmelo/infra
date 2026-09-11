@@ -2,6 +2,14 @@
 
 Initial research **2026-09-09 UTC**, with subsequent dated entries, against upstream documentation, source checkouts, GitHub release lists and recently updated issues. Pins below describe this implementation, not evergreen release recommendations. `flake.lock` is authoritative after future updates.
 
+## Shared marcos password — 2026-09-11
+
+Starting point **`review` / `310d973`**; all dependency pins remain unchanged. Stable Nixpkgs **`d58a46e3bc02d91ebe04667f8397752a749c0024`** supplies SOPS **3.13.3**; sops-nix remains **`13616fff713a9f94055c66f15687ebdc17a335df`**.
+
+- Native SOPS help and pinned [decrypt/extract source](https://github.com/getsops/sops/blob/v3.13.3/cmd/sops/decrypt.go) confirm MAC-checked tree decryption precedes field extraction and string extraction returns raw bytes. `encrypt --filename-override` selects the exact repository creation rule for stdin input; explicit YAML output keeps the requested on-disk format. Consequence: the separately authorized transfer extracts only the existing password into a new password-only source, checks original/new MACs and byte equality in memory, and preserves the original Wi-Fi-bearing ciphertext and recipient boundary.
+- Pinned [age identity loading](https://github.com/getsops/sops/blob/v3.13.3/age/keysource.go) normally considers configured commands, native user key files and SSH keys. The transfer used the existing user-owned operator identity after its public-recipient/permission check, with explicit `SOPS_AGE_KEY_FILE`, empty HOME/XDG configuration, no inherited key commands/services and disabled core dumps. No sudo, new identity, private-key export or plaintext output/file was needed. This authorized operation is separate from routine non-decrypting checks and is not a host-delivery test.
+- Keep the existing sops-nix early-user/root-only delivery and distinct host identities. Public recipient membership is explicit Nix policy, compared to actual YAML by a built check using the already-pinned yq/jq tools; Nix does not parse YAML or decrypted password material. A null/unlisted host recipient leaves the candidate account locked. Adding a recipient later requires the verified host fact, matching policy/rule/ciphertext changes and canonical validation, not merely setting a review flag.
+
 ## Dendritic concern ownership refactor — 2026-09-11
 
 Starting point **`review` / `8e770f6`**. Stable Nixpkgs **`d58a46e3bc02d91ebe04667f8397752a749c0024`**, unstable **`aff8a0b28396750446e5537a96461bc4facdb287`**, Home Manager **`d0fd95e15e0c3baf565a9fd4bc352321e2564ea3`** and every lock remain unchanged.

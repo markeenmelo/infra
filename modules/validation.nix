@@ -138,6 +138,7 @@ in
             "pi-extensions"
             "secret-files"
             "senecanet-template-manifest"
+            "shared-password-recipients"
             "source-quality"
             "stable-deploy-activate-smoke"
             "stable-deploy-schema-smoke"

@@ -94,32 +94,58 @@ in
       && cfg.sops.gnupg.sshKeyPaths == [ ]
       && cfg.sops.validateSopsFiles
       && !cfg.sops.useTmpfs
-      && cfg.fleet.access.passwordSecrets ? marcos
+      && cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
+      &&
+        (lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." cfg.fleet.bootstrap.missing)
+        == (name == "bastion")
       && (
-        if name == "thinkpad" then
-          cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
-          && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
+        if name == "bastion" then
+          cfg.sops.secrets == { }
+          && cfg.fleet.secrets.ageKeyFile == null
+          && cfg.fleet.secrets.ageRecipient == null
+          && cfg.users.users.marcos.hashedPassword == "!"
+          && cfg.users.users.marcos.hashedPasswordFile == null
+        else
+          cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
+          && cfg.sops.secrets.marcos-password-hash.sopsFile == ../../secrets/shared/marcos-password.yaml
+          && cfg.sops.secrets.marcos-password-hash.key == "marcos-password-hash"
+          && cfg.sops.secrets.marcos-password-hash.format == "yaml"
           && cfg.sops.secrets.marcos-password-hash.neededForUsers
           &&
             builtins.attrNames cfg.sops.secrets == (
               [ "marcos-password-hash" ]
-              ++ lib.optionals (cfg.fleet.wifi.senecaSopsFile != null) [
-                "seneca-identity"
-                "seneca-password"
-              ]
-              ++ lib.optional tailscaleEnabled "tailscale-auth-key"
-              ++ [ "wifi-psk" ]
+              ++ lib.optionals (name == "thinkpad") (
+                lib.optionals (cfg.fleet.wifi.senecaSopsFile != null) [
+                  "seneca-identity"
+                  "seneca-password"
+                ]
+                ++ lib.optional tailscaleEnabled "tailscale-auth-key"
+                ++ [ "wifi-psk" ]
+              )
             )
-        else if name == "racknerd" then
-          cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
-          && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
-          && cfg.sops.secrets.marcos-password-hash.sopsFile == ../../secrets/hosts/racknerd.yaml
-          && cfg.sops.secrets.marcos-password-hash.neededForUsers
-          && builtins.attrNames cfg.sops.secrets == [ "marcos-password-hash" ]
-        else
-          cfg.sops.secrets == { }
       )
-    ) "${name}: SOPS identity/password policy regressed or unrelated secrets enabled";
+    ) "${name}: shared SOPS password/identity policy regressed or unrelated secrets enabled";
+    # Evaluation-only bad metadata; never a real recipient or commissioning flag.
+    assert lib.all
+      (
+        recipient:
+        let
+          rejected =
+            (system.extendModules {
+              modules = [ { fleet.secrets.ageRecipient = lib.mkForce recipient; } ];
+            }).config;
+        in
+        lib.assertMsg (
+          (lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." rejected.fleet.bootstrap.missing)
+          && !(rejected.sops.secrets ? marcos-password-hash)
+          && rejected.users.users.marcos.hashedPassword == "!"
+          && rejected.users.users.marcos.hashedPasswordFile == null
+        ) "${name}: a missing/unlisted shared-password recipient must block commissioning"
+      )
+      [
+        null
+        "age1testonlyunlisted"
+      ];
     true;
   flake.validation.sops = sopsReport;
   # Test-only identity has no matching key and cannot decrypt shipped ciphertext.
@@ -137,7 +163,7 @@ in
       };
     };
     sops.secrets.TEST-ONLY-password = {
-      sopsFile = ../../secrets/hosts/thinkpad.yaml;
+      sopsFile = ../../secrets/shared/marcos-password.yaml;
       key = "marcos-password-hash";
       neededForUsers = true;
     };

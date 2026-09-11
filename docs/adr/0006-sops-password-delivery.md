@@ -18,6 +18,14 @@ Use a separately provisioned dedicated age identity at a typed string path direc
 
 Copy ThinkPad's existing ciphertext unchanged and retain its exact public recipient rule. The whole file is preserved for MAC compatibility, including the encrypted Wi-Fi value, but **at initial integration only the password was declared for decryption**. Subsequent Wi-Fi and Tailscale declarations are separate reviewed capabilities; see [current status](../hosts.md#current-status). Do not import unrelated Tailscale/OpenTofu material, enable the old Wi-Fi agent, or expand recipients. Other hosts retained null identity/credential facts at that checkpoint. Nothing depends on the old repository's filesystem at evaluation/runtime.
 
+## Shared-password amendment — 2026-09-11
+
+The user explicitly selected the existing ThinkPad `marcos` password for ThinkPad, Racknerd and Bastion, authorizing only local in-memory extraction/re-encryption, not activation. A separate **password-only YAML** source, `secrets/shared/marcos-password.yaml`, now supplies the common account policy. It was MAC/equality-verified using the existing operator recovery identity without exposing plaintext or exporting private keys. The original ThinkPad password/Wi-Fi file and every existing host recipient rule remain intact; the retained old password entries are no longer selected.
+
+The shared source currently permits only the verified operator, ThinkPad and Racknerd recipients. Keep distinct host identities. Typed `fleet.secrets.ageRecipient` records each known host's public identity; missing/unlisted recipients or a missing key-file binding prevent password-secret declaration, retain the locked candidate account and block commissioning. A built check compares the YAML recipients to the common module's explicit public policy; it is required alongside structural checks and both-track early-users manifests. No YAML parser is added to Nix evaluation and no decrypted material enters Nix.
+
+Bastion remains blocked by the user's choice until its distinct recipient is verified and deliberately added to both the shared rule/ciphertext and Nix policy. Racknerd's unverified early delivery/recovery stays unverified. No readiness/review flag or installed password changes. Shared credentials increase the compromise/rotation scope; they do not permit password SSH or passwordless sudo. This amendment does not authorize future credential operations or deployment.
+
 ## Consequences
 
 Encrypted password hashes may live in Git and the Nix store; decrypted hashes and private identities may not. The private identity itself needs protected durable storage and recovery custody; impermanence is not encryption. Runtime paths and ciphertext metadata do not prove a valid hash, matching private identity or working sudo.

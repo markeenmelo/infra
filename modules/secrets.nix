@@ -16,6 +16,11 @@
           default = null;
           description = "Verified dedicated age identity location on early-mounted persistence, never a Nix path/private key value.";
         };
+        ageRecipient = lib.mkOption {
+          type = lib.types.nullOr (lib.types.strMatching "age1[a-z0-9]+");
+          default = null;
+          description = "Verified public recipient of this host's dedicated age identity. Null remains unresolved; never infer it from a key-file path.";
+        };
         identityReviewed = lib.mkOption {
           type = lib.types.bool;
           default = false;

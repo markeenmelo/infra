@@ -8,9 +8,9 @@ rules=$(yq -o=json '.' .sops.yaml 2>/dev/null) || {
   exit 1
 }
 shopt -s nullglob
-files=(secrets/hosts/*.yaml)
+files=(secrets/hosts/*.yaml secrets/shared/*.yaml)
 if ((${#files[@]} == 0)); then
-  echo 'No encrypted host files found.' >&2
+  echo 'No encrypted credential files found.' >&2
   exit 1
 fi
 for file in "${files[@]}"; do
@@ -30,6 +30,8 @@ for file in "${files[@]}"; do
       and ($matching | length == 1)
       and ($matching[0].key_groups | length == 1)
       and ($matching[0].key_groups[0] | keys == ["age"])
+      and (if $file == "secrets/shared/marcos-password.yaml"
+           then (keys | sort) == ["marcos-password-hash", "sops"] else true end)
       and ([del(.sops) | .. | scalars] | length > 0 and all(.[]; encrypted))
       and (.sops.mac | encrypted)
       and (.sops.age | length > 0)
@@ -45,4 +47,4 @@ for file in "${files[@]}"; do
     exit 1
   fi
 done
-printf 'Encrypted host payloads and recipient rules checked (%s files); no decryption.\n' "${#files[@]}"
+printf 'Encrypted credential payloads and recipient rules checked (%s files); no decryption.\n' "${#files[@]}"
