@@ -270,8 +270,7 @@ let
         && !cfg.sops.useTmpfs
         && cfg.fleet.access.passwordSecrets ? marcos
         && (
-          name != "thinkpad"
-          || (
+          if name == "thinkpad" then
             cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
             && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
             && cfg.sops.secrets.marcos-password-hash.neededForUsers
@@ -285,7 +284,14 @@ let
                 ++ lib.optional tailscaleEnabled "tailscale-auth-key"
                 ++ [ "wifi-psk" ]
               )
-          )
+          else if name == "racknerd" then
+            cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
+            && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
+            && cfg.sops.secrets.marcos-password-hash.sopsFile == ../secrets/hosts/racknerd.yaml
+            && cfg.sops.secrets.marcos-password-hash.neededForUsers
+            && builtins.attrNames cfg.sops.secrets == [ "marcos-password-hash" ]
+          else
+            cfg.sops.secrets == { }
         )
       ) "${name}: SOPS identity/password policy regressed or unrelated secrets enabled";
       assert lib.assertMsg (

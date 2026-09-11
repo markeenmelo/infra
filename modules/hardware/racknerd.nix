@@ -5,8 +5,11 @@
     fleet.installation = {
       stateVersion = "26.05";
       hardwareReviewed = true;
-      # Provider console and network transition still need operator acceptance.
+      # 2026-09-10 operator attestations backed by the read-only audit:
+      # provider-console login, KVM facts, uplink MAC/DNS/route without VPN.
+      networkReviewed = true;
     };
+    fleet.vps.providerReviewed = true;
     boot.initrd.availableKernelModules = [
       "ata_piix"
       "uhci_hcd"

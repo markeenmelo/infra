@@ -6,6 +6,13 @@
       osDevice = "/dev/vda";
       bootMode = "bios";
       biosPartitionIndex = 1;
+      # 2026-09-10 operator-attested reviews over the read-only audit: ~2 GiB
+      # free /boot with Limine artifacts, BIOS-boot vda1, zero Btrfs counters,
+      # console fallback. Migration stance: untouched old Btrfs root subvolume
+      # is the recovery fallback, as on ThinkPad; persistent state, SSH host
+      # keys and the SOPS password are reconciled before activation.
+      bootReviewed = true;
+      migrationReviewed = true;
     };
     disko.devices.nodev = {
       "/boot" = {
