@@ -9,7 +9,10 @@ import { pathToFileURL } from 'node:url';
 const [piDir, bundle] = process.argv.slice(2);
 const load = (path) => import(pathToFileURL(path).href);
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
-const { discoverAndLoadExtensions, loadSkillsFromDir } = await load(join(piDir, 'dist/index.js'));
+const {
+  discoverAndLoadExtensions, loadSkillsFromDir,
+  createAgentSession, DefaultResourceLoader, SessionManager, SettingsManager,
+} = await load(join(piDir, 'dist/index.js'));
 const { createJiti } = await load(join(piDir, 'node_modules/jiti/lib/jiti.mjs'));
 const themeModule = await load(join(piDir, 'dist/modes/interactive/theme/theme.js'));
 themeModule.initTheme('dark', false);
@@ -98,13 +101,47 @@ await invoke(plan, 'turn_end', {
 await invoke(plan, 'agent_end', { messages: [] }, ctx);
 assert.deepEqual(active, original);
 loaded.runtime.flagValues.set('plan', true);
-branch = [];
-await invoke(plan, 'session_start', {}, ctx);
-assert.ok(!active.includes('bash'));
+for (const savedMode of [undefined, 'normal', 'execute']) {
+  branch = savedMode ? [{ type: 'custom', customType: 'pi-plan', data: {
+    mode: savedMode, steps: [{ step: 1, text: 'Inspect files', completed: false }],
+  } }] : [];
+  await invoke(plan, 'session_start', {}, ctx);
+  assert.deepEqual(active, ['read', 'grep', 'find', 'ls', 'ask_user_question'],
+    `--plan must override saved ${savedMode} mode`);
+  for (const toolName of ['write', 'edit', 'bash', 'subagent', 'code_rewrite']) {
+    const results = await invoke(plan, 'tool_call', { toolName, input: {} }, ctx);
+    assert.ok(results.some((r) => r?.block), `--plan with saved ${savedMode} must block ${toolName}`);
+  }
+  const [prompt] = await invoke(plan, 'before_agent_start', {}, ctx);
+  assert.match(prompt.message.content, /^\[PLAN MODE ACTIVE\]/);
+}
 loaded.runtime.flagValues.set('plan', false);
+const preservedMessages = [
+  { role: 'user', content: 'Explain "[PLAN MODE ACTIVE]". Do not deploy.' },
+  { role: 'user', content: [{ type: 'text', text: '[PLAN MODE ACTIVE]' },
+    { type: 'text', text: 'Preserve my constraints.' }, { type: 'image', data: 'TEST-ONLY', mimeType: 'image/png' }] },
+  { role: 'assistant', content: [{ type: 'text', text: '[PLAN MODE ACTIVE]' }] },
+  { role: 'custom', customType: 'another-extension', content: '[PLAN MODE ACTIVE]' },
+  { role: 'custom', customType: 'pi-plan-todo-list', content: 'Plan steps' },
+];
+const staleContext = { role: 'custom', customType: 'pi-plan-context', content: '[PLAN MODE ACTIVE]' };
+for (const savedMode of ['normal', 'execute']) {
+  branch = [{ type: 'custom', customType: 'pi-plan', data: {
+    mode: savedMode, steps: [{ step: 1, text: 'Inspect files', completed: false }],
+  } }];
+  await invoke(plan, 'session_start', {}, ctx);
+  assert.deepEqual(active, original, `Saved ${savedMode} mode must restore without --plan`);
+  assert.ok((await invoke(plan, 'tool_call', { toolName: 'write', input: {} }, ctx)).every((r) => !r?.block));
+  const [filtered] = await invoke(plan, 'context', { messages: [staleContext, ...preservedMessages] }, ctx);
+  assert.deepEqual(filtered.messages, preservedMessages, 'Filter owned context, never user text or other messages');
+}
 branch = [];
 await invoke(plan, 'session_tree', {}, ctx);
 assert.deepEqual(active, original, 'Tree navigation must restore branch-local plan state');
+await plan.commands.get('plan').handler('', ctx);
+assert.deepEqual(await invoke(plan, 'context', { messages: [staleContext, ...preservedMessages] }, ctx),
+  [{ messages: [staleContext, ...preservedMessages] }], 'Active plan context must remain available');
+await plan.commands.get('plan').handler('', ctx);
 console.log('Pi loader, fetch-only registration and plan lifecycle/guards passed');
 
 const jiti = createJiti(import.meta.url, { moduleCache: false });
@@ -130,6 +167,89 @@ for (const name of ['scout', 'reviewer', 'oracle', 'worker', 'researcher', 'evid
   if (name === 'researcher') assert.ok(agent.tools.includes('codex_search') && !agent.tools.includes('web_search'));
 }
 console.log('Subagent roles, settings and detached host-peer resolution passed');
+
+// Cursor registers builtin-name wrappers at session_start in a TTY, even with
+// another provider selected. Test the real registry, not a names-only mock.
+const hostJiti = createJiti(import.meta.url, { alias: resolveHostPeerAliases(piDir).aliases, moduleCache: false });
+const { registerCursorNativeToolDisplay } = await hostJiti.import(
+  join(root, '@akepka/pi-cursor-cli-provider/src/native-tool-display.ts'),
+);
+const { getHostBuiltinToolNames, resolvePiLaunchToolPlan } = await hostJiti.import(
+  join(root, 'pi-subagents/src/runs/shared/child-tool-plan.ts'),
+);
+const sessionSettings = SettingsManager.inMemory({});
+const loaderOptions = {
+  cwd: process.cwd(), agentDir: process.env.PI_CODING_AGENT_DIR, settingsManager: sessionSettings,
+  noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
+};
+const parentLoader = new DefaultResourceLoader({
+  ...loaderOptions, extensionFactories: [registerCursorNativeToolDisplay],
+});
+await parentLoader.reload();
+const { session: parent } = await createAgentSession({
+  resourceLoader: parentLoader, settingsManager: sessionSettings, sessionManager: SessionManager.inMemory(),
+});
+process.env.PI_CURSOR_NATIVE_TOOL_DISPLAY = '1';
+const startupErrors = [];
+try {
+  await parent.bindExtensions({ mode: 'print', onError: (error) => startupErrors.push(error) });
+  assert.deepEqual(startupErrors, []);
+  for (const name of ['read', 'grep', 'ls']) {
+    assert.notEqual(parent.getAllTools().find((tool) => tool.name === name).sourceInfo.source, 'builtin');
+  }
+  const hostAvailableBuiltins = getHostBuiltinToolNames(parent);
+  assert.deepEqual(getHostBuiltinToolNames({ getAllTools: () => [] }), []);
+  const inventoryError = new Error('synthetic registry failure');
+  assert.throws(() => getHostBuiltinToolNames({ getAllTools: () => { throw inventoryError; } }),
+    (error) => error === inventoryError, 'Registry errors must propagate, never permit all tools');
+  for (const name of ['scout', 'reviewer', 'oracle', 'worker', 'delegate', 'researcher', 'evidence-auditor']) {
+    const agent = discovered.agents.find((item) => item.name === name);
+    const toolPlan = resolvePiLaunchToolPlan({
+      agentName: name, tools: agent.tools,
+      extensions: agent.extensions ?? settings.subagents.defaultExtensions, hostAvailableBuiltins,
+    });
+    assert.deepEqual(toolPlan.effectiveToolAllowlist, agent.tools, `${name}: retain every requested tool`);
+    assert.deepEqual(toolPlan.unavailableHostBuiltins, []);
+  }
+  const reviewer = discovered.agents.find((agent) => agent.name === 'reviewer');
+  const request = { agentName: 'reviewer', tools: reviewer.tools, extensions: [], hostAvailableBuiltins };
+  const plan = resolvePiLaunchToolPlan(request);
+  assert.throws(() => resolvePiLaunchToolPlan({ ...request, hostAvailableBuiltins: ['find'] }),
+    'Genuinely missing repository tools must still fail closed');
+  assert.deepEqual(resolvePiLaunchToolPlan({ ...request, excludeTools: ['read'] }).effectiveToolAllowlist,
+    reviewer.tools.filter((name) => name !== 'read'));
+  assert.deepEqual(resolvePiLaunchToolPlan({ ...request, capabilityCeiling: {
+    version: 1, allowedTools: ['find'], denyExtensions: true, sources: ['offline-test'],
+  } }).effectiveToolAllowlist, ['find'], 'Tool availability must not widen capability ceilings');
+  const research = discovered.agents.find((agent) => agent.name === 'researcher');
+  assert.deepEqual(resolvePiLaunchToolPlan({
+    agentName: research.name, tools: research.tools, extensions: research.extensions, hostAvailableBuiltins,
+    excludeTools: ['codex_search'],
+  }).effectiveToolAllowlist, research.tools.filter((name) => name !== 'codex_search'));
+
+  // The same SDK/strict allowlist used by native children, without ambient
+  // extensions, a model prompt, credentials or access to actual project files.
+  const childLoader = new DefaultResourceLoader(loaderOptions);
+  await childLoader.reload();
+  const { session: child } = await createAgentSession({
+    tools: plan.effectiveToolAllowlist, resourceLoader: childLoader,
+    settingsManager: sessionSettings, sessionManager: SessionManager.inMemory(),
+  });
+  try {
+    assert.deepEqual(child.getActiveToolNames().sort(), [...plan.requiredChildTools].sort());
+    assert.ok(child.getAllTools().every((tool) => tool.sourceInfo.source === 'builtin'));
+    writeFileSync('subagent-probe.txt', 'subagent read probe\n');
+    const read = child.agent.state.tools.find((tool) => tool.name === 'read');
+    const result = await read.execute('probe', { path: 'subagent-probe.txt' });
+    assert.equal(result.content[0].text, 'subagent read probe\n');
+  } finally {
+    child.dispose();
+  }
+} finally {
+  delete process.env.PI_CURSOR_NATIVE_TOOL_DISPLAY;
+  parent.dispose();
+}
+console.log('Native subagent tool registry, Cursor wrappers, extension selectors and restrictions passed');
 
 // Exercise native style extensions through their registered Pi handlers.
 const ponytail = extension('/ponytail/pi-extension/');

@@ -1,10 +1,9 @@
 {
-  # Terminal, multiplexer and shell comfort tools for the ThinkPad desktop.
+  # Terminal and multiplexer preferences for the ThinkPad desktop.
   # These are the reviewed current application preferences, re-expressed through
   # native Home Manager program modules instead of hand-written dotfiles.
-  flake.modules.homeManager.hyprland =
+  flake.modules.homeManager.desktop =
     {
-      config,
       lib,
       pkgs,
       ...
@@ -14,6 +13,10 @@
       inherit (theme) colors;
     in
     {
+      xdg.terminal-exec = {
+        enable = true;
+        settings.default = [ "com.mitchellh.ghostty.desktop" ];
+      };
       home.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
       # One patched family for Ghostty, Zed and prompt icons; no regular variant.
       # Keep native sans/serif/emoji defaults, including Noto Color Emoji: Nerd
@@ -23,7 +26,6 @@
       programs = {
         ghostty = {
           enable = true;
-          enableZshIntegration = true;
           settings = {
             # Herdr owns panes/sessions inside the terminal, as it does today.
             command = "direct:${lib.getExe pkgs.herdr}";
@@ -94,60 +96,6 @@
             };
             session.resume_agents_on_restore = true;
             experimental.pane_history = false;
-          };
-        };
-
-        zsh = {
-          enable = true;
-          autosuggestion.enable = true;
-          enableCompletion = true;
-          syntaxHighlighting.enable = true;
-          # Home Manager #9349: the stock zoxide hook is ordered before Starship
-          # and clobbers its precmd chain, so zoxide is initialised last instead.
-          initContent = lib.mkOrder 2000 ''
-            eval "$(${lib.getExe config.programs.zoxide.package} init zsh)"
-          '';
-        };
-
-        starship = {
-          enable = true;
-          enableZshIntegration = true;
-        };
-
-        fzf = {
-          enable = true;
-          enableBashIntegration = false;
-          enableFishIntegration = false;
-          enableNushellIntegration = false;
-          enableZshIntegration = true;
-        };
-
-        zoxide = {
-          enable = true;
-          enableBashIntegration = false;
-          enableFishIntegration = false;
-          enableNushellIntegration = false;
-          # Initialised explicitly above; see the ordering note.
-          enableZshIntegration = false;
-        };
-
-        bat.enable = true;
-        fd.enable = true;
-        ripgrep.enable = true;
-        eza = {
-          enable = true;
-          enableZshIntegration = true;
-          icons = "auto";
-          git = true;
-        };
-
-        git = {
-          enable = true;
-          settings.user = {
-            name = "Marcos Melo";
-            email = "marcosmelo@proton.me";
-            # Refuse to guess an identity from the hostname/login for new repos.
-            useConfigOnly = true;
           };
         };
       };

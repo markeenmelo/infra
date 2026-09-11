@@ -1,5 +1,5 @@
 { inputs, ... }: {
-  flake.modules.homeManager.hyprland =
+  flake.modules.homeManager.desktop =
     { pkgs, ... }:
     let
       oled = builtins.fromJSON (builtins.readFile ./assets/oled-graphite.json);

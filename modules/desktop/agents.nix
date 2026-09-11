@@ -2,7 +2,7 @@
   # Pi coding agent and its pinned extension set. Only the manifest, lock file
   # and the Herdr-provided session extension are vendored here; provider
   # credentials, session history and project trust stay mutable in ~/.pi.
-  flake.modules.nixos.hyprland =
+  flake.modules.nixos.desktop =
     { lib, ... }:
     {
       # Pi's pinned bridge/provider extensions shell out to these two unfree
@@ -16,7 +16,7 @@
         ];
     };
 
-  flake.modules.homeManager.hyprland =
+  flake.modules.homeManager.desktop =
     { lib, pkgs, ... }:
     let
       jsonFormat = pkgs.formats.json { };
@@ -57,6 +57,7 @@
           # Audited adaptations for these exact npm pins; see docs/pi.md.
           patch -p1 < ${./assets/pi-patches/pi-lsp-extension.patch}
           patch -p1 < ${./assets/pi-patches/pi-plan.patch}
+          patch -p1 < ${./assets/pi-patches/pi-subagents.patch}
           patch -p1 < ${./assets/pi-patches/ponytail.patch}
 
           # pi-claude-bridge 0.7.0 issue #59: keep AskClaude children from
@@ -152,6 +153,7 @@
           # Herdr ships this extension to report Pi session state to its panes.
           # Vendored verbatim; Herdr rewrites it when its integration updates.
           ".pi/agent/extensions/herdr-agent-state.ts".source = ./assets/pi/herdr-agent-state.ts;
+          ".pi/agent/extensions/herdr-ui-prompts.ts".source = ./assets/pi/herdr-ui-prompts.ts;
 
           ".pi/agent/claude-bridge.json".source = jsonFormat.generate "pi-claude-bridge.json" {
             askClaude = {
@@ -265,6 +267,7 @@
           defaultProvider = "openai-codex";
           defaultModel = "gpt-6-astra";
           defaultThinkingLevel = "high";
+          hideThinkingBlock = true;
           # Never trust a checkout implicitly; the agent must ask per project.
           defaultProjectTrust = "ask";
           packages = [ "${piExtensions}/share/pi-extensions" ];

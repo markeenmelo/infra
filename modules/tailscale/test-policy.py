@@ -20,7 +20,7 @@ def unique(pairs):
 
 
 def check(policy):
-    tags = [f"tag:fleet-{host}" for host in ["thinkpad", "racknerd", "bastion", "dino"]]
+    tags = [f"tag:fleet-{host}" for host in ["thinkpad", "racknerd", "bastion"]]
     assert set(policy) == {"tagOwners", "acls", "ssh", "autoApprovers", "grants", "tests"}
     assert policy["tagOwners"] == {tag: ["autogroup:admin"] for tag in tags}
     assert policy["acls"] == policy["ssh"] == []
@@ -29,7 +29,7 @@ def check(policy):
     # These are the exact native test intentions, independently enumerated.
     expected = [
         {"src": tags[0], "proto": "tcp", "accept": [f"{t}:22" for t in tags[1:]],
-         "deny": [f"{tags[1]}:80", f"{tags[2]}:443", f"{tags[3]}:3389"]},
+         "deny": [f"{tags[1]}:80", f"{tags[2]}:443"]},
         {"src": tags[0], "proto": "icmp", "accept": [f"{t}:0" for t in tags[1:]]},
         {"src": tags[0], "proto": "udp", "deny": [f"{t}:22" for t in tags[1:]]},
     ]

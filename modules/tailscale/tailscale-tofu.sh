@@ -6,7 +6,7 @@ umask 077
 fail() { printf '%s\n' "$1" >&2; exit 1; }
 [[ $# == 1 ]] || fail 'Usage: tailscale-tofu.sh init|plan|verify|apply|import-policy|import-dns'
 case "$1" in init|plan|verify|apply|import-policy|import-dns) ;; *) fail 'Unsupported operation.' ;; esac
-root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)
 expected_tailnet=$(jq -er '.id | select(type == "string") | select(length > 0 and . != "-" and (test("\\s") | not))' "$root/tofu/tailscale/tailnet.json") \
   || fail 'The checked-in public tailnet identity is missing or invalid.'
 [[ ${TAILSCALE_TAILNET-$expected_tailnet} == "$expected_tailnet" ]] \
@@ -27,6 +27,10 @@ state=$(realpath -m -- "$TAILSCALE_STATE_DIR")
 [[ -z ${TF_ENCRYPTION:-} && -z ${TF_LOG:-} && -z ${TF_LOG_PATH:-} && -z ${TF_LOG_PROVIDER:-} && -z ${TF_LOG_CORE:-} ]] \
   || fail 'Encryption overrides and debug logging are forbidden for this credential-bearing workflow.'
 [[ ${TF_WORKSPACE:-default} == default ]] || fail 'Use one directory per tailnet, not workspaces.'
+[[ -z ${TF_REATTACH_PROVIDERS:-} ]] || fail 'TF_REATTACH_PROVIDERS overrides are forbidden; use the Nix-pinned provider.'
+# Ignore saved workspace selection and all home/XDG CLI provider overrides.
+# withPlugins supplies its own Nix mirror independently of the CLI config.
+export TF_WORKSPACE=default TF_CLI_CONFIG_FILE=/dev/null
 for variable in ${!TF_CLI_ARGS@}; do
   [[ -z ${!variable} ]] || fail 'Unset TF_CLI_ARGS overrides; locking and explicit application must remain enabled.'
 done

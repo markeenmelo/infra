@@ -16,13 +16,13 @@ format-check:
 lint:
     statix check .
     deadnix --fail .
-    shellcheck scripts/*.sh
+    find modules -name '*.sh' -print0 | xargs -0 shellcheck
 
 secret-check:
-    bash scripts/check-secrets.sh
+    bash modules/secrets/check-secrets.sh
 
 secret-check-tests:
-    bash scripts/test-secret-check.sh
+    bash modules/secrets/test-secret-check.sh
 
 evaluate:
     nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing, components})), fixtures, compositions, existingInstallations, sops, desktop, wifi, tailscale}'
@@ -40,31 +40,31 @@ tailscale-inventory:
     nix eval --no-update-lock-file --json .#tailscalePlan | jq .
 
 tailscale-check:
-    bash scripts/check-tailscale.sh
+    bash modules/tailscale/check-tailscale.sh
 
 # Operator-only: plan/verify/import contact the API; apply changes the LIVE tailnet.
 # Never a dependency of check, build, deploy or shell entry.
 tailnet operation:
-    bash scripts/tailscale-tofu.sh "$1"
+    bash modules/tailscale/tailscale-tofu.sh "$1"
 
 revisions:
     jq '.nodes | with_entries(select(.value.locked)) | map_values(.locked | {rev, narHash, url})' flake.lock
 
 ready host:
-    bash scripts/ready.sh "$1"
+    bash modules/fleet/ready.sh "$1"
 
 build host:
-    bash scripts/ready.sh "$1"
+    bash modules/fleet/ready.sh "$1"
     nix build --no-update-lock-file ".#nixosConfigurations.$1.config.system.build.toplevel"
 
 # Fresh-install capability only; existing installations must refuse this.
 # Builds a script for review. NEVER executes it or touches disks.
 disk-plan host:
-    bash scripts/ready.sh "$1" disk-plan
+    bash modules/fleet/ready.sh "$1" disk-plan
     nix build --no-update-lock-file --out-link "result-disko-$1" ".#nixosConfigurations.$1.config.system.build.diskoScript"
 
 deploy host: check
-    bash scripts/ready.sh "$1" deploy
+    bash modules/fleet/ready.sh "$1" deploy
     deploy ".#$1" -- --no-update-lock-file
 
 deploy-fleet: check

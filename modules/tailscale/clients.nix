@@ -1,12 +1,11 @@
 { config, lib, ... }:
 let
   fleet = config;
-  # Enable only the individually reviewed host, never all four at once.
+  # Enable only the individually reviewed host, never the entire fleet at once.
   rollout = {
     thinkpad = true;
     racknerd = false;
     bastion = false;
-    dino = false;
   };
   hosts = builtins.attrNames rollout;
 in
@@ -119,11 +118,7 @@ in
         (lib.mkIf cfg.enable {
           services.tailscale = {
             openFirewall = true;
-            useRoutingFeatures = "none";
             disableTaildrop = true;
-            # Native autoconnect embeds the key value in argv. The owning unit
-            # below uses the CLI's file: argument instead.
-            authKeyFile = null;
           };
           environment.persistence."/persist".directories = [
             {
@@ -138,6 +133,8 @@ in
               "/persist/var/lib/tailscale"
               "/var/lib/tailscale"
             ];
+            # Native autoconnect embeds the key value in argv. The assertion
+            # below keeps it disabled; this unit uses the CLI's file: argument.
             fleet-tailscale = {
               description = "Reconcile reviewed Tailscale client enrollment and preferences";
               wantedBy = [ "multi-user.target" ];

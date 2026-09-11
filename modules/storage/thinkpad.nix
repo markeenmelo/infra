@@ -69,6 +69,7 @@
       };
     };
     fileSystems."/home".neededForBoot = true;
+    fleet.workstation.homePersistence = "filesystem";
     # Old Btrfs root is left intact; no root-reset/deletion hook is carried over.
   };
 }

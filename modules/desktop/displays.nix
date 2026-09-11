@@ -1,15 +1,19 @@
+{ config, ... }:
+let
+  # Verified ThinkPad panel facts, shared by the static rule and runtime policy.
+  internal = {
+    output = "eDP-1";
+    mode = "1920x1200@60.003";
+    width = 1920;
+  };
+  outputPolicyText =
+    builtins.replaceStrings
+      [ "@internalOutput@" "@internalMode@" "@internalWidth@" ]
+      [ internal.output internal.mode (toString internal.width) ]
+      (builtins.readFile ./assets/output-policy.sh);
+in
 {
   fleet.hosts.thinkpad.module = _: {
-    # Pre-activation desktop review, 2026-09-10: evaluated greeter session
-    # (noctalia-greeter, no autologin), password-first PAM with bounded
-    # fingerprint fallback and keyring hooks, Hyprland 0.56.2/UWSM, portals,
-    # PipeWire, lock/idle policy, scoped KDE Connect exposure and Bluetooth.
-    # Live session behavior, fingerprint
-    # enrollment and peripherals are documented first-boot acceptance tests.
-    fleet.desktop.reviewed = true;
-    # Operator-run private audit, 2026-09-10: MAC/decryption and filled scalar
-    # checks passed with the dedicated identity. No campus connection tested.
-    fleet.wifi.senecaSopsFile = ../../secrets/hosts/thinkpad-senecanet.yaml;
     home-manager.users.marcos =
       { lib, pkgs, ... }:
       let
@@ -25,22 +29,18 @@
             pkgs.socat
             pkgs.util-linux
           ];
-          text = builtins.readFile ./assets/output-policy.sh;
+          text = outputPolicyText;
         };
         policyCommand = action: "${lib.getExe pkgs.uwsm} app -- ${lib.getExe outputPolicy} ${action}";
         policyDispatch = action: inline "hl.dsp.exec_cmd(${toLua (policyCommand action)})";
       in
       {
-        # Deliberate initial compatibility baseline for this NEW home configuration;
-        # it is not derived from the moving Home Manager or Nixpkgs version.
-        home.stateVersion = "26.05";
         wayland.windowManager.hyprland.settings = {
           # Chimei Innolux 0x143F, observed locally 2026-09-09. The runtime
           # policy keeps this exact safe rule when no external is present.
           monitor = lib.mkAfter [
             {
-              output = "eDP-1";
-              mode = "1920x1200@60.003";
+              inherit (internal) output mode;
               position = "auto";
               scale = 1;
               cm = "srgb";
@@ -82,5 +82,30 @@
     # preferred 5120x1440 mode, PQ/BT.2020 HDR metadata and 10-bit capability.
     # The generic policy still checks each connected EDID before enabling HDR,
     # arranges externals above eDP-1 and never assumes a cardN/PRIME/eGPU path.
+  };
+  perSystem.checks = {
+    thinkpad-output-policy =
+      let
+        targetPkgs = config.flake.fleetConfigurations.thinkpad.pkgs;
+        script = targetPkgs.writeText "output-policy.sh" outputPolicyText;
+      in
+      targetPkgs.runCommand "thinkpad-output-policy"
+        {
+          nativeBuildInputs = with targetPkgs; [
+            bash
+            coreutils
+            hyprland
+            jq
+            python3
+            shellcheck
+            socat
+            util-linux
+          ];
+        }
+        ''
+          shellcheck ${script}
+          python3 ${./assets/test-output-policy.py} ${script}
+          touch "$out"
+        '';
   };
 }

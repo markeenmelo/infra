@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.hyprland =
+  flake.modules.nixos.desktop =
     {
       config,
       lib,
@@ -105,22 +105,7 @@
             directory = "/var/lib/fprint";
             mode = "0700";
           }
-          {
-            directory = "/var/lib/AccountsService";
-            mode = "0700";
-          }
-          {
-            directory = "/var/lib/noctalia-greeter";
-            user = config.services.greetd.settings.default_session.user;
-            group = config.users.users.${config.services.greetd.settings.default_session.user}.group;
-            mode = "0750";
-          }
         ];
-        # First-boot acceptance 2026-09-10: the upstream accounts-daemon unit
-        # hardcodes StateDirectoryMode=0775, which systemd re-enforces on every
-        # start and which silently reverted the persisted 0700 backing mode.
-        # Force the reviewed private mode; the root daemon needs no group bits.
-        systemd.services.accounts-daemon.serviceConfig.StateDirectoryMode = lib.mkForce "0700";
       };
     };
 }
