@@ -3,3 +3,14 @@
 /.local/
 *.qcow2
 *.raw
+
+# Runtime OpenTofu data/credentials never belong in Git. Keep provider locks.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+**/__pycache__/

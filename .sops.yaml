@@ -1,10 +1,17 @@
-# Verified recipients from the previous repository; no catch-all host rule.
+# Verified public recipients; exact per-host rules, no catch-all.
 keys:
   - &operator age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht
   - &thinkpad age15r7mf8n0ah32y9xf8jxjvj4yrzsf3y52cucqeyr6hlxtkw63vs0qjz7wgm
+  - &racknerd age1dpxn0ymj6jyt33yf9ukuekwh93w8r3gsmfx8d3g3g3vhh5dn7ygsdpy48t
 
 creation_rules:
   - path_regex: ^secrets/hosts/thinkpad\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *thinkpad
+  # Single-use ThinkPad enrollment key; no new identity or recipient.
+  - path_regex: ^secrets/hosts/thinkpad-tailscale\.yaml$
     key_groups:
       - age:
           - *operator
@@ -15,3 +22,13 @@ creation_rules:
       - age:
           - *operator
           - *thinkpad
+  - path_regex: ^secrets/hosts/racknerd\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *racknerd
+  - path_regex: ^secrets/hosts/racknerd-tailscale\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *racknerd
