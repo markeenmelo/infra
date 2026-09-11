@@ -60,7 +60,7 @@ just ready thinkpad
 nh os build --hostname thinkpad --no-update-lock-file
 ```
 
-This selects the commissioned ThinkPad output; Racknerd has a separate ready evaluation candidate, while Bastion and Dino remain unready and absent from `nixosConfigurations`. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
+This selects the commissioned ThinkPad output; Racknerd has a staged but blocked candidate and remains absent from `nixosConfigurations`, while Bastion and Dino remain unready and absent. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
 
 ## Deployment and recovery
 
