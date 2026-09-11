@@ -26,7 +26,6 @@ in
       programs.hyprland = {
         enable = true;
         withUWSM = true;
-        xwayland.enable = true;
       };
       programs.uwsm.waylandCompositors.hyprland = {
         prettyName = "Hyprland";
@@ -48,14 +47,8 @@ in
             };
           };
         };
-        pipewire = {
-          enable = true;
-          alsa.enable = true;
-          pulse.enable = true;
-        };
         gnome.gnome-keyring.enable = true;
       };
-      hardware.graphics.enable = true;
       security.rtkit.enable = true;
       xdg.portal.config.hyprland = {
         default = [
@@ -90,7 +83,6 @@ in
       shell = command: dispatch "exec_cmd" "${lib.getExe pkgs.noctalia} msg ${command}";
     in
     {
-      fonts.fontconfig.enable = true;
       xdg.enable = true;
       wayland.windowManager.hyprland = {
         enable = true;

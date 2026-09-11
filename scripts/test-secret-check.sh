@@ -13,7 +13,7 @@ cp secrets/hosts/thinkpad.yaml "$file"
 chmod u+w "$file"
 (cd "$work" && bash "$repo/scripts/check-secrets.sh")
 
-for variant in plaintext recipient missing-mac unsupported-backend invalid-yaml multiple-documents duplicate-key; do
+for variant in plaintext recipient missing-mac unsupported-backend invalid-yaml multiple-documents duplicate-key merge-key nested-merge; do
   cp "$repo/secrets/hosts/thinkpad.yaml" "$file"
   case "$variant" in
     plaintext) yq -i '."marcos-password-hash" = "TEST-ONLY-NOT-A-HASH"' "$file" ;;
@@ -32,6 +32,17 @@ for variant in plaintext recipient missing-mac unsupported-backend invalid-yaml 
         printf 'marcos-password-hash: TEST-ONLY-NOT-A-HASH\n'
         dd if="$repo/secrets/hosts/thinkpad.yaml" status=none
       } > "$file"
+      ;;
+    merge-key)
+      {
+        printf '<<: {marcos-password-hash: TEST-ONLY-NOT-A-HASH}\n'
+        dd if="$repo/secrets/hosts/thinkpad.yaml" status=none
+      } > "$file"
+      ;;
+    nested-merge)
+      # A nested merge's plaintext MAC would disappear during JSON conversion.
+      awk '{ print } /^sops:$/ { print "    <<: {mac: TEST-ONLY-NOT-A-SECRET}" }' \
+        "$repo/secrets/hosts/thinkpad.yaml" > "$file"
       ;;
   esac
   if (cd "$work" && bash "$repo/scripts/check-secrets.sh") >"$work/result" 2>&1; then

@@ -1,4 +1,5 @@
-"""Test the operator wrapper with a mock executable and disposable state only."""
+"""Wrapper guards plus native CLI isolation; disposable data, no real provider/API access."""
+import json
 import os
 from pathlib import Path
 import shutil
@@ -8,6 +9,7 @@ import tempfile
 import unittest
 
 SCRIPT = Path(sys.argv.pop(1)).resolve()
+NATIVE_TOFU = shutil.which("tofu")
 
 
 class Wrapper(unittest.TestCase):
@@ -24,6 +26,9 @@ class Wrapper(unittest.TestCase):
         executable = self.root / "tofu"
         executable.write_text(f"#!{sys.executable}\n" + """import os, pathlib, sys
 root = pathlib.Path(os.environ['MOCK_ROOT'])
+assert os.environ['TF_WORKSPACE'] == 'default'
+assert os.environ['TF_CLI_CONFIG_FILE'] == '/dev/null'
+assert not os.environ.get('TF_REATTACH_PROVIDERS')
 with (root / 'calls').open('a') as output:
     output.write(' '.join(sys.argv[1:]) + '\\n')
 if sys.argv[1] == 'plan':
@@ -127,10 +132,70 @@ if sys.argv[1] == 'plan':
                     {"TAILSCALE_STATE_DIR": str(self.repo / "state")},
                     {"TAILSCALE_STATE_DIR": "/nix/store/TEST-ONLY-state"},
                     {"TF_ENCRYPTION": "TEST-ONLY-override"}, {"TF_LOG": "TRACE"},
-                    {"TF_CLI_ARGS_plan": "-lock=false"}, {"TF_WORKSPACE": "different"}]:
+                    {"TF_CLI_ARGS_plan": "-lock=false"}, {"TF_WORKSPACE": "different"},
+                    {"TF_REATTACH_PROVIDERS": "{}"}]:
             with self.subTest(env=env):
                 self.assertNotEqual(self.run_command("init", env).returncode, 0)
                 self.assertEqual(self.calls(), [])
+
+    def native_probe(self, *arguments):
+        # Replace only the executable boundary with a native, non-network probe.
+        assert NATIVE_TOFU is not None
+        (self.root / "tofu").write_text(f"#!{sys.executable}\nimport os\n"
+                                      f"os.execv({NATIVE_TOFU!r}, {[NATIVE_TOFU, *arguments]!r})\n")
+
+    def test_saved_workspace_cannot_retarget_native_cli(self):
+        self.assertEqual(self.run_command("init").returncode, 0)
+        data = self.state / "provider-data"
+        data.mkdir()
+        selection = data / "environment"
+        selection.write_text("TEST-ONLY-DIFFERENT")
+        self.native_probe("workspace", "show")
+        result = self.run_command("verify")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "default")
+        self.assertEqual(selection.read_text(), "TEST-ONLY-DIFFERENT")
+
+    def test_native_cli_ignores_home_and_environment_provider_overrides(self):
+        self.assertEqual(self.run_command("init").returncode, 0)
+        config = self.repo / "tofu/tailscale"
+        (config / "main.tf").write_text('''terraform {
+  required_providers {
+    synthetic = { source = "example.test/fixture/synthetic", version = "1.0.0" }
+  }
+}
+''')
+        overrides = self.root / "override"
+        overrides.mkdir()
+        marker = self.root / "override-launched"
+        executable = overrides / "terraform-provider-synthetic"
+        executable.write_text(f"#!{sys.executable}\nfrom pathlib import Path\n"
+                              f"Path({str(marker)!r}).touch()\n")
+        executable.chmod(0o755)
+        cli = 'provider_installation { dev_overrides { "example.test/fixture/synthetic" = ' + json.dumps(str(overrides)) + ' } }\n'
+        paths = [self.root / ".tofurc", self.root / ".terraformrc",
+                 self.root / ".terraform.d/override.tfrc", self.root / "custom.tfrc"]
+        for path in paths:
+            path.parent.mkdir(exist_ok=True)
+            path.write_text(cli)
+        self.native_probe("providers", "schema", "-json")
+        # Prove this local override is executable without downloads/API access.
+        assert NATIVE_TOFU is not None
+        baseline = subprocess.run([NATIVE_TOFU, "providers", "schema", "-json"], cwd=config,
+                                  env=self.env | {"TF_CLI_CONFIG_FILE": str(paths[-1])},
+                                  capture_output=True, text=True, timeout=10)
+        self.assertNotEqual(baseline.returncode, 0)  # The sentinel speaks no provider protocol.
+        self.assertTrue(marker.exists(), baseline.stderr)
+        marker.unlink()
+        # No init/provider downloads: absent synthetic provider must fail before launch.
+        for env in [{}, {"TF_CLI_CONFIG_FILE": str(paths[-1])},
+                    {"TERRAFORM_CONFIG": str(paths[-1])}]:
+            with self.subTest(env=env):
+                result = self.run_command("verify", env)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(marker.exists(), result.stderr)
+                self.assertNotIn("development overrides", result.stderr.lower())
+                self.assertIn("inconsistent dependency lock file", result.stderr.lower())
 
     def test_wrong_directory_permissions_rejected(self):
         self.state.mkdir(mode=0o755)

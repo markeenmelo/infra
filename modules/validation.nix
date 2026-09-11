@@ -1284,6 +1284,7 @@ in
               jq
               python3
               shellcheck
+              socat
               util-linux
             ];
           }

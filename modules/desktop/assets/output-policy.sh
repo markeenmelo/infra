@@ -48,7 +48,7 @@ supports_hdr() {
 }
 
 external_rows() {
-  local connector name status
+  local connector name status active_only=${2:-false}
   local -a connected=()
 
   # Hyprland 0.56 has no virtual flag in monitor JSON. Only connected DRM
@@ -61,7 +61,7 @@ external_rows() {
     connected+=("${name#*-}")
   done
 
-  jq -nr --arg internal "$internal_output" --slurpfile monitors "$1" '
+  jq -nr --arg internal "$internal_output" --argjson activeOnly "$active_only" --slurpfile monitors "$1" '
     $monitors
     | if length == 1 and (.[0] | type == "array") then .[0]
       else error("expected one monitor array") end
@@ -71,6 +71,12 @@ external_rows() {
       | select(.name as $name | $name != $internal and ($ARGS.positional | index($name)) != null)
       | if (.name | test("^[A-Za-z0-9_-]+$")) then .
         else error("invalid DRM output name") end
+      | if $activeOnly then
+          if (.disabled | type) != "boolean" or (.dpmsStatus | type) != "boolean"
+            or (.width | type) != "number" or (.height | type) != "number"
+          then error("invalid active monitor state")
+          else select(.disabled == false and .dpmsStatus == true and .width > 0 and .height > 0) end
+        else . end
       | (
           if (.availableModes | type) != "array" then error("invalid availableModes")
           elif (.availableModes | length) > 0 then .availableModes[0]
@@ -146,6 +152,17 @@ sync_outputs_unlocked() {
   done <<<"$rows"
 
   if ((external_count > 0)) && [[ "$lid" == closed ]]; then
+    if [[ "$dry_run" == false ]]; then
+      # hl.monitor only queues a rule. Confirm a usable physical output in a
+      # fresh active snapshot, not command acceptance or advertised modes.
+      sleep 0.2
+      hyprctl monitors -j >"$monitors"
+      rows=$(external_rows "$monitors" true)
+      if [[ -z "$rows" ]]; then
+        printf 'fleet-output-policy: no active external; refusing to disable panel\n' >&2
+        return 1
+      fi
+    fi
     apply_rule "$dry_run" "output = \"$internal_output\", disabled = true"
   else
     local internal_x=0
@@ -184,15 +201,21 @@ watch_outputs() {
   # Subscribe before waiting so monitor events are buffered. The Hyprland start
   # callback can run before initial DRM/output publication; without this delay,
   # its later static monitor rules can remain active until another event occurs.
-  # pipefail preserves socket failures; a failed sync terminates the watcher
-  # instead of continuing with later rules/events after a partial update.
-  socat -u "UNIX-CONNECT:$socket" - | {
+  # Socat opens the socket BEFORE exec (nofork). Its fixed local marker gates
+  # all mutations; pipefail preserves connection/read failures without reconnect.
+  socat -u "UNIX-CONNECT:$socket" 'SYSTEM:echo subscribed; exec cat,nofork' | {
+    if IFS= read -r event; then
+      [[ "$event" == subscribed ]] || return 1
+    else
+      # The producer failed before exec; leave its status to pipefail.
+      return 0
+    fi
     sleep 0.5
     sync_outputs false
 
     while IFS= read -r event; do
       case "${event%%>>*}" in
-        monitoradded | monitoraddedv2 | monitorremoved | monitorremovedv2 | configreloaded)
+        monitoradded | monitorremoved | configreloaded)
           # Let Hyprland finish publishing the new output set before querying it.
           sleep 0.2
           sync_outputs false

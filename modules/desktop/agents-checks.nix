@@ -36,6 +36,11 @@
             ${lib.getExe pkgs.nodejs} ${./assets/pi/test-extensions.mjs} \
               ${pkgs.pi-coding-agent}/lib/node_modules/pi-monorepo \
               ${builtins.head pi.settings.packages}
+            ${lib.getExe pkgs.nodejs} ${./assets/pi/test-lifecycle.mjs} \
+              ${pkgs.pi-coding-agent}/lib/node_modules/pi-monorepo \
+              ${builtins.head pi.settings.packages} \
+              ${home.home.file.".pi/agent/extensions/herdr-ui-prompts.ts".source} \
+              ${home.home.file.".pi/agent/extensions/herdr-agent-state.ts".source}
             touch "$out"
           '';
     };

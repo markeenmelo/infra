@@ -70,7 +70,7 @@ This is the repeatable operator procedure; initial read-only completion is recor
      -c bash --noprofile --norc
    ```
 
-   The wrapper independently requires the intended `TAILSCALE_OAUTH_CLIENT_ID`/`TAILSCALE_OAUTH_CLIENT_SECRET` pair and rejects API-key, OIDC, legacy OAuth and endpoint overrides.
+   The wrapper independently requires the intended `TAILSCALE_OAUTH_CLIENT_ID`/`TAILSCALE_OAUTH_CLIENT_SECRET` pair and rejects API-key, OIDC, legacy OAuth, endpoint and `TF_REATTACH_PROVIDERS` overrides. It sets `TF_CLI_CONFIG_FILE=/dev/null` to exclude home/XDG CLI files and their `dev_overrides`; the locked `withPlugins` executable supplies the Nix provider mirror independently. It explicitly exports `TF_WORKSPACE=default`, ignoring any saved selection in `provider-data/environment` without deleting it.
 
    Paste this **whole brace block** into that shell before entering values at its hidden prompts. Braces retain exports in the current shell and group the pasted commands before reads begin. Never paste values as shell commands or into chat:
 
@@ -94,7 +94,7 @@ This is the repeatable operator procedure; initial read-only completion is recor
 
    For **first initialization only**, then run `just tailnet init` separately. If already initialized, restoring the exports does not require reinitialization or a new passphrase. Stay in this private shell for the following operations: a fresh clean shell clears these inputs. A missing-variable error stops before API access; it is not an instruction to create replacement state.
 
-   The wrapper binds a new empty private `0700` directory to that tailnet. State, backups, saved plans and provider working data stay **outside the checkout/Nix store**. Existing nonempty/unbound directories require recovery review; permissions are never silently repaired. No auto-loaded `.tfvars` or override files, alternative workspaces, TF_CLI_ARGS overrides, debug logging or TF_ENCRYPTION overrides are accepted. The environment is transient: unset credentials/passphrase after use. State and plan output may disclose network metadata, so review privately.
+   The wrapper binds a new empty private `0700` directory to that tailnet. Normal state, backups, saved plans and provider working data stay **outside the checkout/Nix store**. Backend write failure has an [emergency-state exception](#emergency-state-recovery): preserve it, never clean it away. Existing nonempty/unbound directories require recovery review; permissions are never silently repaired. No auto-loaded `.tfvars` or override files, alternative workspaces, TF_CLI_ARGS overrides, debug logging, TF_REATTACH_PROVIDERS or TF_ENCRYPTION overrides are accepted. The environment is transient: unset credentials/passphrase after use. State and plan output may disclose network metadata, so review privately.
 5. **After authorizing read-only API access**, import both existing singletons into encrypted local state:
 
    ```sh
@@ -107,6 +107,15 @@ This is the repeatable operator procedure; initial read-only completion is recor
 6. **Only after explicit authorization**, `just tailnet apply` applies that saved plan after an exact tailnet-ID confirmation. It changes the live tailnet, not NixOS. The plan is retained; archive it securely outside Git before making the next plan. Do not reuse old plans after policy/emergency changes; replan against refreshed state and serialize all applies. Never wire apply into `just check`, shell entry, a Nix build or NixOS activation.
 
 Raw OpenTofu can bypass the wrapper's workflow guards. Keep the checked configuration and use the wrapper for real operations; do not remove encryption/import protections to recover from an error. Local state is not a remote/team backend: use one administration environment, maintain backups and deliberately migrate if additional operators/CI need access.
+
+### Emergency-state recovery
+
+A backend persistence failure can leave the newest state in **`tofu/tailscale/errored.tfstate`**, because the wrapper runs OpenTofu from that directory. OpenTofu 1.11.8 passes the configured encryption to this emergency writer; retain that upstream recovery mechanism. This exception does not permit ordinary state in Git or prove the failed operation made no live changes. If even the emergency write fails, OpenTofu attempts a terminal state dump using the same encryption; keep the entire diagnostic private.
+
+1. **Stop all OpenTofu operations and competing writers.** Do not retry apply, reimport, reinitialize, change the passphrase or run checkout cleanup. The backend state may be stale; repeating apply can fork state.
+2. Privately preserve the emergency file, existing backend state, retained plan and diagnostics. Under explicit recovery authorization, copy the emergency bytes without overwrite into an owned `0700` recovery directory outside Git/store, with `0600` files; verify the copy before any removal. Never stage the emergency file, print its contents into agent logs or delete it merely because Git ignores it. Preserve the original until recovery is verified. Encryption is not a backup.
+3. Resolve the backend write failure and review the intended tailnet, backend, state lineage/serial and protected backups. A separately authorized **one-off `tofu state push`** of the protected emergency copy must use the same locked executable/configuration, passphrase, `TF_VAR_tailnet`, `TF_VAR_state_directory`, `TF_DATA_DIR`, `TF_WORKSPACE=default` and isolated `TF_CLI_CONFIG_FILE=/dev/null` as the wrapper, with reattachment/debug/encryption overrides absent. These exports do not persist from a previous wrapper process. The wrapper deliberately has no generic recovery bypass. Retain locking and lineage/serial checks; do not use `-force` or disable encryption to make the push succeed.
+4. After verified recovery, run separately authorized non-saving `just tailnet verify` in the private shell and refresh protected backups. Archive the stale saved plan; create/review a new plan before any later apply. Remove the checkout emergency copy only after explicit cleanup approval and verified recoverable copies.
 
 ## Policy-only apply workflow
 

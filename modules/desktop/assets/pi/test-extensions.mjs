@@ -140,7 +140,7 @@ await invoke(plan, 'session_tree', {}, ctx);
 assert.deepEqual(active, original, 'Tree navigation must restore branch-local plan state');
 await plan.commands.get('plan').handler('', ctx);
 assert.deepEqual(await invoke(plan, 'context', { messages: [staleContext, ...preservedMessages] }, ctx),
-  [undefined], 'Active plan context must remain available');
+  [{ messages: [staleContext, ...preservedMessages] }], 'Active plan context must remain available');
 await plan.commands.get('plan').handler('', ctx);
 console.log('Pi loader, fetch-only registration and plan lifecycle/guards passed');
 

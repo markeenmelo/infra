@@ -153,6 +153,7 @@
           # Herdr ships this extension to report Pi session state to its panes.
           # Vendored verbatim; Herdr rewrites it when its integration updates.
           ".pi/agent/extensions/herdr-agent-state.ts".source = ./assets/pi/herdr-agent-state.ts;
+          ".pi/agent/extensions/herdr-ui-prompts.ts".source = ./assets/pi/herdr-ui-prompts.ts;
 
           ".pi/agent/claude-bridge.json".source = jsonFormat.generate "pi-claude-bridge.json" {
             askClaude = {

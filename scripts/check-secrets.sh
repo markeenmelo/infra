@@ -14,8 +14,9 @@ if ((${#files[@]} == 0)); then
   exit 1
 fi
 for file in "${files[@]}"; do
-  # JSON decoding otherwise keeps only the last value of a duplicate YAML key.
-  if ! yq -e '[.. | select(tag == "!!map") | keys | select(length != (unique | length))] | length == 0' "$file" >/dev/null 2>&1; then
+  # JSON conversion discards duplicate keys and overridden YAML merge values.
+  # Reject both in the YAML tree before inspecting the converted payload.
+  if ! yq -e '([.. | select(tag == "!!map") | keys | select(length != (unique | length))] + [... | select(tag == "!!merge")]) | length == 0' "$file" >/dev/null 2>&1; then
     printf 'Ambiguous or invalid YAML: %s (content withheld).\n' "$file" >&2
     exit 1
   fi

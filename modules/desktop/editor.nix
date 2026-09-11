@@ -266,7 +266,6 @@
     {
       programs.zed-editor = {
         enable = true;
-        defaultEditor = false;
         # Zed's own settings UI cannot write back into the Nix store copy; every
         # change belongs in this module so the editor stays reproducible.
         mutableUserSettings = false;
