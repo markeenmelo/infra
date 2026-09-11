@@ -217,6 +217,7 @@
           };
           # Keep infrastructure/check/credential output unfiltered.
           hooks.exclude_commands = [
+            "git"
             "nix"
             "nixos-rebuild"
             "just"

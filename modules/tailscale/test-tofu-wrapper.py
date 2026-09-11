@@ -39,6 +39,8 @@ if sys.argv[1] == 'plan':
             "PATH": str(self.root) + os.pathsep + os.environ["PATH"],
             "HOME": str(self.root), "MOCK_ROOT": str(self.root),
             "TAILSCALE_TAILNET": "TEST-ONLY-TAILNET", "TAILSCALE_STATE_DIR": str(self.state),
+            "TAILSCALE_OAUTH_CLIENT_ID": "TEST-ONLY-OAUTH-ID",
+            "TAILSCALE_OAUTH_CLIENT_SECRET": "TEST-ONLY-OAUTH-SECRET",
             "TF_VAR_state_passphrase": "TEST-ONLY-PASSPHRASE-NOT-A-REAL-SECRET-12345",
         }
 
@@ -113,6 +115,14 @@ if sys.argv[1] == 'plan':
     def test_missing_or_unsafe_inputs_never_invoke_tofu(self):
         for env in [{"TAILSCALE_TAILNET": ""}, {"TAILSCALE_TAILNET": "-"},
                     {"TAILSCALE_TAILNET": "bad\nid"}, {"TF_VAR_state_passphrase": ""},
+                    {"TAILSCALE_OAUTH_CLIENT_ID": ""},
+                    {"TAILSCALE_OAUTH_CLIENT_SECRET": ""},
+                    {"TAILSCALE_API_KEY": "TEST-ONLY-API-KEY"},
+                    {"TAILSCALE_IDENTITY_TOKEN": "TEST-ONLY-IDENTITY-TOKEN"},
+                    {"IDENTITY_TOKEN": "TEST-ONLY-LEGACY-IDENTITY-TOKEN"},
+                    {"TAILSCALE_AUDIENCE": "TEST-ONLY-AUDIENCE"},
+                    {"OAUTH_CLIENT_ID": "TEST-ONLY-LEGACY-ID"},
+                    {"OAUTH_CLIENT_SECRET": "TEST-ONLY-LEGACY-SECRET"},
                     {"TAILSCALE_BASE_URL": "https://alternate.example.test"},
                     {"TAILSCALE_STATE_DIR": str(self.repo / "state")},
                     {"TAILSCALE_STATE_DIR": "/nix/store/TEST-ONLY-state"},

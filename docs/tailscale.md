@@ -70,6 +70,8 @@ This is the repeatable operator procedure; initial read-only completion is recor
      -c bash --noprofile --norc
    ```
 
+   The wrapper independently requires the intended `TAILSCALE_OAUTH_CLIENT_ID`/`TAILSCALE_OAUTH_CLIENT_SECRET` pair and rejects API-key, OIDC, legacy OAuth and endpoint overrides.
+
    Paste this **whole brace block** into that shell before entering values at its hidden prompts. Braces retain exports in the current shell and group the pasted commands before reads begin. Never paste values as shell commands or into chat:
 
    ```sh

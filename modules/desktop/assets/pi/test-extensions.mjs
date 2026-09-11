@@ -178,7 +178,7 @@ const rewrite = async (command) => {
   await invoke(rtk, 'tool_call', event, ctx);
   return event.input.command;
 };
-assert.equal(await rewrite('git status'), 'rtk git status');
+assert.equal(await rewrite('git status'), 'git status', 'Preserve exact Git output');
 assert.equal(await rewrite('rtk git status'), 'rtk git status');
 for (const command of ['nix flake check', 'just check', 'tofu plan', 'sops --version', 'printf hello']) {
   assert.equal(await rewrite(command), command, `Pass through ${command}`);

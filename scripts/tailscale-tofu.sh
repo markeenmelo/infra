@@ -13,6 +13,11 @@ expected_tailnet=$(jq -er '.id | select(type == "string") | select(length > 0 an
   || fail 'TAILSCALE_TAILNET must match tailnet.json; it cannot select another tailnet.'
 export TAILSCALE_TAILNET="$expected_tailnet"
 [[ -z ${TAILSCALE_BASE_URL:-} ]] || fail 'TAILSCALE_BASE_URL overrides are forbidden; use the pinned provider endpoint.'
+[[ -n ${TAILSCALE_OAUTH_CLIENT_ID:-} && -n ${TAILSCALE_OAUTH_CLIENT_SECRET:-} ]] \
+  || fail 'Set the intended TAILSCALE_OAUTH_CLIENT_ID and TAILSCALE_OAUTH_CLIENT_SECRET pair privately.'
+for variable in TAILSCALE_API_KEY TAILSCALE_IDENTITY_TOKEN IDENTITY_TOKEN TAILSCALE_AUDIENCE OAUTH_CLIENT_ID OAUTH_CLIENT_SECRET; do
+  [[ -z ${!variable:-} ]] || fail "$variable authentication overrides are forbidden; use the intended TAILSCALE_OAUTH_CLIENT_ID/SECRET pair."
+done
 [[ ${TAILSCALE_STATE_DIR:-} == /* ]] || fail 'Set TAILSCALE_STATE_DIR to an absolute private path outside Git.'
 state=$(realpath -m -- "$TAILSCALE_STATE_DIR")
 [[ "$state" != "$root" && "$state" != "$root/"* && "$state" != /nix/store && "$state" != /nix/store/* ]] \
