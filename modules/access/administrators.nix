@@ -2,7 +2,7 @@
 {
   # User-selected account policy. This public key was read from each installed
   # host's authorized_keys and selected for reuse; no private material is copied.
-  fleet.hosts = lib.genAttrs [ "thinkpad" "racknerd" "bastion" "dino" ] (_: {
+  fleet.hosts = lib.genAttrs [ "thinkpad" "racknerd" "bastion" ] (_: {
     module = {
       fleet.access = {
         admin = "marcos";

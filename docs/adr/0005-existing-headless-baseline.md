@@ -8,7 +8,7 @@
 
 ## Context
 
-Read-only discovery established that all four hosts already run NixOS with disko/impermanence and Limine. Their disks do not match the scaffold: named Btrfs subvolumes lack `@` prefixes; thinkpad has LUKS/LVM/swap; laptops have separate `/home`; bastion has a valuable, separate ZFS mirror. Applying the original fresh-disk layout would not be a safe migration. The user explicitly requests no wipe, headless scope, password sudo, no VPN yet, and remote deploy capability everywhere except thinkpad.
+Read-only discovery established that all three hosts already run NixOS with disko/impermanence and Limine. Their disks do not match the scaffold: named Btrfs subvolumes lack `@` prefixes; ThinkPad has LUKS/LVM/swap and a separate `/home`; bastion has a valuable, separate ZFS mirror. Applying the original fresh-disk layout would not be a safe migration. The user explicitly requests no wipe, headless scope, password sudo, no VPN yet, and remote deploy capability everywhere except thinkpad.
 
 ## Decision
 
@@ -18,7 +18,7 @@ Target tmpfs root without any deletion hook, preserving existing durable mounts,
 
 Use Limine's common pinned API with observed EFI/BIOS policy, no force/editor and bounded generations. Retain recovery consoles; upstream `profiles/headless.nix` is inappropriate because it disables them. The old fresh-install capability remains separately available and tested but is not composed by the real fleet.
 
-Configure `marcos` with the existing explicitly selected public key, runtime password-file contracts and password sudo. Preserve dino's existing `ian` UID/home without wheel. Servers need a separately authorized transition from their root-only SSH configuration; target root SSH stays disabled. Keep closure trust unresolved until explicitly provisioned, rather than silently granting root-equivalent Nix trust. Dino now opts into deploy-rs after commissioning; thinkpad remains excluded.
+Configure `marcos` with the existing explicitly selected public key, runtime password-file contracts and password sudo. Servers need a separately authorized transition from their root-only SSH configuration; target root SSH stays disabled. Keep closure trust unresolved until explicitly provisioned, rather than silently granting root-equivalent Nix trust. Servers opt into deploy-rs after commissioning; thinkpad remains excluded.
 
 Headless scope includes SSH/firewall/time sync, scoped persistence, server hardening/logging and racknerd SSH banning, plus conservative laptop power management and thinkpad Thunderbolt authorization. No VPN, desktop, launchers, disconnected-eGPU driver, proxy or NAS application is enabled. Laptop graphics/gaming is a later feature, not an invented commissioning acknowledgement.
 

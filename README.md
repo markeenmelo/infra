@@ -1,6 +1,6 @@
 # NixOS fleet
 
-A small dendritic flake for four **already-installed** `x86_64-linux` hosts. This branch proposes a secure baseline plus a **new Hyprland/Noctalia desktop on ThinkPad**, not a reinstall. The other hosts remain headless. Read-only discovery and transition gates are in [docs/hosts.md](docs/hosts.md); new desktop defaults and acceptance are in [docs/desktop.md](docs/desktop.md).
+A small dendritic flake for three **already-installed** `x86_64-linux` hosts. This branch proposes a secure baseline plus a **new Hyprland/Noctalia desktop on ThinkPad**, not a reinstall. The other hosts remain headless. Read-only discovery and transition gates are in [docs/hosts.md](docs/hosts.md); new desktop defaults and acceptance are in [docs/desktop.md](docs/desktop.md).
 
 **Read [current host status](docs/hosts.md#current-status) for dated boot, credential, maintenance and deferred-deployment evidence.** Only ready hosts enter `nixosConfigurations`; deploy outputs require readiness plus enabled deployment intent.
 
@@ -9,11 +9,10 @@ A small dendritic flake for four **already-installed** `x86_64-linux` hosts. Thi
 | `thinkpad` | Hyprland/Noctalia/Greeter, desktop-only HM, Ghostty/Zen and approved apps, fingerprint fallback, SOPS Wi-Fi, laptop power/thermald, reviewed Thunderbolt authorization; preserve LUKS/LVM/swap and `/home` | `nixpkgs-unstable` | local-only |
 | `racknerd` | server hardening, nftables, persistent journal, SSH fail2ban, observed KVM/network configuration | numbered stable | `marcos@72.11.150.242`, after commissioning |
 | `bastion` | server hardening, nftables, persistent journal; preserve existing ZFS `tank` legacy data mounts separately from OS persistence | numbered stable | `marcos@192.168.2.2`, after commissioning |
-| `dino` | NetworkManager, laptop power management; preserve `/home`, `marcos`/`ian`, existing tmpfs root and zram | `nixpkgs-unstable` | `marcos@192.168.20.2`, after commissioning; may be offline |
 
-All four target **Limine** (racknerd BIOS; others UEFI). Headless means no desktop, **not** removal of consoles/emergency recovery. [Tailscale policy/enrollment](docs/tailscale.md) is separately review-gated; policy maintenance is not host enrollment or traffic acceptance. Gaming applications/drivers beyond ordinary hardware support, reverse proxy, shares and other applications remain deferred. Requested application preferences are deliberately reused without copying private profiles or credentials. Hardware unknowns and remaining display/campus/application acceptance stay explicit in [current status](docs/hosts.md#current-status).
+All three target **Limine** (racknerd BIOS; others UEFI). Headless means no desktop, **not** removal of consoles/emergency recovery. [Tailscale policy/enrollment](docs/tailscale.md) is separately review-gated; policy maintenance is not host enrollment or traffic acceptance. Gaming applications/drivers beyond ordinary hardware support, reverse proxy, shares and other applications remain deferred. Requested application preferences are deliberately reused without copying private profiles or credentials. Hardware unknowns and remaining display/campus/application acceptance stay explicit in [current status](docs/hosts.md#current-status).
 
-Servers use a supported numbered stable NixOS branch. Laptops use **`nixpkgs-unstable`**, not `nixos-unstable`, for future interactive/gaming software; its different Hydra gating warrants validation before upgrades. There is no package-channel mixing. The explicit [stock 7.x kernel policy](docs/desktop.md#kernels-and-intel-driver) selects each track's latest locked kernel (7.2.4 on both tracks after the current refresh), with ZFS compatibility and major-version guards. Branch selections are in `flake.nix`; pins and dated API evidence are in [research](docs/research.md).
+Servers use a supported numbered stable NixOS branch. The laptop uses **`nixpkgs-unstable`**, not `nixos-unstable`, for future interactive/gaming software; its different Hydra gating warrants validation before upgrades. There is no package-channel mixing. The explicit [stock 7.x kernel policy](docs/desktop.md#kernels-and-intel-driver) selects each track's latest locked kernel (7.2.4 on both tracks after the current refresh), with ZFS compatibility and major-version guards. Branch selections are in `flake.nix`; pins and dated API evidence are in [research](docs/research.md).
 
 ## Start here
 
@@ -32,7 +31,7 @@ The locked development shell supplies official nixfmt/nixfmt-tree, statix, deadn
 
 Each host composes `existing-storage`: disko `nodev` descriptions derive mounts for existing UUIDs or the existing LVM mapper. All disk/GPT/LVM-create/ZFS-create collections are closed; disko scripts and image/install-test outputs are rejected even after readiness. **`just disk-plan HOST` is unavailable for these installations.** This is a runtime mount description, not an installer layout.
 
-- `/` becomes tmpfs on thinkpad/racknerd/bastion; dino already uses it. No old Btrfs root-reset/deletion script is retained. Existing root subvolumes are not erased.
+- `/` becomes tmpfs on thinkpad/racknerd/bastion. No old Btrfs root-reset/deletion script is retained. Existing root subvolumes are not erased.
 - Existing `/nix`, `/persist` and laptop `/home` remain durable, early-mounted filesystems. Laptop `/home` is **not** also an impermanence bind.
 - Thinkpad's existing encryption, LVM and swap remain. No plaintext secrets or private identities enter the Nix store.
 - Bastion's NVMe OS `/persist` is **not** its ZFS data. The observed `/srv` datasets stay outside disko. No pools/datasets/properties are created or upgraded; import policy and restore require review.
@@ -47,7 +46,7 @@ The original **fresh-install-only** `os-disk` capability is retained with its de
 
 ## Access and deployment
 
-Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** using `neededForUsers` and a dedicated persistent age identity. Null credentials or unreviewed identities remain commissioning blockers, not plausible runtime paths. Dino also retains `ian` without wheel rights. See [secret inventory and procedure](secrets/README.md), [ADR 0006](docs/adr/0006-sops-password-delivery.md) and [current credential/access evidence](docs/hosts.md#current-status).
+Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** using `neededForUsers` and a dedicated persistent age identity. Null credentials or unreviewed identities remain commissioning blockers, not plausible runtime paths. See [secret inventory and procedure](secrets/README.md), [ADR 0006](docs/adr/0006-sops-password-delivery.md) and [current credential/access evidence](docs/hosts.md#current-status).
 
 A temporary non-root access bootstrap is not declarative commissioning. Follow [the transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized), with independent recovery and verified non-VPN routing before removing an old service. Reinstallation requires a separately reviewed fresh-install design; validation never authorizes it.
 

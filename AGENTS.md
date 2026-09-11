@@ -13,8 +13,8 @@ This is infrastructure for real machines and valuable storage. Read `README.md`,
 ## Architecture invariants
 
 - `flake.nix` is the only Nix entry point. All other repository `.nix` files live under `modules/` and are modules of the **top-level flake-parts evaluation**, including tests and adapted hardware facts.
-- Capabilities are deferred, class-checked `flake.modules.nixos` values. Per-host facts merge into `fleet.hosts.<name>.module` (also deferred). Paths name concerns; never add conventional host import roots, `common.nix` dumping grounds or a framework for four hosts.
-- Host `system` and `track` are required explicit metadata. `thinkpad`/`dino` use `nixpkgs-unstable`; `racknerd`/`bastion` use the supported numbered stable branch. Generic features use their own lower-level `pkgs`/`lib`, never arbitrary stable/unstable packages or injected flake inputs.
+- Capabilities are deferred, class-checked `flake.modules.nixos` values. Per-host facts merge into `fleet.hosts.<name>.module` (also deferred). Paths name concerns; never add conventional host import roots, `common.nix` dumping grounds or a framework for this small fleet.
+- Host `system` and `track` are required explicit metadata. `thinkpad` uses `nixpkgs-unstable`; `racknerd`/`bastion` use the supported numbered stable branch. Generic features use their own lower-level `pkgs`/`lib`, never arbitrary stable/unstable packages or injected flake inputs.
 - Do not globally overlay or import both package sets. Input selection belongs in `modules/fleet.nix`; independently required tracks belong in `modules/validation.nix`. A legitimate API difference must be isolated, researched and tested (see logging).
 - `fleetConfigurations` evaluates all compositions. Only explicitly ready hosts appear in `nixosConfigurations`; only ready + deployment-enabled hosts appear in deploy-rs. Preserve this bootstrap distinction.
 - Module fixtures are explicitly synthetic evaluation-only data. Never copy their sentinel device/key/review flags into a fleet host. Do not expose their scripts as install/deploy targets.

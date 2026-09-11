@@ -5,7 +5,7 @@
 
 ## Context
 
-Four hosts need shared capabilities, independent facts and cross-cutting deployment/tooling concerns. A traditional host-import tree obscures these relationships. The upstream dendritic definition does not mandate flake-parts.
+Three hosts need shared capabilities, independent facts and cross-cutting deployment/tooling concerns. A traditional host-import tree obscures these relationships. The upstream dendritic definition does not mandate flake-parts.
 
 ## Decision
 

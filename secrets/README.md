@@ -11,7 +11,6 @@ Declared sources/bindings are below. **Dated credential, recovery and boot accep
 | thinkpad | `hosts/thinkpad.yaml` (password/PSK), `hosts/thinkpad-senecanet.yaml`, `hosts/thinkpad-tailscale.yaml` | `/persist/var/lib/sops-nix/key.txt` |
 | racknerd | `hosts/racknerd.yaml` (password); enrollment file not supplied | `/persist/var/lib/sops-nix/key.txt`; identity review remains blocked |
 | bastion | None supplied | Null blocker |
-| dino | None supplied; both marcos/ian password bindings null | Null blocker |
 
 The ThinkPad file contains encrypted `marcos-password-hash` **and** `wifi-psk`. Keep it intact: removing entries without authorized SOPS editing invalidates its MAC. Both are now declared: the password remains early/root-only; `wifi-psk` supplies native root-owned runtime NetworkManager profiles through a private environment adapter. The old file-secret agent and Noctalia patch are not imported. SenecaNET identity/password use a separate encrypted file, filled privately by the operator and now selected after successful MAC/decryption and marker/format checks; see [Wi-Fi procedure](../docs/desktop.md#wi-fi-credentials). This does not prove the campus account/password or server-certificate policy works on the real network. Do not delete/edit ciphertext fields by hand.
 

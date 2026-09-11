@@ -2,8 +2,7 @@
   "tagOwners": {
     "tag:fleet-thinkpad": ["autogroup:admin"],
     "tag:fleet-racknerd": ["autogroup:admin"],
-    "tag:fleet-bastion": ["autogroup:admin"],
-    "tag:fleet-dino": ["autogroup:admin"]
+    "tag:fleet-bastion": ["autogroup:admin"]
   },
   "acls": [],
   "ssh": [],
@@ -11,7 +10,7 @@
   "grants": [
     {
       "src": ["tag:fleet-thinkpad"],
-      "dst": ["tag:fleet-racknerd", "tag:fleet-bastion", "tag:fleet-dino"],
+      "dst": ["tag:fleet-racknerd", "tag:fleet-bastion"],
       "ip": ["tcp:22", "icmp:*"]
     }
   ],
@@ -19,48 +18,38 @@
     {
       "src": "tag:fleet-thinkpad",
       "proto": "tcp",
-      "accept": ["tag:fleet-racknerd:22", "tag:fleet-bastion:22", "tag:fleet-dino:22"],
-      "deny": ["tag:fleet-racknerd:80", "tag:fleet-bastion:443", "tag:fleet-dino:3389"]
+      "accept": ["tag:fleet-racknerd:22", "tag:fleet-bastion:22"],
+      "deny": ["tag:fleet-racknerd:80", "tag:fleet-bastion:443"]
     },
     {
       "src": "tag:fleet-thinkpad",
       "proto": "icmp",
-      "accept": ["tag:fleet-racknerd:0", "tag:fleet-bastion:0", "tag:fleet-dino:0"]
+      "accept": ["tag:fleet-racknerd:0", "tag:fleet-bastion:0"]
     },
     {
       "src": "tag:fleet-thinkpad",
       "proto": "udp",
-      "deny": ["tag:fleet-racknerd:22", "tag:fleet-bastion:22", "tag:fleet-dino:22"]
+      "deny": ["tag:fleet-racknerd:22", "tag:fleet-bastion:22"]
     },
     {
       "src": "tag:fleet-racknerd",
       "proto": "tcp",
-      "deny": ["tag:fleet-thinkpad:22", "tag:fleet-bastion:22", "tag:fleet-dino:22"]
+      "deny": ["tag:fleet-thinkpad:22", "tag:fleet-bastion:22"]
     },
     {
       "src": "tag:fleet-bastion",
       "proto": "tcp",
-      "deny": ["tag:fleet-thinkpad:22", "tag:fleet-racknerd:22", "tag:fleet-dino:22"]
-    },
-    {
-      "src": "tag:fleet-dino",
-      "proto": "tcp",
-      "deny": ["tag:fleet-thinkpad:22", "tag:fleet-racknerd:22", "tag:fleet-bastion:22"]
+      "deny": ["tag:fleet-thinkpad:22", "tag:fleet-racknerd:22"]
     },
     {
       "src": "tag:fleet-racknerd",
       "proto": "icmp",
-      "deny": ["tag:fleet-thinkpad:0", "tag:fleet-bastion:0", "tag:fleet-dino:0"]
+      "deny": ["tag:fleet-thinkpad:0", "tag:fleet-bastion:0"]
     },
     {
       "src": "tag:fleet-bastion",
       "proto": "icmp",
-      "deny": ["tag:fleet-thinkpad:0", "tag:fleet-racknerd:0", "tag:fleet-dino:0"]
-    },
-    {
-      "src": "tag:fleet-dino",
-      "proto": "icmp",
-      "deny": ["tag:fleet-thinkpad:0", "tag:fleet-racknerd:0", "tag:fleet-bastion:0"]
+      "deny": ["tag:fleet-thinkpad:0", "tag:fleet-racknerd:0"]
     }
   ]
 }

@@ -1,12 +1,11 @@
 { config, lib, ... }:
 let
   fleet = config;
-  # Enable only the individually reviewed host, never all four at once.
+  # Enable only the individually reviewed host, never the entire fleet at once.
   rollout = {
     thinkpad = true;
     racknerd = false;
     bastion = false;
-    dino = false;
   };
   hosts = builtins.attrNames rollout;
 in

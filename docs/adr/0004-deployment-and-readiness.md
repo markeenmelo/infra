@@ -2,11 +2,11 @@
 
 - Status: accepted
 - Date: 2026-09-09
-- Policy update: [ADR 0005](0005-existing-headless-baseline.md) opts dino into remote deployment after commissioning; thinkpad remains local-only. Known endpoints do not remove migration/readiness gates.
+- Policy update: [ADR 0005](0005-existing-headless-baseline.md) retains remote deployment for servers after commissioning; thinkpad remains local-only. Known endpoints do not remove migration/readiness gates.
 
 ## Context
 
-Addresses/accounts are unknown; laptops and gaming machines may be offline. Remote NixOS activation needs SSH, elevation, closure trust and a recovery path, not merely a schema-valid node.
+Addresses/accounts may be unknown, and intermittently connected machines may be offline. Remote NixOS activation needs SSH, elevation, closure trust and a recovery path, not merely a schema-valid node.
 
 ## Decision
 

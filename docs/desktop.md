@@ -1,6 +1,6 @@
 # ThinkPad desktop
 
-A Hyprland + Noctalia desktop for `marcos`. Display/layout/shell policy is authored from observed hardware; the user subsequently authorized reusing the current **application and shell preferences** listed below. The other three hosts remain headless and have no Home Manager evaluation. See [current host status](hosts.md#current-status) for commissioning, deployed/candidate differences and outstanding acceptance. Existing storage, access and recovery protections still apply.
+A Hyprland + Noctalia desktop for `marcos`. Display/layout/shell policy is authored from observed hardware; the user subsequently authorized reusing the current **application and shell preferences** listed below. The other two hosts remain headless and have no Home Manager evaluation. See [current host status](hosts.md#current-status) for commissioning, deployed/candidate differences and outstanding acceptance. Existing storage, access and recovery protections still apply.
 
 ## Ownership and defaults
 
@@ -54,7 +54,7 @@ Current preferences were read from the previous configuration and re-expressed l
 
 Only the patched **JetBrainsMono Nerd Font** package is explicitly installed for these apps; the regular JetBrains Mono package is removed. It supplies prompt/developer icons, while native **Noto Color Emoji** fallback remains separate. Font-family/config checks do not establish every glyph's rendering in a live session.
 
-ThinkPad also gets **nh 4.4.2** through `modules/nh.nix`, with the observed `/home/marcos/projects/infra` checkout as its default flake and automatic cleanup disabled. It is not enabled on Dino or either server. See [nh operation boundaries](operations.md#thinkpad-nix-helper-nh); it does not replace canonical checks or commissioning.
+ThinkPad also gets **nh 4.4.2** through `modules/nh.nix`, with the observed `/home/marcos/projects/infra` checkout as its default flake and automatic cleanup disabled. It is not enabled on either server. See [nh operation boundaries](operations.md#thinkpad-nix-helper-nh); it does not replace canonical checks or commissioning.
 
 The current Pi extension set needs Claude Code 2.1.266 and Cursor CLI as provider dependencies; only those two unfree package names are allowed on the desktop. Standalone Claude/Cursor settings/hooks were not imported. Pi's store-backed settings cannot persist `/settings`, model saving or `pi install`; modify declarative settings instead. Updating Herdr/Pi requires reviewing the vendored hook and extension compatibility, not letting an updater overwrite store-backed files. Herdr 0.8.2 and 0.9.0 ship the same Pi hook bytes as the committed extension. The installed model catalog and deployed settings confirm `openai-codex/gpt-6-astra`; provider authentication and the updated extension runtime still require application-level acceptance.
 
@@ -102,7 +102,7 @@ Earlier live **dry-runs** planned the intended layout without issuing a modeset.
 
 ## Kernels and Intel driver
 
-Keep **`i915`** for the observed Alder Lake-P GPU; the hardware's Iris Xe branding does not mean the newer Linux `xe` driver is preferable. No experimental force-probe, GPU blacklist, NVIDIA driver or kernel tuning is added. `modules/kernel.nix` selects stock `linuxPackages_latest` from each host's own locked track: **7.2.4 on all four hosts**. These are the latest available in those pins, not a claim every track packages kernel.org's newest patch.
+Keep **`i915`** for the observed Alder Lake-P GPU; the hardware's Iris Xe branding does not mean the newer Linux `xe` driver is preferable. No experimental force-probe, GPU blacklist, NVIDIA driver or kernel tuning is added. `modules/kernel.nix` selects stock `linuxPackages_latest` from each host's own locked track: **7.2.4 on all three hosts**. These are the latest available in those pins, not a claim every track packages kernel.org's newest patch.
 
 OpenZFS **2.4.4** declares 7.2 support; Bastion's actual 7.2.4 kernel/ZFS module and initrd derivations evaluate with compatibility guards intact. This is **not a kernel/module build, pool import or boot test**. Future updates must retain a supported pair, major 7 and host-track isolation; they must fail rather than allow a broken ZFS module or silently cross to 8.x. Follow kernel EOL, retain recovery generations and check ESP capacity before boot acceptance.
 

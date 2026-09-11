@@ -6,7 +6,7 @@
 
 ## Context
 
-The existing ThinkPad already uses SOPS for its password hash. Replacing this with an unprovisioned `/persist/secrets` contract loses an established delivery mechanism. The previous repository has one encrypted host file and a dedicated ThinkPad age recipient, but no supplied server/Dino host ciphertext or verified dedicated identities. Infrastructure evaluation must not invent credentials, rotate identities or imply those other hosts are ready.
+The existing ThinkPad already uses SOPS for its password hash. Replacing this with an unprovisioned `/persist/secrets` contract loses an established delivery mechanism. The previous repository has one encrypted host file and a dedicated ThinkPad age recipient, but no supplied server host ciphertext or verified dedicated identities. Infrastructure evaluation must not invent credentials, rotate identities or imply those other hosts are ready.
 
 ## Decision
 
@@ -24,6 +24,6 @@ Encrypted password hashes may live in Git and the Nix store; decrypted hashes an
 
 Both-track fixtures evaluate early password ordering, target-package sourcing and unsafe/missing-credential rejection. Checks build upstream users manifests without decryption. A separate structural/recipient check catches accidental plaintext payloads and rule drift, not cryptographic validity. No fixture can decrypt, install or deploy a system.
 
-At initial integration, every real identity review flag and host readiness remained false. Later evidence-backed commissioning and access reviews are recorded in [current host status](../hosts.md#current-status); they are not authorized by this ADR alone. ThinkPad's pre-transition manifest included an implicit SSH identity; this repository intentionally relies only on the dedicated age identity, verified before activation. A server still using root-only SSH requires a separately authorized staged transition; Dino's credentials must be recovered and verified. Boot/migration/network/recovery gates remain in force.
+At initial integration, every real identity review flag and host readiness remained false. Later evidence-backed commissioning and access reviews are recorded in [current host status](../hosts.md#current-status); they are not authorized by this ADR alone. ThinkPad's pre-transition manifest included an implicit SSH identity; this repository intentionally relies only on the dedicated age identity, verified before activation. A server still using root-only SSH requires a separately authorized staged transition. Boot/migration/network/recovery gates remain in force.
 
 See [secret inventory/procedure](../../secrets/README.md), [host transition checklist](../hosts.md), [research](../research.md), and [validation](../validation.md). No credential generation, decryption, rotation, remote activation or reboot is authorized by this decision.

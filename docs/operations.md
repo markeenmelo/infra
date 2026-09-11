@@ -20,7 +20,7 @@ Never substitute `system.stateVersion` for the current supported release. It is 
    # OR
    nix flake update
    ```
-4. Run `just check` for every scope (the fleet is small). Pay special attention to `racknerd`/`bastion` for stable, `thinkpad`/`dino` for unstable. For commissioned targets build their system closures with `just build HOST`. No deployment is implied.
+4. Run `just check` for every scope (the fleet is small). Pay special attention to `racknerd`/`bastion` for stable and `thinkpad` for unstable. For commissioned targets build their system closures with `just build HOST`. No deployment is implied.
 5. Review **every** changed lock node:
    ```sh
    jq -n --slurpfile old "$before" --slurpfile new flake.lock '
@@ -68,7 +68,7 @@ This selects the commissioned ThinkPad output. Outstanding maintenance/runtime a
 
 See [authoritative current status](hosts.md#current-status) and [the dated deferral](hosts.md#deferred-remote-host-deployment--2026-09-11). Treat `ready`/evaluation records as configuration gates, not successful deployment or boot evidence. Any reinstall requires a separately reviewed and explicitly authorized fresh-install plan; no reinstall or storage action is part of validation.
 
-All four hosts are already installed; follow the [baseline transition checklist](hosts.md) before commissioning. Their disko provisioning outputs are disabled, including `disk-plan`; [bootstrap's installation section](bootstrap.md#storage-and-installation) is fresh-install-only. deploy-rs assumes NixOS, reachable non-root SSH, working elevation and closure trust already exist. Consult current access/rollout evidence before planning a staged transition; a disabled Tailscale candidate preserves backing state, not an active daemon. Validate each host's access, closure trust and routing/recovery state before activation.
+All three hosts are already installed; follow the [baseline transition checklist](hosts.md) before commissioning. Their disko provisioning outputs are disabled, including `disk-plan`; [bootstrap's installation section](bootstrap.md#storage-and-installation) is fresh-install-only. deploy-rs assumes NixOS, reachable non-root SSH, working elevation and closure trust already exist. Consult current access/rollout evidence before planning a staged transition; a disabled Tailscale candidate preserves backing state, not an active daemon. Validate each host's access, closure trust and routing/recovery state before activation.
 
 ### Preflight
 
@@ -93,7 +93,7 @@ deploy --targets .#racknerd .#bastion -- --no-update-lock-file
 just deploy-fleet
 ```
 
-`deploy .` means all **eligible** nodes, not all four identities. Dino now has explicit deployment intent but remains unready; thinkpad remains local-only. To include another offline workstation, explicitly set `fleet.hosts.<name>.deployment.enable = true`, supply metadata/SSH/trust and commission it. Otherwise build/switch locally after authorization. Prefer a named subset for intermittently online targets; an offline desktop is not a reason to remove rollback safeguards.
+`deploy .` means all **eligible** nodes, not every fleet identity. Thinkpad remains local-only. Prefer a named subset for intermittently online targets; an offline machine is not a reason to remove rollback safeguards.
 
 deploy-rs builds from the locked input. Its default own checks may evaluate/build **all** eligible nodes even when a subset is selected; our `just check` also covers the full fleet. This costs more once real machines are commissioned but does not contact them. `remoteBuild` moves the build to the target only when selected; review resources and trust before enabling it.
 
@@ -128,4 +128,4 @@ Or select the previous generation in its bootloader. Inspect the result before r
 
 Servers retain a bounded journal; interactive hosts use volatile logs. No monitoring endpoint, exporter, application database, NAS share, unattended backup or automatic garbage collection is silently enabled. Racknerd's fail2ban database persists; bastion retains its observed monthly `tank` scrub schedule, which is not a backup. Before production services, add separately reviewed backup/restore and observability features with runtime credentials and tested failure handling. A Btrfs subvolume and a persistent root policy are **not backups**. Removing an impermanence declaration leaves backing data; inspect it, do not automatically delete it.
 
-Recommended future work, not implemented here: review dino's unencrypted storage and boot filesystem, complete per-host SOPS identity/credential provisioning and acceptance, VPN access, ThinkPad's hardware-verified NVIDIA/Samsung HDR/VRR profile and desktop runtime acceptance, optional Dino desktop/gaming capabilities, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Thinkpad's existing LUKS encryption is preserved, not newly provisioned. Add only what the fleet actually needs.
+Recommended future work, not implemented here: complete per-host SOPS identity/credential provisioning and acceptance, VPN access, ThinkPad's hardware-verified NVIDIA/Samsung HDR/VRR profile and desktop runtime acceptance, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Thinkpad's existing LUKS encryption is preserved, not newly provisioned. Add only what the fleet actually needs.

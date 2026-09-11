@@ -9,13 +9,11 @@ let
   # Independent policy oracle: changing host metadata alone must fail validation.
   expectedTracks = {
     thinkpad = "unstable";
-    dino = "unstable";
     racknerd = "stable";
     bastion = "stable";
   };
   expectedTailscaleRollout = {
     thinkpad = true;
-    dino = false;
     racknerd = false;
     bastion = false;
   };
@@ -295,10 +293,7 @@ let
         )
       ) "${name}: SOPS identity/password policy regressed or unrelated secrets enabled";
       assert lib.assertMsg (
-        (lib.elem name [
-          "thinkpad"
-          "dino"
-        ])
+        (name == "thinkpad")
         -> (
           cfg.fileSystems."/home".neededForBoot
           && !(lib.elem "/home" host.persistence.directories)
