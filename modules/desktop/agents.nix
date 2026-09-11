@@ -265,6 +265,7 @@
           defaultProvider = "openai-codex";
           defaultModel = "gpt-6-astra";
           defaultThinkingLevel = "high";
+          hideThinkingBlock = true;
           # Never trust a checkout implicitly; the agent must ask per project.
           defaultProjectTrust = "ask";
           packages = [ "${piExtensions}/share/pi-extensions" ];
