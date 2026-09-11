@@ -8,6 +8,12 @@
       system,
       ...
     }:
+    let
+      # Independent inventory includes excluded names and symlinks deliberately.
+      moduleFiles = lib.filter (path: lib.hasSuffix ".nix" (toString path)) (
+        lib.filesystem.listFilesRecursive ../.
+      );
+    in
     {
       options.devPackages = lib.mkOption {
         type = lib.types.listOf lib.types.package;
@@ -32,6 +38,12 @@
           pkgs.python3
         ];
         checks.source-quality =
+          assert lib.assertMsg
+            (
+              inputs.import-tree.leaves ../. == moduleFiles
+              && lib.all (path: builtins.readFileType path == "regular") moduleFiles
+            )
+            "Every module Nix file must be regular and auto-discovered; do not hide modules behind /_ paths or symlinks.";
           pkgs.runCommand "source-quality"
             {
               nativeBuildInputs = [

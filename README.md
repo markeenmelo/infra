@@ -66,7 +66,9 @@ deploy --targets .#racknerd .#bastion -- --no-update-lock-file
 
 ## Architecture
 
-`flake.nix` is the sole Nix entry point. Its sorted discovery imports every `.nix` under `modules/` into **one top-level flake-parts evaluation**; no symlinks are followed. All other repository Nix files, including hardware facts and tests, are top-level modules.
+`flake.nix` is the sole Nix entry point: `mkFlake { inherit inputs; } (inputs.import-tree ./modules)`. The locked, dependency-free importer discovers modules in sorted depth-first order for **one top-level flake-parts evaluation**. All other repository Nix files, including hardware facts and tests, are top-level modules.
+
+Native `import-tree` excludes non-Nix files and paths containing `/_`; `default.nix` is an ordinary module, not a subtree import root. Source-quality checks reject excluded or symlinked Nix modules instead of silently losing a capability. Keep scripts/assets beside their concern; do not introduce hidden Nix helper files or manually re-import discovered files.
 
 Class-checked `flake.modules.nixos.<capability>`, `flake.modules.homeManager.<capability>` and per-host `fleet.hosts.<name>.module` are deferred values. Concerns may contribute to the same value; paths organize concerns, not host import roots. No flake inputs are injected through `specialArgs`. SSH has a stable module key to deduplicate diamond imports.
 
@@ -79,7 +81,8 @@ Class-checked `flake.modules.nixos.<capability>`, `flake.modules.homeManager.<ca
 - `modules/kernel.nix`: explicit host-track latest stock 7.x policy, without suppressing ZFS compatibility failures.
 - `modules/tailscale/`, `tofu/tailscale/`: review-gated client enrollment/persistence (ThinkPad candidate enabled) plus separate OpenTofu policy/MagicDNS management. `just tailscale-inventory` shows rollout blockers; `just tailnet` is an explicit operator workflow, never part of rebuild/check.
 - `modules/deployment.nix`: metadata, SSH integration, target-track activation and upstream checks.
-- `modules/tooling.nix`: locked shell assembly and source checks; features contribute their own developer tools.
+- `modules/flake/configuration.nix`: flake-parts module-class registration and supported output systems.
+- `modules/flake/development.nix`: stable developer packages, locked shell/formatter outputs and source/discovery checks; features contribute their own developer tools.
 - `modules/validation.nix`: typed synthetic fixture assembly and independent report/check/track inventories. Feature-owned `checks.nix` files and small inline checks retain the public reports and safety regressions. Scripts/assets stay beside their owner, not in a separate scripts tree.
 
 Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. The desktop concern, not the fleet evaluator, imports Home Manager only for its unstable bundle, using the host's packages; headless hosts have no HM integration. The `home-manager` and `zen-browser` inputs use default-branch URLs and follow unstable, with their revisions recorded only in `flake.lock`. Zen's recipe is still instantiated with the host's `pkgs`, not its upstream package outputs. Validation independently checks required tracks, actual package-source paths, locked branch names and Home Manager branch/follows policy. See [ADRs](docs/adr/0001-dendritic-composition.md).

@@ -9,6 +9,7 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs-stable";
     };
+    import-tree.url = "github:denful/import-tree";
     # Only the unstable interactive desktop needs Home Manager; servers do not.
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -42,30 +43,5 @@
     };
   };
 
-  outputs =
-    inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      # Every repository Nix file other than this entry point is a top-level module.
-      # readDir is sorted; symlinks are not followed. No discovery dependency needed.
-      imports =
-        let
-          discover =
-            dir:
-            builtins.concatLists (
-              builtins.attrValues (
-                builtins.mapAttrs (
-                  name: type:
-                  if type == "directory" then
-                    discover (dir + "/${name}")
-                  else if type == "regular" && builtins.match ".*\\.nix" name != null then
-                    [ (dir + "/${name}") ]
-                  else
-                    [ ]
-                ) (builtins.readDir dir)
-              )
-            );
-        in
-        [ inputs.flake-parts.flakeModules.modules ] ++ discover ./modules;
-      systems = [ "x86_64-linux" ];
-    };
+  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
 }
