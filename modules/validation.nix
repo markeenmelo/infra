@@ -32,28 +32,34 @@ let
     assert lib.assertMsg (
       (lockedInput "nixpkgs-unstable").original.ref == "nixpkgs-unstable"
     ) "Interactive track must lock nixpkgs-unstable.";
-    assert lib.assertMsg
-      (
-        !(lock.nodes.root.inputs ? home-manager-stable)
-        && !(lock.nodes.root.inputs ? home-manager-unstable)
-        &&
-          (lockedInput "home-manager").original == {
-            type = "github";
-            owner = "nix-community";
-            repo = "home-manager";
-          }
-        && ((lockedInput "home-manager").flake or true)
-        && (lockedInput "home-manager").inputs.nixpkgs == [ "nixpkgs-unstable" ]
-        &&
-          (lockedInput "zen-browser").original == {
-            type = "github";
-            owner = "youwen5";
-            repo = "zen-browser-flake";
-          }
-        && ((lockedInput "zen-browser").flake or true)
-        && (lockedInput "zen-browser").inputs.nixpkgs == [ "nixpkgs-unstable" ]
-      )
-      "Home Manager and Zen must be default-branch flakes following unstable, pinned only in flake.lock.";
+    assert lib.assertMsg (
+      !(lock.nodes.root.inputs ? home-manager-stable)
+      && !(lock.nodes.root.inputs ? home-manager-unstable)
+      &&
+        (lockedInput "home-manager").original == {
+          type = "github";
+          owner = "nix-community";
+          repo = "home-manager";
+        }
+      && ((lockedInput "home-manager").flake or true)
+      && (lockedInput "home-manager").inputs.nixpkgs == [ "nixpkgs-unstable" ]
+      &&
+        (lockedInput "zen-browser").original == {
+          type = "github";
+          owner = "youwen5";
+          repo = "zen-browser-flake";
+        }
+      && ((lockedInput "zen-browser").flake or true)
+      && (lockedInput "zen-browser").inputs.nixpkgs == [ "nixpkgs-unstable" ]
+      &&
+        (lockedInput "sops-nix").original == {
+          type = "github";
+          owner = "Mic92";
+          repo = "sops-nix";
+        }
+      && ((lockedInput "sops-nix").flake or true)
+      && (lockedInput "sops-nix").inputs.nixpkgs == [ "nixpkgs-stable" ]
+    ) "Home Manager, Zen and sops-nix must be default-branch flakes, pinned only in flake.lock.";
     assert lib.assertMsg (
       builtins.attrNames expectedTracks == builtins.attrNames report
     ) "Update the explicit fleet policy oracle when adding/removing a host.";

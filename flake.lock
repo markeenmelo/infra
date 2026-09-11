@@ -179,7 +179,6 @@
       "original": {
         "owner": "Mic92",
         "repo": "sops-nix",
-        "rev": "13616fff713a9f94055c66f15687ebdc17a335df",
         "type": "github"
       }
     },

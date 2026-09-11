@@ -31,9 +31,9 @@
       inputs.nixpkgs.follows = "";
       inputs.home-manager.follows = "";
     };
+    # Normal default-branch flake, pinned only in flake.lock.
     sops-nix = {
-      # Reuse the existing credential backend pin; see docs/research.md.
-      url = "github:Mic92/sops-nix/13616fff713a9f94055c66f15687ebdc17a335df";
+      url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs-stable";
     };
     deploy-rs = {

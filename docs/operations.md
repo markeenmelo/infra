@@ -11,7 +11,7 @@ Never substitute `system.stateVersion` for the current supported release. It is 
    before=$(mktemp)
    cp flake.lock "$before"
    ```
-2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include unstable Home Manager, the pinned Zen recipe, disko, impermanence, sops-nix, deploy-rs and flake-parts issues. Desktop updates must review the actual target-packaged Hyprland/Noctalia APIs and new profile behavior, not legacy Noctalia Shell 4.x instructions. SOPS currently has an explicit reused revision in `flake.nix`; advancing it requires a researched URL revision edit, not just `nix flake update`.
+2. Research affected upstream changes. For stable, determine whether the current branch is still supported and review stable/security/service release notes. For unstable, inspect significant NixOS/module/driver changes since the locked revision. For full updates, include unstable Home Manager, the pinned Zen recipe, disko, impermanence, sops-nix, deploy-rs and flake-parts issues. Desktop updates must review the actual target-packaged Hyprland/Noctalia APIs and new profile behavior, not legacy Noctalia Shell 4.x instructions. Home Manager, Zen and sops-nix are normal default-branch flakes pinned only in `flake.lock`; advance them with a scoped `nix flake update <input>` after research.
 3. Choose **one** update scope:
    ```sh
    nix flake update nixpkgs-stable
