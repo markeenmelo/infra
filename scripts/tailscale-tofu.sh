@@ -12,6 +12,7 @@ expected_tailnet=$(jq -er '.id | select(type == "string") | select(length > 0 an
 [[ ${TAILSCALE_TAILNET-$expected_tailnet} == "$expected_tailnet" ]] \
   || fail 'TAILSCALE_TAILNET must match tailnet.json; it cannot select another tailnet.'
 export TAILSCALE_TAILNET="$expected_tailnet"
+[[ -z ${TAILSCALE_BASE_URL:-} ]] || fail 'TAILSCALE_BASE_URL overrides are forbidden; use the pinned provider endpoint.'
 [[ ${TAILSCALE_STATE_DIR:-} == /* ]] || fail 'Set TAILSCALE_STATE_DIR to an absolute private path outside Git.'
 state=$(realpath -m -- "$TAILSCALE_STATE_DIR")
 [[ "$state" != "$root" && "$state" != "$root/"* && "$state" != /nix/store && "$state" != /nix/store/* ]] \

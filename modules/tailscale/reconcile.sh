@@ -19,8 +19,10 @@ status() {
   tailscale status --json --peers=false 2>/dev/null || fail 'Cannot query Tailscale self status; inspect privately.'
 }
 state=''
+status_payload=''
 for ((attempt = 0; attempt < 30; attempt++)); do
-  state=$(status | jq -er '.BackendState | select(type == "string")')
+  status_payload=$(status)
+  state=$(jq -er '.BackendState | select(type == "string")' <<< "$status_payload")
   [[ "$state" == Starting || "$state" == NoState ]] || break
   sleep 1
 done
@@ -40,8 +42,14 @@ case "$state" in
     tailscale up "--auth-key=file:$key_path" "--advertise-tags=$tag" --timeout=60s "${flags[@]}" >/dev/null 2>&1 \
       || fail 'Tailscale enrollment failed; check credentials/preferences privately. No forced reset was attempted.'
     ;;
-  Running|Stopped) ;;
   NeedsMachineAuth) fail 'Tailscale requires administrator device approval; no enrollment key was resubmitted.' ;;
+  Running|Stopped)
+    jq -e --arg tag "$tag" '
+      (.Self.ID | type == "string" and length > 0)
+      and .Self.Tags == [$tag]
+    ' <<< "$status_payload" >/dev/null \
+      || fail 'Retained Tailscale identity or tag is not the reviewed node; no preferences changed.'
+    ;;
   *) fail 'Tailscale is not ready for reconciliation; no enrollment attempted.' ;;
 esac
 

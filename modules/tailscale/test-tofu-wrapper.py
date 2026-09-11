@@ -113,6 +113,7 @@ if sys.argv[1] == 'plan':
     def test_missing_or_unsafe_inputs_never_invoke_tofu(self):
         for env in [{"TAILSCALE_TAILNET": ""}, {"TAILSCALE_TAILNET": "-"},
                     {"TAILSCALE_TAILNET": "bad\nid"}, {"TF_VAR_state_passphrase": ""},
+                    {"TAILSCALE_BASE_URL": "https://alternate.example.test"},
                     {"TAILSCALE_STATE_DIR": str(self.repo / "state")},
                     {"TAILSCALE_STATE_DIR": "/nix/store/TEST-ONLY-state"},
                     {"TF_ENCRYPTION": "TEST-ONLY-override"}, {"TF_LOG": "TRACE"},

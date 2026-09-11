@@ -102,11 +102,13 @@ elif args[0] == 'up':
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(calls, [])
 
-    def test_invalid_status_and_tag_fail(self):
+    def test_invalid_status_and_tag_fail_before_mutation(self):
         for kwargs in [{"bad_tag": True}, {"malformed": True}, {"state": "UnknownState"}]:
             with self.subTest(kwargs=kwargs):
-                result, _ = self.run_case(**kwargs)
+                result, calls = self.run_case(**kwargs)
                 self.assertNotEqual(result.returncode, 0)
+                if kwargs.get("bad_tag"):
+                    self.assertFalse(any(call[0] in ["up", "set"] for call in calls))
 
 
 if __name__ == "__main__":
