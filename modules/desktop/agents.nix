@@ -57,6 +57,7 @@
           # Audited adaptations for these exact npm pins; see docs/pi.md.
           patch -p1 < ${./assets/pi-patches/pi-lsp-extension.patch}
           patch -p1 < ${./assets/pi-patches/pi-plan.patch}
+          patch -p1 < ${./assets/pi-patches/pi-subagents.patch}
           patch -p1 < ${./assets/pi-patches/ponytail.patch}
 
           # pi-claude-bridge 0.7.0 issue #59: keep AskClaude children from
