@@ -60,9 +60,13 @@ just ready thinkpad
 nh os build --hostname thinkpad --no-update-lock-file
 ```
 
-This selects the commissioned ThinkPad output; the other three hosts remain unready and absent from `nixosConfigurations`. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
+This selects the commissioned ThinkPad output; Racknerd has a separate ready evaluation candidate, while Bastion and Dino remain unready and absent from `nixosConfigurations`. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
 
 ## Deployment and recovery
+
+### Current remote deployment status — 2026-09-11
+
+The operator reports that deployment of `racknerd`, `bastion` and `dino` did not complete. This branch intentionally does not retry remote activation. The work is deferred to another branch/time, and reinstalling those three hosts is likely. Treat the current `ready`/evaluation records as configuration gates only, not successful deployment or boot evidence. Any reinstall requires a separately reviewed and explicitly authorized fresh-install plan; no reinstall or storage action is part of validation.
 
 All four hosts are already installed; follow the [baseline transition checklist](hosts.md) before commissioning. Their disko provisioning outputs are disabled, including `disk-plan`; [bootstrap's installation section](bootstrap.md#storage-and-installation) is fresh-install-only. deploy-rs assumes NixOS, reachable non-root SSH, working elevation and closure trust already exist. Servers currently have root-only access, so a separate staged access transition is required. Baseline removes Tailscale: validate alternate routing/recovery before activation.
 

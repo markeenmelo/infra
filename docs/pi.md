@@ -14,6 +14,8 @@ ThinkPad's native Home Manager configuration lives in `modules/desktop/agents.ni
 | `i-have-adhd` | 0.3.0, commit `6f1f982d0a47c65899af3c5a7450b7098bc65325` | Native Pi extension and skill; **always on** by operator choice; `/i-have-adhd on\|off` |
 | RTK | Nixpkgs 0.47.0 | Native CLI plus its matching official Pi hook, not another npm wrapper |
 
+Pi's declarative defaults use `openai-codex/gpt-6-astra` with thinking level **high**. This is a setting change only; it does not activate or reload a running session.
+
 The requested `pi-web-acces` is not a published package; the corrected name is above. At the operator's choice, **omit `@specode/pi-subscription-usage`**: existing `@99percentpeople/pi-codex-api` 0.4.0 already supplies Codex quota status, `/codex-usage`, and confirmed `/codex-redeem`. Specode 1.0.2 additionally supports OpenCode Go, Grok and Kimi, not Claude/Cursor quota. It adds no web access. Keep one Codex background monitor.
 
 Use existing `codex_search` for search/navigation and `fetch_content` for direct public URLs. Disable the second package's search/source-check commands/tools, browser-cookie extraction, GitHub cloning/private-CLI access, remote hosted extraction, YouTube/local-video upload, curator and automatic browser opening. PDFs use local `unpdf`, not Datalab/Gemini. SSRF checks remain enabled. Both `~/.pi/agent/web-search.json` and `$XDG_CONFIG_HOME/pi/web-search.json` carry the same generated policy because upstream chooses between them according to the environment. Explicit answer-mode fetching can still use the active model; fetched content is untrusted, not instructions.

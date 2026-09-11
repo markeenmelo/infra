@@ -44,7 +44,7 @@
         pname = "infra-pi-extensions";
         version = "1.0.0";
         src = ./assets/pi-extensions;
-        npmDepsHash = "sha256-c/t87brcbR4SFIBiSc7yJoUQhFxLwYeqksjKDq5Yj/o=";
+        npmDepsHash = "sha256-YztlbMFBrMKfvjpyY4NX8IXio8HHa2oWBF3lQf0LGGI=";
         npmFlags = [
           "--legacy-peer-deps"
           "--ignore-scripts"
@@ -263,7 +263,7 @@
           theme = "dark";
           defaultProvider = "openai-codex";
           defaultModel = "gpt-6-astra";
-          defaultThinkingLevel = "xhigh";
+          defaultThinkingLevel = "high";
           # Never trust a checkout implicitly; the agent must ask per project.
           defaultProjectTrust = "ask";
           packages = [ "${piExtensions}/share/pi-extensions" ];
