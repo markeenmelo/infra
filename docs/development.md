@@ -89,7 +89,7 @@ Set `TAILSCALE_SOPS_FILE` to your reviewed encrypted YAML path first. The adapte
 - **Nix/Bash editing:** `nixd`, `bash-language-server`, official nixfmt, statix, deadnix and ShellCheck are available to project-launched editors.
 - **Existing tests:** Python helpers, Pi extension tests, desktop config tests, SOPS guards and offline Tailscale fixtures remain in the canonical flake checks; no new test framework or automatic npm install.
 - **Optional Git hooks:** `devenv --profile hooks shell` installs local nixfmt/statix/deadnix/ShellCheck and ciphertext-recipient hooks. This is explicit opt-in and may replace a pre-existing pre-commit hook; inspect existing hooks first. Hooks are not full fleet validation. After leaving that profile the installed hook still exists until deliberately uninstalled with the hook runner.
-- **Optional direnv:** with the locked CLI and direnv installed, review `.envrc` and run `direnv allow`. It invokes `devenv direnvrc`, not a downloaded script. No secrets are loaded into direnv's cached environment.
+- **Automatic activation (direnv):** the ThinkPad desktop shell installs direnv, its zsh hook and HM's default nix-direnv stdlib, so reviewing `.envrc` and running `direnv allow` once activates the locked environment on directory entry. It invokes `devenv direnvrc`, not a downloaded script; other machines install direnv themselves. No secrets are loaded into direnv's cached environment.
 
 ## Locks and architecture
 

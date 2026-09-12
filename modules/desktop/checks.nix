@@ -51,6 +51,7 @@ let
         && builtins.attrNames cfg.home-manager.extraSpecialArgs == [ "nixosConfig" ]
         && !home.home.version.isReleaseBranch
         && lib.elem fixture.pkgs.noctalia home.home.packages
+        && home.programs.direnv.enable
         && cfg.programs.hyprland.package.version == fixture.pkgs.hyprland.version
         && cfg.hardware.graphics.enable
         && !cfg.hardware.graphics.enable32Bit

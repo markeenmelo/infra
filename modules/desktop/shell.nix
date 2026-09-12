@@ -27,6 +27,17 @@
 
       starship.enable = true;
 
+      # Automatic environment loading for the repository's `use devenv` .envrc.
+      # The hook lands at default initContent order, ahead of the zoxide init
+      # ordered last above; HM's default nix-direnv stdlib also caches
+      # `use nix`/`use flake` in other projects.
+      direnv = {
+        enable = true;
+        enableBashIntegration = false;
+        enableFishIntegration = false;
+        enableNushellIntegration = false;
+      };
+
       fzf = {
         enable = true;
         enableBashIntegration = false;
