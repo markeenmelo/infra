@@ -1,18 +1,14 @@
 # NixOS fleet
 
-A small dendritic flake for three **already-installed** `x86_64-linux` hosts. This branch proposes a secure baseline plus a **new Hyprland/Noctalia desktop on ThinkPad**, not a reinstall. The other hosts remain headless. Read-only discovery and transition gates are in [docs/hosts.md](docs/hosts.md); new desktop defaults and acceptance are in [docs/desktop.md](docs/desktop.md).
+A small dendritic flake for three **already-installed** `x86_64-linux` hosts: a secure baseline plus a Hyprland/Noctalia desktop on ThinkPad; the others stay headless. **[Current host status](docs/hosts.md#current-status) is the authoritative dated evidence for boot, credential, maintenance and deployment state.** Only ready hosts enter `nixosConfigurations`; deploy outputs additionally require enabled deployment intent.
 
-**Read [current host status](docs/hosts.md#current-status) for dated boot, credential, maintenance and deferred-deployment evidence.** Only ready hosts enter `nixosConfigurations`; deploy outputs require readiness plus enabled deployment intent.
-
-| Host | Baseline beyond SSH, access, disko existing mounts, tmpfs root and impermanence | Nixpkgs | Deploy-rs intent |
+| Host | Baseline beyond SSH, access, existing mounts, tmpfs root and impermanence | Nixpkgs | Deploy-rs intent |
 |---|---|---|---|
 | `thinkpad` | Hyprland/Noctalia/Greeter, desktop-only HM, Ghostty/Zen and approved apps, fingerprint fallback, SOPS Wi-Fi, laptop power/thermald, reviewed Thunderbolt authorization; preserve LUKS/LVM/swap and `/home` | `nixpkgs-unstable` | local-only |
 | `racknerd` | server hardening, nftables, persistent journal, SSH fail2ban, observed KVM/network configuration | numbered stable | `marcos@72.11.150.242`, after commissioning |
 | `bastion` | server hardening, nftables, persistent journal; preserve existing ZFS `tank` legacy data mounts separately from OS persistence | numbered stable | `marcos@192.168.2.2`, after commissioning |
 
-All three target **Limine** (racknerd BIOS; others UEFI). Headless means no desktop, **not** removal of consoles/emergency recovery. [Tailscale policy/enrollment](docs/tailscale.md) is separately review-gated; policy maintenance is not host enrollment or traffic acceptance. Gaming applications/drivers beyond ordinary hardware support, reverse proxy, shares and other applications remain deferred. Requested application preferences are deliberately reused without copying private profiles or credentials. Hardware unknowns and remaining display/campus/application acceptance stay explicit in [current status](docs/hosts.md#current-status).
-
-Servers use a supported numbered stable NixOS branch. The laptop uses **`nixpkgs-unstable`**, not `nixos-unstable`, for future interactive/gaming software; its different Hydra gating warrants validation before upgrades. There is no package-channel mixing. The explicit [stock 7.x kernel policy](docs/desktop.md#kernels-and-intel-driver) selects each track's latest locked kernel (7.2.4 on both tracks after the current refresh), with ZFS compatibility and major-version guards. Branch selections are in `flake.nix`: default `nixpkgs` is unstable (also used by flake-parts and developer tools), while `nixpkgs-stable` remains explicit. Pins and dated API evidence are in [research](docs/research.md).
+All three target **Limine** (racknerd BIOS; others UEFI); headless means no desktop, not removal of consoles/emergency recovery. Servers use a supported numbered stable branch; the laptop uses `nixpkgs-unstable` (not `nixos-unstable`) with no package-channel mixing. The [stock 7.x kernel policy](docs/desktop.md#kernels-and-intel-driver) selects each track's latest locked kernel with ZFS compatibility guards. [Tailscale policy/enrollment](docs/tailscale.md) is separately review-gated. Gaming, reverse proxy, shares and other applications remain deferred. Pins and dated API evidence are in [research](docs/research.md).
 
 ## Start here
 
@@ -26,32 +22,24 @@ devenv tasks run repo:check-full   # canonical gate before handoff or deployment
 devenv shell ready racknerd  # expected refusal until identity/trust gates are resolved
 ```
 
-Native **devenv replaces mkShell and just**. It supplies the locked unstable Nix/OpenTofu/Python toolbox, Nix/Bash/OpenTofu language servers, SOPS/age and guarded source-matched deployment scripts. [Development commands, optional hooks/direnv and runtime SOPS delivery](docs/development.md) describe the workflow. Entry performs no deployment, secret retrieval or disk action. **Stage intended new files before evaluation:** Git flakes ignore untracked files. Only reviewed encrypted SOPS files/public recipients may be staged; never plaintext credentials, private identities or unrelated work.
+Native **devenv** supplies the locked toolbox, language servers, SOPS/age and guarded deployment scripts ([development commands](docs/development.md)); it performs no deployment, secret retrieval or disk action. **Stage intended new files before evaluation** — Git flakes ignore untracked files — and stage only reviewed encrypted SOPS files/public recipients, never plaintext credentials or private identities.
 
 ## Preservation, not provisioning
 
-Each host composes `existing-storage`: disko `nodev` descriptions derive mounts for existing UUIDs or the existing LVM mapper. All disk/GPT/LVM-create/ZFS-create collections are closed; disko scripts and image/install-test outputs are rejected even after readiness. **`devenv shell disk-plan HOST` is unavailable for these installations.** This is a runtime mount description, not an installer layout.
+Each host composes `existing-storage`: disko `nodev` descriptions derive mounts for existing UUIDs or the existing LVM mapper. All disk/GPT/LVM-create/ZFS-create collections are closed; disko scripts and image/install-test outputs are rejected even after readiness, so **`devenv shell disk-plan HOST` is unavailable for these installations**.
 
-- `/` becomes tmpfs on thinkpad/racknerd/bastion. No old Btrfs root-reset/deletion script is retained. Existing root subvolumes are not erased.
-- Existing `/nix`, `/persist` and laptop `/home` remain durable, early-mounted filesystems. Laptop `/home` is **not** also an impermanence bind.
-- Thinkpad's existing encryption, LVM and swap remain. No plaintext secrets or private identities enter the Nix store.
-- Bastion's NVMe OS `/persist` is **not** its ZFS data. The observed `/srv` datasets stay outside disko. No pools/datasets/properties are created or upgraded; import policy and restore require review.
-- Persist scoped machine identity, SSH identities, NixOS allocation state, random seed, timers/time sync and feature-owned state. Server journals are bounded; workstation `/home` deliberately preserves user data. Removing declarations does not erase backing data. Persistence and mirroring are not backups.
+- `/` becomes tmpfs on all hosts; no root-reset/deletion script is retained and existing root subvolumes are not erased.
+- Existing `/nix`, `/persist` and laptop `/home` remain durable, early-mounted filesystems; laptop `/home` is not also an impermanence bind.
+- Thinkpad keeps its existing encryption, LVM and swap. Bastion's NVMe OS `/persist` is **not** its ZFS data; the observed `/srv` datasets stay outside disko, with no pools/datasets/properties created or upgraded.
+- Persist scoped machine identity, SSH identities, NixOS allocation state, random seed, timers/time sync and feature-owned state. Server journals are bounded. Removing declarations does not erase backing data, and persistence is not backup.
 
-```sh
-nix eval --json .#fleet.bastion.filesystems | jq .
-nix eval --json .#fleet.thinkpad.persistence | jq .
-```
-
-The original **fresh-install-only** `os-disk` capability is retained with its destructive-boundary/ESP tests, but no current host composes it. Its [installation runbook](docs/bootstrap.md#storage-and-installation) is not a migration procedure. See [ADR 0005](docs/adr/0005-existing-headless-baseline.md).
+The original fresh-install-only `os-disk` capability is retained with its destructive-boundary/ESP tests but composed by no host; its [installation runbook](docs/bootstrap.md#storage-and-installation) is not a migration procedure ([ADR 0005](docs/adr/0005-existing-headless-baseline.md)).
 
 ## Access and deployment
 
-Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** using `neededForUsers` and a dedicated persistent age identity. The shared password-only YAML preserves the existing ThinkPad password for the three-host account policy; Bastion remains blocked without its verified identity/recipient. Null credentials or unreviewed identities remain commissioning blockers, not plausible runtime paths. See [secret inventory and procedure](secrets/README.md), [ADR 0006](docs/adr/0006-sops-password-delivery.md) and [current credential/access evidence](docs/hosts.md#current-status).
+Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** via `neededForUsers` and a dedicated persistent age identity; Bastion remains blocked without its verified identity/recipient ([ADR 0006](docs/adr/0006-sops-password-delivery.md), [secret inventory](secrets/README.md)).
 
-A temporary non-root access bootstrap is not declarative commissioning. Follow [the transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized), with independent recovery and verified non-VPN routing before removing an old service. Reinstallation requires a separately reviewed fresh-install design; validation never authorizes it.
-
-Only `ready && deployment.enable` hosts enter deploy-rs. Root activates the system; a non-root account connects via SSH. Closure transport remains nullable until signing trust or explicit root-equivalent per-user Nix trust is chosen and provisioned. No blanket wheel trust or passwordless sudo. Automatic and magic rollback remain enabled.
+A temporary non-root access bootstrap is not declarative commissioning: follow [the transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized). Only `ready && deployment.enable` hosts enter deploy-rs: root activates, a non-root account connects via SSH, and closure transport remains nullable until signing trust or explicit root-equivalent per-user Nix trust is provisioned. Rollback stays enabled.
 
 After commissioning, **with separate deployment authorization**:
 
@@ -59,36 +47,28 @@ After commissioning, **with separate deployment authorization**:
 devenv shell ready racknerd
 devenv shell build racknerd        # local build; no deployment
 devenv shell deploy-host racknerd  # really activates remotely
-# Approved subset, after each target's preflight:
-deploy --targets .#racknerd .#bastion -- --no-update-lock-file
 ```
 
-`--dry-activate` also contacts/copies to targets. Rollback does not restore data, secrets, storage layouts or guarantee the next boot. See [operations and recovery](docs/operations.md#deployment-and-recovery).
+`--dry-activate` also contacts targets. Rollback does not restore data, secrets, storage layouts or guarantee the next boot. See [operations and recovery](docs/operations.md#deployment-and-recovery).
 
 ## Architecture
 
-`flake.nix` is the production Nix entry point. It pins inputs and passes the whole `modules/` tree to the pinned `import-tree` input for **one top-level flake-parts evaluation**; `/_`-prefixed paths are deliberately excluded non-auto-imported helpers, and `modules/flake-parts.nix` owns the flake-parts conventions. Root `devenv.nix` is the explicitly approved native development-only exception, never imported into a host. All remaining Nix files, including hardware facts and tests, are top-level modules. See [ADR 0010](docs/adr/0010-native-devenv.md).
+`flake.nix` is the production Nix entry point: it pins inputs and passes the whole `modules/` tree to the pinned `import-tree` input for **one top-level flake-parts evaluation** (`/_`-prefixed paths are excluded non-auto-imported helpers). Root `devenv.nix` is the approved native development-only exception; all remaining Nix files, including hardware facts and tests, are top-level modules ([ADR 0010](docs/adr/0010-native-devenv.md)). Class-checked `flake.modules.nixos`/`homeManager` capabilities and deferred per-host `fleet.hosts.<name>.module` facts compose only in their matching evaluation; no flake inputs are forwarded via `specialArgs`.
 
-Class-checked `flake.modules.nixos.<capability>`, `flake.modules.homeManager.<capability>` and per-host `fleet.hosts.<name>.module` are deferred values. Concerns may contribute to the same value; paths organize concerns, not host import roots. No flake inputs are injected through `specialArgs`. SSH has a stable module key to deduplicate diamond imports.
+- `modules/flake-parts.nix` — flake-parts conventions; `modules/fleet.nix` — host identity/track metadata and the evaluation boundary.
+- `modules/machines/` — explicit capability compositions and deployment intent; `modules/hardware/` — observed hardware only.
+- `modules/storage/existing.nix` and host storage modules — existing-installation mount/boot boundary.
+- `modules/{headless,ssh,access,secrets,server,vps,workstation,laptop}.nix` — cohesive reusable features; `logging.nix` contributes to persistence.
+- `modules/desktop.nix` + `modules/desktop/` — the desktop bundle, its HM bridge, compositor/greeter/apps/peripherals and their tests.
+- `modules/kernel.nix` — per-track latest stock 7.x policy; `modules/tailscale/` + `tofu/tailscale/` — review-gated enrollment and OpenTofu policy.
+- `modules/deployment.nix` — deploy metadata and upstream checks; `modules/tooling.nix` — unstable bootstrap CLI and source/lock checks.
+- `devenv.nix` — native developer packages/tasks and guarded script entry points; `modules/validation.nix` — typed synthetic fixture assembly and independent inventories. Feature-owned `checks.nix` files, scripts and assets stay beside their owners.
 
-- `modules/flake-parts.nix`: flake-parts evaluation conventions (flakeModules import, systems).
-- `modules/fleet.nix`: required identity/architecture/track, evaluation boundary, inventory.
-- `modules/machines/`: explicit capability compositions and deployment intent.
-- `modules/hardware/`: observed hardware only; networking, access, locale and laptop policy live in their own concerns.
-- `modules/storage/existing.nix`, host storage/data modules: existing-installation mount/boot boundary.
-- `modules/{headless,ssh,access,secrets,server,vps,workstation,laptop}.nix`: cohesive reusable features; `logging.nix` contributes to persistence.
-- `modules/desktop.nix`: concern-owned native HM bridge and `desktop` bundle. `modules/desktop/` separates compositor, greeter, apps, peripherals, display facts and their tests; applicable NixOS/HM/host contributions stay together.
-- `modules/kernel.nix`: explicit host-track latest stock 7.x policy, without suppressing ZFS compatibility failures.
-- `modules/tailscale/`, `tofu/tailscale/`: review-gated client enrollment/persistence (ThinkPad candidate enabled) plus separate OpenTofu policy/MagicDNS management. `devenv tasks run repo:tailscale-inventory` shows rollout blockers; `devenv shell tailnet` is an explicit operator workflow, never part of rebuild/check.
-- `modules/deployment.nix`: metadata, SSH integration, target-track activation and upstream checks.
-- `devenv.nix`: native developer packages, task graph and guarded script entry points. `modules/tooling.nix`: unstable bootstrap CLI, formatter and source/lock checks; feature scripts/checks stay with their owners.
-- `modules/validation.nix`: typed synthetic fixture assembly and independent report/check/track inventories. Feature-owned `checks.nix` files and small inline checks retain the public reports and safety regressions. Scripts/assets stay beside their owner, not in a separate scripts tree.
-
-Each host's explicit `track` selects exactly one input's `lib.nixosSystem` in `modules/fleet.nix`. NixOS instantiates its own `pkgs`; generic features use that evaluation's `pkgs`/`lib`. The desktop concern, not the fleet evaluator, imports Home Manager only for its unstable bundle, using the host's packages; headless hosts have no HM integration. The `home-manager` and `zen-browser` inputs use default-branch URLs and follow unstable, with their revisions recorded only in `flake.lock`. Zen's recipe is still instantiated with the host's `pkgs`, not its upstream package outputs. Validation independently checks required tracks, actual package-source paths, locked branch names and Home Manager branch/follows policy. See [ADRs](docs/adr/0001-dendritic-composition.md).
+Each host's explicit `track` selects exactly one input's `lib.nixosSystem`; NixOS instantiates its own `pkgs`. The desktop concern imports Home Manager only for its unstable bundle; headless hosts have no HM. `home-manager` and `zen-browser` use default-branch URLs following unstable, pinned only in `flake.lock`; Zen's recipe is instantiated with the host's `pkgs`. See [ADR 0001](docs/adr/0001-dendritic-composition.md) and [ADR 0002](docs/adr/0002-nixpkgs-tracks.md).
 
 ## Validation and updates
 
-Documentation-only edits use [whitespace, link/status and changed-snippet validation](docs/validation.md#documentation-only-changes), not fleet builds. For code/configuration/dependency changes and deployment preflight:
+Documentation-only edits use [scoped whitespace/link/status checks](docs/validation.md#documentation-only-changes). For code/configuration/dependency changes and deployment preflight:
 
 ```sh
 devenv tasks run repo:fmt
@@ -97,17 +77,14 @@ nix eval --json .#fleet | jq 'map_values({track,revision,ready,missing})'
 devenv tasks run repo:revisions
 ```
 
-`devenv tasks run repo:check-full` is the canonical gate. Its fast inner gate `repo:check` verifies the native task/lock/tool contract (including shell-entry purity), checks encrypted payload shape/public recipients without decryption, and runs treefmt (nixfmt, deadnix, ShellCheck, OpenTofu fmt), statix and the whole-fleet inventory in seconds. The full gate then runs the evaluation oracle and every real host report and package/`/etc`/initrd derivation, independent track checks, both-track synthetic infrastructure/storage/security/SOPS fixtures, unstable-only desktop fixtures, built SOPS manifests, native generated desktop-config and offline Wi-Fi checks and upstream deploy schema/activation smoke checks. No target contact or activation occurs. **Evaluation fixtures are not tested installations.** Actual host toplevel builds remain gated. [Validation scope/results](docs/validation.md) distinguishes evaluation, builds and runtime acceptance.
+`repo:check` is the fast inner gate (task contract, formatting, lint, ciphertext guard, fleet inventory); `repo:check-full` adds the evaluation oracle, ciphertext regressions and the full `nix flake check`. No target contact or activation occurs, and **evaluation fixtures are not tested installations** ([validation scope/results](docs/validation.md)).
 
-Updates are separate, researched operations and never change stateVersion automatically:
+Updates are separate, researched operations and never change stateVersion automatically; targeted updates must not move the other track:
 
 ```sh
-nix flake update nixpkgs-stable
-# OR: nix flake update nixpkgs
-# OR: nix flake update
+nix flake update nixpkgs-stable   # OR: nixpkgs / full update
 # After nixpkgs changes, synchronize devenv.lock as documented in docs/development.md.
-# Dependency updates always end at the canonical gate, never just the fast gate.
 devenv tasks run repo:check-full
 ```
 
-Targeted updates must not move the other track. Follow [input operations](docs/operations.md#input-updates), [AGENTS.md](AGENTS.md) and the [skill index](.agents/skills/README.md). Add only the capabilities the fleet actually needs; keep service state and mount requirements beside their owner.
+Follow [input operations](docs/operations.md#input-updates), [AGENTS.md](AGENTS.md) and the [skill index](.agents/skills/README.md). Add only the capabilities the fleet actually needs; keep service state and mount requirements beside their owner.

@@ -1,16 +1,15 @@
 {
   fleet.hosts.thinkpad.module = {
-    # Read-only sysfs/lsblk (2026-09-09), privileged stdout-only scan (2026-09-10).
-    # ThinkPad T14 Gen 3 (21AH00BNUS), Intel i7-1270P; i915 8086:46a6.
+    # Observed read-only (2026-09-09) plus privileged scans (2026-09-10):
+    # ThinkPad T14 Gen 3 (21AH00BNUS), Intel i7-1270P, i915 8086:46a6.
+    # Scan review evidence: docs/hosts.md#current-status.
     fleet.installation = {
       stateVersion = "26.05";
       hardwareReviewed = true;
-      # Pre-activation network review, 2026-09-10: system-owned MN-Home (same
-      # UUID, psk-flags 0, autoconnect) and PEAP/MSCHAPv2 SenecaNET (system CA
-      # bundle, suffix match, empty anonymous identity, autoconnect off) from
-      # root-only 0400 SOPS secrets through the ordered environment and
-      # ensure-profiles units; the legacy helper/agent are absent. Live home/
-      # campus connection is a documented first-boot acceptance test.
+      # Pre-activation review 2026-09-10: system-owned MN-Home and strict
+      # PEAP/MSCHAPv2 SenecaNET from root-only SOPS secrets via the ordered
+      # environment/ensure-profiles units; legacy helper/agent absent.
+      # Evidence and first-boot acceptance: docs/hosts.md#current-status.
       networkReviewed = true;
     };
     boot = {
@@ -29,11 +28,9 @@
     };
     hardware.enableRedistributableFirmware = true;
     hardware.cpu.intel.updateMicrocode = true;
-    # Both privileged scans are reviewed. The 15 subvolume diagnostics are the
-    # scanner's bind-mount fallback, verified against installed/pinned source.
-    # Retain USB/SCSI support observed in the earlier scan; no initrd/boot test.
-    # modules/kernel.nix selects the requested stock 7.x kernel. Retain native
-    # i915 probing for Alder Lake-P, not experimental xe/force_probe overrides;
-    # never load a disconnected eGPU's unverified driver.
+    # Scanner subvolume diagnostics are a reviewed bind-mount fallback; retain
+    # USB/SCSI support from the earlier scan (no initrd/boot test). Stock 7.x
+    # kernel via modules/kernel.nix; native i915 for Alder Lake-P — no
+    # experimental xe/force_probe or unverified eGPU driver.
   };
 }

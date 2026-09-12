@@ -1,37 +1,24 @@
-# ADR 0006 — Preserve SOPS password delivery
+# ADR 0006 — SOPS password delivery
 
-- Status: accepted
+- Status: accepted; supersedes ADR 0005's manual runtime password-file contracts (shared-password amendment 2026-09-11 folded in)
 - Date: 2026-09-09
-- Amends ADR 0005's manual runtime password-file contracts
 
 ## Context
 
-The existing ThinkPad already uses SOPS for its password hash. Replacing this with an unprovisioned `/persist/secrets` contract loses an established delivery mechanism. The previous repository has one encrypted host file and a dedicated ThinkPad age recipient, but no supplied server host ciphertext or verified dedicated identities. Infrastructure evaluation must not invent credentials, rotate identities or imply those other hosts are ready.
+The existing ThinkPad already uses SOPS for its password hash. Replacing it with an unprovisioned `/persist/secrets` contract would lose an established delivery mechanism. Only ThinkPad had verified ciphertext and a dedicated age recipient; evaluation must not invent credentials, rotate identities or imply other hosts are ready.
 
 ## Decision
 
-Add the previous `sops-nix` pin without moving any existing dependency. Its NixOS module is imported into a class-checked deferred `secrets` capability, consumed by `access`. The installer uses each target's own `pkgs`; no input injection or global overlay is introduced.
-
-Replace `fleet.access.passwordFile` with `passwordSecrets`, a typed account-to-declared-SOPS-secret mapping. Null/missing bindings remain explicit commissioning blockers and locked candidate accounts, never guessed filesystem contracts. Real users/UIDs are still host facts. Each password secret must be root-only mode `0400`, `neededForUsers = true`, and the account's sole credential source via its `.path` in `/run/secrets-for-users`. Keep immutable users, locked root, key-only non-root SSH and password sudo.
-
-Use a separately provisioned dedicated age identity at a typed string path directly under early-mounted `/persist/var/lib/sops-nix/`. Disable automatic identity generation and implicit SSH/GPG imports. Retain the current activation-script user backend and default SOPS ramfs; a backend change requires fresh ordering/persistence research. `fleet.secrets.identityReviewed` records actual custody, recipients, permissions, recovery and early-decryption verification, not successful evaluation.
-
-Copy ThinkPad's existing ciphertext unchanged and retain its exact public recipient rule. The whole file is preserved for MAC compatibility, including the encrypted Wi-Fi value, but **at initial integration only the password was declared for decryption**. Subsequent Wi-Fi and Tailscale declarations are separate reviewed capabilities; see [current status](../hosts.md#current-status). Do not import unrelated Tailscale/OpenTofu material, enable the old Wi-Fi agent, or expand recipients. Other hosts retained null identity/credential facts at that checkpoint. Nothing depends on the old repository's filesystem at evaluation/runtime.
-
-## Shared-password amendment — 2026-09-11
-
-The user explicitly selected the existing ThinkPad `marcos` password for ThinkPad, Racknerd and Bastion, authorizing only local in-memory extraction/re-encryption, not activation. A separate **password-only YAML** source, `secrets/shared/marcos-password.yaml`, now supplies the common account policy. It was MAC/equality-verified using the existing operator recovery identity without exposing plaintext or exporting private keys. The original ThinkPad password/Wi-Fi file and every existing host recipient rule remain intact; the retained old password entries are no longer selected.
-
-The shared source currently permits only the verified operator, ThinkPad and Racknerd recipients. Keep distinct host identities. Typed `fleet.secrets.ageRecipient` records each known host's public identity; missing/unlisted recipients or a missing key-file binding prevent password-secret declaration, retain the locked candidate account and block commissioning. A built check compares the YAML recipients to the common module's explicit public policy; it is required alongside structural checks and both-track early-users manifests. No YAML parser is added to Nix evaluation and no decrypted material enters Nix.
-
-Bastion remains blocked by the user's choice until its distinct recipient is verified and deliberately added to both the shared rule/ciphertext and Nix policy. Racknerd's unverified early delivery/recovery stays unverified. No readiness/review flag or installed password changes. Shared credentials increase the compromise/rotation scope; they do not permit password SSH or passwordless sudo. This amendment does not authorize future credential operations or deployment.
+- Import the previous `sops-nix` pin as a class-checked deferred `secrets` capability consumed by `access`; each target's own `pkgs` installs it. No input injection or global overlay.
+- `fleet.access.passwordSecrets` is a typed account-to-declared-SOPS-secret mapping. Null/missing bindings remain explicit commissioning blockers and locked candidate accounts, never guessed filesystem contracts. Real users/UIDs stay host facts. Each password secret is root-only mode `0400`, `neededForUsers = true`, delivered via its `.path` in `/run/secrets-for-users`, and is the account's sole credential source. Immutable users, locked root, key-only non-root SSH and password sudo stay.
+- A dedicated persistent age identity lives at a typed string path under early-mounted `/persist/var/lib/sops-nix/`; automatic identity generation and implicit SSH/GPG imports are disabled. `fleet.secrets.identityReviewed` records actual custody, recipients, permissions, recovery and early-decryption verification — not successful evaluation.
+- ThinkPad's existing ciphertext is copied unchanged with its exact public recipient rule (the whole file is kept for MAC compatibility, including the encrypted Wi-Fi value). Subsequent Wi-Fi and Tailscale declarations are separately reviewed capabilities. Do not import unrelated material, enable the old Wi-Fi agent or expand recipients.
+- **Shared password (amendment):** the user selected the existing ThinkPad `marcos` password for all three hosts, authorizing only local in-memory extraction/re-encryption. A separate password-only YAML (`secrets/shared/marcos-password.yaml`) supplies the common account policy, MAC/equality-verified without exposing plaintext. It permits only the verified operator, ThinkPad and Racknerd recipients; distinct host identities are kept. Typed `fleet.secrets.ageRecipient` records each known host's public identity; missing/unlisted recipients or a missing key-file binding retain the locked candidate account and block commissioning. A built check compares the YAML recipients to the explicit public Nix policy; no YAML parser enters Nix evaluation. Bastion stays blocked until its distinct recipient is verified and deliberately added to both ciphertext and policy. Shared credentials widen compromise/rotation scope and permit neither password SSH nor passwordless sudo.
 
 ## Consequences
 
-Encrypted password hashes may live in Git and the Nix store; decrypted hashes and private identities may not. The private identity itself needs protected durable storage and recovery custody; impermanence is not encryption. Runtime paths and ciphertext metadata do not prove a valid hash, matching private identity or working sudo.
+- Encrypted password hashes may live in Git and the Nix store; decrypted hashes and private identities may not. The private identity needs protected durable storage and recovery custody. Runtime paths and ciphertext metadata prove nothing about a valid hash, matching identity or working sudo.
+- Checks cover early password ordering, target-package sourcing, unsafe/missing-credential rejection, structural recipient drift and built upstream users manifests — without decryption ([validation scope](../validation.md)).
+- Review/readiness flags change only with recorded evidence in [hosts.md](../hosts.md#current-status).
 
-Both-track fixtures evaluate early password ordering, target-package sourcing and unsafe/missing-credential rejection. Checks build upstream users manifests without decryption. A separate structural/recipient check catches accidental plaintext payloads and rule drift, not cryptographic validity. No fixture can decrypt, install or deploy a system.
-
-At initial integration, every real identity review flag and host readiness remained false. Later evidence-backed commissioning and access reviews are recorded in [current host status](../hosts.md#current-status); they are not authorized by this ADR alone. ThinkPad's pre-transition manifest included an implicit SSH identity; this repository intentionally relies only on the dedicated age identity, verified before activation. A server still using root-only SSH requires a separately authorized staged transition. Boot/migration/network/recovery gates remain in force.
-
-See [secret inventory/procedure](../../secrets/README.md), [host transition checklist](../hosts.md), [research](../research.md), and [validation](../validation.md). No credential generation, decryption, rotation, remote activation or reboot is authorized by this decision.
+See [secret inventory and procedure](../../secrets/README.md).
