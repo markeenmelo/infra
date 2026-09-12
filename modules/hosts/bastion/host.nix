@@ -1,11 +1,11 @@
 { config, lib, ... }:
-let
-  bastion = config.flake.fleetConfigurations.bastion;
-in
 {
   fleet.hosts.bastion = {
     system = "x86_64-linux";
     track = "stable";
+    # Pre-install commissioning facts reviewed 2026-09-12; boot acceptance is
+    # separately recorded in docs/hosts.md. No Racknerd/ThinkPad approval.
+    ready = true;
     capabilities = [
       "bastion-disko"
       "headless"
@@ -13,20 +13,38 @@ in
       "access"
       "server"
       "nas"
-      "editors"
+      "agents"
     ];
     deployment = {
       enable = true;
       hostname = "192.168.2.2";
       sshUser = "marcos";
+      transport = "signed";
+      sshOpts = [
+        "-o"
+        "StrictHostKeyChecking=yes"
+      ];
     };
     # Temporary workstation for the final ThinkPad reinstall: ordinary marcos,
     # no new account/role, no desktop, and no credential copying or enrollment.
     module = { config, pkgs, ... }: {
+      # Live-USB preflight 2026-09-12: verified DHCP MAC/routes/console without VPN.
+      fleet.installation.networkReviewed = true;
+      fleet.secrets = {
+        ageKeyFile = "/persist/var/lib/sops-nix/key.txt";
+        ageRecipient = "age1su25ytldd4uye705w6jllwzkmpdkprruq5mzpcrth0e9zcmcyewspeck6q";
+        # Protected recovery plus actual root-only early-delivery RAMFS rehearsal.
+        identityReviewed = true;
+      };
+      # Public closure trust only. The operator's signing identity stays off-host.
+      nix.settings.trusted-public-keys = [
+        "bastion-deploy-20260912:FYekV+z8HC3dmaBay30ThuDpgGWrWoLolsSRNs+2dJs="
+      ];
+      # Agent-only workspace: removing editors must not restore default nano.
+      programs.nano.enable = false;
       environment.systemPackages = [
-        pkgs.pi-coding-agent
-        pkgs.git
         pkgs.tmux
+        pkgs.devenv
       ];
       environment.persistence."/persist".directories = [
         {
@@ -40,7 +58,11 @@ in
   };
 
   fleet.validation.hostChecks.bastionTools =
-    { name, system, ... }:
+    {
+      name,
+      system,
+      ...
+    }:
     let
       cfg = system.config;
     in
@@ -53,10 +75,19 @@ in
             [
               pi-coding-agent
               git
+              gh
               tmux
+              devenv
             ]
           )
           && !(cfg ? home-manager)
+          && !cfg.programs.neovim.enable
+          && !cfg.programs.nano.enable
+          && config.fleet.hosts.${name}.deployment.transport == "signed"
+          && !(lib.elem "marcos" cfg.nix.settings.trusted-users)
+          && !(lib.elem "@wheel" cfg.nix.settings.trusted-users)
+          && cfg.nix.settings.require-sigs
+          && lib.elem "bastion-deploy-20260912:FYekV+z8HC3dmaBay30ThuDpgGWrWoLolsSRNs+2dJs=" cfg.nix.settings.trusted-public-keys
           && !cfg.networking.networkmanager.enable
           && cfg.users.users.marcos.isNormalUser
           && lib.any (
@@ -68,14 +99,4 @@ in
       "Bastion's temporary Pi workspace must use its normal admin, private OS persistence and own-track tools";
     true;
 
-  perSystem = { pkgs, ... }: {
-    checks.bastion-pi = pkgs.runCommand "bastion-pi" { } ''
-      export HOME="$TMPDIR/home"
-      mkdir -p "$HOME"
-      # This pin redirects stdout to stderr without a TTY, even for --version.
-      version=$(env -i HOME="$HOME" PATH=${bastion.pkgs.coreutils}/bin ${bastion.pkgs.pi-coding-agent}/bin/pi --version 2>&1)
-      test "$version" = '${bastion.pkgs.pi-coding-agent.version}'
-      touch "$out"
-    '';
-  };
 }

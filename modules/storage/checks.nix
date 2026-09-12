@@ -178,29 +178,42 @@ in
     let
       cfg = system.config;
     in
-    assert lib.assertMsg (
-      !host.ready
-      && !cfg.fleet.installation.storageReviewed
-      && host.storageMode == "provision"
-      && builtins.attrNames cfg.disko.devices.disk == [ "os" ]
-      && lib.all (collection: cfg.disko.devices.${collection} == { }) unused
-      && cfg.fileSystems."/".fsType == "tmpfs"
-      && cfg.fileSystems."/nix".neededForBoot
-      && cfg.fileSystems."/persist".neededForBoot
-      && cfg.boot.initrd.luks.devices == { }
-      && !cfg.boot.initrd.services.lvm.enable
-      && cfg.boot.loader.limine.enable
-      && !cfg.boot.loader.grub.enable
-      && !cfg.boot.loader.systemd-boot.enable
-      && (name != "racknerd" || host.osDisk == null)
-      && rejectsScripts system
-    ) "${name}: fresh candidates must remain unready with provisioning blocked pending review";
+    assert lib.assertMsg
+      (
+        # Independent commissioning oracle: only Bastion has the new reviews.
+        host.ready == (name == "bastion")
+        && cfg.fleet.installation.storageReviewed == (name == "bastion")
+        && host.storageMode == "provision"
+        && builtins.attrNames cfg.disko.devices.disk == [ "os" ]
+        && lib.all (collection: cfg.disko.devices.${collection} == { }) unused
+        && cfg.fileSystems."/".fsType == "tmpfs"
+        && cfg.fileSystems."/nix".neededForBoot
+        && cfg.fileSystems."/persist".neededForBoot
+        && cfg.boot.initrd.luks.devices == { }
+        && !cfg.boot.initrd.services.lvm.enable
+        && cfg.boot.loader.limine.enable
+        && !cfg.boot.loader.grub.enable
+        && !cfg.boot.loader.systemd-boot.enable
+        && (name != "racknerd" || host.osDisk == null)
+        && (
+          if name == "bastion" then
+            (builtins.tryEval cfg.system.build.diskoScript.drvPath).success
+            && rejectsScripts (
+              system.extendModules {
+                modules = [ { fleet.bootstrap.approved = lib.mkForce false; } ];
+              }
+            )
+          else
+            rejectsScripts system
+        )
+      )
+      "${name}: only reviewed Bastion may provision; pending candidates and revoked approval must remain blocked";
     true;
 
   flake.validation = {
     storageLayouts =
-      assert builtins.attrNames config.flake.nixosConfigurations == [ ];
-      assert builtins.attrNames config.flake.deploy.nodes == [ ];
+      assert builtins.attrNames config.flake.nixosConfigurations == [ "bastion" ];
+      assert builtins.attrNames config.flake.deploy.nodes == [ "bastion" ];
       layouts;
     fixtures = lib.mapAttrs (_: fixture: {
       toplevel = fixture.config.system.build.toplevel.drvPath;

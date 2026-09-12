@@ -1,6 +1,6 @@
 # Commissioning a host
 
-This runbook covers the **fresh per-host reinstall candidates**. **It is not authorization to touch disks or deploy.** All candidates are unready; the running installations remain unchanged. Never activate these plain layouts over the old mounted disks. Follow [the ordered reinstall/recovery plan](reinstall.md) first, then work from a rescue environment/local console only with separate boot/storage/network authorization and verified recovery. **Full validation is currently paused until the operator explicitly requests it; commands below describe later stages.**
+This runbook covers the **fresh per-host reinstall candidates**. **It is not authorization to touch disks or deploy.** Bastion has completed pre-install fact review; Racknerd/ThinkPad remain unready. [Current status](hosts.md#current-status) distinguishes authorization, validation and actual installation/boot acceptance. Never activate these plain layouts over the old mounted disks. Follow [the ordered reinstall/recovery plan](reinstall.md) first, then work from a rescue environment/local console only with separate boot/storage/network authorization and verified recovery. The operator now explicitly requested full validation and Bastion-only installation/boot tests. That task authorization does not extend to another host or make this runbook executable permission.
 
 ## 1. Gather facts before editing
 
@@ -80,7 +80,7 @@ An unready host still has its commissioning assertion. Only after resolving all 
 
 ## Storage and installation
 
-**All three candidates now compose their per-host fresh layouts, but remain unready.** For running installations use [hosts.md](hosts.md); the commands below are not authorized now.
+**All three candidates compose their per-host fresh layouts; only Bastion currently has pre-install commissioning approval.** Use [hosts.md](hosts.md#current-status) for exact execution scope and results; other candidates and operations remain blocked.
 
 **Everything below the explicit execution boundary is a manual maintenance-window operation. Disko may erase the entire selected disk, including existing partitions and boot entries. It is not a migration tool. Never run it during ordinary deployment.**
 

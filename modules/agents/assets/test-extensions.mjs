@@ -10,12 +10,13 @@ import { pathToFileURL } from 'node:url';
 const [piDir, codexConfig, toolRepairConfig] = process.argv.slice(2);
 const load = (path) => import(pathToFileURL(path).href);
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
-const { discoverAndLoadExtensions } = await load(join(piDir, 'dist/index.js'));
-// Load Pi's own ESM-only dependency, not an ambient npm install or a copied
-// regex. Use the same packaged compat entry that AgentSession imports.
-const { isRetryableAssistantError } = await load(
-  join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'),
-);
+const { discoverAndLoadExtensions, AgentSession } = await load(join(piDir, 'dist/index.js'));
+const legacyPi = json(join(piDir, 'package.json')).version === '0.75.4';
+// Exercise the actual native classifier on each pin, never a copied regex.
+// Stable 0.75.4 keeps it on AgentSession and predates the compat export.
+const isRetryableAssistantError = legacyPi
+  ? (message) => AgentSession.prototype._isRetryableError.call({ model: undefined }, message)
+  : (await load(join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'))).isRetryableAssistantError;
 // Managed settings must carry the exact pinned package set.
 const settings = json(join(process.env.PI_CODING_AGENT_DIR, 'settings.json'));
 assert.equal(settings.defaultProjectTrust, 'ask');
@@ -104,13 +105,21 @@ assert.equal(
 for (const [label, override] of [
   ['non-error response', { stopReason: 'toolUse' }],
   ['unrecognized error', { errorMessage: 'tool arguments are empty' }],
-  ['billing exhaustion', { errorMessage: 'provider returned error: insufficient_quota' }],
 ]) {
   assert.equal(
     isRetryableAssistantError({ ...emptyEdit.message, ...override }), false,
     `Pi must not retry ${label}`,
   );
 }
+
+// Native 0.75.4 retries this prefixed quota error; 0.85.1 rejects it. Keep the
+// modern regression strict and report, rather than hide, the legacy limitation.
+assert.equal(
+  isRetryableAssistantError({ ...emptyEdit.message, errorMessage: 'provider returned error: insufficient_quota' }),
+  legacyPi,
+  'Native quota classification must match the separately reviewed runtime contract',
+);
+if (legacyPi) console.log('Pi 0.75.4 limitation: no native project trust; prefixed quota errors use bounded retry');
 
 const missingArgs = retryEmptyArguments(
   assistant([call('edit', undefined)]), tools,
@@ -145,6 +154,7 @@ const rewrite = async (command) => {
   for (const handler of rtk.handlers.get('tool_call')) await handler(event, ctx);
   return event.input.command;
 };
+assert.equal(await rewrite('ls -la'), 'rtk ls -la', 'Supported commands must really be rewritten');
 assert.equal(await rewrite('git status'), 'git status', 'Preserve exact Git output');
 assert.equal(await rewrite('rtk git status'), 'rtk git status');
 for (const command of ['nix flake check', 'just check', 'tofu plan', 'sops --version', 'printf hello']) {

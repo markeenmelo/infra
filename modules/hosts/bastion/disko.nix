@@ -3,9 +3,14 @@ let
   limine = config.flake.modules.nixos.limine;
 in
 {
-  # Historical OS identity, not a fresh serial/backup review. tank stays outside.
-  fleet.hosts.bastion.module.fleet.installation.osDevice =
-    "/dev/disk/by-id/nvme-eui.6479a7a2ea200e8e";
+  # Authorized pre-install review, 2026-09-12: live serial 511250213117000312,
+  # UEFI/console, NVMe-only replacement, NAS backup/restore and distinct recovered
+  # credentials. Kernel+initrd: 55,580,037 bytes; ten copies fit the 2 GiB ESP.
+  # This is not boot acceptance. tank/SATA/USB remain outside this layout.
+  fleet.hosts.bastion.module.fleet.installation = {
+    osDevice = "/dev/disk/by-id/nvme-eui.6479a7a2ea200e8e";
+    storageReviewed = true;
+  };
 
   flake.modules.nixos.bastion-disko =
     {

@@ -1,6 +1,7 @@
 { lib, ... }:
 let
-  # Observed legacy mount facts, 2026-09-09. No pool/filesystem creation,
+  # Legacy mounts re-verified by authorized read-only import, 2026-09-12.
+  # No pool/filesystem creation,
   # property migration, upgrades, repartitioning, shares or data migration.
   datasets = {
     "/srv" = "tank/srv";
@@ -35,10 +36,12 @@ in
       # this declaration neither sets properties nor proves any dataset opted in.
       autoSnapshot.enable = true;
     };
-    # nas.storageReviewed stays false: verify pool GUID 7246454901288299061,
-    # both member serials, restore, and upstream versus previous strict import
-    # behavior before approving this transition. Also review inherited snapshot
-    # opt-ins, existing names/holds, pruning and free space before activation.
+    # 2026-09-12: GUID 7246454901288299061, both serials, eight legacy mounts,
+    # native non-force policy and capacity reviewed; backup/restore confirmed by
+    # the operator. 114 existing snapshots, one hold, no native opt-ins or managed
+    # names. Inspection was read-only/unmounted and the pool was exported again.
+    # Normal first-boot mounts/timers are separately authorized, not yet accepted.
+    fleet.nas.storageReviewed = true;
     # No application may use /srv until its exact required mount is present.
   };
 

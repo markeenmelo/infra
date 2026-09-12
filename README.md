@@ -1,6 +1,6 @@
 # NixOS fleet
 
-A small dendritic flake preparing **fresh reinstalls** of three `x86_64-linux` hosts: a secure baseline plus a Hyprland/Noctalia desktop on ThinkPad; the others stay headless. All candidates are currently unready. The running installations are untouched; do not activate these new disk layouts over them. **[Current host status](docs/hosts.md#current-status) is the authoritative dated evidence for boot, credential, maintenance and deployment state.** Only ready hosts enter `nixosConfigurations`; deploy outputs additionally require enabled deployment intent.
+A small dendritic flake preparing **fresh reinstalls** of three `x86_64-linux` hosts: a secure baseline plus a Hyprland/Noctalia desktop on ThinkPad; the others stay headless. Candidate readiness is distinct from installed-system acceptance; do not activate fresh disk layouts over existing installations. **[Current host status](docs/hosts.md#current-status) is the authoritative dated evidence for boot, credential, maintenance and deployment state.** Only ready hosts enter `nixosConfigurations`; deploy outputs additionally require enabled deployment intent.
 
 | Host | Candidate beyond SSH, access, plain Btrfs, tmpfs root and impermanence | Nixpkgs | Deploy-rs intent |
 |---|---|---|---|
@@ -24,21 +24,21 @@ devenv shell ready racknerd  # expected refusal until identity/trust gates are r
 
 Native **devenv** supplies the locked toolbox, language servers, SOPS/age and guarded deployment scripts ([development commands](docs/development.md)); it performs no deployment, secret retrieval or disk action. **Stage intended new files before evaluation** — Git flakes ignore untracked files — and stage only reviewed encrypted SOPS files/public recipients, never plaintext credentials or private identities.
 
-## Fresh candidates, no execution authorization
+## Fresh candidates and execution boundaries
 
 Each host composes its single `modules/hosts/<host>/disko.nix`: native disko partitions, firmware policy and local provisioning guards. The old `os-disk.nix`, `existing.nix`, old UUID mount files and their interfaces are removed, not renamed or retained as an old/new framework.
 
 - Order: **Bastion → Racknerd → ThinkPad**. Keep the running ThinkPad operational until both servers and Bastion's independent Pi/administration workspace are accepted.
 - GPT, FAT `/boot`, plain Btrfs `nix`/`persist`, tmpfs `/`; ThinkPad adds `home` and 8 GiB swap. BIOS Racknerd has a first 1 MiB EF02 partition. No LUKS/LVM or old UUIDs in the candidate.
-- All three remain unready with `fleet.installation.storageReviewed = false`; Racknerd's installation device is null pending a reviewed no-by-id exception. **No standard NixOS/deploy targets or real disko script outputs are available.** Old-installation reviews do not commission freshly formatted storage.
+- Readiness and storage review gate standard NixOS/deploy targets and real disko scripts. Racknerd's installation device remains null pending a reviewed no-by-id exception; Racknerd/ThinkPad remain unready. Old-installation reviews do not commission freshly formatted storage.
 - Bastion's NVMe `/persist` is **not** `tank`; its legacy `/srv` mounts remain outside disko and unchanged. No NAS pool/dataset creation, conversion or migration is authorized.
-- Preserve scoped identity and service state through impermanence. Bastion's existing `marcos` gets temporary Pi/Git/tmux and private home persistence, not a new operator account. Persistence is not backup.
+- Preserve scoped identity and service state through impermanence. Bastion's existing `marcos` gets stable Pi/Git/gh/tmux/devenv and private home persistence, not a new operator account; no Neovim/nano. Persistence is not backup.
 
-[Reinstall preparation](docs/reinstall.md) and the [manual installation runbook](docs/bootstrap.md#storage-and-installation) retain recovery and explicit execution boundaries. The historical adoption policy is [ADR 0005](docs/adr/0005-existing-headless-baseline.md); the current fresh design is [ADR 0003](docs/adr/0003-storage-and-impermanence.md). Full validation is deferred until the operator explicitly requests it.
+[Reinstall preparation](docs/reinstall.md) and the [manual installation runbook](docs/bootstrap.md#storage-and-installation) retain recovery and explicit execution boundaries. The historical adoption policy is [ADR 0005](docs/adr/0005-existing-headless-baseline.md); the current fresh design is [ADR 0003](docs/adr/0003-storage-and-impermanence.md). The operator now authorized full validation and Bastion-only installation/boot acceptance on its verified NVMe; [dated status](docs/hosts.md#current-status) records progress and exact boundaries. This does not authorize Racknerd/ThinkPad operations or deploy-rs activation.
 
 ## Access and deployment
 
-Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** via `neededForUsers` and a dedicated persistent age identity; Bastion remains blocked without its verified identity/recipient ([ADR 0006](docs/adr/0006-sops-password-delivery.md), [secret inventory](secrets/README.md)).
+Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** via `neededForUsers` and a dedicated persistent age identity; Bastion now has a separately verified identity/recipient and early-delivery preflight, not yet installed-boot acceptance ([ADR 0006](docs/adr/0006-sops-password-delivery.md), [secret inventory](secrets/README.md)).
 
 A temporary non-root access bootstrap is not declarative commissioning: follow [the transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized). Only `ready && deployment.enable` hosts enter deploy-rs: root activates, a non-root account connects via SSH, and closure transport remains nullable until signing trust or explicit root-equivalent per-user Nix trust is provisioned. Rollback stays enabled.
 
