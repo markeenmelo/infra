@@ -118,6 +118,8 @@
             panicOnChecksumMismatch = true;
             enrollConfig = false;
             maxGenerations = 10;
+            # Upstream's mkDefault wallpaper overrides its empty option default.
+            style.wallpapers = [ ];
           };
         };
         fileSystems = {
