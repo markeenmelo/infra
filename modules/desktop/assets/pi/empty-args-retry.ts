@@ -1,30 +1,26 @@
 // Retry provider responses whose tool-call arguments arrive empty.
 //
-// Fleet evidence (2026-09-12, session logs on thinkpad) and upstream
-// earendil-works/pi#5194: zai's GLM tool-call translation intermittently
-// drops the arguments of tools whose schema nests an array of objects. The
-// toolCall block arrives with its id but `arguments: {}` — observed on
-// glm-5.3/glm-5.3-flash for pi's `edit` (39/61 and 13/19 calls), never for
-// flat-schema tools (`write`, `bash`, `read`) and never on other providers.
-// Pi then fails the call with a misleading schema error and models tend to
-// re-emit the identical call, wasting turns.
+// The ThinkPad session analysis recorded in PR #8 (2026-09-12) reports
+// empty `edit` arguments on zai's glm-5.3/glm-5.3-flash. Upstream pi#5194
+// reports the same misleading schema diagnostic, but does not establish a
+// GLM-specific root cause. See docs/research.md's dated retry-contract entry;
+// absence from the sampled flat-schema/provider calls is not a guarantee.
 //
 // pi-tool-repair deliberately cannot handle this class: every
 // validate-then-repair rule needs present (but malformed) fields, and `{}`
 // leaves nothing to repair. This extension instead converts the whole
 // response into a transient provider error (stopReason "error" plus a
 // descriptive errorMessage), which Pi's built-in agent retry (retry.enabled,
-// retry.maxRetries, default 3 attempts) re-issues automatically — the same
-// mechanism pi-tool-repair uses for phantom toolUse responses. All toolCall
+// retry.maxRetries, default 3 retries) re-issues automatically. All toolCall
 // blocks are stripped from the returned message so a retried turn never
 // leaves unmatched calls in the persisted history (the failure spiral of
 // earendil-works/pi#5921).
 //
-// The errorMessage phrasing is load-bearing: Pi retries only messages whose
-// error text matches its RETRYABLE_PROVIDER_ERROR_PATTERN, so the message
-// must start with "provider returned error" (test-extensions.mjs asserts
-// this; pi 0.85.1's pattern requires it, and even pi-tool-repair's phantom
-// message misses the current list).
+// The errorMessage phrasing is load-bearing: Pi 0.85.1's
+// isRetryableAssistantError checks RETRYABLE_PROVIDER_ERROR_PATTERN after
+// excluding quota/billing errors. Our "provider returned error" prefix
+// matches that pattern; test-extensions.mjs calls Pi's actual classifier.
+// Recheck classification and message_end/retry ordering on Pi upgrades.
 //
 // Deliberately model-agnostic and schema-directed: a call with zero
 // arguments against an active tool that declares required properties can

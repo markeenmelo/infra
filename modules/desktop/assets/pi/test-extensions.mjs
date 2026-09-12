@@ -11,6 +11,11 @@ const [piDir, codexConfig, toolRepairConfig] = process.argv.slice(2);
 const load = (path) => import(pathToFileURL(path).href);
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const { discoverAndLoadExtensions } = await load(join(piDir, 'dist/index.js'));
+// Load Pi's own ESM-only dependency, not an ambient npm install or a copied
+// regex. Use the same packaged compat entry that AgentSession imports.
+const { isRetryableAssistantError } = await load(
+  join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'),
+);
 // Managed settings must carry the exact pinned package set.
 const settings = json(join(process.env.PI_CODING_AGENT_DIR, 'settings.json'));
 assert.equal(settings.defaultProjectTrust, 'ask');
@@ -67,7 +72,7 @@ assert.ok(
 );
 assert.ok(rtk?.handlers.has('tool_call'), 'RTK hook must register the official tool_call handler');
 assert.ok(review?.commands.has('review') && review.commands.has('end-review'), 'pi-review must register its commands');
-console.log('Pi loader registration for pi-review and the RTK hook passed');
+console.log('Pi loader registration for pi-review, RTK and empty-args-retry passed');
 
 // Exercise empty-args-retry's pure transform: only schema-required tools with
 // a completely absent/empty arguments payload flip the message into a
@@ -90,13 +95,22 @@ assert.ok(emptyEdit.changed, 'Empty edit arguments must convert the message');
 assert.equal(emptyEdit.message.stopReason, 'error');
 assert.equal(toolCallsOf(emptyEdit.message).length, 0, 'All toolCall blocks must be stripped');
 assert.match(emptyEdit.message.errorMessage, /"edit".*path, edits/);
-// Pi only auto-retries assistant errors whose text matches its
-// RETRYABLE_PROVIDER_ERROR_PATTERN; keep the load-bearing phrasing pinned.
-assert.match(
-  emptyEdit.message.errorMessage,
-  /^provider returned error/,
-  'errorMessage must match Pi\'s retryable provider error pattern',
+// Exercise the classifier AgentSession actually uses. A local prefix check
+// would keep passing if a future Pi pin stopped recognizing that phrasing.
+assert.equal(
+  isRetryableAssistantError(emptyEdit.message), true,
+  'The pinned Pi runtime must classify the transformed message as retryable',
 );
+for (const [label, override] of [
+  ['non-error response', { stopReason: 'toolUse' }],
+  ['unrecognized error', { errorMessage: 'tool arguments are empty' }],
+  ['billing exhaustion', { errorMessage: 'provider returned error: insufficient_quota' }],
+]) {
+  assert.equal(
+    isRetryableAssistantError({ ...emptyEdit.message, ...override }), false,
+    `Pi must not retry ${label}`,
+  );
+}
 
 const missingArgs = retryEmptyArguments(
   assistant([call('edit', undefined)]), tools,
