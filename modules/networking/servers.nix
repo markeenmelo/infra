@@ -15,6 +15,9 @@ in
 {
   fleet.hosts = lib.mapAttrs (name: uplink: {
     module = {
+      # Bastion's direct LAN root/marcos access works while Tailscale needs
+      # login; MAC/DHCP routing and independent recovery reviewed 2026-09-11.
+      fleet.installation.networkReviewed = lib.mkIf (name == "bastion") true;
       networking.useNetworkd = true;
       services.resolved.enable = true;
       systemd.network.networks."10-${name}-uplink" = {
@@ -33,8 +36,6 @@ in
         };
         linkConfig.RequiredForOnline = "routable";
       };
-      # No VPN. networkReviewed stays false until access works without the
-      # existing Tailscale sessions/routes and provider/LAN recovery is checked.
     };
   }) uplinks;
 }

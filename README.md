@@ -34,7 +34,7 @@ Each host composes `existing-storage`: disko `nodev` descriptions derive mounts 
 - `/` becomes tmpfs on thinkpad/racknerd/bastion. No old Btrfs root-reset/deletion script is retained. Existing root subvolumes are not erased.
 - Existing `/nix`, `/persist` and laptop `/home` remain durable, early-mounted filesystems. Laptop `/home` is **not** also an impermanence bind.
 - Thinkpad's existing encryption, LVM and swap remain. No plaintext secrets or private identities enter the Nix store.
-- Bastion's NVMe OS `/persist` is **not** its ZFS data. The observed `/srv` datasets stay outside disko. No pools/datasets/properties are created or upgraded; import policy and restore require review.
+- Bastion's NVMe OS `/persist` is **not** its ZFS data. The observed `/srv` datasets stay outside disko. No pools/datasets/properties are created or upgraded; the candidate retains the reviewed strict GUID/topology/health importer. Restore and activation remain separate operator responsibilities.
 - Persist scoped machine identity, SSH identities, NixOS allocation state, random seed, timers/time sync and feature-owned state. Server journals are bounded; workstation `/home` deliberately preserves user data. Removing declarations does not erase backing data. Persistence and mirroring are not backups.
 
 ```sh
@@ -46,7 +46,7 @@ The original **fresh-install-only** `os-disk` capability is retained with its de
 
 ## Access and deployment
 
-Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** using `neededForUsers` and a dedicated persistent age identity. The shared password-only YAML preserves the existing ThinkPad password for the three-host account policy; Bastion remains blocked without its verified identity/recipient. Null credentials or unreviewed identities remain commissioning blockers, not plausible runtime paths. See [secret inventory and procedure](secrets/README.md), [ADR 0006](docs/adr/0006-sops-password-delivery.md) and [current credential/access evidence](docs/hosts.md#current-status).
+Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** using `neededForUsers` and a dedicated persistent age identity. The shared password-only YAML preserves the existing ThinkPad password for the three-host account policy. Bastion now has staged non-root access, a verified distinct recipient and password decryption; new-identity recovery and state migration still block commissioning. Null credentials or unreviewed identities remain commissioning blockers, not plausible runtime paths. See [secret inventory and procedure](secrets/README.md), [ADR 0006](docs/adr/0006-sops-password-delivery.md) and [current credential/access evidence](docs/hosts.md#current-status).
 
 A temporary non-root access bootstrap is not declarative commissioning. Follow [the transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized), with independent recovery and verified non-VPN routing before removing an old service. Reinstallation requires a separately reviewed fresh-install design; validation never authorizes it.
 

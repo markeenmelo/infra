@@ -145,10 +145,10 @@ in
           && !key.neededForUsers
           && key.restartUnits == [ "fleet-tailscale.service" ]
         else
-          cfg.fleet.tailscale.enrollmentMode == null
+          cfg.fleet.tailscale.enrollmentMode == (if name == "bastion" then "auth-key" else null)
           && cfg.fleet.tailscale.authKeySecret == null
-          && !cfg.fleet.tailscale.stateReviewed
-          && !cfg.fleet.tailscale.policyReviewed
+          && cfg.fleet.tailscale.stateReviewed == (name == "bastion")
+          && cfg.fleet.tailscale.policyReviewed == (name == "bastion")
           && cfg.fleet.tailscale.missing != [ ]
           && !(cfg.systemd.services ? fleet-tailscale)
           && !(lib.elem "/var/lib/tailscale" host.persistence.directories)

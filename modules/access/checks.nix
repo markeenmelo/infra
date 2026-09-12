@@ -95,35 +95,29 @@ in
       && cfg.sops.validateSopsFiles
       && !cfg.sops.useTmpfs
       && cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
-      &&
-        (lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." cfg.fleet.bootstrap.missing)
-        == (name == "bastion")
+      && !(lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." cfg.fleet.bootstrap.missing)
+      && cfg.fleet.secrets.ageKeyFile == "/persist/var/lib/sops-nix/key.txt"
+      && cfg.fleet.secrets.identityReviewed == (name == "thinkpad")
       && (
-        if name == "bastion" then
-          cfg.sops.secrets == { }
-          && cfg.fleet.secrets.ageKeyFile == null
-          && cfg.fleet.secrets.ageRecipient == null
-          && cfg.users.users.marcos.hashedPassword == "!"
-          && cfg.users.users.marcos.hashedPasswordFile == null
-        else
-          cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
-          && cfg.sops.secrets.marcos-password-hash.sopsFile == ../../secrets/shared/marcos-password.yaml
-          && cfg.sops.secrets.marcos-password-hash.key == "marcos-password-hash"
-          && cfg.sops.secrets.marcos-password-hash.format == "yaml"
-          && cfg.sops.secrets.marcos-password-hash.neededForUsers
-          &&
-            builtins.attrNames cfg.sops.secrets == (
-              [ "marcos-password-hash" ]
-              ++ lib.optionals (name == "thinkpad") (
-                lib.optionals (cfg.fleet.wifi.senecaSopsFile != null) [
-                  "seneca-identity"
-                  "seneca-password"
-                ]
-                ++ lib.optional tailscaleEnabled "tailscale-auth-key"
-                ++ [ "wifi-psk" ]
-              )
-            )
+        name != "bastion"
+        ||
+          cfg.fleet.secrets.ageRecipient == "age1p0ecx9y4vn85nccz98427qpfyxfva5kfg9vr6ccqammscuwl0vfsh7rrkf"
       )
+      && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
+      && cfg.sops.secrets.marcos-password-hash.sopsFile == ../../secrets/shared/marcos-password.yaml
+      && cfg.sops.secrets.marcos-password-hash.key == "marcos-password-hash"
+      && cfg.sops.secrets.marcos-password-hash.format == "yaml"
+      && cfg.sops.secrets.marcos-password-hash.neededForUsers
+      &&
+        builtins.attrNames cfg.sops.secrets == (
+          [ "marcos-password-hash" ]
+          ++ lib.optionals (name == "thinkpad" && cfg.fleet.wifi.senecaSopsFile != null) [
+            "seneca-identity"
+            "seneca-password"
+          ]
+          ++ lib.optional tailscaleEnabled "tailscale-auth-key"
+          ++ lib.optional (name == "thinkpad") "wifi-psk"
+        )
     ) "${name}: shared SOPS password/identity policy regressed or unrelated secrets enabled";
     # Evaluation-only bad metadata; never a real recipient or commissioning flag.
     assert lib.all

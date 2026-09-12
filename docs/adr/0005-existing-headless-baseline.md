@@ -22,6 +22,10 @@ Configure `marcos` with the existing explicitly selected public key, runtime pas
 
 Headless scope includes SSH/firewall/time sync, scoped persistence, server hardening/logging and racknerd SSH banning, plus conservative laptop power management and thinkpad Thunderbolt authorization. No VPN, desktop, launchers, disconnected-eGPU driver, proxy or NAS application is enabled. Laptop graphics/gaming is a later feature, not an invented commissioning acknowledgement.
 
+## Bastion import-policy amendment — 2026-09-12
+
+The operator chose to retain the installed strict importer rather than accept the initial candidate's native degraded-pool fallback. Reverified pool/mirror/leaf GUIDs, member serial aliases and dataset properties are recorded beside Bastion's storage concern. Its adapted script requires a complete healthy mirror, exact identity/topology, reviewed dataset properties and read-only preflight before writable import, with no force flag. Preserve native required-before edges to the eight mounts. Offline mocks cover rejection and failure paths; no real pool import/export or storage migration was run. Operator-confirmed existing NAS backups support policy review, not a newly tested boot. Dedicated-identity recovery and timer migration remain separate commissioning blockers.
+
 ## Consequences
 
 All real facts remain inspectable under `fleetConfigurations`, with `ready = false` until migration, credentials, network without VPN, hardware/boot and recovery review are complete. `just disk-plan` is not available for existing installations; a future reinstallation needs a separately researched and authorized design. Activation still changes boot files and can break access/state even without disko; it is not authorized by checks.

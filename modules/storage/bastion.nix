@@ -4,6 +4,9 @@
       osDevice = "/dev/disk/by-id/nvme-eui.6479a7a2ea200e8e";
       bootMode = "uefi";
       efiCanTouchVariables = true;
+      # Matching EFI entry/ESP, free space, SMART/Btrfs checks and operator-
+      # confirmed independent console recovery, 2026-09-11; not a candidate boot.
+      bootReviewed = true;
     };
     # OS state stays on the NVMe; tank is deliberately outside disko.
     disko.devices.nodev = {

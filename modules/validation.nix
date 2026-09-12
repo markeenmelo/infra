@@ -132,6 +132,7 @@ in
         ) "An evaluation suite is missing; review the independent report inventory.";
         assert lib.assertMsg (
           builtins.attrNames config.checks == [
+            "bastion-import-policy"
             "deploy-activate"
             "deploy-schema"
             "fleet-evaluation"

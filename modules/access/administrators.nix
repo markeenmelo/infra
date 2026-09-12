@@ -7,6 +7,7 @@ let
     "age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht"
     "age15r7mf8n0ah32y9xf8jxjvj4yrzsf3y52cucqeyr6hlxtkw63vs0qjz7wgm"
     "age1dpxn0ymj6jyt33yf9ukuekwh93w8r3gsmfx8d3g3g3vhh5dn7ygsdpy48t"
+    "age1p0ecx9y4vn85nccz98427qpfyxfva5kfg9vr6ccqammscuwl0vfsh7rrkf"
   ];
 in
 {
