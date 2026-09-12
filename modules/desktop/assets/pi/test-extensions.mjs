@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-const [piDir, codexConfig] = process.argv.slice(2);
+const [piDir, codexConfig, toolRepairConfig] = process.argv.slice(2);
 const load = (path) => import(pathToFileURL(path).href);
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const { discoverAndLoadExtensions } = await load(join(piDir, 'dist/index.js'));
@@ -22,6 +22,7 @@ assert.deepEqual(
     'npm:@akepka/pi-cursor-cli-provider@0.10.1',
     'npm:@ayulab/pi-rewind@0.4.6',
     'npm:@juicesharp/rpiv-ask-user-question@2.9.0',
+    'npm:pi-tool-repair@0.2.5',
   ],
   'Pinned npm specs must match the reviewed set',
 );
@@ -37,6 +38,13 @@ for (const path of local) assert.ok(existsSync(path), `Missing local package: ${
 const rtkHook = local.find((path) => path.endsWith('/hooks/pi/rtk.ts'));
 const piReview = local.find((path) => path !== rtkHook);
 json(codexConfig); // Generated extension config must stay valid JSON.
+// Grammar recovery stays opt-in and scoped to GLM model ids only.
+const toolRepair = json(toolRepairConfig);
+assert.equal(toolRepair.grammarRepair.enabled, undefined, 'No global grammar repair');
+assert.equal(toolRepair.grammarRepair.mode, 'recover');
+assert.equal(toolRepair.grammarRepair.requireKnownTool, true);
+assert.deepEqual(toolRepair.grammarRepair.grammars, ['glm']);
+assert.deepEqual(toolRepair.grammarRepair.leakModels, ['glm']);
 console.log('Settings pins and generated configs passed');
 
 // Load the Nix-pinned extensions through Pi's actual loader.

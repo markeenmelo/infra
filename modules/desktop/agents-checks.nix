@@ -27,7 +27,8 @@
             cd "$TMPDIR/work"
             ${lib.getExe pkgs.nodejs} ${./assets/pi/test-extensions.mjs} \
               ${pkgs.pi-coding-agent}/lib/node_modules/pi-monorepo \
-              ${home.home.file.".pi/agent/99extensions.json".source}
+              ${home.home.file.".pi/agent/99extensions.json".source} \
+              ${home.home.file.".pi/agent/extensions/pi-tool-repair.json".source}
             touch "$out"
           '';
     };

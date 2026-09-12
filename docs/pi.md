@@ -14,6 +14,7 @@ Versioned `npm:` specs are pinned and skipped by `pi update`; Pi installs them i
 | `@akepka/pi-cursor-cli-provider` | 0.10.1 | Cursor provider; resolves its CLI through `CURSOR_AGENT_PATH` |
 | `@ayulab/pi-rewind` | 0.4.6 | `ayu.rewind.restoreOnTree = "ask"`; checkpoint restore never automatic on resume/fork/clone |
 | `@juicesharp/rpiv-ask-user-question` | 2.9.0 | `~/.config/rpiv-ask-user-question/config.json`: collapse key `ctrl+]` |
+| `pi-tool-repair` | 0.2.5 | Repairs malformed tool-call arguments (stringified `edits` arrays, field aliases, null optionals) before Pi validation — covers the `edit` failures seen from z.ai GLM models. `~/.pi/agent/extensions/pi-tool-repair.json` keeps grammar recovery opt-in per model id (`leakModels: ["glm"]`, `recover` mode, known-tool gated); default argument repairs need no config |
 | `pi-review` | commit `f1de050504936046c0f85b21fec0e0a93ef394eb` (Nix hash pin) | `/review`, `/end-review` |
 | RTK | Nixpkgs 0.47.0 | Native CLI plus its matching official Pi hook, not another npm wrapper |
 
@@ -50,4 +51,4 @@ Removals are declarative history: `git log`/`git show` on this file recover the 
 
 ## Validation
 
-`checks.x86_64-linux.pi-extensions` is part of `devenv tasks run repo:check`. In a sandbox with an empty HOME and no credentials it loads the managed settings through **Pi 0.85.1's actual loader**, asserts the exact pinned `npm:` spec set and the absence of every removed package, verifies both local store entries exist, loads `pi-review` and the RTK hook through the real loader (command/handler registration), and exercises native RTK rewrite/config/statistics/raw-bypass privacy behavior. It cannot load the `npm:` packages themselves (offline sandbox, mutable install tree), so their runtime behavior is not covered by checks; a new Pi session after activation is the real acceptance step. It makes no model request and activates no host.
+`checks.x86_64-linux.pi-extensions` is part of `devenv tasks run repo:check`. In a sandbox with an empty HOME and no credentials it loads the managed settings through **Pi 0.85.1's actual loader**, asserts the exact pinned `npm:` spec set and the absence of every removed package, verifies both local store entries exist and the generated `99extensions.json`/pi-tool-repair configs stay valid and correctly scoped, loads `pi-review` and the RTK hook through the real loader (command/handler registration), and exercises native RTK rewrite/config/statistics/raw-bypass privacy behavior. It cannot load the `npm:` packages themselves (offline sandbox, mutable install tree), so their runtime behavior is not covered by checks; a new Pi session after activation is the real acceptance step. It makes no model request and activates no host.

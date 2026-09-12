@@ -59,6 +59,17 @@
               usagePollInterval = 5;
             };
           };
+          # pi-tool-repair's opt-in grammar recovery, scoped to GLM model ids
+          # only: the default schema-directed argument repairs (which cover the
+          # malformed `edit` calls seen from z.ai GLM models) need no config.
+          ".pi/agent/extensions/pi-tool-repair.json".source = jsonFormat.generate "pi-tool-repair.json" {
+            grammarRepair = {
+              mode = "recover";
+              requireKnownTool = true;
+              grammars = [ "glm" ];
+              leakModels = [ "glm" ];
+            };
+          };
         };
       };
 
@@ -131,6 +142,9 @@
             "npm:@akepka/pi-cursor-cli-provider@0.10.1"
             "npm:@ayulab/pi-rewind@0.4.6"
             "npm:@juicesharp/rpiv-ask-user-question@2.9.0"
+            # Validate-then-repair of malformed tool-call arguments (stringified
+            # `edits` arrays, field aliases, null optionals); GLM-covered.
+            "npm:pi-tool-repair@0.2.5"
             "${piReview}"
             rtkHook
           ];
