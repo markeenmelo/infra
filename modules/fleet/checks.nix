@@ -41,6 +41,7 @@ let
     assert lib.assertMsg (
       builtins.attrNames config.fleet.validation.hostChecks == [
         "desktop"
+        "editors"
         "kernel"
         "nh"
         "printing"

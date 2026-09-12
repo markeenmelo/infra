@@ -2,6 +2,11 @@
 
 Initial research **2026-09-09 UTC**, with subsequent dated entries, against upstream documentation, source checkouts, GitHub release lists and recently updated issues. Pins below describe this implementation, not evergreen release recommendations. `flake.lock` is authoritative after future updates.
 
+## Console editor policy: Neovim replaces nano — 2026-09-12
+
+- Both locked tracks ship byte-identical [nano](https://github.com/NixOS/nixpkgs/blob/21a67dc470149f337cecafbe965d8d252a390518/nixos/modules/programs/nano.nix) and [neovim](https://github.com/NixOS/nixpkgs/blob/21a67dc470149f337cecafbe965d8d252a390518/nixos/modules/programs/neovim.nix) NixOS modules (stable `21a67dc470149f337cecafbe965d8d252a390518`, unstable `aff8a0b28396750446e5537a96461bc4facdb287`): nano defaults to enabled and installs its package plus `/etc/nanorc`, so `programs.nano.enable = false` removes both; `programs.neovim.defaultEditor` sets `environment.sessionVariables.EDITOR = "nvim"` at `mkOverride 900`, overridable by a deliberate host/session assignment.
+- Both tracks expose `wrapNeovim = neovimUtils.legacyWrapper` ([stable utils.nix](https://github.com/NixOS/nixpkgs/blob/21a67dc470149f337cecafbe965d8d252a390518/pkgs/applications/editors/neovim/utils.nix), [unstable wrapper.nix](https://github.com/NixOS/nixpkgs/blob/aff8a0b28396750446e5537a96461bc4facdb287/pkgs/applications/editors/neovim/wrapper.nix)), which still accepts `configure = { customRC, customLuaRC, packages }` even though the lower-level `wrapNeovimUnstable` API moved to `plugins`/`luaRcContent`. Consequence: one track-agnostic `programs.neovim.configure.customLuaRC` policy (Neovim 0.12.5 unstable / 0.12.4 stable) needs no compatibility branch; the wrapped binary loads its store configuration and deliberately ignores `~/.config/nvim`, so no mutable dotfile enters the fleet.
+
 ## import-tree discovery input — 2026-09-12
 
 Starting point: clean `devenv` / `5c1f116`. Every existing pin is unchanged; the only lock movement is the new input itself.

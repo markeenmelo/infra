@@ -12,6 +12,7 @@
       "access"
       "server"
       "vps"
+      "editors"
     ];
     deployment = {
       # Keep deploy-rs disabled until the staged root activation provisions

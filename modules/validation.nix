@@ -82,6 +82,7 @@ in
         "gaming"
         "nas"
         "administration"
+        "editors"
         "tailscale"
       ];
       # Explicitly synthetic EVALUATION fixtures, never fleet/install/deploy targets.

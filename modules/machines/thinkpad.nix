@@ -11,6 +11,7 @@
       "workstation"
       "laptop"
       "administration"
+      "editors"
     ];
     deployment.enable = false;
     # 2026-09-10: commissioning reviews recorded (docs/hosts.md). Local
