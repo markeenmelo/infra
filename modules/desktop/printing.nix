@@ -9,21 +9,17 @@
     }:
     {
       services = {
-        # Discovery for the approved IPP/eSCL devices. Do not publish local services.
+        # Discovery for the approved IPP/eSCL devices. Upstream defaults keep
+        # discovery local-only, unpublished and off the firewall.
         avahi = {
           enable = true;
           nssmdns4 = true;
-          openFirewall = true;
-          publish.enable = false;
         };
         printing = {
           enable = true;
-          allowFrom = [ "localhost" ];
+          # cups-browsed is the only deliberate deviation from the local-only
+          # upstream defaults.
           browsed.enable = false;
-          browsing = false;
-          defaultShared = false;
-          listenAddresses = [ "localhost:631" ];
-          openFirewall = false;
         };
       };
       hardware.sane = {

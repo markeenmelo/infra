@@ -5,8 +5,6 @@
   fleet.hosts.thinkpad.module.programs.nh = {
     enable = true;
     flake = "/home/marcos/projects/infra";
-    # Preserve recovery generations; never schedule pruning as a convenience.
-    clean.enable = false;
   };
 
   fleet.validation.hostChecks.nh =

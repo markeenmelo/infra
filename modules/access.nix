@@ -95,7 +95,6 @@ in
           ];
         };
         security.sudo = {
-          wheelNeedsPassword = true;
           extraRules = lib.optional (cfg.admin != null && cfg.passwordlessSudo) {
             users = [ cfg.admin ];
             commands = [

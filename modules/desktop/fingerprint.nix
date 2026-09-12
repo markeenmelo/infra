@@ -35,7 +35,6 @@
           };
           noctalia-greetd = {
             fprintAuth = true;
-            allowNullPassword = false;
             enableGnomeKeyring = true;
             # Native unix-early collects the password before stashing it for
             # the keyring. Reuse it exactly once: an empty/wrong submission must
@@ -54,7 +53,6 @@
           };
           sudo = {
             fprintAuth = true;
-            allowNullPassword = false;
             rules.auth.fprintd = {
               order = config.security.pam.services.sudo.rules.auth.unix.order + 10;
               settings = {
