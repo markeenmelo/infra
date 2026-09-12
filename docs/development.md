@@ -6,7 +6,7 @@
 nix run --no-update-lock-file .#devenv -- shell
 ```
 
-This fetches/builds the **locked unstable CLI** and enters the native environment; it does not install a profile or activate a host. With that CLI already on PATH, use `devenv shell`.
+This fetches/builds the **locked unstable CLI** and enters the native environment; it does not install a profile or activate a host. The ThinkPad desktop also includes `devenv` in Marcos's normal user profile: after activating that configuration, the CLI is available from any directory, including other projects. Use `devenv shell` in an existing devenv project, or `devenv init` to initialize a new one. Other machines can still use the bootstrap command above.
 
 The shell uses `pkgs.stdenvNoCC`, retaining the previous `mkShellNoCC` behavior: no default C compiler toolchain in the developer shell. Nix system/package builds still get their own build dependencies. The Nix CLI is explicitly packaged, so checks/build commands also work under `--clean`. The [Nix recipe](https://devenv.sh/recipes/nix/#nix-patterns) does not justify adding a second package set, overlays or extra PATH hooks here.
 

@@ -1,5 +1,8 @@
 { inputs, ... }:
 {
+  # Make the CLI available outside this repository's development shell.
+  flake.modules.homeManager.desktop = { pkgs, ... }: { home.packages = [ pkgs.devenv ]; };
+
   perSystem =
     {
       lib,
