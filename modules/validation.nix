@@ -133,6 +133,7 @@ in
         assert lib.assertMsg (
           builtins.attrNames config.checks == [
             "bastion-import-policy"
+            "bastion-tailscale-manifest"
             "deploy-activate"
             "deploy-schema"
             "fleet-evaluation"

@@ -79,7 +79,7 @@ Class-checked `flake.modules.nixos.<capability>`, `flake.modules.homeManager.<ca
 - `modules/{headless,ssh,access,secrets,server,vps,workstation,laptop}.nix`: cohesive reusable features; `logging.nix` contributes to persistence.
 - `modules/desktop.nix`: concern-owned native HM bridge and `desktop` bundle. `modules/desktop/` separates compositor, greeter, apps, peripherals, display facts and their tests; applicable NixOS/HM/host contributions stay together.
 - `modules/kernel.nix`: explicit host-track latest stock 7.x policy, without suppressing ZFS compatibility failures.
-- `modules/tailscale/`, `tofu/tailscale/`: review-gated client enrollment/persistence (ThinkPad candidate enabled) plus separate OpenTofu policy/MagicDNS management. `just tailscale-inventory` shows rollout blockers; `just tailnet` is an explicit operator workflow, never part of rebuild/check.
+- `modules/tailscale/`, `tofu/tailscale/`: review-gated client enrollment/persistence (ThinkPad and Bastion candidates enabled, not activated) plus separate OpenTofu policy/MagicDNS management. `just tailscale-inventory` shows rollout blockers; `just tailnet` is an explicit operator workflow, never part of rebuild/check.
 - `modules/deployment.nix`: metadata, SSH integration, target-track activation and upstream checks.
 - `modules/flake/configuration.nix`: flake-parts module-class registration and supported output systems.
 - `modules/flake/development.nix`: stable developer packages, locked shell/formatter outputs and source/discovery checks; features contribute their own developer tools.

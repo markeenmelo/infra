@@ -5,7 +5,7 @@ let
   rollout = {
     thinkpad = true;
     racknerd = false;
-    bastion = false;
+    bastion = true;
   };
   hosts = builtins.attrNames rollout;
 in

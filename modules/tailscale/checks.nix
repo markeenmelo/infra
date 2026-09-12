@@ -4,7 +4,7 @@ let
   expectedTailscaleRollout = {
     thinkpad = true;
     racknerd = false;
-    bastion = false;
+    bastion = true;
   };
   tailscaleFixtures = lib.mapAttrs (
     _: fixture:
@@ -136,7 +136,7 @@ in
           && cfg.services.tailscale.package.drvPath == system.pkgs.tailscale.drvPath
           && cfg.services.tailscale.authKeyFile == null
           && !(lib.elem "tailscale0" cfg.networking.firewall.trustedInterfaces)
-          && key.sopsFile == ../../secrets/hosts/thinkpad-tailscale.yaml
+          && key.sopsFile == ../../secrets/hosts/${name}-tailscale.yaml
           && key.key == "tailscale-auth-key"
           && key.path == "/run/secrets/tailscale-auth-key"
           && key.owner == "root"
@@ -145,10 +145,10 @@ in
           && !key.neededForUsers
           && key.restartUnits == [ "fleet-tailscale.service" ]
         else
-          cfg.fleet.tailscale.enrollmentMode == (if name == "bastion" then "auth-key" else null)
+          cfg.fleet.tailscale.enrollmentMode == null
           && cfg.fleet.tailscale.authKeySecret == null
-          && cfg.fleet.tailscale.stateReviewed == (name == "bastion")
-          && cfg.fleet.tailscale.policyReviewed == (name == "bastion")
+          && !cfg.fleet.tailscale.stateReviewed
+          && !cfg.fleet.tailscale.policyReviewed
           && cfg.fleet.tailscale.missing != [ ]
           && !(cfg.systemd.services ? fleet-tailscale)
           && !(lib.elem "/var/lib/tailscale" host.persistence.directories)
