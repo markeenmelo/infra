@@ -22,12 +22,12 @@ Read `../../../AGENTS.md`, [dendritic-nix](../dendritic-nix/SKILL.md), `../../..
 5. Keep the service, its persisted state/ownership, host-specific policy, scripts, checks and developer/output integration together or adjacent by concern. Do not put unrelated configuration into base/common/misc or hardware facts. Use the lower evaluation's `pkgs` and `lib` for ordinary packages; assemble developer tools in native `devenv.nix` using its locked unstable `pkgs`, never host package sets; keep scripts/checks feature-owned.
 6. For a genuine stable/unstable API difference, inspect pinned options/source on **both** tracks. Prefer one localized option-availability branch (see logging). Explain when to remove it and record evidence in `docs/research.md`. Never solve compatibility by globally importing both package sets. A package exception needs a separate narrow, reviewed design.
 7. Add owner-local assertions/tests, not feature implementations in the shared validation harness. Use `fleet.validation.fixtureModules.<capability>` for synthetic facts scoped to an actually selected capability; `hostChecks`, `flake.validation` and `perSystem.checks` retain the existing report/check interfaces. Deliberately update independent inventories when adding/removing a gate. Exercise reusable infrastructure on both tracks, restricted desktop on its supported track plus rejection cases. Fixtures never become real host outputs or commissioning facts.
-8. Stage new files, `devenv tasks run repo:fmt`, `devenv tasks run repo:check`. Build affected commissioned hosts separately. Review persistence migration, runtime secrets, required mounts and recovery before any later activation.
+8. Stage new files, `devenv tasks run repo:fmt`, `devenv tasks run repo:check-full`. Build affected commissioned hosts separately. Review persistence migration, runtime secrets, required mounts and recovery before any later activation.
 9. Update README navigation, relevant ADR/research and procedures when the abstraction changes. Remove redundant code instead of adding compatibility layers without users.
 
 ## Commands
 
-From repository root: `devenv shell`, `devenv tasks run repo:fmt`, `devenv tasks run repo:check`, `nix eval --json .#validation`. For a commissioned consumer: `devenv shell ready HOST`, `devenv shell build HOST`. Bootstrap and CLI details: [development](../../../docs/development.md).
+From repository root: `devenv shell`, `devenv tasks run repo:fmt`, `devenv tasks run repo:check-full`, `nix eval --json .#validation`. For a commissioned consumer: `devenv shell ready HOST`, `devenv shell build HOST`. Bootstrap and CLI details: [development](../../../docs/development.md).
 
 ## Safety / completion
 

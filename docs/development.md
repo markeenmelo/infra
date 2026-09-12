@@ -15,10 +15,11 @@ Inside the environment:
 ```sh
 devenv tasks list
 devenv tasks run repo:fmt
-devenv tasks run repo:check
+devenv tasks run repo:check        # fast inner gate
+devenv tasks run repo:check-full   # canonical gate
 ```
 
-`devenv test` runs the same canonical check. No application processes/services are configured. The first environment build requires network/cache access; subsequent entries use devenv's evaluation cache. **Safety tasks themselves are never cached.** A repository assertion matches the CLI to the locked package version; use the bootstrap command if another installed version differs. The devenv source URL is unversioned, with its exact revision in `devenv.lock`; native execution tests establish compatibility instead of relying on upstream's occasionally stale version marker.
+`devenv test` runs the canonical `repo:check-full` gate. `repo:check` is the fast inner gate — task contract, formatting, statix, ciphertext guard and the whole-fleet inventory in seconds; `repo:check-full` adds the evaluation oracle, ciphertext regression suite and full `nix flake check -L`. No application processes/services are configured. The first environment build requires network/cache access; subsequent entries use devenv's evaluation cache. **Safety tasks themselves are never cached.** A repository assertion matches the CLI to the locked package version; use the bootstrap command if another installed version differs. The devenv source URL is unversioned, with its exact revision in `devenv.lock`; native execution tests establish compatibility instead of relying on upstream's occasionally stale version marker.
 
 When passing command flags, separate them from devenv's global flags:
 
@@ -26,7 +27,7 @@ When passing command flags, separate them from devenv's global flags:
 devenv shell -- bash -c 'tofu version'
 ```
 
-Without `--`, `bash -c` can be parsed as devenv's global `--clean`, silently dropping the intended command. For log-visible automation use `devenv --no-tui --verbose tasks run repo:check`; inspect task completion and the exit status, not just a quiet invocation.
+Without `--`, `bash -c` can be parsed as devenv's global `--clean`, silently dropping the intended command. For log-visible automation use `devenv --no-tui --verbose tasks run repo:check-full`; inspect task completion and the exit status, not just a quiet invocation.
 
 ## Commands replacing just
 
@@ -36,7 +37,7 @@ Run from the repository root. These tasks need no production credentials:
 |---|---|
 | `just fmt` / `just format-check` | `devenv tasks run repo:fmt` / `repo:format-check` |
 | `just lint` / `just evaluate` | `devenv tasks run repo:lint` / `repo:evaluate` |
-| `just check` | **`devenv tasks run repo:check`** |
+| `just check` | **`devenv tasks run repo:check-full`** (fast iteration: `repo:check`) |
 | `just inventory` / `just revisions` | `devenv tasks run repo:inventory` / `repo:revisions` |
 | `just secret-check` / `just secret-check-tests` | `devenv tasks run repo:secret-check` / `repo:secret-check-tests` |
 | `just tailscale-inventory` / `just tailscale-check` | `devenv tasks run repo:tailscale-inventory` / `repo:tailscale-check` |
@@ -86,9 +87,9 @@ Set `TAILSCALE_SOPS_FILE` to your reviewed encrypted YAML path first. The adapte
 ## Additional repo integrations
 
 - **OpenTofu editing:** native `languages.opentofu` supplies the exact checked offline provider wrapper and `tofu-ls`; no auto-init or live validation hook.
-- **Nix/Bash editing:** `nixd`, `bash-language-server`, official nixfmt, statix, deadnix and ShellCheck are available to project-launched editors.
+- **Nix/Bash editing:** `nixd`, `bash-language-server`, official nixfmt, statix, deadnix and ShellCheck are available to project-launched editors. One native treefmt declaration (through the locked `treefmt-nix` devenv input) formats Nix, removes dead bindings, applies ShellCheck (including `.envrc`) and runs OpenTofu fmt; report-only statix stays in `repo:lint` because treefmt can only run statix's fixing mode. Formatting never runs at shell entry: the integration's own task is detached by the repository and the task contract guards that wiring.
 - **Existing tests:** Python helpers, Pi extension tests, desktop config tests, SOPS guards and offline Tailscale fixtures remain in the canonical flake checks; no new test framework or automatic npm install.
-- **Optional Git hooks:** `devenv --profile hooks shell` installs local nixfmt/statix/deadnix/ShellCheck and ciphertext-recipient hooks. This is explicit opt-in and may replace a pre-existing pre-commit hook; inspect existing hooks first. Hooks are not full fleet validation. After leaving that profile the installed hook still exists until deliberately uninstalled with the hook runner.
+- **Optional Git hooks:** `devenv --profile hooks shell` installs local treefmt, statix and ciphertext-recipient hooks. This is explicit opt-in and may replace a pre-existing pre-commit hook; inspect existing hooks first. Hooks are not full fleet validation. After leaving that profile the installed hook still exists until deliberately uninstalled with the hook runner.
 - **Automatic activation (direnv):** the ThinkPad desktop shell installs direnv, its zsh hook and HM's default nix-direnv stdlib, so reviewing `.envrc` and running `direnv allow` once activates the locked environment on directory entry. It invokes `devenv direnvrc`, not a downloaded script; other machines install direnv themselves. No secrets are loaded into direnv's cached environment.
 
 ## Locks and architecture

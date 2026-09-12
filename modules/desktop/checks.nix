@@ -34,11 +34,17 @@ let
     let
       cfg = fixture.config;
       home = cfg.home-manager.users.fixture-admin;
+      # Assertion failures are data on config.assertions; the NixOS toplevel
+      # throws exactly when one is false. Force only the assertion booleans:
+      # upstream messages may legitimately throw while their assertion passes,
+      # because the toplevel renders failed messages only.
       rejected =
         module:
-        !(builtins.tryEval
-          (fixture.extendModules { modules = [ module ]; }).config.system.build.toplevel.drvPath
-        ).success;
+        let
+          broken = (fixture.extendModules { modules = [ module ]; }).config;
+          forced = builtins.tryEval (lib.all (a: a.assertion) broken.assertions);
+        in
+        !forced.success || !forced.value;
     in
     assert lib.assertMsg
       (

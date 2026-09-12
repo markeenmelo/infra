@@ -15,6 +15,12 @@ inputs:
     inputs:
       nixpkgs:
         follows: nixpkgs
+  # Native devenv treefmt integration; same unstable source as the CLI.
+  treefmt-nix:
+    url: github:numtide/treefmt-nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
 
 # Never resolve secrets during evaluation or shell entry.
 secretspec:

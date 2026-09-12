@@ -78,11 +78,11 @@ Supply deployment metadata through `fleet.hosts.<name>.deployment`, independentl
 
 ```sh
 devenv tasks run repo:fmt
-devenv tasks run repo:check
+devenv tasks run repo:check-full
 nix eval --json .#fleet.thinkpad | jq '{missing,failedAssertions}'
 ```
 
-An unready host still has its commissioning assertion. Only after resolving all other issues set `fleet.hosts.thinkpad.ready = true` in a commissioning/identity module, then rerun `devenv tasks run repo:check` and `devenv shell ready thinkpad`. Merely setting ready with missing fields makes validation fail; it never overrides them. Source-control facts before installing; retain the exact lock file and recovery generation.
+An unready host still has its commissioning assertion. Only after resolving all other issues set `fleet.hosts.thinkpad.ready = true` in a commissioning/identity module, then rerun `devenv tasks run repo:check-full` and `devenv shell ready thinkpad`. Merely setting ready with missing fields makes validation fail; it never overrides them. Source-control facts before installing; retain the exact lock file and recovery generation.
 
 ## Storage and installation
 
@@ -99,7 +99,7 @@ Only `disko.devices.disk.os` is allowed by this capability. Unused `lvm_vg`, `md
 After real facts and readiness are approved:
 
 ```sh
-devenv tasks run repo:check
+devenv tasks run repo:check-full
 devenv shell ready bastion
 nix eval --json .#fleetConfigurations.bastion.config.disko.devices.disk.os.device
 nix eval --json .#fleetConfigurations.bastion.config.fileSystems | jq .

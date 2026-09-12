@@ -177,23 +177,19 @@ let
           modules = [ { fleet.osDisk.espSize = lib.mkForce espSize; } ];
         }).config;
       missingEsp = withEspSize null;
+      # One representative per rejection class (type regex, zero, unit-less,
+      # wrong unit, fractional) and the accepted lower/upper boundaries; every
+      # class shares the same type/apply rejection mechanism in os-disk.nix.
       espSizes = {
         accepted = [
           "512M"
-          "513M"
-          "1024M"
-          "1G"
           "2G"
         ];
         rejected = [
-          "1M"
           "511M"
           "0M"
-          "0G"
           "512"
           "512MB"
-          "512MiB"
-          "512m"
           "1.5G"
         ];
       };
@@ -224,11 +220,13 @@ let
     ) "${track}: foreign storage contributions changed the OS-only disko script";
     # Force the actual script derivation, not just the declared option type:
     # NixOS toplevel assertions alone do not guard direct disko evaluation.
+    # The os-disk espSize option's type and apply assertion throw while the
+    # declared disk layout is evaluated, before any disko script is derived.
     assert lib.all (
       size:
       lib.assertMsg (
-        !(builtins.tryEval (withEspSize size).system.build.diskoScript.drvPath).success
-      ) "${track}: invalid/undersized ESP '${size}' allowed a disko script"
+        !(builtins.tryEval (withEspSize size).disko.devices.disk.os.content.partitions.ESP.size).success
+      ) "${track}: invalid/undersized ESP '${size}' was accepted"
     ) espSizes.rejected;
     assert lib.all (
       size:

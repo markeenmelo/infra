@@ -71,7 +71,7 @@ After **both** markers have been replaced and the file reviewed, select it insid
 fleet.wifi.senecaSopsFile = ../../secrets/hosts/thinkpad-senecanet.yaml;
 ```
 
-Until then, leave the option's default **`null`**: no campus profile is emitted and commissioning remains blocked. The runtime adapter also rejects either marker in any credential field if the file is selected prematurely; the shared environment/profile preparation then fails, including MN-Home delivery. Do not select an unfilled file just to remove the null blocker. Run `devenv tasks run repo:secret-check` before staging and `devenv tasks run repo:check` after the reviewed change.
+Until then, leave the option's default **`null`**: no campus profile is emitted and commissioning remains blocked. The runtime adapter also rejects either marker in any credential field if the file is selected prematurely; the shared environment/profile preparation then fails, including MN-Home delivery. Do not select an unfilled file just to remove the null blocker. Run `devenv tasks run repo:secret-check` before staging and `devenv tasks run repo:check-full` after the reviewed change.
 
 The actual Wi-Fi manifest and separate `senecanet-template-manifest` checks validate encrypted key selection only. The latter can pass against **markers** and is never proof of valid credentials, decryption or readiness.
 
@@ -91,7 +91,7 @@ Tailnet API credentials and the OpenTofu recovery passphrase are separate operat
 
 ## Safe operator workflow
 
-The native devenv shell supplies `sops`, `age` and `yq` for reviewed maintenance. Shell entry, `devenv tasks run repo:secret-check` and `devenv tasks run repo:check` do not decrypt anything or contact targets.
+The native devenv shell supplies `sops`, `age` and `yq` for reviewed maintenance. Shell entry, `devenv tasks run repo:secret-check` and `devenv tasks run repo:check-full` do not decrypt anything or contact targets.
 
 1. Recover/verify existing identities and the intended password-sharing scope under **separate authorization**. Do not print/export hashes or keys through agent tools, command arguments, shell history or logs. Do not copy ThinkPad ciphertext to other hosts or widen its recipients as a shortcut.
 2. If a host needs an identity, provision a distinct one and verify its public recipient through a trusted channel, with recovery custody established. No generation or provisioning is automatic. Add only reviewed exact file rules, operator recovery access and verified host recipients. Shared-password membership additionally requires the matching Nix recipient policy; do not widen unrelated host files.

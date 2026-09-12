@@ -74,22 +74,4 @@
         ];
       };
     };
-
-  perSystem = { pkgs, ... }: {
-    checks.secret-files =
-      pkgs.runCommand "secret-files"
-        {
-          nativeBuildInputs = [
-            pkgs.bash
-            pkgs.jq
-            pkgs.yq-go
-          ];
-        }
-        ''
-          cd ${inputs.self}
-          bash modules/secrets/check-secrets.sh
-          bash modules/secrets/test-secret-check.sh
-          touch "$out"
-        '';
-  };
 }

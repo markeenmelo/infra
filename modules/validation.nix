@@ -136,7 +136,6 @@ in
             "deploy-schema"
             "fleet-evaluation"
             "pi-extensions"
-            "secret-files"
             "senecanet-template-manifest"
             "shared-password-recipients"
             "source-quality"

@@ -1,8 +1,65 @@
 {
+  lib,
   config,
   pkgs,
   ...
 }:
+let
+  # Single source for the ciphertext/public-metadata guard, inlined into both
+  # secret tasks below. Never decrypts, imports identities or prints values;
+  # catches accidental plaintext and recipient drift, not cryptographic validity.
+  checkSecretPayloads = ''
+    check_secret_payloads() {
+      local rules file
+      rules=$(yq -o=json '.' .sops.yaml 2>/dev/null) || {
+        echo 'Cannot parse .sops.yaml (content withheld).' >&2
+        return 1
+      }
+      shopt -s nullglob
+      local -a files
+      files=(secrets/hosts/*.yaml secrets/shared/*.yaml)
+      if ((''${#files[@]} == 0)); then
+        echo 'No encrypted credential files found.' >&2
+        return 1
+      fi
+      for file in "''${files[@]}"; do
+        # JSON conversion discards duplicate keys and overridden YAML merge values.
+        # Reject both in the YAML tree before inspecting the converted payload.
+        if ! yq -e '([.. | select(tag == "!!map") | keys | select(length != (unique | length))] + [... | select(tag == "!!merge")]) | length == 0' "$file" >/dev/null 2>&1; then
+          printf 'Ambiguous or invalid YAML: %s (content withheld).\n' "$file" >&2
+          return 1
+        fi
+        if ! yq -o=json '.' "$file" 2>/dev/null | jq -e -s --arg file "$file" --argjson rules "$rules" '
+          def encrypted:
+            type == "string" and test("^ENC\\[AES256_GCM,data:[A-Za-z0-9+/=]+,iv:[A-Za-z0-9+/=]+,tag:[A-Za-z0-9+/=]+,type:str\\]$");
+          if length != 1 then error("Expected one YAML document") else .[0] end
+          | . as $doc
+          | [$rules.creation_rules[] | . as $rule | select($file | test($rule.path_regex))] as $matching
+          | type == "object"
+            and ($matching | length == 1)
+            and ($matching[0].key_groups | length == 1)
+            and ($matching[0].key_groups[0] | keys == ["age"])
+            and (if $file == "secrets/shared/marcos-password.yaml"
+                 then (keys | sort) == ["marcos-password-hash", "sops"] else true end)
+            and ([del(.sops) | .. | scalars] | length > 0 and all(.[]; encrypted))
+            and (.sops.mac | encrypted)
+            and (.sops.age | length > 0)
+            and (all(.sops.age[];
+              (keys | sort == ["enc", "recipient"])
+              and (.recipient | test("^age1[a-z0-9]+$"))
+              and (.enc | startswith("-----BEGIN AGE ENCRYPTED FILE-----") and contains("-----END AGE ENCRYPTED FILE-----"))))
+            and (([.sops.age[].recipient] | sort) == ($matching[0].key_groups[0].age | sort))
+            and (["kms", "gcp_kms", "azure_kv", "hc_vault", "pgp"] | all(.[]; ($doc.sops[.] // []) == []))
+            and (.sops | keys - ["age", "mac", "version", "lastmodified", "unencrypted_suffix", "kms", "gcp_kms", "azure_kv", "hc_vault", "pgp"] | length == 0)
+        ' >/dev/null 2>&1; then
+          printf 'Encrypted payload/recipient check failed: %s (content withheld).\n' "$file" >&2
+          return 1
+        fi
+      done
+      printf 'Encrypted credential payloads and recipient rules checked (%s files); no decryption.\n' "''${#files[@]}"
+    }
+  '';
+in
 {
   # Native development entry point; production remains in flake.nix/modules/.
   # Do not resolve secrets in Nix, shell hooks, tasks or direnv's cached environment.
@@ -37,17 +94,30 @@
     lsp.package = pkgs.tofu-ls;
   };
 
+  # One formatting declaration replaces the duplicated fmt/lint/fixture stacks.
+  # nixfmt, deadnix and ShellCheck report through treefmt; report-only statix
+  # stays in repo:lint because treefmt can only run statix's fixing mode.
+  treefmt = {
+    enable = true;
+    config.programs = {
+      nixfmt.enable = true;
+      deadnix.enable = true;
+      shellcheck.enable = true;
+      terraform.enable = true; # OpenTofu formatting; provider plugins are irrelevant to fmt.
+    };
+  };
+
+  tasks."devenv:treefmt:run".before = lib.mkForce [ ];
+
   # Optional local hooks, not another canonical gate and never a live operation.
   # Opt in with `devenv --profile hooks shell`; ordinary shell entry installs none.
   profiles.hooks.module.git-hooks.hooks = {
-    nixfmt.enable = true;
+    treefmt.enable = true;
     statix.enable = true;
-    deadnix.enable = true;
-    shellcheck.enable = true;
     encrypted-secrets = {
       enable = true;
       name = "Encrypted payloads and public recipients (no decryption)";
-      entry = "bash modules/secrets/check-secrets.sh";
+      entry = "devenv tasks run repo:secret-check";
       files = "^(secrets/|\\.sops\\.yaml$)";
       pass_filenames = false;
     };
@@ -57,33 +127,208 @@
     "repo:fmt".exec = ''
       set -euo pipefail
       cd "$DEVENV_ROOT"
-      nix fmt --no-update-lock-file
-      tofu -chdir=tofu/tailscale fmt -recursive
+      treefmt
     '';
     "repo:format-check".exec = ''
       set -euo pipefail
       cd "$DEVENV_ROOT"
       treefmt --ci
-      tofu -chdir=tofu/tailscale fmt -check -recursive
     '';
+    # Report-only linter; the fixing/checking formatters live in treefmt above.
     "repo:lint".exec = ''
       set -euo pipefail
       cd "$DEVENV_ROOT"
       statix check .
-      deadnix --fail .
-      find modules -name '*.sh' -print0 | xargs -0 shellcheck .envrc
     '';
     "repo:secret-check".exec = ''
+      set -euo pipefail
       cd "$DEVENV_ROOT"
-      bash modules/secrets/check-secrets.sh
+      ${checkSecretPayloads}
+      check_secret_payloads
     '';
     "repo:secret-check-tests".exec = ''
+      set -euo pipefail
       cd "$DEVENV_ROOT"
-      bash modules/secrets/test-secret-check.sh
+      # Local throwaway ciphertext copies + obvious dummy strings, never decryption.
+      ${checkSecretPayloads}
+      work=$(mktemp -d)
+      trap 'rm -rf "$work"' EXIT
+      mkdir -p "$work/secrets/hosts" "$work/secrets/shared"
+      cp .sops.yaml "$work/.sops.yaml"
+      file="$work/secrets/hosts/thinkpad.yaml"
+      cp secrets/hosts/thinkpad.yaml "$file"
+      shared="$work/secrets/shared/marcos-password.yaml"
+      cp secrets/shared/marcos-password.yaml "$shared"
+      # Store inputs are read-only; only these disposable test copies may be mutated.
+      chmod u+w "$file" "$shared"
+      (cd "$work" && check_secret_payloads)
+      repo=$PWD
+      for variant in plaintext recipient missing-mac unsupported-backend invalid-yaml multiple-documents duplicate-key merge-key nested-merge \
+        shared-plaintext shared-extra-key; do
+        cp "$repo/secrets/hosts/thinkpad.yaml" "$file"
+        cp "$repo/secrets/shared/marcos-password.yaml" "$shared"
+        case "$variant" in
+          plaintext) yq -i '."marcos-password-hash" = "TEST-ONLY-NOT-A-HASH"' "$file" ;;
+          recipient) yq -i '.sops.age[0].recipient = .sops.age[1].recipient' "$file" ;;
+          missing-mac) yq -i 'del(.sops.mac)' "$file" ;;
+          unsupported-backend) yq -i '.sops.kms = [{"arn": "TEST-ONLY-NOT-A-KEY"}]' "$file" ;;
+          invalid-yaml) printf 'unclosed: [\n' > "$file" ;;
+          shared-plaintext) yq -i '."marcos-password-hash" = "TEST-ONLY-NOT-A-HASH"' "$shared" ;;
+          shared-extra-key) yq -i '."wifi-psk" = ."marcos-password-hash"' "$shared" ;;
+          multiple-documents)
+            {
+              printf 'plain: TEST-ONLY-NOT-A-SECRET\n---\n'
+              dd if="$repo/secrets/hosts/thinkpad.yaml" status=none
+            } > "$file"
+            ;;
+          duplicate-key)
+            {
+              printf 'marcos-password-hash: TEST-ONLY-NOT-A-HASH\n'
+              dd if="$repo/secrets/hosts/thinkpad.yaml" status=none
+            } > "$file"
+            ;;
+          merge-key)
+            {
+              printf '<<: {marcos-password-hash: TEST-ONLY-NOT-A-HASH}\n'
+              dd if="$repo/secrets/hosts/thinkpad.yaml" status=none
+            } > "$file"
+            ;;
+          nested-merge)
+            # A nested merge's plaintext MAC would disappear during JSON conversion.
+            awk '{ print } /^sops:$/ { print "    <<: {mac: TEST-ONLY-NOT-A-SECRET}" }' \
+              "$repo/secrets/hosts/thinkpad.yaml" > "$file"
+            ;;
+        esac
+        if (cd "$work" && check_secret_payloads) >"$work/result" 2>&1; then
+          printf 'ERROR: secret guard accepted %s.\n' "$variant" >&2
+          exit 1
+        fi
+        grep -q 'content withheld' "$work/result"
+        if grep -q 'TEST-ONLY-NOT-' "$work/result"; then
+          printf 'ERROR: secret guard printed dummy payload for %s.\n' "$variant" >&2
+          exit 1
+        fi
+        printf 'Secret guard rejected %s; values withheld.\n' "$variant"
+      done
     '';
+    # Native task-graph contract: exact inventory, gate composition, uncached
+    # safety gates, shell-entry purity, lock parity and OpenTofu wrapper parity.
     "repo:tooling-check".exec = ''
+      set -euo pipefail
       cd "$DEVENV_ROOT"
-      python3 modules/tooling/check-devenv.py
+      tasks=$DEVENV_TASK_FILE
+
+      expect() {
+        local description=$1
+        shift
+        jq -e "$*" "$tasks" > /dev/null || { printf 'Native task contract violated: %s\n' "$description" >&2; exit 1; }
+      }
+
+      expect 'an acyclic task graph' '
+        def closure($t; $names):
+          if ($names | length) > ($t | length) then error("cyclic task graph") else
+            ([$names[] as $n | ($t[] | select(.name == $n) | .after[])] | unique) as $next
+            | (($names + $next) | unique) as $all
+            | if ($next - $names | length) == 0 then $all else closure($t; $all) end
+          end;
+        closure(. ; [.[] | .name]) | length > 0
+      '
+
+      expect 'the exact repo task inventory' '
+        [ .[] | select(.name | startswith("repo:")) | .name ] | sort == [
+          "repo:check",
+          "repo:check-full",
+          "repo:evaluate",
+          "repo:fmt",
+          "repo:format-check",
+          "repo:inventory",
+          "repo:lint",
+          "repo:revisions",
+          "repo:secret-check",
+          "repo:secret-check-tests",
+          "repo:tailscale-check",
+          "repo:tailscale-inventory",
+          "repo:tooling-check"
+        ]
+      '
+
+      expect 'every dependency to reference an existing task' '
+        . as $t
+        | all($t[]; ((.after // []) + (.before // []))
+          | all(. as $d | any($t[]; .name == $d)))
+      '
+
+      expect 'the fast gate to compose only the cheap independent checks' '
+        [ .[] | select(.name == "repo:check") | .after[] ] | sort == [
+          "repo:format-check",
+          "repo:lint",
+          "repo:secret-check",
+          "repo:tooling-check"
+        ]
+      '
+
+      # devenv serializes exec into a store command script; inspect its text.
+      fast_command=$(jq -r '.[] | select(.name == "repo:check") | .command' "$tasks")
+      full_command=$(jq -r '.[] | select(.name == "repo:check-full") | .command' "$tasks")
+      grep -q 'flake check' "$full_command" \
+        || { echo 'Native task contract violated: repo:check-full lost the full flake check.' >&2; exit 1; }
+      if grep -q 'flake check' "$fast_command"; then
+        echo 'Native task contract violated: the fast gate must not run the full flake check.' >&2
+        exit 1
+      fi
+
+      expect 'the full gate to close over every required safety gate' '
+        def closure($t; $names):
+          ([$names[] as $n | ($t[] | select(.name == $n) | .after[])] | unique) as $next
+          | (($names + $next) | unique) as $all
+          | if ($next - $names | length) == 0 then $all else closure($t; $all) end;
+        closure(. ; ["repo:check-full"]) as $c
+        | all(
+            "repo:evaluate",
+            "repo:secret-check",
+            "repo:secret-check-tests",
+            "repo:format-check",
+            "repo:lint",
+            "repo:tooling-check"
+          ; $c | index(.))
+      '
+
+      expect 'ciphertext to be checked before evaluation' '
+        def closure($t; $names):
+          ([$names[] as $n | ($t[] | select(.name == $n) | .after[])] | unique) as $next
+          | (($names + $next) | unique) as $all
+          | if ($next - $names | length) == 0 then $all else closure($t; $all) end;
+        closure(. ; ["repo:evaluate"]) | index("repo:secret-check") != null
+      '
+
+      expect 'every safety gate to stay uncached' '
+        [.[]
+          | select(.name as $n
+            | ["repo:check", "repo:check-full", "repo:evaluate", "repo:format-check", "repo:lint",
+               "repo:secret-check", "repo:secret-check-tests", "repo:tooling-check"]
+            | index($n))]
+        | all(.status == null and ((.exec_if_modified // []) | length == 0))
+      '
+
+      expect 'shell entry to run no repository or treefmt operation' '
+        ([.[] | select((.before // []) | index("devenv:enterShell")) | .name]
+          + [.[] | select(.name == "devenv:enterShell") | (.after // [])[]])
+        | all(test("^(repo:|devenv:treefmt)") | not)
+      '
+
+      jq -e --slurpfile flake flake.lock \
+        '.nodes.nixpkgs.locked == $flake[0].nodes.nixpkgs.locked' devenv.lock > /dev/null \
+        || { echo 'Development/flake unstable pins differ.' >&2; exit 1; }
+      jq -e '.nodes.devenv.original == {owner: "cachix", repo: "devenv", type: "github"}' devenv.lock > /dev/null \
+        || { echo 'Keep the devenv source unversioned; revisions belong in devenv.lock.' >&2; exit 1; }
+
+      # Catch divergence in the duplicated one-line native OpenTofu package selection.
+      packaged=$(nix eval --no-update-lock-file --raw .#packages.x86_64-linux.tailscale-tofu)
+      tofu=$(command -v tofu)
+      [[ $tofu != null ]] || { echo 'OpenTofu is missing from the native environment.' >&2; exit 1; }
+      [[ $(readlink -f "$tofu") == "$packaged/bin/tofu" ]] \
+        || { echo 'Use the exact checked OpenTofu/provider wrapper.' >&2; exit 1; }
+      echo 'Native task graph, uncached safety gates, unstable lock and OpenTofu/provider parity passed.'
     '';
     "repo:evaluate" = {
       # Serialize Nix evaluations to avoid competing for the same eval-cache DB.
@@ -99,11 +344,28 @@
       '';
     };
     "repo:check" = {
-      description = "Canonical non-destructive gate; no credentials, target contact or activation";
+      description = "Fast inner gate for iteration; the canonical gate is repo:check-full";
       after = [
         "repo:format-check"
         "repo:lint"
+        "repo:secret-check"
+        "repo:tooling-check"
+      ];
+      showOutput = true;
+      exec = ''
+        set -euo pipefail
+        cd "$DEVENV_ROOT"
+        # Cheap whole-fleet smoke: real host reports still evaluate; no fixtures.
+        nix eval --no-update-lock-file --json .#fleet \
+          | jq '{hosts: (map_values({track, revision, ready, missing}))}'
+      '';
+    };
+    "repo:check-full" = {
+      description = "Canonical non-destructive gate; no credentials, target contact or activation";
+      after = [
+        "repo:check"
         "repo:evaluate"
+        "repo:secret-check-tests"
       ];
       showOutput = true;
       exec = ''
@@ -172,7 +434,7 @@
       set -euo pipefail
       cd "$DEVENV_ROOT"
       [[ $# == 1 ]] || { echo 'Usage: deploy-host HOST' >&2; exit 1; }
-      devenv tasks run repo:check --mode before
+      devenv tasks run repo:check-full --mode before
       bash modules/fleet/ready.sh "$1" deploy
       exec deploy ".#$1" -- --no-update-lock-file
     '';
@@ -180,7 +442,7 @@
       set -euo pipefail
       cd "$DEVENV_ROOT"
       [[ $# == 0 ]] || { echo 'Usage: deploy-fleet' >&2; exit 1; }
-      devenv tasks run repo:check --mode before
+      devenv tasks run repo:check-full --mode before
       nix eval --no-update-lock-file --json .#deploy.nodes --apply builtins.attrNames | jq -e 'length > 0' > /dev/null
       exec deploy . -- --no-update-lock-file
     '';
@@ -193,7 +455,7 @@
   };
 
   enterTest = ''
-    devenv tasks run repo:check --mode before
+    devenv tasks run repo:check-full --mode before
   '';
 
   assertions = [

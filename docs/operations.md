@@ -20,7 +20,7 @@ Never substitute `system.stateVersion` for the current supported release. It is 
    # OR
    nix flake update
    ```
-4. Synchronize the native unstable lock as described in [development locks](development.md#locks-and-architecture) when `nixpkgs` changes. Run `devenv tasks run repo:check` for every scope (the fleet is small). Pay special attention to `racknerd`/`bastion` for stable and `thinkpad` for unstable. For commissioned targets build their system closures with `devenv shell build HOST`. No deployment is implied.
+4. Synchronize the native unstable lock as described in [development locks](development.md#locks-and-architecture) when `nixpkgs` changes. Run `devenv tasks run repo:check-full` for every scope (the fleet is small). Pay special attention to `racknerd`/`bastion` for stable and `thinkpad` for unstable. For commissioned targets build their system closures with `devenv shell build HOST`. No deployment is implied.
 5. Review **every** changed lock node:
    ```sh
    jq -n --slurpfile old "$before" --slurpfile new flake.lock '
@@ -52,10 +52,10 @@ A **stable release migration** changes the numbered stable Nixpkgs URL in `flake
 
 `programs.nh.clean.enable = false`: no nh cleanup service/timer, generation pruning, automatic input updates or rebuild aliases. Keep recovery generations and use the reviewed input-update procedure above. Home Manager is integrated into NixOS; there is no standalone output for `nh home`.
 
-`devenv tasks run repo:check` remains canonical for substantive changes and deployment preflight; `devenv shell ready thinkpad` must still pass before a system build. [Current status](hosts.md#current-status) records exported hosts and acceptance. A build-only helper invocation is:
+`devenv tasks run repo:check-full` remains canonical for substantive changes and deployment preflight; `devenv shell ready thinkpad` must still pass before a system build. [Current status](hosts.md#current-status) records exported hosts and acceptance. A build-only helper invocation is:
 
 ```sh
-devenv tasks run repo:check
+devenv tasks run repo:check-full
 devenv shell ready thinkpad
 nh os build --hostname thinkpad --no-update-lock-file
 ```
@@ -72,7 +72,7 @@ All three hosts are already installed; follow the [baseline transition checklist
 
 ### Preflight
 
-1. `devenv tasks run repo:check`; inspect `devenv tasks run repo:inventory` and `nix eval --json .#deploymentPlan | jq .`.
+1. `devenv tasks run repo:check-full`; inspect `devenv tasks run repo:inventory` and `nix eval --json .#deploymentPlan | jq .`.
 2. Use `bash modules/fleet/ready.sh HOST deploy` for deployment-specific readiness, or `devenv shell ready HOST` for build readiness. `devenv shell deploy-host HOST` performs the deploy-specific preflight automatically. The SSH user must be non-root with configured public keys; root is rejected to match the SSH root-login restriction. Keep the system activation `profileUser` as root and verify the chosen elevation path.
 3. Confirm the reported revision/actual package source matches the independent host policy. Check a known-good generation and backup/restore status. The persistent SOPS identity, intended ciphertext/recipients and early-decryption path must be verified, alongside signing keys; pure checks cannot verify them. SOPS creates runtime password files during activation, not during builds. Follow the [secret procedure](../secrets/README.md).
 4. Verify host-key fingerprint, reachability, free `/nix`/`/boot` space, admin login, sudo/doas policy and Nix closure trust. Do not put credentials in flake arguments, source files or shell history. For signed transport, securely set `LOCAL_KEY` to the existing signing-key path; the target must already trust its public key.
@@ -84,7 +84,7 @@ All three hosts are already installed; follow the [baseline transition checklist
 devenv shell deploy-host racknerd
 
 # Subset: manually preflight each; --targets is the verified upstream API.
-devenv tasks run repo:check
+devenv tasks run repo:check-full
 bash modules/fleet/ready.sh racknerd deploy
 bash modules/fleet/ready.sh bastion deploy
 deploy --targets .#racknerd .#bastion -- --no-update-lock-file
@@ -95,7 +95,7 @@ devenv shell deploy-fleet
 
 `deploy .` means all **eligible** nodes, not every fleet identity. Thinkpad remains local-only. Prefer a named subset for intermittently online targets; an offline machine is not a reason to remove rollback safeguards.
 
-deploy-rs builds from the locked input. Its default own checks may evaluate/build **all** eligible nodes even when a subset is selected; our `devenv tasks run repo:check` also covers the full fleet. This costs more once real machines are commissioned but does not contact them. `remoteBuild` moves the build to the target only when selected; review resources and trust before enabling it.
+deploy-rs builds from the locked input. Its default own checks may evaluate/build **all** eligible nodes even when a subset is selected; our `devenv tasks run repo:check-full` also covers the full fleet. This costs more once real machines are commissioned but does not contact them. `remoteBuild` moves the build to the target only when selected; review resources and trust before enabling it.
 
 ### Rollback semantics
 

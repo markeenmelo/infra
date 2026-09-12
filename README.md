@@ -21,7 +21,8 @@ Requires Nix with `nix-command` and `flakes`; developed with Nix 2.34.8.
 ```sh
 nix run --no-update-lock-file .#devenv -- shell
 devenv tasks run repo:inventory
-devenv tasks run repo:check
+devenv tasks run repo:check        # fast inner gate (seconds)
+devenv tasks run repo:check-full   # canonical gate before handoff or deployment
 devenv shell ready racknerd  # expected refusal until identity/trust gates are resolved
 ```
 
@@ -91,12 +92,12 @@ Documentation-only edits use [whitespace, link/status and changed-snippet valida
 
 ```sh
 devenv tasks run repo:fmt
-devenv tasks run repo:check
+devenv tasks run repo:check-full
 nix eval --json .#fleet | jq 'map_values({track,revision,ready,missing})'
 devenv tasks run repo:revisions
 ```
 
-`devenv tasks run repo:check` verifies the native task/lock/tool contract and checks encrypted payload shape/public recipients before evaluation without decryption, then runs formatting, statix, deadnix, ShellCheck, every real host report and package/`/etc`/initrd derivation, independent track checks, both-track synthetic infrastructure/storage/security/SOPS fixtures, unstable-only desktop fixtures, built SOPS manifests, native generated desktop-config and offline Wi-Fi checks and upstream deploy schema/activation smoke checks. No target contact or activation occurs. **Evaluation fixtures are not tested installations.** Actual host toplevel builds remain gated. [Validation scope/results](docs/validation.md) distinguishes evaluation, builds and runtime acceptance.
+`devenv tasks run repo:check-full` is the canonical gate. Its fast inner gate `repo:check` verifies the native task/lock/tool contract (including shell-entry purity), checks encrypted payload shape/public recipients without decryption, and runs treefmt (nixfmt, deadnix, ShellCheck, OpenTofu fmt), statix and the whole-fleet inventory in seconds. The full gate then runs the evaluation oracle and every real host report and package/`/etc`/initrd derivation, independent track checks, both-track synthetic infrastructure/storage/security/SOPS fixtures, unstable-only desktop fixtures, built SOPS manifests, native generated desktop-config and offline Wi-Fi checks and upstream deploy schema/activation smoke checks. No target contact or activation occurs. **Evaluation fixtures are not tested installations.** Actual host toplevel builds remain gated. [Validation scope/results](docs/validation.md) distinguishes evaluation, builds and runtime acceptance.
 
 Updates are separate, researched operations and never change stateVersion automatically:
 
