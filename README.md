@@ -106,7 +106,8 @@ nix flake update nixpkgs-stable
 # OR: nix flake update nixpkgs
 # OR: nix flake update
 # After nixpkgs changes, synchronize devenv.lock as documented in docs/development.md.
-devenv tasks run repo:check
+# Dependency updates always end at the canonical gate, never just the fast gate.
+devenv tasks run repo:check-full
 ```
 
 Targeted updates must not move the other track. Follow [input operations](docs/operations.md#input-updates), [AGENTS.md](AGENTS.md) and the [skill index](.agents/skills/README.md). Add only the capabilities the fleet actually needs; keep service state and mount requirements beside their owner.

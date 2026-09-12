@@ -225,13 +225,27 @@ in
       }
 
       expect 'an acyclic task graph' '
-        def closure($t; $names):
-          if ($names | length) > ($t | length) then error("cyclic task graph") else
-            ([$names[] as $n | ($t[] | select(.name == $n) | .after[])] | unique) as $next
-            | (($names + $next) | unique) as $all
-            | if ($next - $names | length) == 0 then $all else closure($t; $all) end
-          end;
-        closure(. ; [.[] | .name]) | length > 0
+        # Kahn elimination over both dependency directions: an edge X->Y means
+        # "X must run before Y" (Y.after contains X, or X.before contains Y).
+        # A cycle is any node set that never runs out of prerequisite-free
+        # nodes; the existence check below owns unknown references.
+        def kahn($nodes; $edges):
+          [$nodes[] | select(. as $n | $edges | all(.[1] != $n))] as $ready
+          | if ($nodes | length) == 0 then true
+            elif ($ready | length) == 0 then false
+            else
+              kahn(
+                [$nodes[] | select(. as $n | ($ready | index($n)) | not)];
+                [$edges[] | select(.[0] as $from | ($ready | index($from)) | not)]
+              )
+            end;
+        . as $t
+        | [$t[].name] as $nodes
+        | [ $t[] as $n
+            | ((($n.after // [])[] | [., $n.name]), (($n.before // [])[] | [$n.name, .]))
+            | select((.[0] as $a | $nodes | index($a) != null) and (.[1] as $b | $nodes | index($b) != null))
+          ] as $edges
+        | kahn($nodes; $edges)
       '
 
       expect 'the exact repo task inventory' '

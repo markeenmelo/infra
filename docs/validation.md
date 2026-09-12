@@ -60,6 +60,23 @@ With the locked CLI available, use **`devenv tasks run repo:check-full`** (defau
 
 The independent track oracle in `modules/validation.nix` deliberately repeats the three required track decisions. Changing a host's metadata alone must fail. Changing evaluator wiring to the other input must also fail even if reported metadata looks correct. A numbered stable input must not be silently replaced with an unstable branch alias.
 
+## Stable Nixpkgs and Home Manager pin refresh — 2026-09-12
+
+Starting point: `devenv` / `5d715d2` (the lock-only commit advancing `nixpkgs-stable` to `21a67dc…` and Home Manager to `cd1c9e5…`). This section records the gate evidence that commit lacked; upstream deltas are in [research](research.md#stable-nixpkgs-and-home-manager-pin-refresh--2026-09-12).
+
+- **Canonical gate.** On the branch head (including the review remediation below) `devenv tasks run repo:fmt` made no changes, and `devenv tasks run repo:check-full` exited 0 with `all checks passed!` (~327 s task / 620 s total on a warm store): fast-gate contract, ciphertext guard and regressions, whole-fleet inventory, evaluation oracle, all eight reports, 22 built checks and the full `nix flake check -L` including both-track fixtures on the advanced stable packages.
+- **Commissioned host.** `devenv shell ready thinkpad` reports `ready` with no missing facts or failed assertions; `devenv shell build thinkpad` exited 0 and produced **`/nix/store/qk7z0nlrxa5fbpx1f5dl249wxzj15nb1-nixos-system-thinkpad-26.11.20260910.aff8a0b`**. The path differs from the pre-refresh closure as expected: the Home Manager bump and the later console-editor policy are in the closure. This is a build result, not a boot/activation test.
+- **Servers.** `racknerd` and `bastion` consume the advanced stable packages only through fleet/fixture evaluation; both remain uncommissioned (identity/trust blockers) with readiness still refusing, so no real server closure was built. Deployment and any live package/kernel/service acceptance remain separately authorized operations.
+
+## PR review remediation — 2026-09-12
+
+Four review findings on `ec56ac0`, all validated as real and fixed in one coherent candidate covered by the gate evidence above:
+
+- **Undocumented pin advancement:** the stable/HM lock movement carried no ledger or gate record; closed by the dated [research](research.md#stable-nixpkgs-and-home-manager-pin-refresh--2026-09-12) and validation sections above (pins kept, not reverted, after re-research).
+- **Fast-gate-only update recipe:** README's dependency-update example ended at `repo:check`; it now ends at the canonical `repo:check-full`, matching `docs/operations.md#input-updates` and the update-inputs skill.
+- **Vacuous acyclicity contract:** the inlined jq check seeded its closure with every task name, so it accepted any cycle and never analyzed `.before` edges. Replaced with Kahn elimination over both dependency directions; synthetic `after`/`before`/self/mixed cycles and real-task-file mutations are rejected while the actual task graph and pure duplicate-direction edges still pass.
+- **Stale Pi procedures:** `update-inputs` skill, `docs/operations.md` and the Pi paragraph in `docs/desktop.md` still described the deleted vendored manifest/npm-hash/patch review and a Claude Code dependency; synchronized with the managed `settings.packages` workflow in `docs/pi.md` (single `cursor-cli` unfree allowance, no committed extension).
+
 ## Layered check gate, native treefmt and oracle trim — 2026-09-12
 
 Starting point: `devenv` / `5c1f116` with the staged import-tree discovery amendment ([ADR 0001](adr/0001-dendritic-composition.md#discovery-input-amendment--2026-09-12)); production inputs, host tracks, readiness and ciphertext unchanged.
