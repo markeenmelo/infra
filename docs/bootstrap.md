@@ -1,6 +1,6 @@
 # Commissioning a host
 
-This runbook covers commissioning and the original **fresh-install** scaffold. **It is not authorization to touch disks or deploy.** All three current hosts are already installed and instead compose `existing-storage`; use [their inventory/transition checklist](hosts.md) first. Their disko script/image outputs are blocked even after readiness, and the installation commands below do not apply to them. Never swap in the fresh-disk layout to bypass this boundary. Work from a rescue environment/local console for separately authorized boot/storage/network changes, with verified backup/restore and recovery access.
+This runbook covers the **fresh per-host reinstall candidates**. **It is not authorization to touch disks or deploy.** All candidates are unready; the running installations remain unchanged. Never activate these plain layouts over the old mounted disks. Follow [the ordered reinstall/recovery plan](reinstall.md) first, then work from a rescue environment/local console only with separate boot/storage/network authorization and verified recovery. **Full validation is currently paused until the operator explicitly requests it; commands below describe later stages.**
 
 ## 1. Gather facts before editing
 
@@ -27,9 +27,9 @@ Do not publish captured output indiscriminately. Before a new install, `nixos-ge
 
 ## 2. Add facts as top-level modules
 
-Create files naming their concern, e.g. `modules/hardware/thinkpad.nix`, `modules/storage/thinkpad.nix`, `modules/access/thinkpad.nix`. Paths are organizational, not import rules. Each file contributes to the same deferred `fleet.hosts.thinkpad.module` value. Do not place a raw lower-level generated `.nix` file in the repository and import it from a host; adapt its reviewed contents into the deferred value.
+Create files naming their concern, e.g. `modules/hardware/thinkpad.nix`, `modules/hosts/thinkpad/disko.nix`, `modules/access/thinkpad.nix`. Paths are organizational, not import rules. Each file contributes to the same deferred `fleet.hosts.thinkpad.module` value. Do not place a raw lower-level generated `.nix` file in the repository and import it from a host; adapt its reviewed contents into the deferred value.
 
-For an **uncommissioned `existing-storage` composition**, the option shape is below; nulls/false reviews intentionally do not unblock deployment. ThinkPad names the contribution path only: **do not apply this example over its commissioned facts or reset its reviews**. Edit the existing declarations rather than add conflicting definitions.
+For an **uncommissioned fresh candidate**, the installation metadata shape is below. Nulls/false reviews intentionally block commissioning and scripts. Edit the existing facts rather than add conflicting definitions; native partitions and firmware settings belong directly in the host's `disko.nix`.
 
 ```nix
 {
@@ -38,20 +38,14 @@ For an **uncommissioned `existing-storage` composition**, the option shape is be
       stateVersion = null;
       hardwareReviewed = false;
       networkReviewed = false;
-    };
-    fleet.existingStorage = {
       osDevice = null;
-      bootMode = null;
-      efiCanTouchVariables = null;
-      biosPartitionIndex = null;
-      bootReviewed = false;
-      migrationReviewed = false;
+      storageReviewed = false;
     };
   };
 }
 ```
 
-Replace `null` only with verified choices. Add actual kernel/initrd/network settings in the appropriate deferred module. Preserve the reviewed existing mounts, encryption and swap through their owning modules; do not import duplicate scanner filesystem definitions. Generated `nixpkgs.hostPlatform` should agree with required host metadata. Keep `stateVersion` in `fleet.installation.stateVersion`, which sets the NixOS option; do not give it a second, conflicting direct definition.
+Replace `null` only with verified choices. Add actual kernel/initrd/network settings in the appropriate deferred module. Do not import old scanner filesystem UUIDs, encryption or swap into a freshly formatted layout. The running installation and its recovery generation must remain untouched until the authorized cutover. Generated `nixpkgs.hostPlatform` should agree with required host metadata. Keep `stateVersion` in `fleet.installation.stateVersion`, which sets the NixOS option; do not give it a second, conflicting direct definition.
 
 No one-time value comes from the dev shell's Nixpkgs, another host, or a hardware scan of the administration machine. User preference settings (timezone, locale, keymap, desktop) should also be deliberate rather than inferred.
 
@@ -68,11 +62,11 @@ No one-time value comes from the dev shell's Nixpkgs, another host, or a hardwar
    - `signed`: provision an operator signing key outside this repository, add its public counterpart to the target's `nix.settings.trusted-public-keys`, and supply `LOCAL_KEY` when deploying. Do not disable signature checking. Verify this path before relying on it remotely.
 6. Default escalation is interactive `sudo -u`. For automation use an explicitly reviewed passwordless elevation policy and `interactiveSudo = false`. `doas -u` requires separately configuring doas; selecting a command does not configure authorization. SOPS delivers passwords, not SSH enrollment, sudo authentication or Nix closure trust.
 
-Future service secrets may use the same SOPS capability, with separately researched consumers, permissions, ordering and migration. Keep decrypted values/private identities outside Nix expressions/store inputs; ciphertext and public metadata are the only repository inputs. The fresh-install `os-disk` layout has no LUKS support. Current thinkpad adoption **preserves its existing LUKS/LVM encryption**, while server OS storage was observed unencrypted. Do not silently remove encryption or retrofit it through a formatting script; encryption changes need a separately reviewed migration and recovery-key plan.
+Future service secrets may use the same SOPS capability, with separately researched consumers, permissions, ordering and migration. Keep decrypted values/private identities outside Nix expressions/store inputs; ciphertext and public metadata are the only repository inputs. The selected fresh layouts are plain Btrfs. ThinkPad's new candidate intentionally removes LUKS/LVM, but its running encrypted disk remains intact; do not activate the new settings over it. Fresh storage and swap expose data offline. Formatting/encryption changes still need explicit execution and recovery approval.
 
 ## 3. Resolve capability-specific blockers
 
-`devenv tasks run repo:inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement. ThinkPad's graphical capability requires genuine `fleet.desktop.reviewed` acceptance of login/locking/sleep, portals, audio and the mobile display; follow [its checklist](desktop.md#activation-and-acceptance-checklist). This flag does not certify future eGPU/HDR or gaming behavior.
+`devenv tasks run repo:inventory` explains every unresolved field. Hardware/network review, user credentials and provider/NAS review are real barriers, not automatic discovery. `fleet.installation.storageReviewed` separately requires fresh serial/layout/firmware/boot-capacity, backup, credential-recovery and migration review; old-installation acceptance does not satisfy it. Headless workstation use does not require a desktop acknowledgement. ThinkPad's graphical capability requires genuine `fleet.desktop.reviewed` acceptance of login/locking/sleep, portals, audio and the mobile display; follow [its checklist](desktop.md#activation-and-acceptance-checklist). This flag does not certify future eGPU/HDR or gaming behavior.
 
 Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Racknerd and bastion opt in after commissioning; thinkpad remains local-only. Keep `ready = false` during discovery. Once every fact is supplied, inspect `git status --short`, `git diff` and `git diff --cached`. Stage intended new files **individually**, using `git add -- path/to/reviewed-file`, after reviewing each path; never stage the whole `modules` directory or unrelated work. Run `devenv tasks run repo:secret-check` before staging intended ciphertext/public rules. Inspect `git diff --cached` again, then run in the locked shell:
 
@@ -86,13 +80,13 @@ An unready host still has its commissioning assertion. Only after resolving all 
 
 ## Storage and installation
 
-**Fresh-install `os-disk` capability only; none of the current hosts use this layout.** For current installations use [hosts.md](hosts.md) and do not run these commands.
+**All three candidates now compose their per-host fresh layouts, but remain unready.** For running installations use [hosts.md](hosts.md); the commands below are not authorized now.
 
 **Everything below the explicit execution boundary is a manual maintenance-window operation. Disko may erase the entire selected disk, including existing partitions and boot entries. It is not a migration tool. Never run it during ordinary deployment.**
 
-The baseline requires OS-disk confirmation, firmware choice and an explicitly sized ESP for UEFI. `fleet.osDisk.espSize` accepts positive whole `M`/`G` sizes (MiB/GiB) with a **512 MiB minimum**: `512M` is the floor, and `1G` is also valid. Smaller values fail option evaluation before a disko script can be generated; `null` remains a commissioning blocker, not a default size. This floor does **not** guarantee capacity: review the actual kernel/initrd sizes, retained boot generations and headroom, and choose a larger ESP when needed. BIOS needs no ESP; leave its size null. UEFI additionally requires `fleet.osDisk.efiCanTouchVariables`: `true` permits bootctl to create/update NVRAM entries; `false` avoids those writes and requires verifying the firmware boots the installed fallback EFI path. Neither is inferred from machine model. It uses a tmpfs `/`, Btrfs `@nix` at `/nix` and `@persist` at `/persist`. BIOS additionally uses `@boot` and a standard GPT BIOS metadata partition; UEFI uses a vfat ESP. No sizes of existing disks/filesystems are asserted. “100%” means the chosen remainder policy, not an observed capacity.
+Each `modules/hosts/<host>/disko.nix` directly declares its native partitions and boot settings; no generic layout/firmware option interface remains. `fleet.installation.osDevice` is nullable whole-disk metadata; unresolved identity or fresh review blocks public outputs, as does unready status. Fixed FAT boot sizes are Bastion/Racknerd **2G** and ThinkPad **4G**; review kernel/initrd sizes and retained generations before approval. BIOS has a first 1 MiB EF02 embedding partition and no ESP. The proposed native `boot.loader.efi.canTouchEfiVariables = true` on UEFI hosts allows Limine NVRAM writes; review this or deliberately select/test fallback boot. All three use tmpfs `/` and Btrfs `nix`/`persist`; ThinkPad adds `home` and **8G plain swap**, without LUKS/LVM/resume or hibernation. “100%” is the remainder policy, not observed capacity. Racknerd's formatting device stays null until a fresh-provisioning identifier exception is reviewed.
 
-Only `disko.devices.disk.os` is allowed by this capability. Unused `lvm_vg`, `mdadm`, `zpool` and `bcachefs_filesystems` collections are forced empty; foreign contributions cannot expand the generated plan. NAS data disk definitions, multi-device pools, shares and backup jobs are absent. **For `bastion`, disconnect valuable data disks during initial OS provisioning where practicable**, independently compare serials, and have another person review the boundary. If an OS and valuable data share the same disk, **do not use this baseline**; design a migration that preserves data instead.
+Only `disko.devices.disk.os` is allowed: additional disks or an OS device redirected away from the reviewed fact reject public script/image outputs. Unused `lvm_vg`, `mdadm`, `zpool` and `bcachefs_filesystems` collections are forced empty; foreign contributions cannot expand the generated plan. NAS data disk definitions, multi-device pools, shares and backup jobs are absent. **For `bastion`, disconnect valuable data disks during initial OS provisioning where practicable**, independently compare serials, and have another person review the boundary. If an OS and valuable data share the same disk, **do not use this baseline**; design a migration that preserves data instead.
 
 ### Non-destructive planning
 

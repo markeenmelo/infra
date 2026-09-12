@@ -1,12 +1,11 @@
 {
   fleet.hosts.racknerd = {
-    # Remains blocked until the dedicated identity passes early decryption and
-    # recovery review, then the staged root activation provisions Nix trust.
+    # Fresh layout/device, identity/recovery and closure trust remain unreviewed.
     ready = false;
     system = "x86_64-linux";
     track = "stable";
     capabilities = [
-      "existing-storage"
+      "racknerd-disko"
       "headless"
       "persistence"
       "access"

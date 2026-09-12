@@ -20,6 +20,22 @@
           };
         };
         installation = {
+          osDevice = mkOption {
+            type = types.nullOr (types.strMatching "/dev/disk/by-id/[a-zA-Z0-9._:+-]+");
+            default = null;
+            apply =
+              device:
+              assert lib.assertMsg (
+                device == null || builtins.match ".*-part[0-9]+" device == null
+              ) "The installation device must be a whole OS disk, not a partition.";
+              device;
+            description = "Whole OS disk identity for the per-host disko layout. Racknerd remains null pending a reviewed no-by-id provisioning exception.";
+          };
+          storageReviewed = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Fresh OS device/serial, partition layout, firmware/boot capacity, backups, credential recovery and state migration reviewed. Old-installation acceptance does not satisfy this gate.";
+          };
           stateVersion = mkOption {
             type = types.nullOr (types.strMatching "[0-9]{2}\\.(05|11)");
             default = null;
@@ -40,6 +56,12 @@
       config = {
         fleet.bootstrap.missing =
           lib.optional (
+            cfg.installation.osDevice == null
+          ) "Supply fleet.installation.osDevice after verifying the whole OS disk and identifier policy."
+          ++
+            lib.optional (!cfg.installation.storageReviewed)
+              "Review the fresh OS layout, serials, boot/firmware, backups and credential/state recovery; acknowledge fleet.installation.storageReviewed."
+          ++ lib.optional (
             cfg.installation.stateVersion == null
           ) "Set fleet.installation.stateVersion from the installation history."
           ++ lib.optional (

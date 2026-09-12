@@ -71,7 +71,7 @@ in
         bastion = "stable";
       };
       allCapabilities = [
-        "os-disk"
+        "bastion-disko"
         "headless"
         "persistence"
         "access"
@@ -123,16 +123,17 @@ in
           builtins.attrNames reports == [
             "compositions"
             "desktop"
-            "existingInstallations"
             "fixtures"
             "hosts"
             "sops"
+            "storageLayouts"
             "tailscale"
             "wifi"
           ]
         ) "An evaluation suite is missing; review the independent report inventory.";
         assert lib.assertMsg (
           builtins.attrNames config.checks == [
+            "bastion-pi"
             "deploy-activate"
             "deploy-schema"
             "fleet-evaluation"

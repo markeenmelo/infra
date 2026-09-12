@@ -20,7 +20,7 @@ let
   desktopFixtures = lib.genAttrs [ "unstable" ] (
     track:
     fixtureFor track "uefi" [
-      "os-disk"
+      "thinkpad-disko"
       "ssh"
       "desktop"
       "persistence"

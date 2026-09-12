@@ -372,7 +372,7 @@ in
       exec = ''
         set -euo pipefail
         cd "$DEVENV_ROOT"
-        nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing, components})), fixtures, compositions, existingInstallations, sops, desktop, wifi, tailscale}'
+        nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing, components})), fixtures, compositions, storageLayouts, sops, desktop, wifi, tailscale}'
       '';
     };
     "repo:check" = {

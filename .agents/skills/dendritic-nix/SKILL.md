@@ -36,6 +36,7 @@ Read `../../../AGENTS.md`, `../../../README.md`, `../../../docs/adr/0001-dendrit
 ## Local choices, not upstream requirements
 
 - Production inputs stay in `flake.nix`; root `devenv.nix` is the sole approved development-only entry-point exception and is never discovered/imported into production. Discovery is the pinned `import-tree` input (`denful/import-tree`, formerly `vic/import-tree`): the flake root module is `(inputs.import-tree ./modules)` and `modules/flake-parts.nix` owns the flake-parts conventions. The pinned default excludes `/_`-prefixed paths and keeps `*.nix`-named entries in sorted depth-first order; configure no filters or builder API without a researched need.
+- Host-local composition and storage live in `modules/hosts/<name>/{host,disko}.nix`, with Bastion data mounts in `data.nix`. This grouping does not create an import root: every file remains independently discovered at the top level. Shared storage capabilities/checks stay under `modules/storage/`.
 - Discovery has exactly one dependency: the pinned `import-tree` callable, used bare. Prefer native module merging over hand-written registries that duplicate it; the small typed fleet/fixture interfaces exist for actual safety/reporting needs.
 - Preserve required `system`/`track`, `fleetConfigurations`, readiness-filtered `nixosConfigurations` and ready-plus-enabled deployment outputs. Fixtures never become installation/deployment targets. `perSystem.pkgs` is not a source of normal host packages.
 
