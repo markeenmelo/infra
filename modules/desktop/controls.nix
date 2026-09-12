@@ -8,7 +8,6 @@
     # The session owner replaces this packaged daemon autostart, not unrelated user state.
     xdg.autostart = {
       enable = true;
-      readOnly = false;
       entries = [
         "${
           pkgs.makeDesktopItem {

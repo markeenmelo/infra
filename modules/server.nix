@@ -2,7 +2,6 @@
 {
   flake.modules.nixos.server = {
     imports = [ config.flake.modules.nixos.ssh ];
-    documentation.nixos.enable = false;
     fleet.logging.persistent = true;
     networking.nftables.enable = true;
     systemd.coredump.enable = false;

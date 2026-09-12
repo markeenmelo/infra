@@ -12,7 +12,6 @@
           PermitRootLogin = "no";
           PermitEmptyPasswords = false;
           AuthenticationMethods = "publickey";
-          X11Forwarding = false;
           AllowAgentForwarding = false;
           AllowTcpForwarding = lib.mkDefault "no";
           MaxAuthTries = 3;

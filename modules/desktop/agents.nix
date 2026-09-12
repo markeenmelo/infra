@@ -2,7 +2,8 @@
   # Pi coding agent. The extension set is declared directly in Pi's managed
   # settings: pinned `npm:` specs (Pi installs them under mutable
   # ~/.pi/agent/npm on first start) plus Nix-store local entries for the
-  # hash-pinned pi-review package and the official RTK hook. Credentials,
+  # hash-pinned pi-review package, the official RTK hook and the local
+  # empty-args-retry extension. Credentials,
   # sessions, installed packages and project trust stay mutable in ~/.pi.
   flake.modules.nixos.desktop =
     { lib, ... }:
@@ -30,6 +31,11 @@
       # Official hook delegating to the pinned Nixpkgs rtk binary; loaded as a
       # single-file extension straight from its source output.
       rtkHook = "${pkgs.rtk.src}/hooks/pi/rtk.ts";
+
+      # Retry-as-provider-error when a provider drops a tool call's arguments
+      # entirely (zai GLM `edit` arrives as `{}`; earendil-works/pi#5194).
+      # Unrepairable by pi-tool-repair, which needs present-but-malformed data.
+      emptyArgsRetry = "${./assets/pi/empty-args-retry.ts}";
     in
     {
       home = {
@@ -60,8 +66,10 @@
             };
           };
           # pi-tool-repair's opt-in grammar recovery, scoped to GLM model ids
-          # only: the default schema-directed argument repairs (which cover the
-          # malformed `edit` calls seen from z.ai GLM models) need no config.
+          # only: the default schema-directed argument repairs (stringified
+          # `edits` arrays, field aliases, null optionals) need no config. The
+          # unrepairable empty-arguments class is retried by the local
+          # empty-args-retry extension instead.
           ".pi/agent/extensions/pi-tool-repair.json".source = jsonFormat.generate "pi-tool-repair.json" {
             grammarRepair = {
               mode = "recover";
@@ -135,8 +143,8 @@
           # Never trust a checkout implicitly; the agent must ask per project.
           defaultProjectTrust = "ask";
           # Versioned npm specs are pinned and skipped by `pi update`; Pi
-          # installs them into mutable ~/.pi/agent/npm on first start. The two
-          # local entries are immutable Nix store paths.
+          # installs them into mutable ~/.pi/agent/npm on first start. The
+          # three local entries are immutable Nix store paths.
           packages = [
             "npm:@99percentpeople/pi-codex-api@0.4.0"
             "npm:@akepka/pi-cursor-cli-provider@0.10.1"
@@ -147,6 +155,7 @@
             "npm:pi-tool-repair@0.2.5"
             "${piReview}"
             rtkHook
+            emptyArgsRetry
           ];
           ayu = {
             # Restoring a worktree is destructive to uncommitted work: ask, and

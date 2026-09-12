@@ -17,13 +17,9 @@ in
   fleet.hosts.bastion.module = {
     networking.hostId = "ebbb349e";
     boot.supportedFilesystems = [ "zfs" ];
-    boot.zfs = {
-      devNodes = "/dev/disk/by-id";
-      forceImportRoot = false;
-      forceImportAll = false;
-      # NixOS derives the named tank import from the legacy filesystem entries.
-      extraPools = [ ];
-    };
+    # Strict root-only import; NixOS derives the named tank import from the
+    # legacy filesystem entries (by-id devices, no forced extra pools).
+    boot.zfs.forceImportRoot = false;
     fileSystems = lib.mapAttrs (_: device: {
       inherit device;
       fsType = "zfs";
@@ -32,8 +28,6 @@ in
     services.zfs.autoScrub = {
       enable = true;
       pools = [ "tank" ];
-      interval = "monthly";
-      randomizedDelaySec = "6h";
     };
     # nas.storageReviewed stays false: verify pool GUID 7246454901288299061,
     # both member serials, restore, and upstream versus previous strict import

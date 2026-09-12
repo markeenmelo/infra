@@ -117,6 +117,9 @@ let
       && bios.fileSystems."/boot".fsType == "vfat"
     ) "${track}: Limine EFI/BIOS policy regressed";
     assert lib.assertMsg (
+      cfg.boot.loader.limine.style.wallpapers == [ ] && bios.boot.loader.limine.style.wallpapers == [ ]
+    ) "${track}: existing-installation boot menus must remain wallpaper-free";
+    assert lib.assertMsg (
       !(lib.elem "/home" (map (d: d.dirPath) home.environment.persistence."/persist".directories))
       && home.fileSystems."/home".neededForBoot
     ) "${track}: separate /home must not also be an impermanence bind";
@@ -278,6 +281,7 @@ in
       && cfg.fileSystems."/persist".neededForBoot
       && cfg.boot.loader.limine.enable
       && !cfg.boot.loader.limine.force
+      && cfg.boot.loader.limine.style.wallpapers == [ ]
       && !cfg.boot.loader.grub.enable
       && !cfg.boot.loader.systemd-boot.enable
     ) "${name}: real hosts must preserve existing storage and use Limine";

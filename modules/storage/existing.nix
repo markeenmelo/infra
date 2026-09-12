@@ -106,9 +106,8 @@
           )
         );
         boot.loader = {
+          # grub.enable is a deliberate deviation: its upstream default is true.
           grub.enable = false;
-          systemd-boot.enable = false;
-          timeout = 5;
           efi.canTouchEfiVariables = cfg.efiCanTouchVariables == true;
           limine = {
             enable = cfg.bootMode != null;
@@ -116,12 +115,10 @@
             biosSupport = cfg.bootMode == "bios";
             biosDevice = if cfg.bootMode == "bios" && cfg.osDevice != null then cfg.osDevice else "nodev";
             partitionIndex = cfg.biosPartitionIndex;
-            enableEditor = false;
-            force = false;
-            validateChecksums = true;
             panicOnChecksumMismatch = true;
             enrollConfig = false;
             maxGenerations = 10;
+            # Upstream's mkDefault wallpaper overrides its empty option default.
             style.wallpapers = [ ];
           };
         };

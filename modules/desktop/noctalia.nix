@@ -107,7 +107,6 @@
       programs.noctalia = {
         enable = true;
         systemd.enable = true;
-        checkConfig = true;
         inherit settings;
       };
       # Keep native generation/validation, but retain the isolated fresh shell

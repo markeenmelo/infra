@@ -11,6 +11,11 @@ const [piDir, codexConfig, toolRepairConfig] = process.argv.slice(2);
 const load = (path) => import(pathToFileURL(path).href);
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const { discoverAndLoadExtensions } = await load(join(piDir, 'dist/index.js'));
+// Load Pi's own ESM-only dependency, not an ambient npm install or a copied
+// regex. Use the same packaged compat entry that AgentSession imports.
+const { isRetryableAssistantError } = await load(
+  join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'),
+);
 // Managed settings must carry the exact pinned package set.
 const settings = json(join(process.env.PI_CODING_AGENT_DIR, 'settings.json'));
 assert.equal(settings.defaultProjectTrust, 'ask');
@@ -33,10 +38,15 @@ for (const removed of [
   assert.ok(!settings.packages.some((spec) => spec.includes(removed)), `${removed} must stay removed`);
 }
 const local = settings.packages.filter((spec) => !spec.startsWith('npm:'));
-assert.equal(local.length, 2, 'Exactly pi-review and the RTK hook are local entries');
+assert.equal(
+  local.length, 3,
+  'Exactly pi-review, the RTK hook and empty-args-retry are local entries',
+);
 for (const path of local) assert.ok(existsSync(path), `Missing local package: ${path}`);
 const rtkHook = local.find((path) => path.endsWith('/hooks/pi/rtk.ts'));
-const piReview = local.find((path) => path !== rtkHook);
+const emptyArgsRetry = local.find((path) => path.endsWith('empty-args-retry.ts'));
+assert.ok(emptyArgsRetry, 'empty-args-retry.ts must be pinned as a settings entry');
+const piReview = local.find((path) => path !== rtkHook && path !== emptyArgsRetry);
 json(codexConfig); // Generated extension config must stay valid JSON.
 // Grammar recovery stays opt-in and scoped to GLM model ids only.
 const toolRepair = json(toolRepairConfig);
@@ -49,14 +59,84 @@ console.log('Settings pins and generated configs passed');
 
 // Load the Nix-pinned extensions through Pi's actual loader.
 const loaded = await discoverAndLoadExtensions(
-  [rtkHook, join(piReview, 'review.ts')], process.cwd(), process.env.PI_CODING_AGENT_DIR,
+  [rtkHook, join(piReview, 'review.ts'), emptyArgsRetry],
+  process.cwd(), process.env.PI_CODING_AGENT_DIR,
 );
 assert.deepEqual(loaded.errors, [], 'Local extensions must load in the pinned Pi runtime');
 const rtk = loaded.extensions.find((ext) => ext.path.endsWith('rtk.ts'));
 const review = loaded.extensions.find((ext) => ext.path.includes('review'));
+const emptyArgs = loaded.extensions.find((ext) => ext.path.endsWith('empty-args-retry.ts'));
+assert.ok(
+  emptyArgs?.handlers.has('message_end'),
+  'empty-args-retry must register the official message_end handler',
+);
 assert.ok(rtk?.handlers.has('tool_call'), 'RTK hook must register the official tool_call handler');
 assert.ok(review?.commands.has('review') && review.commands.has('end-review'), 'pi-review must register its commands');
-console.log('Pi loader registration for pi-review and the RTK hook passed');
+console.log('Pi loader registration for pi-review, RTK and empty-args-retry passed');
+
+// Exercise empty-args-retry's pure transform: only schema-required tools with
+// a completely absent/empty arguments payload flip the message into a
+// retryable error, and every toolCall block is stripped so a retried turn
+// never leaves unmatched calls in the history.
+const { retryEmptyArguments } = await load(emptyArgsRetry);
+const tools = [
+  { name: 'edit', parameters: { type: 'object', required: ['path', 'edits'] } },
+  { name: 'bash', parameters: { type: 'object', required: ['command'] } },
+  { name: 'status', parameters: { type: 'object', required: [] } },
+];
+const assistant = (parts, stopReason = 'toolUse') => ({
+  role: 'assistant', stopReason, content: parts,
+});
+const call = (name, arguments_) => ({ type: 'toolCall', id: 'call_x', name, arguments: arguments_ });
+const toolCallsOf = (message) => message.content.filter((part) => part.type === 'toolCall');
+
+const emptyEdit = retryEmptyArguments(assistant([call('edit', {})]), tools);
+assert.ok(emptyEdit.changed, 'Empty edit arguments must convert the message');
+assert.equal(emptyEdit.message.stopReason, 'error');
+assert.equal(toolCallsOf(emptyEdit.message).length, 0, 'All toolCall blocks must be stripped');
+assert.match(emptyEdit.message.errorMessage, /"edit".*path, edits/);
+// Exercise the classifier AgentSession actually uses. A local prefix check
+// would keep passing if a future Pi pin stopped recognizing that phrasing.
+assert.equal(
+  isRetryableAssistantError(emptyEdit.message), true,
+  'The pinned Pi runtime must classify the transformed message as retryable',
+);
+for (const [label, override] of [
+  ['non-error response', { stopReason: 'toolUse' }],
+  ['unrecognized error', { errorMessage: 'tool arguments are empty' }],
+  ['billing exhaustion', { errorMessage: 'provider returned error: insufficient_quota' }],
+]) {
+  assert.equal(
+    isRetryableAssistantError({ ...emptyEdit.message, ...override }), false,
+    `Pi must not retry ${label}`,
+  );
+}
+
+const missingArgs = retryEmptyArguments(
+  assistant([call('edit', undefined)]), tools,
+);
+assert.ok(missingArgs.changed, 'Absent arguments must convert the message');
+
+const mixed = retryEmptyArguments(
+  assistant([call('write', { path: '/tmp/f', content: 'x' }), call('edit', {})]), tools,
+);
+assert.ok(mixed.changed, 'An empty call among valid calls must still convert');
+assert.equal(toolCallsOf(mixed.message).length, 0, 'Even valid calls are stripped on retry');
+
+const valid = retryEmptyArguments(
+  assistant([call('edit', { path: '/tmp/f', edits: [{ oldText: 'a', newText: 'b' }] })]), tools,
+);
+assert.equal(valid.changed, false, 'Populated arguments must pass through unchanged');
+
+for (const [label, message] of [
+  ['unknown tool', assistant([call('fabric_exec', {})])],
+  ['tool without required properties', assistant([call('status', {})])],
+  ['non-toolUse stop reason', assistant([call('edit', {})], 'endTurn')],
+]) {
+  const result = retryEmptyArguments(message, tools);
+  assert.equal(result.changed, false, `${label} must be left for Pi's own handling`);
+}
+console.log('empty-args-retry conversion behavior passed');
 
 // Exercise the RTK hook: rewrite only, never execute the commands.
 const ctx = { cwd: process.cwd(), hasUI: true, mode: 'tui' };

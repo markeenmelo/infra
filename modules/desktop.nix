@@ -44,7 +44,6 @@ in
           useGlobalPkgs = true;
           useUserPackages = true;
           sharedModules = [ desktopHome ];
-          backupFileExtension = null;
         };
       };
     };

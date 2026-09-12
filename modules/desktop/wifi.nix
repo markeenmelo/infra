@@ -18,8 +18,6 @@
       secret = sopsFile: {
         inherit sopsFile restartUnits;
         owner = "root";
-        group = "root";
-        mode = "0400";
       };
     in
     {

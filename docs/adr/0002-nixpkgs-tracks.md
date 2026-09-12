@@ -1,27 +1,26 @@
 # ADR 0002 — One package universe per host
 
-- Status: accepted; input naming and developer/library track amended by [ADR 0010](0010-native-devenv.md)
+- Status: accepted; developer/library track amended by [ADR 0010](0010-native-devenv.md), Home Manager scope narrowed by [ADR 0008](0008-native-desktop-and-kernels.md)
 - Date: 2026-09-09
-- Extended by [ADR 0007](0007-thinkpad-desktop.md), then narrowed by [ADR 0008](0008-native-desktop-and-kernels.md): only the unstable desktop imports Home Manager, using its host's packages; servers retain stable Nixpkgs without HM.
 
 ## Context
 
-Servers require predictable stable service changes; interactive machines require the explicitly requested `nixpkgs-unstable` track. A top-level module evaluator must not silently determine all target package sets.
+Servers need predictable stable service changes; the interactive machine needs `nixpkgs-unstable`. A top-level module evaluator must not silently determine target package sets.
 
 ## Decision
 
-Keep independent `nixpkgs-stable` and default `nixpkgs` inputs and locks; `nixpkgs` names the `nixpkgs-unstable` branch. Stable names a researched, numbered supported NixOS branch. Each host **must** declare `track` and `system`. At the composition boundary, call the selected input's `lib.nixosSystem`; let NixOS instantiate its own packages.
-
-Use unstable library/developer tooling at the top level; flake-parts follows `nixpkgs`. This does not select packages for stable hosts. Disko/impermanence modules consume the target evaluator's `pkgs`/`lib`. The deploy-rs overlay is scoped to the target's package set when constructing an activator, never installed globally into host overlays.
+- Keep independent `nixpkgs` (naming `nixpkgs-unstable`) and `nixpkgs-stable` (a researched, numbered supported branch) inputs and locks. Every host declares explicit `track` and `system`; `modules/fleet.nix` calls the selected input's `lib.nixosSystem` and lets NixOS instantiate its own packages.
+- Unstable library/developer tooling is used at the top level; flake-parts follows `nixpkgs`. This never selects packages for stable hosts. Generic features consume their own evaluation's `pkgs`/`lib`; a real API difference gets a localized option probe (as logging does), never cross-track package imports.
+- The deploy-rs overlay is scoped to the target's package set when constructing an activator, never installed globally into host overlays.
 
 ## Consequences
 
-No global `pkgsStable`/`pkgsUnstable`, mixed-package overlays, cross-track defaults or package imports in generic features. A future package exception must be narrow, explicit and independently documented. Real API differences can use a localized option probe, as logging does.
-
-Validation has an independent required-host mapping, actual-package-source comparison and locked-branch assertions. It catches metadata changes, evaluator wiring mistakes and input aliases. Updates can move one track without moving the other. Development tools change with unstable; stateVersion never follows an input.
+- No `pkgsStable`/`pkgsUnstable`, mixed-package overlays, cross-track defaults or package imports in generic features. A future package exception must be narrow, explicit and independently documented.
+- Validation independently checks required tracks, actual `pkgs.path` sources and locked branch names ([scope](../validation.md)); updates can move one track without the other.
+- Development tools advance with unstable; `stateVersion` never follows an input.
 
 ## Alternatives
 
-A shared `perSystem.pkgs` for all hosts violates the split. Importing both trees into every host hides mixing and costs evaluation. Inferring tracks from roles or directory names makes intent less auditable.
+A shared `perSystem.pkgs` for all hosts, importing both trees into every host, or inferring tracks from roles/directory names all hide intent or cost evaluation.
 
 See [research](../research.md), `flake.nix`, `modules/fleet.nix`, `modules/validation.nix`.

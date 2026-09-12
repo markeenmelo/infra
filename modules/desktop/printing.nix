@@ -9,21 +9,18 @@
     }:
     {
       services = {
-        # Discovery for the approved IPP/eSCL devices. Do not publish local services.
+        # Discover IPP/eSCL devices via mDNS: upstream opens UDP 5353 but
+        # does not publish local services. CUPS below stays localhost-only
+        # with no shared queues or CUPS firewall opening.
         avahi = {
           enable = true;
           nssmdns4 = true;
-          openFirewall = true;
-          publish.enable = false;
         };
         printing = {
           enable = true;
-          allowFrom = [ "localhost" ];
+          # cups-browsed is the only deliberate deviation from the local-only
+          # upstream defaults.
           browsed.enable = false;
-          browsing = false;
-          defaultShared = false;
-          listenAddresses = [ "localhost:631" ];
-          openFirewall = false;
         };
       };
       hardware.sane = {
