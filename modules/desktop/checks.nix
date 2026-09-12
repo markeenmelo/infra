@@ -12,7 +12,9 @@ let
     track:
     (lib.evalModules {
       class = "nixos";
-      specialArgs.modulesPath = "${inputs."nixpkgs-${track}"}/nixos/modules";
+      specialArgs.modulesPath = "${
+        if track == "stable" then inputs.nixpkgs-stable else inputs.nixpkgs
+      }/nixos/modules";
       modules = [ config.flake.modules.nixos.desktop ];
     }).graph;
   desktopFixtures = lib.genAttrs [ "unstable" ] (

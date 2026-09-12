@@ -72,17 +72,17 @@ Future service secrets may use the same SOPS capability, with separately researc
 
 ## 3. Resolve capability-specific blockers
 
-`just inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement. ThinkPad's graphical capability requires genuine `fleet.desktop.reviewed` acceptance of login/locking/sleep, portals, audio and the mobile display; follow [its checklist](desktop.md#activation-and-acceptance-checklist). This flag does not certify future eGPU/HDR or gaming behavior.
+`devenv tasks run repo:inventory` explains every unresolved field. Hardware/network review, user credentials, provider/NAS review and (for `existing-storage`) boot/migration review are real barriers, not automatic discovery. Fresh-install `os-disk` additionally requires disk confirmation. Headless workstation use does not require a desktop acknowledgement. ThinkPad's graphical capability requires genuine `fleet.desktop.reviewed` acceptance of login/locking/sleep, portals, audio and the mobile display; follow [its checklist](desktop.md#activation-and-acceptance-checklist). This flag does not certify future eGPU/HDR or gaming behavior.
 
-Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Racknerd and bastion opt in after commissioning; thinkpad remains local-only. Keep `ready = false` during discovery. Once every fact is supplied, inspect `git status --short`, `git diff` and `git diff --cached`. Stage intended new files **individually**, using `git add -- path/to/reviewed-file`, after reviewing each path; never stage the whole `modules` directory or unrelated work. Run `just secret-check` before staging intended ciphertext/public rules. Inspect `git diff --cached` again, then run in the locked shell:
+Supply deployment metadata through `fleet.hosts.<name>.deployment`, independently of the NixOS module. Racknerd and bastion opt in after commissioning; thinkpad remains local-only. Keep `ready = false` during discovery. Once every fact is supplied, inspect `git status --short`, `git diff` and `git diff --cached`. Stage intended new files **individually**, using `git add -- path/to/reviewed-file`, after reviewing each path; never stage the whole `modules` directory or unrelated work. Run `devenv tasks run repo:secret-check` before staging intended ciphertext/public rules. Inspect `git diff --cached` again, then run in the locked shell:
 
 ```sh
-just fmt
-just check
+devenv tasks run repo:fmt
+devenv tasks run repo:check
 nix eval --json .#fleet.thinkpad | jq '{missing,failedAssertions}'
 ```
 
-An unready host still has its commissioning assertion. Only after resolving all other issues set `fleet.hosts.thinkpad.ready = true` in a commissioning/identity module, then rerun `just check` and `just ready thinkpad`. Merely setting ready with missing fields makes validation fail; it never overrides them. Source-control facts before installing; retain the exact lock file and recovery generation.
+An unready host still has its commissioning assertion. Only after resolving all other issues set `fleet.hosts.thinkpad.ready = true` in a commissioning/identity module, then rerun `devenv tasks run repo:check` and `devenv shell ready thinkpad`. Merely setting ready with missing fields makes validation fail; it never overrides them. Source-control facts before installing; retain the exact lock file and recovery generation.
 
 ## Storage and installation
 
@@ -99,11 +99,11 @@ Only `disko.devices.disk.os` is allowed by this capability. Unused `lvm_vg`, `md
 After real facts and readiness are approved:
 
 ```sh
-just check
-just ready bastion
+devenv tasks run repo:check
+devenv shell ready bastion
 nix eval --json .#fleetConfigurations.bastion.config.disko.devices.disk.os.device
 nix eval --json .#fleetConfigurations.bastion.config.fileSystems | jq .
-just disk-plan bastion
+devenv shell disk-plan bastion
 less result-disko-bastion
 ```
 

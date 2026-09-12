@@ -11,7 +11,7 @@ let
   expectedTracks = config.fleet.validation.expectedTracks;
   tracks = {
     stable = inputs.nixpkgs-stable;
-    unstable = inputs.nixpkgs-unstable;
+    unstable = inputs.nixpkgs;
   };
   report = config.flake.fleet;
   lock = builtins.fromJSON (builtins.readFile (inputs.self + "/flake.lock"));
@@ -54,8 +54,10 @@ let
       builtins.match "nixos-[0-9]{2}\\.(05|11)" (lockedInput "nixpkgs-stable").original.ref != null
     ) "Stable must lock a numbered NixOS release branch, not an unstable alias.";
     assert lib.assertMsg (
-      (lockedInput "nixpkgs-unstable").original.ref == "nixpkgs-unstable"
-    ) "Interactive track must lock nixpkgs-unstable.";
+      (lockedInput "nixpkgs").original.ref == "nixpkgs-unstable"
+      && !(lock.nodes.root.inputs ? nixpkgs-unstable)
+      && (lockedInput "flake-parts").inputs.nixpkgs-lib == [ "nixpkgs" ]
+    ) "The default nixpkgs input and flake-parts must use the interactive unstable track.";
     assert lib.assertMsg (
       !(lock.nodes.root.inputs ? home-manager-stable)
       && !(lock.nodes.root.inputs ? home-manager-unstable)
@@ -66,7 +68,7 @@ let
           repo = "home-manager";
         }
       && ((lockedInput "home-manager").flake or true)
-      && (lockedInput "home-manager").inputs.nixpkgs == [ "nixpkgs-unstable" ]
+      && (lockedInput "home-manager").inputs.nixpkgs == [ "nixpkgs" ]
       &&
         (lockedInput "zen-browser").original == {
           type = "github";
@@ -74,7 +76,7 @@ let
           repo = "zen-browser-flake";
         }
       && ((lockedInput "zen-browser").flake or true)
-      && (lockedInput "zen-browser").inputs.nixpkgs == [ "nixpkgs-unstable" ]
+      && (lockedInput "zen-browser").inputs.nixpkgs == [ "nixpkgs" ]
       &&
         (lockedInput "sops-nix").original == {
           type = "github";

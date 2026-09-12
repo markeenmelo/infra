@@ -20,7 +20,7 @@ Use native NetworkManager `ensureProfiles` with system-owned, root-only runtime 
 
 Select `pkgs.linuxPackages_latest` from **each host's own locked track**, with a major-7 assertion and independent validation. This deliberately supersedes the earlier explicit-minor recommendation in response to the latest-7.x request: after the 2026-09-10 update, both tracks provide 7.2.4. Keep upstream ZFS incompatibility failures enabled and evaluate Bastion's actual kernel module; a future incompatible update must stop. Do not silently pin an EOL kernel, allow broken packages or cross to 8.x. Retain native `i915` for observed Alder Lake-P, not experimental `xe` force-probing or an unobserved NVIDIA driver.
 
-Use only JetBrainsMono Nerd Font for the requested monospace apps, retaining native Noto Color Emoji fallback. Enable native `programs.nh` on **ThinkPad only**, with its observed checkout path and cleanup disabled. It does not introduce standalone HM outputs or replace `just check`, readiness gates, explicit update review or operation authorization.
+Use only JetBrainsMono Nerd Font for the requested monospace apps, retaining native Noto Color Emoji fallback. Enable native `programs.nh` on **ThinkPad only**, with its observed checkout path and cleanup disabled. It does not introduce standalone HM outputs or replace `devenv tasks run repo:check`, readiness gates, explicit update review or operation authorization.
 
 ## Consequences
 

@@ -9,7 +9,7 @@ let
   hosts = config.fleet.hosts;
   tracks = {
     stable = inputs.nixpkgs-stable;
-    unstable = inputs.nixpkgs-unstable;
+    unstable = inputs.nixpkgs;
   };
   evaluated = lib.mapAttrs (
     name: host:
@@ -90,7 +90,7 @@ in
           capabilities
           ready
           ;
-        input = "nixpkgs-${host.track}";
+        input = if host.track == "stable" then "nixpkgs-stable" else "nixpkgs";
         revision = input.rev;
         nixpkgsPath = toString system.pkgs.path;
         intendedNixpkgsPath = toString input.outPath;

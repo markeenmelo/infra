@@ -10,7 +10,7 @@ let
   reports = config.flake.validation;
   tracks = {
     stable = inputs.nixpkgs-stable;
-    unstable = inputs.nixpkgs-unstable;
+    unstable = inputs.nixpkgs;
   };
 in
 {

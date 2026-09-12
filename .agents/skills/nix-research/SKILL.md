@@ -15,7 +15,7 @@ Read `../../../AGENTS.md`, `../../../docs/research.md`, relevant ADRs and curren
 
 ## Procedure
 
-1. Establish research date (`date -u +%F`), installed `nix --version`, current pins (`nix flake metadata`, `just revisions`) and the affected host tracks. Do not update anything to learn its version.
+1. Establish research date (`date -u +%F`), installed `nix --version`, current pins (`nix flake metadata`, `devenv tasks run repo:revisions`) and the affected host tracks. Do not update anything to learn its version.
 2. Prefer official project manuals, upstream READMEs/source examples and releases. Search first; distinguish latest documentation from the exact locked API. Read the relevant source at the pin when documentation disagrees.
 3. When stable is relevant, verify the current **supported** release using nixos.org downloads/announcements and release notes. Distinguish `nixos-<release>`, `release-<release>`, `nixos-unstable` and the required `nixpkgs-unstable`. Do not infer support from the calendar or stateVersion.
 4. Review recent/relevant issues and breaking changes for Nix/Nixpkgs and each affected dependency. For disko/impermanence inspect systemd initrd, mount timing and destructive behavior; for deploy-rs inspect schema, activation, checks, closure trust and rollback flags.

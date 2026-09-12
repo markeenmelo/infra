@@ -24,7 +24,7 @@ Headless scope includes SSH/firewall/time sync, scoped persistence, server harde
 
 ## Consequences
 
-All real facts remain inspectable under `fleetConfigurations`, with `ready = false` until migration, credentials, network without VPN, hardware/boot and recovery review are complete. `just disk-plan` is not available for existing installations; a future reinstallation needs a separately researched and authorized design. Activation still changes boot files and can break access/state even without disko; it is not authorized by checks.
+All real facts remain inspectable under `fleetConfigurations`, with `ready = false` until migration, credentials, network without VPN, hardware/boot and recovery review are complete. `devenv shell disk-plan HOST` is not available for existing installations; a future reinstallation needs a separately researched and authorized design. Activation still changes boot files and can break access/state even without disko; it is not authorized by checks.
 
 Both-track fixtures test Limine EFI/BIOS, existing UUID-backed mounts, separate `/home`, all provisioning-output rejection with and without readiness, migration gating and headless security. Existing fresh-install/ESP/deployment-access tests remain. No fixture flags/devices/keys become real commissioning data. Standard checks do not test boots, passwords, restored backups, pool imports or gaming.
 

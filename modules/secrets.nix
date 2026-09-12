@@ -76,11 +76,6 @@
     };
 
   perSystem = { pkgs, ... }: {
-    devPackages = [
-      pkgs.sops
-      pkgs.age
-      pkgs.yq-go
-    ];
     checks.secret-files =
       pkgs.runCommand "secret-files"
         {

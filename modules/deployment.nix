@@ -175,8 +175,7 @@ in
       lib.filterAttrs (_: host: host.ready && host.deployment.enable) hosts
     );
     flake.deploymentPlan = lib.mapAttrs (_: host: host.deployment // { inherit (host) ready; }) hosts;
-    perSystem = { config, pkgs, ... }: {
-      devPackages = [ config.packages.deploy-rs ];
+    perSystem = { pkgs, ... }: {
       packages.deploy-rs = (deploymentPkgs pkgs).deploy-rs.deploy-rs;
       checks = (deployLib pkgs).deployChecks deployConfig;
     };

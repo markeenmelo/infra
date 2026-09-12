@@ -1,6 +1,6 @@
 # Tailscale: staged clients and declarative tailnet
 
-See [ADR 0009](adr/0009-tailscale-and-opentofu.md) and [dated API evidence](research.md#staged-tailscale--opentofu--2026-09-10).
+See [ADR 0009](adr/0009-tailscale-and-opentofu.md) and [dated API evidence](research.md#staged-tailscale--opentofu--2026-09-10). [Native devenv](development.md) now owns development commands; its [runtime SOPS adapter](development.md#sops--opentofu) is an alternative to the private prompts below, not a state/credential migration or new API authorization.
 
 ## Status and dated preflight evidence
 
@@ -8,7 +8,7 @@ See [ADR 0009](adr/0009-tailscale-and-opentofu.md) and [dated API evidence](rese
 
 Before application, the operator confirmed the intended tailnet, scopes, exclusive writer control, unused/uniquely correct fleet tags, independent administrative access and tested offline policy/DNS/state-backup recovery. The prior plan remains at `$TAILSCALE_STATE_DIR/reviewed-plan-71i6d10m/change.tfplan`; the applied plan is retained at `$TAILSCALE_STATE_DIR/change.tfplan`. After the apply report, the agent checked only tailnet binding, ownership/permissions (`0700` directory, `0600` state/plan files) and encrypted envelopes, without decryption, mutations or API access. Preserve these historical files and do not reuse the saved plan. The current checked policy differs from that applied evidence; any future live update requires fresh review, planning and explicit authorization.
 
-The public tailnet ID **`Td9HdopnWQ11CNTRL`** is recorded in [`tofu/tailscale/tailnet.json`](../tofu/tailscale/tailnet.json). Both OpenTofu and the wrapper read this single source; optional environment confirmation cannot retarget it. An enabled, reviewed candidate adds the daemon/enrollment unit, UDP 41641 and the existing backing-state bind; disabled candidates preserve backing state without an active daemon. Consult current status before selecting a host. `just tailscale-inventory` reports separate rollout prerequisites; `just inventory` still reports OS commissioning.
+The public tailnet ID **`Td9HdopnWQ11CNTRL`** is recorded in [`tofu/tailscale/tailnet.json`](../tofu/tailscale/tailnet.json). Both OpenTofu and the wrapper read this single source; optional environment confirmation cannot retarget it. An enabled, reviewed candidate adds the daemon/enrollment unit, UDP 41641 and the existing backing-state bind; disabled candidates preserve backing state without an active daemon. Consult current status before selecting a host. `devenv tasks run repo:tailscale-inventory` reports separate rollout prerequisites; `devenv tasks run repo:inventory` still reports OS commissioning.
 
 **Historical initial inventory, 2026-09-10 (later ThinkPad state review supersedes its row):** authorized read-only SSH used previously verified host keys, strict checking and no key updates/forwarding. During that inventory, no deployment, reboot, state read/copy/reset, secret decryption or tailnet API operation occurred:
 
@@ -38,14 +38,16 @@ The ACL protects **Tailscale traffic only**. Existing public/LAN SSH and other n
 
 ## OpenTofu ownership and private local state
 
-The locked development shell supplies stable OpenTofu **1.11.8** with only Nix-pinned Tailscale provider **0.29.0**, offline. `.terraform.lock.hcl` records that packaged linux_amd64 artifact. Init reports the locally mirrored provider as **unauthenticated** because it is not an upstream signed release archive: trust comes from the pinned Nix source/build/cache verification. Do not silently replace it with a registry binary or regenerate its checksum on unexplained mismatch. New platforms and provider updates need explicit review/tests. There are no new flake inputs or host package-track changes.
+The locked development shell supplies unstable-track OpenTofu **1.12.6** with only Nix-pinned Tailscale provider **0.29.2**, offline. `.terraform.lock.hcl` records that packaged linux_amd64 artifact. Init reports the locally mirrored provider as **unauthenticated** because it is not an upstream signed release archive: trust comes from the pinned Nix source/build/cache verification. Do not silently replace it with a registry binary or regenerate its checksum on unexplained mismatch. New platforms and provider updates need explicit review/tests. Native devenv has its own development-only lock; the canonical contract enforces the same unstable Nixpkgs and exact provider wrapper as the flake. Production input aliases/follows changed, but their source revisions and host package tracks are preserved.
+
+**Tooling upgrade, not live-state migration:** this development change has not opened existing operator state or contacted the tailnet. Before the next separately authorized operation, preserve private encrypted backups and recovery access, then use `tailnet init` against the existing bound state directory to initialize the new pinned provider. Do not recreate state, rotate its passphrase or repeat imports. OpenTofu natively rejects a saved plan from a different CLI version before application. Preserve/archive retained 1.11 plans and obtain authorization for a fresh 1.12 plan/review; do not bypass that check. Offline synthetic tests do not establish compatibility of actual operator state.
 
 OpenTofu owns:
 
 - The complete policy through `tailscale_acl.policy`, with import protection and no reset-to-default on destruction; `prevent_destroy` adds an explicit guard. Removing the resource block also removes that lifecycle guard, so deletion always needs review.
 - MagicDNS through `tailscale_dns_preferences.tailnet` (`magic_dns = true`). **Review this tailnet-wide change**, including personal/family DNS behavior, before the first apply. Global/split resolvers and search domains are not managed or overwritten.
 
-It deliberately does **not** create auth keys, OAuth clients, family accounts/devices, subnet routes, or an assumed tailnet. Bootstrap secrets remain separately provisioned. Provider v0.29.0's known auth-key recreation issue is outside the resource set used here.
+It deliberately does **not** create auth keys, OAuth clients, family accounts/devices, subnet routes, or an assumed tailnet. Bootstrap secrets remain separately provisioned. Provider v0.29.2 fixes the earlier auth-key recreation issue; auth-key resources remain outside this configuration.
 
 ### Operator setup (private terminal only)
 
@@ -66,8 +68,7 @@ This is the repeatable operator procedure; initial read-only completion is recor
 4. From the repository root in a **private terminal**, first enter a clean locked shell. This avoids inherited API-key/OIDC credentials, alternate API endpoints, debug settings and shell startup integrations; never launch an agent/editor from the later credential-bearing shell:
 
    ```sh
-   nix develop --no-update-lock-file --ignore-environment --keep HOME --keep TERM \
-     -c bash --noprofile --norc
+   devenv --clean shell -- bash --noprofile --norc
    ```
 
    The wrapper independently requires the intended `TAILSCALE_OAUTH_CLIENT_ID`/`TAILSCALE_OAUTH_CLIENT_SECRET` pair and rejects API-key, OIDC, legacy OAuth, endpoint and `TF_REATTACH_PROVIDERS` overrides. It sets `TF_CLI_CONFIG_FILE=/dev/null` to exclude home/XDG CLI files and their `dev_overrides`; the locked `withPlugins` executable supplies the Nix provider mirror independently. It explicitly exports `TF_WORKSPACE=default`, ignoring any saved selection in `provider-data/environment` without deleting it.
@@ -92,30 +93,30 @@ This is the repeatable operator procedure; initial read-only completion is recor
    }
    ```
 
-   For **first initialization only**, then run `just tailnet init` separately. If already initialized, restoring the exports does not require reinitialization or a new passphrase. Stay in this private shell for the following operations: a fresh clean shell clears these inputs. A missing-variable error stops before API access; it is not an instruction to create replacement state.
+   For **first initialization only**, then run `tailnet init` separately inside that shell. If already initialized, restoring the exports does not require reinitialization or a new passphrase. Stay in this private shell for the following operations: a fresh clean shell clears these inputs. A missing-variable error stops before API access; it is not an instruction to create replacement state.
 
    The wrapper binds a new empty private `0700` directory to that tailnet. Normal state, backups, saved plans and provider working data stay **outside the checkout/Nix store**. Backend write failure has an [emergency-state exception](#emergency-state-recovery): preserve it, never clean it away. Existing nonempty/unbound directories require recovery review; permissions are never silently repaired. No auto-loaded `.tfvars` or override files, alternative workspaces, TF_CLI_ARGS overrides, debug logging, TF_REATTACH_PROVIDERS or TF_ENCRYPTION overrides are accepted. The environment is transient: unset credentials/passphrase after use. State and plan output may disclose network metadata, so review privately.
 5. **After authorizing read-only API access**, import both existing singletons into encrypted local state:
 
    ```sh
-   just tailnet import-policy &&
-   just tailnet import-dns &&
-   just tailnet plan
+   tailnet import-policy &&
+   tailnet import-dns &&
+   tailnet plan
    ```
 
    Imports change local state, not the live tailnet. A plan contacts the API but does not apply. Review the complete policy/DNS diff and policy tests, verify one intended node per privileged tag, preserve out-of-band access, and authorize the exact change separately. A saved plan remains at `$TAILSCALE_STATE_DIR/change.tfplan`; no older plan is silently overwritten. Expect only updates or no-ops for `tailscale_acl.policy` and `tailscale_dns_preferences.tailnet`; stop for creates, destroys or unrelated addresses. Provider/server validation on apply is still required; offline mocks are not Tailscale's policy engine. At the end of this preflight, **stop without applying and `exit` this private shell** to drop its credential environment. Exporting variables here does not update an already-running agent session. Report only which steps succeeded, the add/change/destroy counts and sanitized blockers; keep raw policy, state, plan, token responses and credential-bearing diagnostics private.
-6. **Only after explicit authorization**, `just tailnet apply` applies that saved plan after an exact tailnet-ID confirmation. It changes the live tailnet, not NixOS. The plan is retained; archive it securely outside Git before making the next plan. Do not reuse old plans after policy/emergency changes; replan against refreshed state and serialize all applies. Never wire apply into `just check`, shell entry, a Nix build or NixOS activation.
+6. **Only after explicit authorization**, `tailnet apply` inside the private shell applies that saved plan after an exact tailnet-ID confirmation. It changes the live tailnet, not NixOS. The plan is retained; archive it securely outside Git before making the next plan. Do not reuse old plans after policy/emergency changes; replan against refreshed state and serialize all applies. Never wire apply into `devenv tasks run repo:check`, shell entry, a Nix build or NixOS activation.
 
 Raw OpenTofu can bypass the wrapper's workflow guards. Keep the checked configuration and use the wrapper for real operations; do not remove encryption/import protections to recover from an error. Local state is not a remote/team backend: use one administration environment, maintain backups and deliberately migrate if additional operators/CI need access.
 
 ### Emergency-state recovery
 
-A backend persistence failure can leave the newest state in **`tofu/tailscale/errored.tfstate`**, because the wrapper runs OpenTofu from that directory. OpenTofu 1.11.8 passes the configured encryption to this emergency writer; retain that upstream recovery mechanism. This exception does not permit ordinary state in Git or prove the failed operation made no live changes. If even the emergency write fails, OpenTofu attempts a terminal state dump using the same encryption; keep the entire diagnostic private.
+A backend persistence failure can leave the newest state in **`tofu/tailscale/errored.tfstate`**, because the wrapper runs OpenTofu from that directory. OpenTofu 1.12.6 passes the configured encryption to this emergency writer; retain that upstream recovery mechanism. This exception does not permit ordinary state in Git or prove the failed operation made no live changes. If even the emergency write fails, OpenTofu attempts a terminal state dump using the same encryption; keep the entire diagnostic private.
 
 1. **Stop all OpenTofu operations and competing writers.** Do not retry apply, reimport, reinitialize, change the passphrase or run checkout cleanup. The backend state may be stale; repeating apply can fork state.
 2. Privately preserve the emergency file, existing backend state, retained plan and diagnostics. Under explicit recovery authorization, copy the emergency bytes without overwrite into an owned `0700` recovery directory outside Git/store, with `0600` files; verify the copy before any removal. Never stage the emergency file, print its contents into agent logs or delete it merely because Git ignores it. Preserve the original until recovery is verified. Encryption is not a backup.
 3. Resolve the backend write failure and review the intended tailnet, backend, state lineage/serial and protected backups. A separately authorized **one-off `tofu state push`** of the protected emergency copy must use the same locked executable/configuration, passphrase, `TF_VAR_tailnet`, `TF_VAR_state_directory`, `TF_DATA_DIR`, `TF_WORKSPACE=default` and isolated `TF_CLI_CONFIG_FILE=/dev/null` as the wrapper, with reattachment/debug/encryption overrides absent. These exports do not persist from a previous wrapper process. The wrapper deliberately has no generic recovery bypass. Retain locking and lineage/serial checks; do not use `-force` or disable encryption to make the push succeed.
-4. After verified recovery, run separately authorized non-saving `just tailnet verify` in the private shell and refresh protected backups. Archive the stale saved plan; create/review a new plan before any later apply. Remove the checkout emergency copy only after explicit cleanup approval and verified recoverable copies.
+4. After verified recovery, run separately authorized non-saving `tailnet verify` in the private shell and refresh protected backups. Archive the stale saved plan; create/review a new plan before any later apply. Remove the checkout emergency copy only after explicit cleanup approval and verified recoverable copies.
 
 ## Policy-only apply workflow
 
@@ -137,14 +138,14 @@ This procedure is scoped to the reviewed whole-policy replacement for `Td9HdopnW
 3. Generate the requested fresh plan:
 
    ```sh
-   just tailnet plan
+   tailnet plan
    ```
 
    Stop and privately review the complete diff. It must still propose **0 additions, 1 update, 0 deletions**, changing only `tailscale_acl.policy` to the previously reviewed contents. Report only those counts, the resource address and whether the full diff matches. Any DNS change, different resource, create/destroy, policy-content difference or error is outside this approval: stop and review, without widening scopes or disabling tests/guards. Never chain a successful plan directly into apply. The recorded application used a fresh plan whose full contents and minimal client scopes were explicitly operator-confirmed.
 4. **Only after that fresh-plan review is satisfied**, the explicitly authorized policy-only operation is run separately in the private terminal:
 
    ```sh
-   just tailnet apply
+   tailnet apply
    ```
 
    The wrapper prompts for the exact tailnet ID. Enter `Td9HdopnWQ11CNTRL` interactively only after verifying the plan and continued recovery/writer control. Server errors or failed policy tests must be investigated, not bypassed. Keep raw output private and report only sanitized success/failure and resource counts. A failed/partial apply requires fresh state/plan review, not blind reuse of this artifact. The operator reports the authorized application succeeded; do not run it again for verification.
@@ -155,10 +156,10 @@ This procedure is scoped to the reviewed whole-policy replacement for `Td9HdopnW
 In the clean private shell, restore the existing state-directory/passphrase and the **original read-only client's** ID/secret using the operator-setup brace block. Do not create another client, reinitialize, reimport, rerun apply or move/overwrite either saved plan. Then run:
 
 ```sh
-just tailnet verify
+tailnet verify
 ```
 
-`verify` reuses all wrapper guards and runs a normal refreshing `tofu plan -input=false -lock-timeout=60s -detailed-exitcode`, **without `-out`**. It reads the managed live policy and MagicDNS preference but does not apply changes or create/replace a saved plan. The detailed result is **0 = no changes**, **2 = differences proposed**, **1 = error**; `just` reports a failed recipe for either nonzero result. A guard/input failure also remains a failure. Do not convert differences/errors into a passing check, use `-refresh=false`/targeting, or apply a proposed correction without reviewing it and obtaining new authorization.
+`verify` reuses all wrapper guards and runs a normal refreshing `tofu plan -input=false -lock-timeout=60s -detailed-exitcode`, **without `-out`**. It reads the managed live policy and MagicDNS preference but does not apply changes or create/replace a saved plan. The detailed result is **0 = no changes**, **2 = differences proposed**, **1 = error**; the native script preserves that exit status. A guard/input failure also remains a failure. Do not convert differences/errors into a passing check, use `-refresh=false`/targeting, or apply a proposed correction without reviewing it and obtaining new authorization.
 
 Expect **No changes**. Report only that result (or sanitized differences/errors), and separately confirm the intended live policy/MagicDNS plus administrative and out-of-band recovery access still work after the update. Keep raw plans, policy contents and credentials private. Verification covers only managed configuration, not real allowed/denied traffic, tag cardinality over time, node identity durability or hardware boot. Update protected state backups after success and retain the applied plan until deliberate archival; exit the private shell to drop its credential environment. For this maintenance task, the operator has reported **No changes** and confirmed post-update administrative/out-of-band access plus updated, checked protected backups. Do not repeat completed checks just to update status documentation.
 
@@ -175,7 +176,7 @@ The exact rule for `secrets/hosts/thinkpad-tailscale.yaml` uses the **existing o
    sops edit secrets/hosts/thinkpad-tailscale.yaml
    ```
 
-3. Run `just secret-check` before staging anything and report only success/failure, confirmation of the exact key settings above, and whether the retained **host-state** backup is protected and recoverable. Exit the private shell. Do not paste the key or raw diagnostics, overwrite a failed/existing file automatically, or repeat node deletion.
+3. Run `devenv tasks run repo:secret-check` before staging anything and report only success/failure, confirmation of the exact key settings above, and whether the retained **host-state** backup is protected and recoverable. Exit the private shell. Do not paste the key or raw diagnostics, overwrite a failed/existing file automatically, or repeat node deletion.
 
 Those preparation prerequisites are now operator-confirmed and selected for ThinkPad only. Run canonical checks/readiness/build **once for the substantive candidate change**, review the complete candidate (including the unactivated desktop fix), then obtain activation authorization. If the daemon does not report `NeedsLogin`, the reconciler will not submit the key or force a reset; stop and review instead of bypassing that guard. No other host rollout is implied.
 
@@ -183,7 +184,7 @@ Those preparation prerequisites are now operator-confirmed and selected for Thin
 
 1. Review existing node identity, private backing state and live/bind equivalence without printing state contents. Back up/migrate only under separate authorization; never copy one device's state to another. A `NeedsLogin` daemon is not authorization to erase its old state. Persist `/var/lib/tailscale` at `/persist/var/lib/tailscale`, root-owned `0700`, with private state files; verify existing backing permissions because impermanence does not repair them automatically. The daemon requires both mount paths before starting. Do not create/import NAS datasets or alter existing OS mounts.
 2. For new authentication, privately generate a separate **short-lived, single-use, non-ephemeral auth key**, scoped to exactly that host's tag. Use preauthorization only for the already verified device, or approve the pending device manually. Never install reusable tailnet-administration OAuth credentials on a host. Provision reviewed SOPS ciphertext with the verified operator and that host's distinct public recipient; no new keys/ciphertext/recipients are generated by this implementation.
-3. Declare its SOPS secret in the existing host's top-level module contribution: root-only `0400`, ordinary runtime path `/run/secrets/NAME`, `neededForUsers = false`, and `restartUnits = [ "fleet-tailscale.service" ]`. Set `fleet.tailscale.authKeySecret` to that declaration's name and `enrollmentMode = "auth-key"`. The ciphertext source/key selection must be real. `just secret-check` precedes staging. ThinkPad's existing Wi-Fi/password ciphertext is not a Tailscale credential; the fixture's use of that ciphertext only tests shape/key selection.
+3. Declare its SOPS secret in the existing host's top-level module contribution: root-only `0400`, ordinary runtime path `/run/secrets/NAME`, `neededForUsers = false`, and `restartUnits = [ "fleet-tailscale.service" ]`. Set `fleet.tailscale.authKeySecret` to that declaration's name and `enrollmentMode = "auth-key"`. The ciphertext source/key selection must be real. `devenv tasks run repo:secret-check` precedes staging. ThinkPad's existing Wi-Fi/password ciphertext is not a Tailscale credential; the fixture's use of that ciphertext only tests shape/key selection.
 4. For an already authenticated, correctly tagged node, select `enrollmentMode = "preserve"`, `authKeySecret = null`; do not reenroll it. Review any retained routing, Serve/Funnel or operator settings before reuse; this code does not silently reset old private state. Only after actual state/recovery and intended-tailnet/live-policy/tag review acknowledge `stateReviewed` and `policyReviewed`. Then change only that host's entry in the `rollout` table in `modules/tailscale/clients.nix` to true and deliberately update the independent real-host rollout oracle in `modules/tailscale/checks.nix`. Do not set host `ready` or other review flags as a shortcut.
 5. Run canonical checks and the affected commissioned host's readiness/build. Enabling a client adds UDP **41641** for encrypted tunnel transport, not a new application grant. It keeps native netfilter mode `on` (Tailscale manages its own overlay rules), never blanket-trusts the interface, disables Taildrop/Tailscale SSH/webclient/operator/auto-update and route/exit-node advertisement/acceptance, and accepts reviewed tailnet DNS. Host builds never publish tailnet policy. `services.tailscale.*` must not become a second enrollment/preferences writer.
 6. With explicit host-operation authorization and verified recovery, activate one commissioned host at a time. The unit uses `--auth-key=file:...` **only in NeedsLogin**; it never force-reauthenticates, resets unknown preferences or submits a key to a pending-approval node. Running nodes retain identity; stopped nodes reconnect using a genuinely bare `up` bounded by external `timeout` (even `up --timeout` triggers the CLI's non-default-settings check). Exact self-tag and running-state checks reject unexpected identity results. Secret/CLI failures have sanitized diagnostics; inspect them privately rather than exposing credentials/login URLs. Network-online ordering and three bounded attempts cover transient startup failures; after exhaustion, correct the cause and explicitly reset/restart the unit, never disable guards.
@@ -191,6 +192,6 @@ Those preparation prerequisites are now operator-confirmed and selected for Thin
 
 ## Validation boundaries
 
-`just check` covers both-track staged/enabled fixtures, own-track packages, persistence/mount requirements, review/secret/tag/override rejection, native CLI flag availability, offline mocked reconciliation/wrapper behavior, an exact initial-policy oracle with widening regressions, native OpenTofu schema/mock-provider plans and synthetic local encrypted-state/saved-plan tests including non-saving no-change/drift statuses, retained-file preservation and wrong-key/plaintext rejection. The encryption test's `terraform_data` apply writes only a temporary local fixture: **no cloud/tailnet provider, host activation, installer or daemon is run**.
+`devenv tasks run repo:check` covers native task/lock/tooling parity, synthetic SOPS-adapter boundaries, both-track staged/enabled fixtures, own-track packages, persistence/mount requirements, review/secret/tag/override rejection, native CLI flag availability, offline mocked reconciliation/wrapper behavior, an exact initial-policy oracle with widening regressions, native OpenTofu schema/mock-provider plans and synthetic local encrypted-state/saved-plan tests including non-saving no-change/drift statuses, retained-file preservation and wrong-key/plaintext rejection. The encryption test's `terraform_data` apply writes only a temporary local fixture: **no cloud/tailnet provider, host activation, installer or daemon is run**.
 
 These tests cannot establish real key validity/decryption, tailnet identity/plan entitlement, API policy acceptance, tag cardinality, firewall behavior, credentials, networking, hardware boot or restore. Read-only access/scopes, complete diff review and offline backup recovery are now operator-confirmed, separately from these tests. Exclusive policy-writer control, unused/uniquely correct fleet-tag assignments and independent administrative recovery access were operator-confirmed for that earlier maintenance task. The minimal write scopes and fresh exact policy-only diff were subsequently operator-confirmed, followed by a successful apply report. These attestations are not blanket authorization for later changes. The report is evidence of API acceptance, not an agent-observed readback or real allowed/denied flow test. The operator subsequently confirmed no-drift verification, post-apply independent recovery and checked protected backups. ThinkPad's host-state backup and key provisioning are now operator-confirmed; only its state/policy review flags and candidate rollout are enabled. Key validity, dedicated-identity runtime decryption, device approval and enrollment remain runtime gates. Other hosts' state/enrollment credentials and remote commissioning remain open; no OS commissioning flag changed. Deployment and live enrollment are not complete.
