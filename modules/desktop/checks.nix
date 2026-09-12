@@ -12,7 +12,9 @@ let
     track:
     (lib.evalModules {
       class = "nixos";
-      specialArgs.modulesPath = "${inputs."nixpkgs-${track}"}/nixos/modules";
+      specialArgs.modulesPath = "${
+        if track == "stable" then inputs.nixpkgs-stable else inputs.nixpkgs
+      }/nixos/modules";
       modules = [ config.flake.modules.nixos.desktop ];
     }).graph;
   desktopFixtures = lib.genAttrs [ "unstable" ] (
@@ -32,11 +34,17 @@ let
     let
       cfg = fixture.config;
       home = cfg.home-manager.users.fixture-admin;
+      # Assertion failures are data on config.assertions; the NixOS toplevel
+      # throws exactly when one is false. Force only the assertion booleans:
+      # upstream messages may legitimately throw while their assertion passes,
+      # because the toplevel renders failed messages only.
       rejected =
         module:
-        !(builtins.tryEval
-          (fixture.extendModules { modules = [ module ]; }).config.system.build.toplevel.drvPath
-        ).success;
+        let
+          broken = (fixture.extendModules { modules = [ module ]; }).config;
+          forced = builtins.tryEval (lib.all (a: a.assertion) broken.assertions);
+        in
+        !forced.success || !forced.value;
     in
     assert lib.assertMsg
       (
@@ -49,6 +57,7 @@ let
         && builtins.attrNames cfg.home-manager.extraSpecialArgs == [ "nixosConfig" ]
         && !home.home.version.isReleaseBranch
         && lib.elem fixture.pkgs.noctalia home.home.packages
+        && home.programs.direnv.enable
         && cfg.programs.hyprland.package.version == fixture.pkgs.hyprland.version
         && cfg.hardware.graphics.enable
         && !cfg.hardware.graphics.enable32Bit

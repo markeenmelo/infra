@@ -1,37 +1,29 @@
 { inputs, ... }:
 {
+  # Make the CLI available outside this repository's development shell.
+  flake.modules.homeManager.desktop = { pkgs, ... }: { home.packages = [ pkgs.devenv ]; };
+
   perSystem =
     {
-      config,
       lib,
       pkgs,
       system,
       ...
     }:
     {
-      options.devPackages = lib.mkOption {
-        type = lib.types.listOf lib.types.package;
-        default = [ ];
-        description = "Feature-owned packages for the locked development shell, using this per-system evaluation only.";
-      };
       config = {
-        # Developer tools are deliberately stable and independent of every host's pkgs.
-        _module.args.pkgs = inputs.nixpkgs-stable.legacyPackages.${system};
+        # Unstable development/check tools; host packages use their own explicit track.
+        _module.args.pkgs = inputs.nixpkgs.legacyPackages.${system};
         formatter = pkgs.nixfmt-tree;
-        devShells.default = pkgs.mkShellNoCC { packages = config.devPackages; };
-        devPackages = [
-          pkgs.nixfmt-tree
-          pkgs.nixfmt
-          pkgs.statix
-          pkgs.deadnix
-          pkgs.just
-          pkgs.jq
-          pkgs.git
-          pkgs.openssh
-          pkgs.shellcheck
-          pkgs.python3
-        ];
+        # Bootstrap without installing anything or retaining a parallel devShell.
+        packages.devenv = pkgs.devenv;
         checks.source-quality =
+          assert lib.assertMsg
+            (
+              (lib.importJSON ../devenv.lock).nodes.nixpkgs.locked == (lib.importJSON ../flake.lock)
+              .nodes.nixpkgs.locked
+            )
+            "devenv.lock must use the flake's locked unstable tooling source; synchronize it after a nixpkgs update.";
           pkgs.runCommand "source-quality"
             {
               nativeBuildInputs = [
@@ -43,14 +35,14 @@
             }
             ''
               cd ${inputs.self}
-              if find . -name '*.nix' ! -path './flake.nix' ! -path './modules/*' -print -quit | grep -q .; then
-                echo 'Every non-entry Nix file must be a top-level module under modules/.' >&2
+              if find . -name '*.nix' ! -path './flake.nix' ! -path './devenv.nix' ! -path './modules/*' -print -quit | grep -q .; then
+                echo 'Only flake.nix and devenv.nix are entry points; other Nix files must be top-level modules under modules/.' >&2
                 exit 1
               fi
               find . -name '*.nix' -print0 | xargs -0 -n1 nixfmt --check
               statix check .
               deadnix --fail .
-              find modules -name '*.sh' -print0 | xargs -0 shellcheck
+              find modules -name '*.sh' -print0 | xargs -0 shellcheck .envrc
               touch "$out"
             '';
       };

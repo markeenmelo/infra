@@ -28,11 +28,17 @@ let
     track: fixture:
     let
       cfg = fixture.config;
+      # Assertion failures are data on config.assertions; the NixOS toplevel
+      # throws exactly when one is false. Force only the assertion booleans:
+      # upstream messages may legitimately throw while their assertion passes,
+      # because the toplevel renders failed messages only.
       rejected =
         extra:
-        !(builtins.tryEval
-          (fixture.extendModules { modules = [ extra ]; }).config.system.build.toplevel.drvPath
-        ).success;
+        let
+          broken = (fixture.extendModules { modules = [ extra ]; }).config;
+          forced = builtins.tryEval (lib.all (a: a.assertion) broken.assertions);
+        in
+        !forced.success || !forced.value;
       enrollment = fixture.extendModules {
         modules = [
           {
@@ -87,15 +93,18 @@ let
         { networking.firewall.trustedInterfaces = [ "tailscale0" ]; }
       ];
     assert lib.assertMsg (
-      !(builtins.tryEval
-        (enrollment.extendModules {
-          modules = [
-            {
-              sops.secrets.TEST-ONLY-tailscale.mode = lib.mkForce "0444";
-            }
-          ];
-        }).config.system.build.toplevel.drvPath
-      ).success
+      let
+        leaked =
+          (enrollment.extendModules {
+            modules = [
+              {
+                sops.secrets.TEST-ONLY-tailscale.mode = lib.mkForce "0444";
+              }
+            ];
+          }).config;
+        forced = builtins.tryEval (lib.all (a: a.assertion) leaked.assertions);
+      in
+      !forced.success || !forced.value
     ) "${track}: world-readable Tailscale credential must fail";
     {
       preserveToplevel = cfg.system.build.toplevel.drvPath;

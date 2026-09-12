@@ -5,6 +5,7 @@
       pkgs.jq
       pkgs.just
     ];
-    # Repository-pinned deployment and lint tooling comes from nix develop.
+    # Repository tooling now comes from native devenv; just remains a general
+    # administration tool for unrelated projects, not this repo's task runner.
   };
 }

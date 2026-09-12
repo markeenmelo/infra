@@ -18,7 +18,7 @@ in
       # than teaching fleet.nix or the fixture constructor about desktop names.
       imports =
         assert lib.assertMsg (
-          toString modulesPath == "${inputs.nixpkgs-unstable}/nixos/modules"
+          toString modulesPath == "${inputs.nixpkgs}/nixos/modules"
         ) "The desktop/Home Manager capability is supported only on the unstable track.";
         [ inputs.home-manager.nixosModules.home-manager ];
       options.fleet.desktop.reviewed = lib.mkOption {

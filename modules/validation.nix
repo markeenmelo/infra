@@ -10,7 +10,7 @@ let
   reports = config.flake.validation;
   tracks = {
     stable = inputs.nixpkgs-stable;
-    unstable = inputs.nixpkgs-unstable;
+    unstable = inputs.nixpkgs;
   };
 in
 {
@@ -82,6 +82,7 @@ in
         "gaming"
         "nas"
         "administration"
+        "editors"
         "tailscale"
       ];
       # Explicitly synthetic EVALUATION fixtures, never fleet/install/deploy targets.
@@ -136,7 +137,6 @@ in
             "deploy-schema"
             "fleet-evaluation"
             "pi-extensions"
-            "secret-files"
             "senecanet-template-manifest"
             "shared-password-recipients"
             "source-quality"

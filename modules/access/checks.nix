@@ -10,11 +10,17 @@ let
     track: fixture:
     let
       cfg = fixture.config;
+      # Assertion failures are data on config.assertions; the NixOS toplevel
+      # throws exactly when one is false. Force only the assertion booleans:
+      # upstream messages may legitimately throw while their assertion passes,
+      # because the toplevel renders failed messages only.
       rejected =
         module:
-        !(builtins.tryEval
-          (fixture.extendModules { modules = [ module ]; }).config.system.build.toplevel.drvPath
-        ).success;
+        let
+          broken = (fixture.extendModules { modules = [ module ]; }).config;
+          forced = builtins.tryEval (lib.all (a: a.assertion) broken.assertions);
+        in
+        !forced.success || !forced.value;
       missing =
         (fixture.extendModules {
           modules = [ { fleet.access.passwordSecrets.fixture-admin = lib.mkForce null; } ];
@@ -47,7 +53,13 @@ let
       missing.users.users.fixture-admin.hashedPassword == "!"
       && missing.users.users.fixture-admin.hashedPasswordFile == null
       && lib.elem "Supply a declared SOPS password-hash secret in fleet.access.passwordSecrets.fixture-admin." missing.fleet.bootstrap.missing
-      && !(builtins.tryEval missing.system.build.toplevel.drvPath).success
+      # Force only the assertion booleans; the credential blocker must fail them.
+      && (
+        let
+          forced = builtins.tryEval (lib.all (a: a.assertion) missing.assertions);
+        in
+        !forced.success || !forced.value
+      )
     ) "${track}: missing credentials must stay locked and block commissioning";
     assert lib.all
       (

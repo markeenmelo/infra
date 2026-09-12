@@ -9,6 +9,7 @@
       "access"
       "server"
       "nas"
+      "editors"
     ];
     deployment = {
       enable = true;

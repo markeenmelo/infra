@@ -15,18 +15,18 @@ Read `../../../AGENTS.md`, `../../../modules/deployment.nix`, `../../../modules/
 
 ## Procedure
 
-1. From repository root enter `nix develop --no-update-lock-file`. Confirm exactly which host/subset is intended and whether it is online. Desktop eligibility is `deployment.enable`, not an assumption that all fleet entries should receive every change.
-2. Run `just check` before remote contact. Inspect `just inventory`; compare the target's track/revision and actual `nixpkgsPath` with intended input. `validation.nix` independently enforces the host-track policy; never change the oracle merely to bypass an unexpected track.
-3. Run `bash modules/fleet/ready.sh HOST deploy`. Inspect `nix eval --json .#deploymentPlan | jq .`; resolve all placeholders. `deployment.sshUser` must be a configured non-root account with public keys, while `deployment.profileUser` remains root for system activation. Never enable SSH root login to bypass the non-root deployment assertion. Build with `just build HOST` if prebuilding is appropriate. Review SOPS identity custody/recipients/early decryption and signing keys separately via `../../../secrets/README.md`: pure checks do not decrypt or verify working credentials. Missing password bindings and unreviewed identities must continue to block commissioning.
+1. From repository root enter `devenv shell` (bootstrap: `nix run --no-update-lock-file .#devenv -- shell`). Confirm exactly which host/subset is intended and whether it is online. Desktop eligibility is `deployment.enable`, not an assumption that all fleet entries should receive every change.
+2. Run `devenv tasks run repo:check-full` before remote contact. Inspect `devenv tasks run repo:inventory`; compare the target's track/revision and actual `nixpkgsPath` with intended input. `validation.nix` independently enforces the host-track policy; never change the oracle merely to bypass an unexpected track.
+3. Run `bash modules/fleet/ready.sh HOST deploy`. Inspect `nix eval --json .#deploymentPlan | jq .`; resolve all placeholders. `deployment.sshUser` must be a configured non-root account with public keys, while `deployment.profileUser` remains root for system activation. Never enable SSH root login to bypass the non-root deployment assertion. Build with `devenv shell build HOST` if prebuilding is appropriate. Review SOPS identity custody/recipients/early decryption and signing keys separately via `../../../secrets/README.md`: pure checks do not decrypt or verify working credentials. Missing password bindings and unreviewed identities must continue to block commissioning.
 4. Confirm closure upload trust and elevation independently. `transport = "trusted-user"` is root-equivalent Nix access; `"signed"` needs pre-provisioned target public trust and an operator `LOCAL_KEY`. Interactive sudo/doas must work as configured. Never add global wheel trust, disable signature checks or store credentials in Git to get past a deployment failure.
 5. With authorization, verify SSH fingerprint/reachability and console access. Keep an existing session for sensitive changes. If offline, stop or deliberately choose an online subset; do not remove rollback safeguards or retry blindly.
 6. Execute only the selected approved scope:
    ```sh
-   just deploy racknerd
+   devenv shell deploy-host racknerd
    # Approved subset, after individual preflights:
    deploy --targets .#racknerd .#bastion -- --no-update-lock-file
    # All eligible nodes, only if that whole scope was authorized:
-   just deploy-fleet
+   devenv shell deploy-fleet
    ```
 7. Preserve automatic and magic rollback. `--dry-activate` still contacts/copies to the target. SSH changes should preserve old/new access in a staged migration. If unavoidable, a separately authorized console-controlled maintenance may use `--magic-rollback false`; never persist that override in defaults. Review upstream subset `--rollback-succeeded` behavior before intentionally changing it.
 8. Confirm activation, reachability, intended generation, service health and persistent mounts. A future reboot/hardware acceptance test needs its own maintenance plan. Do not confuse successful activation with data restore or verified bootability.

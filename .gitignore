@@ -1,5 +1,9 @@
 /result*
 /.direnv/
+/.devenv/
+/.pre-commit-config.yaml
+/.env
+/.env.*
 /.local/
 *.qcow2
 *.raw

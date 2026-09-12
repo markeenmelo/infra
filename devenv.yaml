@@ -1,0 +1,27 @@
+# Development uses unstable; host package tracks remain in flake.nix.
+# Keep nixpkgs locked to flake.lock's nixpkgs; repo:check rejects drift.
+inputs:
+  devenv:
+    url: github:cachix/devenv
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+      git-hooks:
+        follows: git-hooks
+  nixpkgs:
+    url: github:NixOS/nixpkgs/nixpkgs-unstable
+  git-hooks:
+    url: github:cachix/git-hooks.nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  # Native devenv treefmt integration; same unstable source as the CLI.
+  treefmt-nix:
+    url: github:numtide/treefmt-nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+
+# Never resolve secrets during evaluation or shell entry.
+secretspec:
+  enable: false
