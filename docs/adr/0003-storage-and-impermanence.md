@@ -1,6 +1,6 @@
 # ADR 0003 — Explicit OS storage: tmpfs root, no NAS topology
 
-- Status: accepted; amended 2026-09-12 for per-host fresh candidates, superseding [ADR 0005](0005-existing-headless-baseline.md) for this branch only. All candidates remain unready; running installations are untouched.
+- Status: accepted; amended 2026-09-12 for per-host fresh candidates, superseding [ADR 0005](0005-existing-headless-baseline.md) for this branch only. All candidates began unready; subsequent host review, installation and boot acceptance are recorded in [current status](../hosts.md#current-status).
 - Date: 2026-09-09
 
 ## Context
@@ -10,7 +10,7 @@ The original scaffold targeted fresh disks whose identifiers, firmware modes and
 ## Decision
 
 - Each host composes its single `modules/hosts/<host>/disko.nix`, a top-level flake-parts module exporting that host's plain NixOS layout. Delete `os-disk.nix`, `existing.nix` and old per-host UUID mount files; no replacement generic storage module, compatibility interface or old/new toggle. Each file directly imports upstream disko and the shared Limine boot policy, and owns its small provisioning-output guard.
-- Nullable `fleet.installation.osDevice` and fresh `storageReviewed` belong to the existing installation metadata, not a layout-building API. All candidates are unready, including ThinkPad. Old-installation boot/migration approvals remain historical evidence, not fresh review. Racknerd has no approved provisioning identifier; null blocks scripts without inventing a path.
+- Nullable `fleet.installation.osDevice` and fresh `storageReviewed` belong to the existing installation metadata, not a layout-building API. All fresh candidates begin unready, including previously commissioned ThinkPad; new approvals require actual fresh review. Old-installation boot/migration approvals remain historical evidence, not fresh review. Racknerd has no approved provisioning identifier; null blocks scripts without inventing a path.
 - GPT with explicitly sized FAT `/boot`, plain Btrfs `nix` and `persist` subvolumes, and tmpfs `/` with the existing configurable 25% ceiling. ThinkPad additionally declares `home` and an 8 GiB plain swap partition, with no hibernation or LVM. Persistent and ephemeral mounts are `neededForBoot`.
 - Both firmware modes use Limine and FAT `/boot`: UEFI uses an ESP; BIOS adds a first 1 MiB EF02 embedding partition. Boot sizes are explicit native disko values: 2 GiB on servers, 4 GiB on ThinkPad, covered by independent layout fixture assertions. There is no generic size option/minimum parser. Actual kernel/initrd sizes and retained generations still require review before approval.
 - Btrfs shares remaining capacity without a `/nix` versus state split; it introduces no RAID/snapshot machinery. No ZFS/LVM/LUKS stack, root-reset service or NAS data disk is inferred. Unused `lvm_vg`, `mdadm`, `zpool` and `bcachefs_filesystems` collections are forced empty. Additional disks and redirected OS devices reject public scripts/images; pending identity/confirmation/firmware facts reject even empty scripts that could unmount `/mnt`. Both-track tests cover the actual three proposed layouts, not a second test-only layout.

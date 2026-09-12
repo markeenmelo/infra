@@ -38,7 +38,7 @@ Each host composes its single `modules/hosts/<host>/disko.nix`: native disko par
 
 ## Access and deployment
 
-Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** via `neededForUsers` and a dedicated persistent age identity; Bastion now has a separately verified identity/recipient and early-delivery preflight, not yet installed-boot acceptance ([ADR 0006](docs/adr/0006-sops-password-delivery.md), [secret inventory](secrets/README.md)).
+Target policy: `marcos`, the explicitly selected existing public key, authenticated sudo with password fallback (ThinkPad additionally permits fingerprint), immutable users, locked root, no root/password SSH. **SOPS delivers password hashes from ciphertext before account creation** via `neededForUsers` and a dedicated persistent age identity; Bastion now has a separately verified identity/recipient, private-terminal credential checks and two-boot persistence acceptance ([ADR 0006](docs/adr/0006-sops-password-delivery.md), [secret inventory](secrets/README.md)).
 
 A temporary non-root access bootstrap is not declarative commissioning: follow [the transition checklist](docs/hosts.md#access-and-state-migration-checklist--no-execution-authorized). Only `ready && deployment.enable` hosts enter deploy-rs: root activates, a non-root account connects via SSH, and closure transport remains nullable until signing trust or explicit root-equivalent per-user Nix trust is provisioned. Rollback stays enabled.
 
