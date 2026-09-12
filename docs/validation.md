@@ -70,6 +70,17 @@ The independent track oracle in `modules/validation.nix` deliberately repeats th
 - Nix warns about custom outputs such as `fleet`, `fleetConfigurations`, `deploymentPlan`, `tailscalePlan`, `validation`, `modules` and `deploy`. These are not standard Nix CLI schema names; custom outputs are explicitly evaluated by the check suite.
 - ThinkPad's build readiness passes; `devenv shell ready racknerd` and `devenv shell ready bastion` refuse with their real blockers. Racknerd has no deploy-rs node until its identity and closure-trust gates are resolved, and ThinkPad's deployment readiness still refuses its local-only intent. This is the desired safety distinction.
 
+## import-tree discovery input — 2026-09-12
+
+Starting point: clean **`devenv` / `5c1f116`**. [Research](research.md#import-tree-discovery-input--2026-09-12) and the [ADR 0001 amendment](adr/0001-dendritic-composition.md#discovery-input-amendment--2026-09-12) record the operator-selected adoption of the pinned `denful/import-tree` input (`eb1b52e…`, the repository formerly published as `vic/import-tree`). The `flake.nix` root module is now the `modules/` tree itself; `modules/flake-parts.nix` owns the flake-parts conventions. No fleet pin, host composition, readiness/review flag, credential or storage decision changed.
+
+- **Canonical validation passed:** `repo:fmt` (0 files changed) and full `repo:check` (exit 0, 584s), then `ready thinkpad` and `build thinkpad` (exit 0). Logs: `/tmp/it-importtree-check.log`, `/tmp/it-ready-thinkpad.log`, `/tmp/it-build-thinkpad.log`. Final diagnostics remain only the documented dirty-tree, restricted-client-setting and custom-output warnings; no new warning category and no schema complaint about the new input.
+- **Behavior-neutral evidence:** before/after captures on the identical tree keep `.#fleet` JSON, `nixosConfigurations` (`thinkpad` only), `deploy.nodes` (empty) and ThinkPad's toplevel derivation byte-identical (`/nix/store/2aq6hh9cn1cwflw1d6j0sqa50dlq1gv6-nixos-system-thinkpad-26.11.20260910.aff8a0b.drv`), confirming sorted discovery and merge order are unchanged. The built output is `/nix/store/lrxzw6mxpxvjylaw6arb6953z4c12bkl-nixos-system-thinkpad-26.11.20260910.aff8a0b` from that same derivation.
+- **Lock movement is purely additive:** `flake.lock` gained only the `import-tree` node (16 insertions, 0 deletions) at `eb1b52eaecc57f7c136d07ae8a93e724dfecac46`; every existing pin and narHash is unchanged, so devenv unstable-lock parity is unaffected.
+- **Known behavior deltas documented, none active:** `/_`-prefixed paths are now excluded helpers and `*.nix` symlinks would now be discovered; the tree contained neither at switch time. Racknerd/Bastion readiness refusals and the absence of deploy nodes are unchanged.
+
+Built, not activated; no target contact or deployment occurred. This session staged the candidate without committing; the seven implementation files were committed externally as `4dc6d2b` while validation ran, leaving this record as the only uncommitted change.
+
 ## Native devenv and unstable tooling — 2026-09-12
 
 Starting point: clean **`devenv` / `a6def7a`**. [ADR 0010](adr/0010-native-devenv.md), [development commands](development.md) and [dated source evidence](research.md#native-devenv--2026-09-12) record the operator-selected native entry point, unstable toolbox, unversioned devenv source, default `nixpkgs` input and unstable flake-parts follow. Production source revisions/hashes, host tracks, credentials, storage and readiness decisions are preserved.
