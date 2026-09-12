@@ -213,137 +213,155 @@ in
     '';
     # Native task-graph contract: exact inventory, gate composition, uncached
     # safety gates, shell-entry purity, lock parity and OpenTofu wrapper parity.
-    "repo:tooling-check".exec = ''
-      set -euo pipefail
-      cd "$DEVENV_ROOT"
-      tasks=$DEVENV_TASK_FILE
+    # Evaluating any flake attr copies this tracked tree (secrets/ included)
+    # into the world-readable store, so the parity eval below must never race
+    # the ciphertext guard: the guard completes first.
+    "repo:tooling-check" = {
+      after = [ "repo:secret-check" ];
+      exec = ''
+        set -euo pipefail
+        cd "$DEVENV_ROOT"
+        tasks=$DEVENV_TASK_FILE
 
-      expect() {
-        local description=$1
-        shift
-        jq -e "$*" "$tasks" > /dev/null || { printf 'Native task contract violated: %s\n' "$description" >&2; exit 1; }
-      }
+        expect() {
+          local description=$1
+          shift
+          jq -e "$*" "$tasks" > /dev/null || { printf 'Native task contract violated: %s\n' "$description" >&2; exit 1; }
+        }
 
-      expect 'an acyclic task graph' '
-        # Kahn elimination over both dependency directions: an edge X->Y means
-        # "X must run before Y" (Y.after contains X, or X.before contains Y).
-        # A cycle is any node set that never runs out of prerequisite-free
-        # nodes; the existence check below owns unknown references.
-        def kahn($nodes; $edges):
-          [$nodes[] | select(. as $n | $edges | all(.[1] != $n))] as $ready
-          | if ($nodes | length) == 0 then true
-            elif ($ready | length) == 0 then false
-            else
-              kahn(
-                [$nodes[] | select(. as $n | ($ready | index($n)) | not)];
-                [$edges[] | select(.[0] as $from | ($ready | index($from)) | not)]
-              )
-            end;
-        . as $t
-        | [$t[].name] as $nodes
-        | [ $t[] as $n
-            | ((($n.after // [])[] | [., $n.name]), (($n.before // [])[] | [$n.name, .]))
-            | select((.[0] as $a | $nodes | index($a) != null) and (.[1] as $b | $nodes | index($b) != null))
-          ] as $edges
-        | kahn($nodes; $edges)
-      '
+        expect 'an acyclic task graph' '
+          # Kahn elimination over both dependency directions: an edge X->Y means
+          # "X must run before Y" (Y.after contains X, or X.before contains Y).
+          # A cycle is any node set that never runs out of prerequisite-free
+          # nodes; the existence check below owns unknown references.
+          def kahn($nodes; $edges):
+            [$nodes[] | select(. as $n | $edges | all(.[1] != $n))] as $ready
+            | if ($nodes | length) == 0 then true
+              elif ($ready | length) == 0 then false
+              else
+                kahn(
+                  [$nodes[] | select(. as $n | ($ready | index($n)) | not)];
+                  [$edges[] | select(.[0] as $from | ($ready | index($from)) | not)]
+                )
+              end;
+          . as $t
+          | [$t[].name] as $nodes
+          | [ $t[] as $n
+              | ((($n.after // [])[] | [., $n.name]), (($n.before // [])[] | [$n.name, .]))
+              | select((.[0] as $a | $nodes | index($a) != null) and (.[1] as $b | $nodes | index($b) != null))
+            ] as $edges
+          | kahn($nodes; $edges)
+        '
 
-      expect 'the exact repo task inventory' '
-        [ .[] | select(.name | startswith("repo:")) | .name ] | sort == [
-          "repo:check",
-          "repo:check-full",
-          "repo:evaluate",
-          "repo:fmt",
-          "repo:format-check",
-          "repo:inventory",
-          "repo:lint",
-          "repo:revisions",
-          "repo:secret-check",
-          "repo:secret-check-tests",
-          "repo:tailscale-check",
-          "repo:tailscale-inventory",
-          "repo:tooling-check"
-        ]
-      '
-
-      expect 'every dependency to reference an existing task' '
-        . as $t
-        | all($t[]; ((.after // []) + (.before // []))
-          | all(. as $d | any($t[]; .name == $d)))
-      '
-
-      expect 'the fast gate to compose only the cheap independent checks' '
-        [ .[] | select(.name == "repo:check") | .after[] ] | sort == [
-          "repo:format-check",
-          "repo:lint",
-          "repo:secret-check",
-          "repo:tooling-check"
-        ]
-      '
-
-      # devenv serializes exec into a store command script; inspect its text.
-      fast_command=$(jq -r '.[] | select(.name == "repo:check") | .command' "$tasks")
-      full_command=$(jq -r '.[] | select(.name == "repo:check-full") | .command' "$tasks")
-      grep -q 'flake check' "$full_command" \
-        || { echo 'Native task contract violated: repo:check-full lost the full flake check.' >&2; exit 1; }
-      if grep -q 'flake check' "$fast_command"; then
-        echo 'Native task contract violated: the fast gate must not run the full flake check.' >&2
-        exit 1
-      fi
-
-      expect 'the full gate to close over every required safety gate' '
-        def closure($t; $names):
-          ([$names[] as $n | ($t[] | select(.name == $n) | .after[])] | unique) as $next
-          | (($names + $next) | unique) as $all
-          | if ($next - $names | length) == 0 then $all else closure($t; $all) end;
-        closure(. ; ["repo:check-full"]) as $c
-        | all(
+        expect 'the exact repo task inventory' '
+          [ .[] | select(.name | startswith("repo:")) | .name ] | sort == [
+            "repo:check",
+            "repo:check-full",
             "repo:evaluate",
+            "repo:fmt",
+            "repo:format-check",
+            "repo:inventory",
+            "repo:lint",
+            "repo:revisions",
             "repo:secret-check",
             "repo:secret-check-tests",
+            "repo:tailscale-check",
+            "repo:tailscale-inventory",
+            "repo:tooling-check"
+          ]
+        '
+
+        expect 'every dependency to reference an existing task' '
+          . as $t
+          | all($t[]; ((.after // []) + (.before // []))
+            | all(. as $d | any($t[]; .name == $d)))
+        '
+
+        expect 'the fast gate to compose only the cheap checks' '
+          [ .[] | select(.name == "repo:check") | .after[] ] | sort == [
             "repo:format-check",
             "repo:lint",
+            "repo:secret-check",
             "repo:tooling-check"
-          ; $c | index(.))
-      '
+          ]
+        '
 
-      expect 'ciphertext to be checked before evaluation' '
-        def closure($t; $names):
-          ([$names[] as $n | ($t[] | select(.name == $n) | .after[])] | unique) as $next
-          | (($names + $next) | unique) as $all
-          | if ($next - $names | length) == 0 then $all else closure($t; $all) end;
-        closure(. ; ["repo:evaluate"]) | index("repo:secret-check") != null
-      '
+        # devenv serializes exec into a store command script; inspect its text.
+        fast_command=$(jq -r '.[] | select(.name == "repo:check") | .command' "$tasks")
+        full_command=$(jq -r '.[] | select(.name == "repo:check-full") | .command' "$tasks")
+        grep -q 'flake check' "$full_command" \
+          || { echo 'Native task contract violated: repo:check-full lost the full flake check.' >&2; exit 1; }
+        if grep -q 'flake check' "$fast_command"; then
+          echo 'Native task contract violated: the fast gate must not run the full flake check.' >&2
+          exit 1
+        fi
 
-      expect 'every safety gate to stay uncached' '
-        [.[]
-          | select(.name as $n
-            | ["repo:check", "repo:check-full", "repo:evaluate", "repo:format-check", "repo:lint",
-               "repo:secret-check", "repo:secret-check-tests", "repo:tooling-check"]
-            | index($n))]
-        | all(.status == null and ((.exec_if_modified // []) | length == 0))
-      '
+        # Evaluating or building this path flake copies the tracked tree
+        # (secrets/ included) into the world-readable store before evaluation
+        # even starts, so every such task must wait for the ciphertext guard
+        # instead of racing it as a sibling dependency.
+        evaluators=$(jq -r '.[] | select(.command != null) | "\(.name)\t\(.command)"' "$tasks" \
+          | while IFS=$'\t' read -r task_name command; do
+              grep -Eq 'nix (eval|build|flake check)' "$command" && printf '%s\n' "$task_name"
+            done | jq -R -s 'split("\n") | map(select(length > 0))')
+        [[ $(jq 'length' <<<"$evaluators") -gt 0 ]] \
+          || { echo 'Native task contract violated: no flake-evaluating task found; command inspection is stale.' >&2; exit 1; }
+        jq -e --argjson evaluators "$evaluators" "
+          def closure(\$t; \$names):
+            ([\$names[] as \$n | (\$t[] | select(.name == \$n) | .after[])] | unique) as \$next
+            | ((\$names + \$next) | unique) as \$all
+            | if (\$next - \$names | length) == 0 then \$all else closure(\$t; \$all) end;
+          . as \$t
+          | all(\$evaluators[]; . as \$n | closure(\$t; [\$n]) | index(\"repo:secret-check\") != null)
+        " "$tasks" > /dev/null \
+          || { echo 'Native task contract violated: ciphertext verification must precede every flake evaluation.' >&2; exit 1; }
 
-      expect 'shell entry to run no repository or treefmt operation' '
-        ([.[] | select((.before // []) | index("devenv:enterShell")) | .name]
-          + [.[] | select(.name == "devenv:enterShell") | (.after // [])[]])
-        | all(test("^(repo:|devenv:treefmt)") | not)
-      '
+        expect 'the full gate to close over every required safety gate' '
+          def closure($t; $names):
+            ([$names[] as $n | ($t[] | select(.name == $n) | .after[])] | unique) as $next
+            | (($names + $next) | unique) as $all
+            | if ($next - $names | length) == 0 then $all else closure($t; $all) end;
+          closure(. ; ["repo:check-full"]) as $c
+          | all(
+              "repo:evaluate",
+              "repo:secret-check",
+              "repo:secret-check-tests",
+              "repo:format-check",
+              "repo:lint",
+              "repo:tooling-check"
+            ; $c | index(.))
+        '
 
-      jq -e --slurpfile flake flake.lock \
-        '.nodes.nixpkgs.locked == $flake[0].nodes.nixpkgs.locked' devenv.lock > /dev/null \
-        || { echo 'Development/flake unstable pins differ.' >&2; exit 1; }
-      jq -e '.nodes.devenv.original == {owner: "cachix", repo: "devenv", type: "github"}' devenv.lock > /dev/null \
-        || { echo 'Keep the devenv source unversioned; revisions belong in devenv.lock.' >&2; exit 1; }
+        expect 'every safety gate to stay uncached' '
+          [.[]
+            | select(.name as $n
+              | ["repo:check", "repo:check-full", "repo:evaluate", "repo:format-check", "repo:lint",
+                 "repo:secret-check", "repo:secret-check-tests", "repo:tooling-check"]
+              | index($n))]
+          | all(.status == null and ((.exec_if_modified // []) | length == 0))
+        '
 
-      # Catch divergence in the duplicated one-line native OpenTofu package selection.
-      packaged=$(nix eval --no-update-lock-file --raw .#packages.x86_64-linux.tailscale-tofu)
-      tofu=$(command -v tofu)
-      [[ $tofu != null ]] || { echo 'OpenTofu is missing from the native environment.' >&2; exit 1; }
-      [[ $(readlink -f "$tofu") == "$packaged/bin/tofu" ]] \
-        || { echo 'Use the exact checked OpenTofu/provider wrapper.' >&2; exit 1; }
-      echo 'Native task graph, uncached safety gates, unstable lock and OpenTofu/provider parity passed.'
-    '';
+        expect 'shell entry to run no repository or treefmt operation' '
+          ([.[] | select((.before // []) | index("devenv:enterShell")) | .name]
+            + [.[] | select(.name == "devenv:enterShell") | (.after // [])[]])
+          | all(test("^(repo:|devenv:treefmt)") | not)
+        '
+
+        jq -e --slurpfile flake flake.lock \
+          '.nodes.nixpkgs.locked == $flake[0].nodes.nixpkgs.locked' devenv.lock > /dev/null \
+          || { echo 'Development/flake unstable pins differ.' >&2; exit 1; }
+        jq -e '.nodes.devenv.original == {owner: "cachix", repo: "devenv", type: "github"}' devenv.lock > /dev/null \
+          || { echo 'Keep the devenv source unversioned; revisions belong in devenv.lock.' >&2; exit 1; }
+
+        # Catch divergence in the duplicated one-line native OpenTofu package selection.
+        packaged=$(nix eval --no-update-lock-file --raw .#packages.x86_64-linux.tailscale-tofu)
+        tofu=$(command -v tofu)
+        [[ $tofu != null ]] || { echo 'OpenTofu is missing from the native environment.' >&2; exit 1; }
+        [[ $(readlink -f "$tofu") == "$packaged/bin/tofu" ]] \
+          || { echo 'Use the exact checked OpenTofu/provider wrapper.' >&2; exit 1; }
+        echo 'Native task graph, uncached safety gates, unstable lock and OpenTofu/provider parity passed.'
+      '';
+    };
     "repo:evaluate" = {
       # Serialize Nix evaluations to avoid competing for the same eval-cache DB.
       after = [
@@ -388,7 +406,9 @@ in
         nix flake check --no-update-lock-file -L
       '';
     };
+    # Standalone fleet evaluation must not bypass the ciphertext guard either.
     "repo:inventory" = {
+      after = [ "repo:secret-check" ];
       showOutput = true;
       exec = ''
         set -euo pipefail
@@ -397,6 +417,7 @@ in
       '';
     };
     "repo:tailscale-inventory" = {
+      after = [ "repo:secret-check" ];
       showOutput = true;
       exec = ''
         set -euo pipefail
