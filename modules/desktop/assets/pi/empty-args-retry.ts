@@ -20,6 +20,12 @@
 // leaves unmatched calls in the persisted history (the failure spiral of
 // earendil-works/pi#5921).
 //
+// The errorMessage phrasing is load-bearing: Pi retries only messages whose
+// error text matches its RETRYABLE_PROVIDER_ERROR_PATTERN, so the message
+// must start with "provider returned error" (test-extensions.mjs asserts
+// this; pi 0.85.1's pattern requires it, and even pi-tool-repair's phantom
+// message misses the current list).
+//
 // Deliberately model-agnostic and schema-directed: a call with zero
 // arguments against an active tool that declares required properties can
 // never execute on any provider, so a bounded retry is always preferable to
@@ -87,8 +93,8 @@ export function retryEmptyArguments(
       content: content.filter((part) => !isToolCall(part)),
       stopReason: "error",
       errorMessage:
-        `provider tool call for "${name}" arrived with an empty arguments payload ` +
-        `(required: ${needs}); treated as transient and retried`,
+        `provider returned error: tool call for "${name}" arrived with an empty ` +
+        `arguments payload (required: ${needs}); treated as transient and retried`,
     },
   }
 }
