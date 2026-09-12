@@ -66,10 +66,11 @@ deploy --targets .#racknerd .#bastion -- --no-update-lock-file
 
 ## Architecture
 
-`flake.nix` is the production Nix entry point. Its sorted discovery imports every `.nix` under `modules/` into **one top-level flake-parts evaluation**; no symlinks are followed. Root `devenv.nix` is the explicitly approved native development-only exception, never imported into a host. All remaining Nix files, including hardware facts and tests, are top-level modules. See [ADR 0010](docs/adr/0010-native-devenv.md).
+`flake.nix` is the production Nix entry point. It pins inputs and passes the whole `modules/` tree to the pinned `import-tree` input for **one top-level flake-parts evaluation**; `/_`-prefixed paths are deliberately excluded non-auto-imported helpers, and `modules/flake-parts.nix` owns the flake-parts conventions. Root `devenv.nix` is the explicitly approved native development-only exception, never imported into a host. All remaining Nix files, including hardware facts and tests, are top-level modules. See [ADR 0010](docs/adr/0010-native-devenv.md).
 
 Class-checked `flake.modules.nixos.<capability>`, `flake.modules.homeManager.<capability>` and per-host `fleet.hosts.<name>.module` are deferred values. Concerns may contribute to the same value; paths organize concerns, not host import roots. No flake inputs are injected through `specialArgs`. SSH has a stable module key to deduplicate diamond imports.
 
+- `modules/flake-parts.nix`: flake-parts evaluation conventions (flakeModules import, systems).
 - `modules/fleet.nix`: required identity/architecture/track, evaluation boundary, inventory.
 - `modules/machines/`: explicit capability compositions and deployment intent.
 - `modules/hardware/`: observed hardware only; networking, access, locale and laptop policy live in their own concerns.

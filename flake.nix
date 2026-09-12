@@ -9,6 +9,10 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
+    # Deterministic auto-import of the modules/ tree into one top-level
+    # flake-parts evaluation. A zero-dependency callable formerly published
+    # as vic/import-tree; see docs/research.md and ADR 0001.
+    import-tree.url = "github:denful/import-tree";
     # Only the unstable interactive desktop needs Home Manager; servers do not.
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -44,29 +48,9 @@
 
   outputs =
     inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      # Production Nix files are top-level modules; devenv.nix is the separate
-      # native development entry point and is never discovered here.
-      # readDir is sorted; symlinks are not followed. No discovery dependency needed.
-      imports =
-        let
-          discover =
-            dir:
-            builtins.concatLists (
-              builtins.attrValues (
-                builtins.mapAttrs (
-                  name: type:
-                  if type == "directory" then
-                    discover (dir + "/${name}")
-                  else if type == "regular" && builtins.match ".*\\.nix" name != null then
-                    [ (dir + "/${name}") ]
-                  else
-                    [ ]
-                ) (builtins.readDir dir)
-              )
-            );
-        in
-        [ inputs.flake-parts.flakeModules.modules ] ++ discover ./modules;
-      systems = [ "x86_64-linux" ];
-    };
+    # The whole modules/ tree is the root module of one flake-parts
+    # evaluation; modules/flake-parts.nix owns the flake-parts conventions.
+    # import-tree reads builtins.readDir: sorted, no symlinks followed, and
+    # /_-prefixed paths are deliberately excluded non-auto-imported helpers.
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
 }

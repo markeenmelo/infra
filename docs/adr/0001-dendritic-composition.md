@@ -1,6 +1,6 @@
 # ADR 0001 — Top-level dendritic composition
 
-- Status: accepted; development entry-point exception and tooling ownership amended by [ADR 0010](0010-native-devenv.md)
+- Status: accepted; development entry-point exception and tooling ownership amended by [ADR 0010](0010-native-devenv.md); discovery moved to the pinned import-tree input by the [2026-09-12 amendment](#discovery-input-amendment--2026-09-12)
 - Date: 2026-09-09
 
 ## Context
@@ -22,6 +22,12 @@ The [upstream pattern](https://github.com/mightyiam/dendritic) requires feature-
 - Feature-owned checks merge existing `validation` reports and public `checks`. The small typed validation harness only assembles synthetic capability-scoped fixtures and preserves independent report/check/track inventories. Tests are top-level modules, never raw NixOS fixture files or exported hosts. Scripts live beside their owners; the later native devenv migration assembles developer packages/tasks separately, without changing feature-owned checks.
 - Shared display facts feed native HM settings and the tested runtime script from one local binding. Ordinary `let`, module merging and existing `perSystem` evaluation suffice; no new input or abstraction framework is introduced.
 
+## Discovery-input amendment — 2026-09-12
+
+The operator chose the upstream discovery idiom. `flake.nix` pins the `import-tree` input ([denful/import-tree](https://github.com/denful/import-tree), formerly published as `vic/import-tree`; researched at `eb1b52eaecc57f7c136d07ae8a93e724dfecac46` in [research](../research.md#import-tree-discovery-input--2026-09-12)) and its root module is the tree itself: `mkFlake { inherit inputs; } (inputs.import-tree ./modules)`. `modules/flake-parts.nix` — an ordinary discovered module — owns the flake-parts conventions (`flakeModules.modules` import and `systems`). The hand-written `readDir` traversal is removed.
+
+Source-verified behavior preserves deterministic sorted depth-first discovery. The only deltas are the upstream default excluding `/_`-prefixed helper paths — from now on underscore-prefixed files are deliberately not auto-imported — and including `*.nix`-named non-directory entries; neither exists in the tree today. All fleet inputs stay declared in `flake.nix`; no fleet interface, host composition, readiness or track decision changes. This supersedes the Alternatives note that declined import-tree: it remains unnecessary for correctness and is adopted as deliberate idiom alignment.
+
 ## Consequences
 
 File paths name features, not a host's import graph. Hardware facts must be wrapped rather than stored as raw generated lower-level modules. Multiple import routes need ordinary module deduplication; SSH has an explicit key. A custom host schema is justified by auditing/safety, not a general infrastructure framework.
@@ -30,6 +36,6 @@ Uncommissioned NixOS values live in `fleetConfigurations`; `fleet` reports their
 
 ## Alternatives
 
-Raw `lib.evalModules` is valid dendritic architecture but would duplicate flake output plumbing. import-tree is useful at larger scale but unnecessary for a small deterministic traversal. A conventional `hosts/common/profiles` tree does not meet this repository's design goal.
+Raw `lib.evalModules` is valid dendritic architecture but would duplicate flake output plumbing. import-tree was initially declined as unnecessary for a small deterministic traversal; the [2026-09-12 amendment](#discovery-input-amendment--2026-09-12) later adopted it as idiom alignment with behavior-neutral effect. A conventional `hosts/common/profiles` tree does not meet this repository's design goal.
 
 See [research](../research.md) and `modules/fleet.nix`.
