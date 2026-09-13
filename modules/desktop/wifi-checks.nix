@@ -73,8 +73,8 @@ in
   perSystem = { pkgs, ... }: {
     checks = {
       wifi-secret-environment = pkgs.runCommand "wifi-secret-environment" { } ''
-        ${lib.getExe pkgs.python3} ${./assets/test-wifi-environment.py} \
-          ${./assets/wifi-environment.py} ${lib.getLib pkgs.glib}/lib/libglib-2.0.so ${lib.getExe pkgs.envsubst}
+        ${lib.getExe pkgs.python3} ${../../scripts/desktop/test-wifi-environment.py} \
+          ${../../scripts/desktop/wifi-environment.py} ${lib.getLib pkgs.glib}/lib/libglib-2.0.so ${lib.getExe pkgs.envsubst}
         touch "$out"
       '';
       thinkpad-wifi-manifest =

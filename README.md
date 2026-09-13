@@ -22,7 +22,7 @@ Use the [validation skill](.agents/skills/validate/SKILL.md) for manual local ch
 
 ## Architecture and procedures
 
-`flake.nix` discovers `modules/` in one top-level flake-parts evaluation. Features own their class-checked NixOS/Home Manager contributions, facts and tests; hosts explicitly choose one package track. Native `devenv.nix` is the sole development-only entry-point exception.
+`flake.nix` discovers the Nix-only `modules/` tree in one top-level flake-parts evaluation. Executable sources/tests live in `scripts/`, static data in `assets/`, grouped by concern. Features own their class-checked NixOS/Home Manager contributions, facts and tests; hosts explicitly choose one package track. Native `devenv.nix` is the sole development-only entry-point exception.
 
 Operational guidance, architecture decisions, research and dated evidence live under [.agents/skills/](.agents/skills/README.md), not `docs/` or code comments. Start with [AGENTS.md](AGENTS.md), the matching skill and [secret handling](secrets/README.md).
 

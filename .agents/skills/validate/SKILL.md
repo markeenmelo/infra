@@ -28,7 +28,7 @@ Run from the repository root in `devenv shell` (bootstrap: `nix run --no-update-
    tofu fmt -check -recursive tofu
    statix check .
    deadnix --fail .
-   find modules -name '*.sh' -print0 | xargs -0 shellcheck .envrc
+   find scripts -name '*.sh' -print0 | xargs -0 shellcheck .envrc
    ```
 
    Do not run unreviewed broad automatic lint/dead-code fixes.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)
-python3 "$root/modules/tailscale/test-policy.py" "$root/tofu/tailscale/policy.hujson"
+python3 "$root/scripts/tailscale/test-policy.py" "$root/tofu/tailscale/policy.hujson"
 tofu -chdir="$root/tofu/tailscale" fmt -check -recursive
 scratch=$(mktemp -d)
 trap 'rm -rf -- "$scratch"' EXIT

@@ -87,7 +87,7 @@
         cfg = thinkpad.config;
       in
       thinkpad.pkgs.runCommand "thinkpad-printer-provisioning" { } ''
-        ${lib.getExe thinkpad.pkgs.python3} ${./assets/test-printer-provisioning.py} \
+        ${lib.getExe thinkpad.pkgs.python3} ${../../scripts/desktop/test-printer-provisioning.py} \
           ${lib.trim cfg.systemd.services.ensure-printers.serviceConfig.ExecStart} \
           ${thinkpad.pkgs.cups}/bin/lpadmin \
           ${cfg.systemd.units."ensure-printers.service".unit}/ensure-printers.service

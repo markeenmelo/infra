@@ -2,7 +2,7 @@
   flake.modules.homeManager.desktop =
     { lib, pkgs, ... }:
     let
-      theme = lib.importJSON ./assets/oled-graphite.json;
+      theme = lib.importJSON ../../assets/desktop/oled-graphite.json;
       inherit (theme) colors;
       withAlpha = color: alpha: "${color}${alpha}";
 

@@ -157,7 +157,7 @@ in
                 UMask = "0077";
               };
               script = ''
-                ${pkgs.bash}/bin/bash ${./reconcile.sh} ${
+                ${pkgs.bash}/bin/bash ${../../scripts/tailscale/reconcile.sh} ${
                   lib.escapeShellArgs [
                     (if cfg.enrollmentMode == null then "unconfigured" else cfg.enrollmentMode)
                     config.networking.hostName

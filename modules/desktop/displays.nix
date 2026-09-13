@@ -9,7 +9,7 @@ let
     builtins.replaceStrings
       [ "@internalOutput@" "@internalMode@" "@internalWidth@" ]
       [ internal.output internal.mode (toString internal.width) ]
-      (builtins.readFile ./assets/output-policy.sh);
+      (builtins.readFile ../../scripts/desktop/output-policy.sh);
 in
 {
   fleet.hosts.thinkpad.module = _: {
@@ -97,7 +97,7 @@ in
         }
         ''
           shellcheck ${script}
-          python3 ${./assets/test-output-policy.py} ${script}
+          python3 ${../../scripts/desktop/test-output-policy.py} ${script}
           touch "$out"
         '';
   };

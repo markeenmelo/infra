@@ -36,10 +36,14 @@
                 echo 'Only flake.nix and devenv.nix are entry points; other Nix files must be top-level modules under modules/.' >&2
                 exit 1
               fi
+              if find modules -type f ! -name '*.nix' -print -quit | grep -q .; then
+                echo 'modules/ contains only Nix modules; executables belong in scripts/ and static data in assets/.' >&2
+                exit 1
+              fi
               find . -name '*.nix' -print0 | xargs -0 -n1 nixfmt --check
               statix check .
               deadnix --fail .
-              find modules -name '*.sh' -print0 | xargs -0 shellcheck .envrc
+              find scripts -name '*.sh' -print0 | xargs -0 shellcheck .envrc
               touch "$out"
             '';
       };

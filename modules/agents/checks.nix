@@ -33,7 +33,7 @@
             cd "$TMPDIR/work"
             version=$(env -i HOME="$HOME" PATH=${pkgs.coreutils}/bin ${pkgs.pi-coding-agent}/bin/pi --version 2>&1)
             test "$version" = '${pkgs.pi-coding-agent.version}'
-            node ${./assets/test-extensions.mjs} ${codex}
+            node ${../../scripts/agents/test-extensions.mjs} ${codex}
             touch "$out"
           '';
     };

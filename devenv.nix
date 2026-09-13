@@ -34,20 +34,20 @@
     ready.exec = ''
       set -euo pipefail
       cd "$DEVENV_ROOT"
-      exec bash modules/fleet/ready.sh "$@"
+      exec bash scripts/fleet/ready.sh "$@"
     '';
     build.exec = ''
       set -euo pipefail
       cd "$DEVENV_ROOT"
       [[ $# == 1 ]] || { echo 'Usage: build HOST' >&2; exit 1; }
-      bash modules/fleet/ready.sh "$1"
+      bash scripts/fleet/ready.sh "$1"
       exec nix build --no-update-lock-file ".#nixosConfigurations.$1.config.system.build.toplevel"
     '';
     disk-plan.exec = ''
       set -euo pipefail
       cd "$DEVENV_ROOT"
       [[ $# == 1 ]] || { echo 'Usage: disk-plan HOST' >&2; exit 1; }
-      bash modules/fleet/ready.sh "$1" disk-plan
+      bash scripts/fleet/ready.sh "$1" disk-plan
       exec nix build --no-update-lock-file --out-link "result-disko-$1" ".#nixosConfigurations.$1.config.system.build.diskoScript"
     '';
     deploy.exec = ''
@@ -56,10 +56,10 @@
       exec nix run --no-update-lock-file .#deploy-rs -- "$@"
     '';
     tailnet.exec = ''
-      exec bash "$DEVENV_ROOT/modules/tailscale/tailscale-tofu.sh" "$@"
+      exec bash "$DEVENV_ROOT/scripts/tailscale/tailscale-tofu.sh" "$@"
     '';
     tailnet-sops.exec = ''
-      exec python3 "$DEVENV_ROOT/modules/tailscale/tailscale-sops.py" "$@"
+      exec python3 "$DEVENV_ROOT/scripts/tailscale/tailscale-sops.py" "$@"
     '';
   };
 

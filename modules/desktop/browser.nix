@@ -2,7 +2,7 @@
   flake.modules.homeManager.desktop =
     { pkgs, ... }:
     let
-      oled = builtins.fromJSON (builtins.readFile ./assets/oled-graphite.json);
+      oled = builtins.fromJSON (builtins.readFile ../../assets/desktop/oled-graphite.json);
 
       bitwardenXpi = pkgs.fetchurl {
         name = "bitwarden-2026.8.0.xpi";
@@ -280,9 +280,9 @@
       );
 
       xdg.configFile = {
-        "sponsorblock/settings-v6.1.7.json".source = ./assets/browser/sponsorblock-settings-v6.1.7.json;
+        "sponsorblock/settings-v6.1.7.json".source = ../../assets/desktop/browser/sponsorblock-settings-v6.1.7.json;
         "youtube-enhancer/settings-v1.34.2.json".source =
-          ./assets/browser/youtube-enhancer-settings-v1.34.2.json;
+          ../../assets/desktop/browser/youtube-enhancer-settings-v1.34.2.json;
       };
     };
 }

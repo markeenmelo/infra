@@ -15,11 +15,11 @@
         }
         ''
           cd ${inputs.self}
-          shellcheck modules/tailscale/reconcile.sh
-          python3 modules/tailscale/test-reconcile.py modules/tailscale/reconcile.sh
-          python3 modules/tailscale/test-tofu-wrapper.py modules/tailscale/tailscale-tofu.sh
-          python3 modules/tailscale/test-sops-wrapper.py modules/tailscale/tailscale-sops.py
-          bash modules/tailscale/check-tailscale.sh
+          shellcheck scripts/tailscale/reconcile.sh
+          python3 scripts/tailscale/test-reconcile.py scripts/tailscale/reconcile.sh
+          python3 scripts/tailscale/test-tofu-wrapper.py scripts/tailscale/tailscale-tofu.sh
+          python3 scripts/tailscale/test-sops-wrapper.py scripts/tailscale/tailscale-sops.py
+          bash scripts/tailscale/check-tailscale.sh
           touch "$out"
         '';
   };

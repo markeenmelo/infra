@@ -107,7 +107,7 @@
               RestrictAddressFamilies = [ "AF_UNIX" ];
             };
             script = ''
-              ${lib.getExe pkgs.python3} ${./assets/wifi-environment.py} ${
+              ${lib.getExe pkgs.python3} ${../../scripts/desktop/wifi-environment.py} ${
                 lib.escapeShellArgs (
                   [
                     environmentFile
