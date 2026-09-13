@@ -3,8 +3,10 @@ let
   limine = config.flake.modules.nixos.limine;
 in
 {
-  fleet.hosts.thinkpad.module.fleet.installation.osDevice =
-    "/dev/disk/by-id/nvme-eui.00a075013a594e93";
+  fleet.hosts.thinkpad.module.fleet.installation = {
+    approved = false;
+    osDevice = "/dev/disk/by-id/nvme-eui.00a075013a594e93";
+  };
 
   flake.modules.nixos.thinkpad-disko =
     {
@@ -16,7 +18,7 @@ in
     let
       device = config.fleet.installation.osDevice;
       blocked =
-        !config.fleet.bootstrap.approved
+        !config.fleet.installation.approved
         || config.fleet.bootstrap.missing != [ ]
         || builtins.attrNames config.disko.devices.disk != [ "os" ]
         || config.disko.devices.disk.os.device != device;
@@ -44,7 +46,7 @@ in
           )
           (
             name:
-            lib.mkForce (throw "ThinkPad: ${name} requires a commissioned, reviewed OS-only installation.")
+            lib.mkForce (throw "ThinkPad: ${name} requires an approved, fact-complete OS-only installation.")
           )
       );
       disko.devices = {

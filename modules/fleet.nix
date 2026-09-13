@@ -20,7 +20,6 @@ let
         {
           networking.hostName = name;
           nixpkgs.hostPlatform = host.system;
-          fleet.bootstrap.approved = host.ready;
         }
       ]
       ++ map (capability: config.flake.modules.nixos.${capability}) host.capabilities;
@@ -55,11 +54,6 @@ in
             default = { };
             description = "Host-specific facts, merged by independent top-level features.";
           };
-          ready = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Explicit commissioning approval. Missing facts still block builds.";
-          };
         };
       }
     );
@@ -76,12 +70,8 @@ in
         input = tracks.${host.track};
       in
       {
-        inherit (host)
-          system
-          track
-          capabilities
-          ready
-          ;
+        inherit (host) system track capabilities;
+        installationApproved = cfg.fleet.installation.approved;
         input = if host.track == "stable" then "nixpkgs-stable" else "nixpkgs";
         revision = input.rev;
         nixpkgsPath = toString system.pkgs.path;

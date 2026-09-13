@@ -14,6 +14,5 @@
       "editors"
     ];
     deployment.enable = false;
-    ready = false;
   };
 }

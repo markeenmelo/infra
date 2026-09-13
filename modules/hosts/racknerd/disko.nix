@@ -4,8 +4,8 @@ let
 in
 {
   fleet.hosts.racknerd.module.fleet.installation = {
+    approved = true;
     osDevice = "/dev/disk/by-path/pci-0000:00:04.0";
-    storageReviewed = true;
   };
   flake.modules.nixos.racknerd-disko =
     {
@@ -17,7 +17,7 @@ in
     let
       device = config.fleet.installation.osDevice;
       blocked =
-        !config.fleet.bootstrap.approved
+        !config.fleet.installation.approved
         || config.fleet.bootstrap.missing != [ ]
         || builtins.attrNames config.disko.devices.disk != [ "os" ]
         || config.disko.devices.disk.os.device != device;
@@ -47,7 +47,7 @@ in
           )
           (
             name:
-            lib.mkForce (throw "Racknerd: ${name} requires a commissioned, reviewed OS-only installation.")
+            lib.mkForce (throw "Racknerd: ${name} requires an approved, fact-complete OS-only installation.")
           )
       );
       disko.devices = {

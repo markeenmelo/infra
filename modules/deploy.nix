@@ -82,7 +82,7 @@ in
             enable = mkOption {
               type = types.bool;
               default = false;
-              description = "Opt into deploy-rs targeting independently of local configuration readiness.";
+              description = "Opt into deploy-rs targeting.";
             };
             hostname = mkOption {
               type = types.nullOr (types.strMatching "[a-zA-Z0-9][a-zA-Z0-9.:%_-]*");
@@ -278,15 +278,12 @@ in
     ];
 
     flake = {
-      deploy.nodes = lib.mapAttrs mkNode (
-        lib.filterAttrs (_: host: host.ready && host.deployment.enable) hosts
-      );
+      deploy.nodes = lib.mapAttrs mkNode (lib.filterAttrs (_: host: host.deployment.enable) hosts);
       deploymentGroups = lib.genAttrs groupNames orderedHosts;
       deploymentPlan = lib.mapAttrs (
         _: host:
         host.deployment
         // {
-          inherit (host) ready;
           profileUser = "root";
           transport = "trusted-user";
           sudo = "sudo -n -u";

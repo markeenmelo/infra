@@ -4,8 +4,8 @@ let
 in
 {
   fleet.hosts.bastion.module.fleet.installation = {
+    approved = true;
     osDevice = "/dev/disk/by-id/nvme-eui.6479a7a2ea200e8e";
-    storageReviewed = true;
   };
 
   flake.modules.nixos.bastion-disko =
@@ -18,7 +18,7 @@ in
     let
       device = config.fleet.installation.osDevice;
       blocked =
-        !config.fleet.bootstrap.approved
+        !config.fleet.installation.approved
         || config.fleet.bootstrap.missing != [ ]
         || builtins.attrNames config.disko.devices.disk != [ "os" ]
         || config.disko.devices.disk.os.device != device;
@@ -45,7 +45,8 @@ in
             ]
           )
           (
-            name: lib.mkForce (throw "Bastion: ${name} requires a commissioned, reviewed OS-only installation.")
+            name:
+            lib.mkForce (throw "Bastion: ${name} requires an approved, fact-complete OS-only installation.")
           )
       );
       disko.devices = {

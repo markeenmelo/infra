@@ -2,7 +2,6 @@
   fleet.hosts.bastion = {
     system = "x86_64-linux";
     track = "stable";
-    ready = true;
     capabilities = [
       "bastion-disko"
       "headless"

@@ -7,19 +7,17 @@
     in
     {
       options.fleet = {
-        bootstrap = {
+        bootstrap.missing = mkOption {
+          type = types.listOf types.str;
+          default = [ ];
+          description = "Actionable commissioning blockers contributed by capabilities.";
+        };
+        installation = {
           approved = mkOption {
             type = types.bool;
             default = false;
-            description = "Set by host readiness metadata, never a substitute for missing facts.";
+            description = "Expose this host's destructive disko aliases after the exact OS layout, backups and recovery have been approved. This never authorizes an installation run.";
           };
-          missing = mkOption {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "Actionable commissioning blockers contributed by capabilities.";
-          };
-        };
-        installation = {
           osDevice = mkOption {
             type = types.nullOr (types.strMatching "/dev/disk/by-(id|path)/[a-zA-Z0-9._:+-]+");
             default = null;
@@ -30,11 +28,6 @@
               ) "The installation device must be a whole OS disk, not a partition.";
               device;
             description = "Whole OS disk identity for the per-host disko layout. Each layout restricts its identifier policy; only Racknerd permits a reviewed PCI by-path exception when no serial/by-id exists.";
-          };
-          storageReviewed = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Fresh OS device/serial, partition layout, firmware/boot capacity, backups, credential recovery and state migration reviewed. Old-installation acceptance does not satisfy this gate.";
           };
           stateVersion = mkOption {
             type = types.nullOr (types.strMatching "[0-9]{2}\\.(05|11)");
@@ -58,9 +51,6 @@
           lib.optional (
             cfg.installation.osDevice == null
           ) "Supply fleet.installation.osDevice after verifying the whole OS disk and identifier policy."
-          ++
-            lib.optional (!cfg.installation.storageReviewed)
-              "Review the fresh OS layout, serials, boot/firmware, backups and credential/state recovery; acknowledge fleet.installation.storageReviewed."
           ++ lib.optional (
             cfg.installation.stateVersion == null
           ) "Set fleet.installation.stateVersion from the installation history."
