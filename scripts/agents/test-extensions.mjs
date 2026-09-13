@@ -16,7 +16,7 @@ assert.deepEqual(
     'npm:@99percentpeople/pi-codex-api@0.4.0',
     'npm:@akepka/pi-cursor-cli-provider@0.10.1',
     'npm:@dietrichgebert/ponytail@4.9.0',
-    'npm:@juicesharp/rpiv-ask-user-question@2.9.0',
+    'npm:@juicesharp/rpiv-ask-user-question@2.10.1',
   ],
   'Exactly the reviewed npm pins, with no removed packages or local extensions',
 );

@@ -3,6 +3,26 @@
 Initial research **2026-09-09 UTC**, with subsequent dated entries, against upstream documentation, source checkouts, GitHub release lists and recently updated issues. Pins below describe this implementation, not evergreen release recommendations. `flake.lock` is authoritative after future updates.
 
 
+## Full dependency and extension refresh — 2026-09-13
+
+Ran the explicitly requested `nix flake update` and `devenv update` after the pre-store ciphertext guard. Native/production unstable nodes remain identical without manual repair. The [official NixOS announcement](https://nixos.org/blog/announcements/2026/nixos-2605/) confirms 26.05 support through 2026-12-31; no track or stateVersion changes. Stable, deploy-rs, disko, impermanence, sops-nix, flake-parts, import-tree and other transitive pins did not move.
+
+| Input | Before | After |
+|---|---|---|
+| Nixpkgs unstable (both locks) | `aff8a0b28396750446e5537a96461bc4facdb287` | `02f5696b0e6097e589076d886b317b83ff0437d7` |
+| Home Manager | `cd1c9e552f41894aeb5cc5cb353d5a1d61550357` | `7e3645c737e803fcc98e27bc99c5835c700836f2` |
+| Zen flake | `3aadc420e763a8243aedd2ce925ae1dc13663ed9` | `4036109214cf20632000558935bd823b901fa886` |
+| Native devenv source | `6e323832a55097670dbd8eed04b1e63efc841dfa` | `e6f5e1e6cda3a75bad3e0a4af97eb9e70bc9e127` |
+
+- Reviewed relevant patches from the [1,858-commit unstable window](https://github.com/NixOS/nixpkgs/compare/aff8a0b28396750446e5537a96461bc4facdb287...02f5696b0e6097e589076d886b317b83ff0437d7), not a claim to audit every package. Composed changes include absolute zsh hostname resolution, udev rule selection/verification, initrd closure/activation ordering and `/nix/store` mount options; Limine changes only option prose. Btrfs scrub moves to hardened template units, but this repository does not select autoscrub. The latest kernel still selects stock 7.2; retain the major-7/ZFS compatibility gates and require final both-track/build validation.
+- [Home Manager's 21-commit window](https://github.com/nix-community/home-manager/compare/cd1c9e552f41894aeb5cc5cb353d5a1d61550357...7e3645c737e803fcc98e27bc99c5835c700836f2) changes deprecation helpers, adds systemd Exec argument escaping and updates otherwise unselected program/service modules. Preserve native HM settings, collision checks and host-pkgs scope. [Zen's two commits](https://github.com/youwen5/zen-browser-flake/compare/3aadc420e763a8243aedd2ce925ae1dc13663ed9...4036109214cf20632000558935bd823b901fa886) update upstream sources **1.22b → 1.22.1b** and its own followed-away lock, not the wrapper recipe.
+- Nixpkgs now supplies devenv **2.3.1** (embedded Nix 2.35); bootstrap the matching CLI rather than relaxing the version assertion. The [native source delta](https://github.com/cachix/devenv/compare/6e323832a55097670dbd8eed04b1e63efc841dfa...e6f5e1e6cda3a75bad3e0a4af97eb9e70bc9e127) only updates its latest-version marker. [2.3.1 release notes](https://github.com/cachix/devenv/releases/tag/v2.3.1) address Cachix duplicate-cache/key fetching; Cachix remains disabled here. Native Pi remains **0.85.1**.
+- Official npm registry checks found Codex API **0.4.0**, Cursor provider **0.10.1** and Ponytail **4.9.0** current. Update [rpiv-ask-user-question](https://registry.npmjs.org/@juicesharp%2frpiv-ask-user-question/latest) **2.9.0 → 2.10.1**, source **`42a272eb3363f18e072d71deccdbc27452bb0c45`**. Inspected the integrity-verified published manifest, entry and README: native Pi entry/optional i18n, Node >=22, unchanged read-only `collapseKey` config, no install lifecycle script. Retain the exact four-package assertion; no removed extension returns or runtime npm install occurs.
+- All six Mozilla addons were checked by their actual GUID against the [AMO v5 API](https://addons-server.readthedocs.io/en/latest/topics/api/addons.html): Bitwarden 2026.8.0, uBlock Origin 1.74.0, YouTube Enhancer 1.35.0, SponsorBlock 6.1.7, Proton VPN 1.3.6 and SimpleLogin 3.0.7 remain current at the declared URLs/hashes. Keep the public preference exports and disabled browser-managed updates.
+- The [Zed registry](https://github.com/zed-industries/extensions/blob/main/extensions.toml) currently lists biome **0.3.1**, neocmake **1.0.0**, nix **0.1.5**, opentofu **1.0.1**. The pinned HM module generates `auto_install_extensions` from their names: these are application-managed runtime installs, not repository version pins to rewrite. No editor session/install was launched. Neovim has no plugin selection.
+
+This dependency task is committed before tests at the operator's request. No intermediate commit is approved for deployment; the final batch gate must evaluate/build affected configurations, and installed extension/boot acceptance remains separate.
+
 ## Native devenv script extraction — 2026-09-13
 
 Operator-requested follow-up to **`57b4979`**: the six existing native devenv script bodies move to `scripts/devenv/*.sh`; `devenv.nix` retains only their registrations via `builtins.readFile`. Preserve arguments, working-directory handling, runtime helper paths and the absence of automatic operations. This is a source move, not a replacement task system or deployment authorization. No pins/API changes; tests remain deferred to the batch's final validation.

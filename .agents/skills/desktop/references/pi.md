@@ -15,7 +15,7 @@ The Home Manager settings file is read-only. Change the declaration rather than 
 | `@99percentpeople/pi-codex-api` | 0.4.0 | Codex search/quota/image tools; `~/.pi/agent/99extensions.json` retains `gpt-image-2`, quota status and `allowOtherProviders` |
 | `@akepka/pi-cursor-cli-provider` | 0.10.1 | Cursor provider; its CLI resolves through `CURSOR_AGENT_PATH` |
 | `@dietrichgebert/ponytail` | 4.9.0 | Native Pi extension and six skills; stock upstream package, no restored patches/config |
-| `@juicesharp/rpiv-ask-user-question` | 2.9.0 | `~/.config/rpiv-ask-user-question/config.json`: collapse key `ctrl+]` |
+| `@juicesharp/rpiv-ask-user-question` | 2.10.1 | `~/.config/rpiv-ask-user-question/config.json`: collapse key `ctrl+]` |
 
 Pi retains `openai-codex/gpt-6-astra`, thinking level **high**, and project trust **ask**. Use `codex_search` for search/navigation; the old `pi-web-access` direct-fetch tools remain absent.
 
