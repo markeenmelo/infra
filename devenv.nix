@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 {
   stdenv = pkgs.stdenvNoCC;
   cachix.enable = false;
@@ -16,6 +16,7 @@
     pkgs.jq
     pkgs.git
     pkgs.openssh
+    pkgs.nixos-anywhere
     pkgs.shellcheck
     pkgs.bash-language-server
     pkgs.python3
@@ -37,6 +38,27 @@
     deploy.exec = builtins.readFile ./scripts/devenv/deploy.sh;
     tailnet.exec = builtins.readFile ./scripts/devenv/tailnet.sh;
     tailnet-sops.exec = builtins.readFile ./scripts/devenv/tailnet-sops.sh;
+  };
+
+  tasks = {
+    "host:create" = {
+      description = "Create an untracked/unready host scaffold; no evaluation, staging or installation.";
+      exec = builtins.readFile ./scripts/devenv/host-create.sh;
+      input = lib.genAttrs [ "name" "system" "track" "group" ] (_: null);
+      showOutput = true;
+    };
+    "host:install" = {
+      description = "Confirmed OS-only installation from a pinned live installer; full preflight, no kexec or reboot.";
+      exec = builtins.readFile ./scripts/devenv/host-install.sh;
+      input = lib.genAttrs [ "host" "target" "port" "device" "identity" "fingerprint" "planHash" "confirm" ] (_: null);
+      showOutput = true;
+    };
+    "deploy:run" = {
+      description = "Confirmed host/group deployment with full preflight, remote builds and ordered rollback-protected activation.";
+      exec = builtins.readFile ./scripts/devenv/deploy.sh;
+      input = lib.genAttrs [ "target" "mode" "confirm" ] (_: null);
+      showOutput = true;
+    };
   };
 
   assertions = [

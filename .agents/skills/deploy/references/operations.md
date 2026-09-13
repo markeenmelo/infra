@@ -1,6 +1,6 @@
 # Operations
 
-Use the locked `x86_64-linux` development environment and matching skill. Tasks were removed on 2026-09-13 with no replacement runner. All local preflight is now the explicit [manual validation procedure](../../validate/SKILL.md); it authorizes no runtime operation.
+Use the locked `x86_64-linux` development environment and matching skill. Three explicitly requested [operator tasks](../../devenv/references/development.md#operator-tasks) supersede the interim task-removal policy. Deployment/installation synchronously run the complete [local validation procedure](../../validate/SKILL.md) before contact; checks themselves authorize no runtime operation.
 
 ## Input updates
 
@@ -22,7 +22,7 @@ Both servers have accepted fresh installs/two boots with their older signed/inte
 
 ### Preflight
 
-Follow [deploy](../SKILL.md). Before any contact, complete manual ciphertext, format, lint, lock/tool parity, fleet/evaluation and full flake checks; run deployment-specific readiness and real closure builds. Runtime identity/credential/backup acceptance must be independently verified. A raw deploy wrapper does none of this for you now.
+Follow [deploy](../SKILL.md). Before any contact, complete manual ciphertext, format, lint, lock/tool parity, fleet/evaluation and full flake checks; run deployment-specific readiness and real closure builds. Runtime identity/credential/backup acceptance must be independently verified. The guarded deploy script/task enforces local checks and basic installed access/trust; a raw deploy-rs invocation does not replace it or establish independent recovery.
 
 Select an eligible host or explicit ordered group. `servers` means Racknerd then Bastion; `workstations` contains unready ThinkPad and must refuse rather than silently skip it. `deploy` is explicitly root-equivalent through Nix trust and passwordless activation/confirmation; wheel does not get blanket Nix trust or passwordless sudo. Its password is locked and its two authorized keys have `restrict`. No private signing-key access is needed for this new transport policy. Public configuration proves neither working installed login nor recovery.
 
@@ -31,6 +31,18 @@ Preserve the target's configured port and these reviewed whitespace-free deploy-
 Use locked deploy-rs, `--checksigs` and `--no-update-lock-file`, without `--interactive`, after exact target/mode authorization. Keep automatic/magic rollback. `--boot` changes boot selection without a live switch; neither it nor magic confirmation proves a future boot. `sudo -n -u root` may run the store activate-rs executable and remove only its root-owned `/run/deploy-rs` canary. The general wheel password requirement remains in force.
 
 Native `--groups servers` filters but does not implement repository order. Expand explicit `--targets .#racknerd .#bastion` for ordered activation; remote builds may overlap. `deploy .` is not a safe transition recipe. Upstream local checks may build all eligible closures even for a subset. Remote builds require working target Nix trust and reviewed RAM/store/build capacity; durable `/nix/var/nix/builds` avoids the small tmpfs root. This repository still exports controller tools only for Linux, not Darwin.
+
+### Guarded boot deployment
+
+After current operation authorization and independent recovery/access review, select a commissioned host or explicit group:
+
+```sh
+: "${target:?Choose one commissioned host or explicit group}"
+devenv tasks run deploy:run --input-json "$(jq -cn --arg target "$target" \
+  '{target:$target,mode:"boot",confirm:("DEPLOY " + $target + " boot")}')"
+```
+
+The task performs synchronous full local preflight, validates every member, builds local closures, then checks installed login, sudo policy readability, activation directories and Nix trust. No arbitrary override passthrough is accepted. The final clean-tree/revision recheck refuses a changed candidate. Probes cannot prove actual sudo activation execution or remote-build capacity. Nix options follow deploy-rs's final `--`; signatures and automatic/magic rollback remain enabled. Bastion's current `bootOnly` metadata refuses switch mode. Full [input contracts](../../devenv/references/development.md#operator-tasks) are independent from installation.
 
 ### Minimal-server transition — 2026-09-13
 

@@ -29,6 +29,10 @@
                 pkgs.deadnix
                 pkgs.shellcheck
                 pkgs.python3
+                pkgs.jq
+                pkgs.yq-go
+                pkgs.openssh
+                pkgs.nixos-anywhere
               ];
             }
             ''
@@ -46,6 +50,14 @@
               deadnix --fail .
               find scripts -name '*.sh' -print0 | xargs -0 shellcheck .envrc
               python3 scripts/agents/check-guidance.py "$PWD"
+              bash scripts/secrets/check.sh
+              bash scripts/secrets/test-check.sh
+              python3 scripts/devenv/test-workflows.py "$PWD" \
+                ${pkgs.writeText "TEST-ONLY-NOT-A-DISKO-PLAN" "exit 99\n"} \
+                ${pkgs.emptyDirectory} ${lib.getExe' pkgs.openssh "ssh"}
+              nixos-anywhere --help > "$TMPDIR/nixos-anywhere-help"
+              grep -q -- '--store-paths' "$TMPDIR/nixos-anywhere-help"
+              grep -q -- '--phases' "$TMPDIR/nixos-anywhere-help"
               touch "$out"
             '';
       };

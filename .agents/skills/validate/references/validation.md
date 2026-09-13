@@ -1,6 +1,6 @@
 # Validation scope and implementation record
 
-Current commands are the [manual validation procedure](../SKILL.md). All repository tasks were removed on 2026-09-13 without replacements. Historical sections retain exact old task/just commands and results as dated evidence, not executable guidance or current authorization. `devenv test` is no longer a gate.
+Current commands follow [local validation](../SKILL.md). Three explicit scaffold/install/deploy tasks now supersede the interim task-removal policy; live tasks run synchronous local preflight but must never be invoked as tests. Historical sections retain exact old task/just commands and results as dated evidence, not executable guidance or current authorization. `devenv test` is no longer a gate.
 
 ## Task removal, comment cleanup and skill migration — 2026-09-13
 
@@ -61,7 +61,7 @@ The operator selected standard native retention and dataset-property opt-in, kee
 
 ## Choose validation scope
 
-Use the actual staged/unstaged diff. Follow [validate](../SKILL.md) for the ordered manual checks and affected commissioned-host builds; no task wrapper exists.
+Use the actual staged/unstaged diff. Follow [validate](../SKILL.md) for ordered local checks, the actual native task contract and affected commissioned-host builds; live tasks call the same synchronous preflight.
 
 ### Documentation-only changes
 
@@ -69,13 +69,13 @@ Whitespace, local Markdown links/anchors, dated-status reconciliation and change
 
 ## Canonical command
 
-There is no replacement task command. Run the [full manual sequence](../SKILL.md#code-configuration-dependency-test-or-ciphertext-changes), including ciphertext guard/regressions before flake evaluation, static checks, lock/provider parity, fleet/evaluation reports and `nix flake check --no-update-lock-file -L`. Formatting and affected real readiness/builds remain explicit. A bare flake check is not the entire manual preflight.
+In the locked shell, `bash scripts/devenv/preflight.sh` runs the report-only local gate, including native task metadata and the [full sequence](../SKILL.md#code-configuration-dependency-test-or-ciphertext-changes), including ciphertext guard/regressions before flake evaluation, static checks, lock/provider parity, fleet/evaluation reports and `nix flake check --no-update-lock-file -L`. Formatting and affected real readiness/builds remain explicit. A bare flake check is not the entire manual preflight.
 
 ## What is checked
 
 | Check | Actual scope |
 |---|---|
-| `source-quality` | Nix-only modules/entry-point placement, formatting/static/ShellCheck and shared Pi/Claude import, canonical skill frontmatter and exact relative alias inventory. No assistant installation or live skill/provider invocation |
+| `source-quality` | Nix-only placement, formatting/static/ShellCheck, shared Pi/Claude import/frontmatter/aliases, real ciphertext guard plus eleven malformed-copy regressions, mocked scaffold/deploy/install success/refusal/order/status tests and native SSH -G precedence/installer-help checks. No network, real disk script, installer, assistant/provider or host operation |
 | `validation.hosts` | All three actual compositions; typed options/assertions; forced package-path, `/etc`, kernel/initrd, Bastion ZFS-module and ThinkPad home-activation derivations; desktop isolation from headless hosts; independent intended-track mapping; actual `pkgs.path` versus required input; Nixpkgs/Home Manager/Zen branch/follows policy; ThinkPad-only native nh package/path and no cleanup units |
 | `validation.fixtures` | Shared both-track synthetic infrastructure evaluation, toplevel/script paths and deployment contributions; never real installation targets |
 | `validation.fixtures.*.deploymentAccess` | Actual fleet metadata and dedicated deployment capability on both tracks; locked keyed deploy account, root-only activation, explicit Nix trust, NOPASSWD rules and root-SSH denial. Reject root/null/wrong/missing users, unlocked/empty-key accounts and missing trust/sudo. No fixture deployment targets or real remote operations |

@@ -5,8 +5,8 @@ Skills own the repository's procedures, architecture decisions, research and dat
 | Skill | Use |
 |---|---|
 | [fleet-operations](fleet-operations/SKILL.md) | Authoritative dated host status, hardware/credential/boot evidence and operation scope |
-| [devenv](devenv/SKILL.md) | Native toolbox, existing scripts and synchronized locks; no replacement tasks yet |
-| [validate](validate/SKILL.md) | Ordered manual checks, ciphertext preflight and validation limits |
+| [devenv](devenv/SKILL.md) | Native toolbox, explicit scaffold/install/deploy tasks and synchronized locks |
+| [validate](validate/SKILL.md) | Ordered local checks, native task contract, ciphertext preflight and validation limits |
 | [nix-research](nix-research/SKILL.md) | Pinned upstream API/release evidence before dependency-sensitive edits |
 | [dendritic-nix](dendritic-nix/SKILL.md) | Architecture/refactors, class boundaries, retained ADRs and implementation rationale |
 | [add-host](add-host/SKILL.md) | Explicit host identity/track/composition and genuine commissioning |

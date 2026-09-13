@@ -1,6 +1,6 @@
 # Encrypted credentials
 
-For current local checks, follow [manual validation](../.agents/skills/validate/SKILL.md), including the ciphertext guard before staging/evaluation. Repository tasks and the automatic test gate were removed; no replacements exist yet. Historical results below retain their original dates and do not authorize new operations.
+For current local checks, follow [manual validation](../.agents/skills/validate/SKILL.md), including the ciphertext guard before staging/evaluation. The explicitly requested scaffold/install/deploy tasks do not load secrets at evaluation or shell entry. Installation uses independently reviewed private runtime identity staging only after exact operation confirmation; checks never decrypt. Historical results below retain their original dates and do not authorize new operations.
 
 Only SOPS ciphertext and verified **public** recipients belong here. Never add passwords, plaintext password hashes, private keys, decrypted files or editor backups. See [ADR 0006](../.agents/skills/dendritic-nix/references/adr/0006-sops-password-delivery.md).
 

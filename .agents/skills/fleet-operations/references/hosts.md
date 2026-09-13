@@ -1,6 +1,6 @@
 # Existing host inventory and baseline transition
 
-Repository tasks were removed on 2026-09-13; historical task commands/results below are evidence only. Use [manual validation](../../validate/SKILL.md) and [current deployment guidance](../../deploy/SKILL.md), not the former live task. This documentation/comment cleanup changes no host review or runtime status.
+Historical task commands/results below are dated evidence only. The new explicit scaffold/install/deploy tasks supersede the interim task-removal policy; use [current validation](../../validate/SKILL.md), [task boundaries](../../devenv/references/development.md#operator-tasks) and [deployment guidance](../../deploy/SKILL.md). No task implementation changes host review or runtime acceptance.
 
 Read-only discovery: **2026-09-09 UTC**. All three machines were already installed. No disk script, mount, partition/format/repair, pool import/export, activation, installation or reboot was executed. SSH used existing known-host entries with strict checking and no automatic host-key updates. No private keys, password hashes, VPN state or Wi-Fi secrets were collected.
 

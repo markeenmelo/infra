@@ -1,6 +1,6 @@
 # Fresh-install preparation — Bastion → Racknerd → ThinkPad
 
-For current local checks, follow [manual validation](../../validate/SKILL.md), including the ciphertext guard before staging/evaluation. Repository tasks and the automatic test gate were removed; no replacements exist yet. Historical results below retain their original dates and do not authorize new operations.
+For current local checks, follow [manual validation](../../validate/SKILL.md), including the ciphertext guard before staging/evaluation. The explicitly requested [host:install task](../../devenv/references/development.md#separate-destructive-installation) is separate from scaffold/deploy tasks and requires current destructive-operation authorization. None runs on shell entry. Historical results below retain their original dates and do not authorize new operations.
 
 Date: **2026-09-12**. Starting point: clean `redeploy` at `40ff4881552838b5e02dc57a58cf9b0a3f42f375`.
 

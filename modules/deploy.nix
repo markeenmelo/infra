@@ -144,6 +144,11 @@ in
             default = true;
             description = "Build on the target's ssh-ng store using the explicitly trusted deployment account.";
           };
+          bootOnly = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Operator runner must use boot-only activation until the access/home transition is accepted.";
+          };
           activationTimeout = mkOption {
             type = types.ints.positive;
             default = 300;
@@ -263,6 +268,7 @@ in
           deployment = {
             enable = true;
             hostname = "192.168.2.2";
+            bootOnly = true;
             group = "servers";
             order = 20;
           };

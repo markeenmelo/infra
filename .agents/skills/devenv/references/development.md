@@ -10,7 +10,7 @@ nix run --no-update-lock-file .#devenv -- shell
 
 The shell supplies the locked unstable CLI/toolbox, no default compiler (`stdenvNoCC`), explicit Nix, Nix/Bash language servers, Python, SOPS/age and the exact checked OpenTofu/provider wrapper plus `tofu-ls`. No host imports this development environment. ThinkPad's desktop also packages devenv for other projects.
 
-**2026-09-13: all repository tasks removed; replacements deferred.** No repository task graph, task contract, live deployment task, fleet-deploy wrapper, optional hooks profile or `enterTest` gate remains. Native devenv lifecycle tasks are implementation details, not validation. `devenv test` no longer runs repository checks. The treefmt integration and its direct lock input were removed because enabling it automatically registers a shell-entry task; `pkgs.nixfmt-tree` still supplies a Nix-only `treefmt` wrapper.
+**2026-09-13 task amendment:** after the earlier task removal, the operator explicitly requested three independent tasks: `host:create`, `host:install` and `deploy:run`. No repo validation DAG, automatic formatter, hooks profile or `enterTest` gate returns. All task inputs default to null; no cache/status or lifecycle/dependency edges. Shell entry never invokes them, and `devenv test` remains no validation gate. `pkgs.nixfmt-tree` supplies the explicit Nix-only formatter. The toolbox adds Nixpkgs-pinned nixos-anywhere 1.13.0, not an unpinned `nix run github:...` installer.
 
 Use `devenv shell -- bash -c 'COMMAND'` for shell flags: without the separator, `-c` can be parsed as devenv's global clean flag. Check actual output/exit status, not merely a quiet successful shell entry.
 
@@ -23,13 +23,60 @@ Bodies live in `scripts/devenv/`; `devenv.nix` registers them with `builtins.rea
 | `devenv shell ready HOST` | Local commissioning checks only |
 | `devenv shell build HOST` | Readiness then local system build |
 | `devenv shell disk-plan HOST` | Local guarded script construction, never execution |
-| `devenv shell deploy ...` | Raw locked deploy-rs; **no automatic full preflight** |
+| `devenv shell -- deploy TARGET MODE "DEPLOY TARGET MODE"` | Same guarded preflight/confirmation body as deploy:run, no raw overrides |
 | `devenv shell tailnet OPERATION` | Guarded operator workflow; live API/state actions need authorization |
 | `devenv shell tailnet-sops ENCRYPTED.yaml OPERATION` | Explicit private runtime credential delivery into that workflow |
 
-These scripts predate task removal; none is a replacement task. Follow [manual validation](../../validate/SKILL.md), including ciphertext inspection **before** staging/evaluation. Then use the matching [deployment](../../deploy/SKILL.md), [storage](../../storage-disko/SKILL.md) or [Tailscale](../../tailscale/SKILL.md) procedure. Shell/build scripts do not supply the removed task graph's automatic ciphertext checks.
+Follow [validation](../../validate/SKILL.md), including ciphertext inspection **before** staging/evaluation. Deployment/installation explicitly run `bash scripts/devenv/preflight.sh` synchronously; it performs report-only formatting/static checks, native task contract, ciphertext/regressions, tool/lock parity and serialized fleet/full-flake validation. It never formats files or contacts targets. Readiness/build/disk-plan still require the operator's pre-store guard. Use the matching [deployment](../../deploy/SKILL.md), [storage](../../storage-disko/SKILL.md) or [Tailscale](../../tailscale/SKILL.md) procedure.
 
 `.envrc` uses the installed CLI's `devenv direnvrc`, not downloaded shell code. Review before `direnv allow`. Never load secrets into its cached environment. Existing local hooks installed by the deleted opt-in profile may remain on an operator machine; inspect them and request separate removal if needed, rather than modifying `.git/hooks` automatically.
+
+## Operator tasks
+
+Run from the locked shell. Inputs are public operation requests, not Nix configuration or proof of acceptance. Unknown/missing inputs and wrong confirmation phrases fail closed. Live tasks require a clean reviewed commit; no task stages files, changes readiness, logs credential values, disables rollback or deletes homes as deployment cleanup.
+
+### Scaffold only
+
+```sh
+: "${new_host:?Choose a new lowercase host name}"
+devenv tasks run host:create --input-json "$(jq -cn --arg name "$new_host" \
+  '{name:$name,system:"x86_64-linux",track:"stable",group:"servers"}')"
+```
+
+Choose track and group deliberately; the example selects stable/server. This creates only `modules/hosts/NAME/{host,hardware,disko}.nix`, refuses overwrites, leaves all facts/reviews unresolved and blocks every disk-script alias. Workstation scaffolds start headless until desktop policy is explicitly reviewed. No evaluation or Git staging occurs. Before staging, complete hardware/OS layout/keys/state, add deployment facts to `modules/deploy.nix`, and deliberately extend independent track/host/composition oracles. The incomplete scaffold is not yet a passing fleet addition and may not be installed.
+
+### Deployment
+
+```sh
+devenv tasks run deploy:run --input target=servers --input mode=boot \
+  --input 'confirm=DEPLOY servers boot'
+```
+
+This is a live-operation example, **not a command to run without current authorization**. Targets may be one commissioned host or `servers`/`workstations`. All members must be eligible before any contact. Server activation is ordered Racknerd then Bastion via explicit targets; upstream remote builds may overlap, and a later failure may roll back earlier successful activations. ThinkPad remains blocked. Bastion's current `bootOnly` metadata refuses switch mode. The first account/home transition still requires [staged old access or console](../../deploy/references/operations.md#minimal-server-transition--2026-09-13); the task cannot create its own missing login. Native deploy-rs Nix flags follow its final `--`; no arbitrary override passthrough is accepted.
+
+### Separate destructive installation
+
+First complete [storage review](../../storage-disko/SKILL.md), independent backups/restore, live-installer console identity and exact OS-device review. `disk-plan HOST` builds without executing and prints the script SHA-256; read the entire plan before supplying `planHash`. Any changed hash requires renewed review.
+
+Prepare a private owned `0700` staging directory **outside the checkout/store**, containing only `persist/etc/machine-id`, `persist/etc/ssh/ssh_host_ed25519_key`, its `.pub`, and `persist/var/lib/sops-nix/key.txt`. Private files must be owned `0600` or stricter; no symlinks/group-writable entries. These are independently verified installed identities with off-host recovery, not live-USB identities. Do not generate/rotate/decrypt them implicitly. Set only runtime paths `FLEET_INSTALL_EXTRA_FILES` and `FLEET_INSTALL_IDENTITY`; no path/content goes in Nix or task inputs.
+
+```sh
+: "${FLEET_INSTALL_EXTRA_FILES:?Set the reviewed private staging directory}"
+: "${FLEET_INSTALL_IDENTITY:?Set the reviewed private installer SSH identity path}"
+: "${host:?}" "${installer:?root@reviewed-IPv4-or-DNS-endpoint}" "${port:?}"
+: "${device:?Reviewed whole OS disk}" "${identity:?Exact serial; Racknerd PCI only: size:BYTES}"
+: "${fingerprint:?Console-verified installer ED25519 SHA256 fingerprint}" "${plan_hash:?Reviewed disko script SHA-256}"
+export FLEET_INSTALL_EXTRA_FILES FLEET_INSTALL_IDENTITY
+devenv tasks run host:install --input-json "$(jq -cn \
+  --arg host "$host" --arg target "$installer" --argjson port "$port" \
+  --arg device "$device" --arg identity "$identity" --arg fingerprint "$fingerprint" \
+  --arg planHash "$plan_hash" --arg confirm "ERASE $host $installer $device $identity" \
+  '{host:$host,target:$target,port:$port,device:$device,identity:$identity,fingerprint:$fingerprint,planHash:$planHash,confirm:$confirm}')"
+```
+
+The confirmation acknowledges the exact target/disk/identity, reviewed plan, backup and recovery prerequisites; it does not prove them. The task runs full local preflight, compares the commissioned disk and plan hash, pins a scanned ED25519 key against the console-provided fingerprint, and then requires root on a RAM/overlay NixOS live installer with no `/mnt` mounts or imported ZFS pools. Fresh lsblk must identify one unmounted whole disk matching the serial, or Racknerd's explicitly reviewed PCI/size exception. Unknown/mounted/mismatched state refuses before the installer.
+
+Nixos-anywhere 1.13.0 hardcodes unsafe SSH defaults before its option flags. The runtime SSH shim **prepends** strict/batch/key-only settings and the pinned private known-host file for every underlying SSH call; ordinary `--ssh-option StrictHostKeyChecking=yes` cannot safely override the upstream first-value behavior. The tool copies the selected installer login key into its private temporary directory and may ensure that key is authorized in the live installer; it does not generate installed host identities here. It receives prebuilt store paths, `--build-on local` and exactly `--phases disko,install`: **destructive OS partitioning/install, no kexec, no reboot, no automatic host-key copying**. Inspect mounts/identities/boot setup afterward; boot and two-boot acceptance require separate authorization. Task success is not a tested installation.
 
 ## SOPS → OpenTofu
 

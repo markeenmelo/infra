@@ -1,6 +1,6 @@
 # Tailscale: staged clients and declarative tailnet
 
-For current local checks, follow [manual validation](../../validate/SKILL.md), including the ciphertext guard before staging/evaluation. Repository tasks and the automatic test gate were removed; no replacements exist yet. Historical results below retain their original dates and do not authorize new operations.
+For current local checks, follow [manual validation](../../validate/SKILL.md), including the ciphertext guard before staging/evaluation. Only explicit scaffold/install/deploy tasks are registered; Tailscale still uses its separate guarded scripts, with no automatic task or secret loading. Historical results below retain their original dates and do not authorize new operations.
 
 See [ADR 0009](../../dendritic-nix/references/adr/0009-tailscale-and-opentofu.md) and [dated API evidence](../../nix-research/references/research.md#staged-tailscale--opentofu--2026-09-10). [Native devenv](../../devenv/references/development.md) now owns development commands; its [runtime SOPS adapter](../../devenv/references/development.md#sops--opentofu) is an alternative to the private prompts below, not a state/credential migration or new API authorization.
 

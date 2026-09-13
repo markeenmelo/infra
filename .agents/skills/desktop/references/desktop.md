@@ -1,6 +1,6 @@
 # ThinkPad desktop
 
-For current local checks, follow [manual validation](../../validate/SKILL.md), including the ciphertext guard before staging/evaluation. Repository tasks and the automatic test gate were removed; no replacements exist yet. Historical results below retain their original dates and do not authorize new operations.
+For current local checks, follow [manual validation](../../validate/SKILL.md), including the ciphertext guard before staging/evaluation. Only the explicitly requested scaffold/install/deploy tasks are registered; none runs on shell entry and `devenv test` is not a gate. Historical results below retain their original dates and do not authorize new operations.
 
 A Hyprland + Noctalia desktop for `marcos`. Display/layout/shell policy is authored from observed hardware; the user subsequently authorized reusing the current **application and shell preferences** listed below. The other two hosts remain headless and have no Home Manager evaluation. See [current host status](../../fleet-operations/references/hosts.md#current-status) for commissioning, deployed/candidate differences and outstanding acceptance. Existing storage, access and recovery protections still apply.
 

@@ -1,11 +1,11 @@
 ---
 name: validate
-description: Run manual non-destructive formatting, ciphertext, static, fleet and flake validation after task removal; distinguish local checks from real host acceptance.
+description: Run non-destructive formatting, ciphertext, task-contract, static, fleet and flake validation; distinguish local checks and mocked workflows from real host acceptance.
 ---
 
 # Validate
 
-Read `../../../AGENTS.md`, the actual staged/unstaged diff, [check scope and historical evidence](references/validation.md), `../../../modules/validation.nix` and affected feature checks. Repository devenv tasks were removed on 2026-09-13; **do not recreate them or use `devenv test` as a gate**.
+Read `../../../AGENTS.md`, the actual staged/unstaged diff, [check scope and historical evidence](references/validation.md), `../../../modules/validation.nix` and affected feature checks. Only the explicitly requested `host:create`, `host:install` and `deploy:run` tasks exist. **Never run live tasks as tests or use `devenv test` as a gate.** `scripts/devenv/preflight.sh` performs the synchronous report-only local sequence below; installation/deployment invoke it internally before contact.
 
 ## Documentation-only changes
 
@@ -42,7 +42,13 @@ Run from the repository root in `devenv shell` (bootstrap: `nix run --no-update-
    test "$(readlink -f "$(command -v tofu)")" = "$packaged/bin/tofu"
    ```
 
-   Inspect native shell/task inventory after development changes: no repository/deployment/treefmt tasks, no local hook installation, no credential loading. Native lifecycle tasks can remain. Do not grant trust or add another package set to repair a failure.
+   Inspect the generated native task contract:
+
+   ```sh
+   python3 scripts/devenv/check-tasks.py "$DEVENV_TASK_FILE"
+   ```
+
+   Exactly three uncached operator tasks have null-default public inputs and no lifecycle/dependency edges. No automatic treefmt, hook installation or credential loading. Native lifecycle tasks can remain. Do not grant trust or add another package set to repair a failure.
 4. Run the malformed-input regression block in [ciphertext checks](references/ciphertext.md#regressions), then serialize the local fleet/evaluation/full-flake commands; do not race Nix's eval-cache database:
 
    ```sh
@@ -51,7 +57,7 @@ Run from the repository root in `devenv shell` (bootstrap: `nix run --no-update-
    nix flake check --no-update-lock-file -L
    ```
 
-   Run the full sequence once for the final coherent candidate and before deployment; targeted tests are only iteration. Use `set -euo pipefail` for automation so pipeline failures cannot be hidden. No replacement task runner is provided.
+   Run the full sequence once for the final coherent candidate and before deployment; targeted tests are only iteration. Use `set -euo pipefail` for automation so pipeline failures cannot be hidden. Inside the locked shell, `bash scripts/devenv/preflight.sh` runs this whole report-only sequence, including the actual native task contract. It performs no formatting mutation or remote operation. Source-quality also runs synthetic workflow and ciphertext regressions, including native SSH `-G` parsing without connection.
 5. Inspect real blockers/assertions. Only documented bootstrap/client-setting/custom-output/deprecated-alias diagnostics are expected. Do not suppress new option, track, disk, persistence or credential failures. Both-track fixtures remain synthetic; all public disko aliases reject unready/missing-review/extra/redirected-device cases. Only native disk scripts have positive fixture expectations; VM/image variants may correctly refuse under real access/device guards. Never execute a generated script.
 6. For affected commissioned closures, run `devenv shell ready HOST` and `devenv shell build HOST`. ThinkPad's unready candidate must refuse; inspect only `fleetConfigurations` for its evaluation. No false facts/reviews to get a build.
 7. Compare refactor baselines: host facts/track/readiness/output sets, packages, access, mounts and persistence. Inspect expected derivation changes from immutable script/comment paths. Preserve the independent track/rollout/check inventories, native HM `nixosConfig` and stable SSH module key. `/_` paths are excluded helpers, not discovered modules.
@@ -59,4 +65,4 @@ Run from the repository root in `devenv shell` (bootstrap: `nix run --no-update-
 
 ## Completion
 
-The applicable manual path passes, affected ready-host builds are accounted for and no unauthorized operation occurred. If blocked by resources/network/platform, report the precise uncompleted command and reason; do not call an incomplete candidate validated.
+The applicable local path passes, actual native task metadata is checked, affected ready-host builds are accounted for and no unauthorized operation occurred. If blocked by resources/network/platform, report the precise uncompleted command and reason; do not call an incomplete candidate validated.

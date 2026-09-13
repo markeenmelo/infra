@@ -16,7 +16,7 @@ Dendritic NixOS configurations for three `x86_64-linux` machines.
 nix run --no-update-lock-file .#devenv -- shell
 ```
 
-`devenv.nix` supplies the locked toolbox and existing operator scripts. **Repository tasks have been removed; replacements are deferred.** Shell entry performs no repository checks, formatting, secret loading or deployment. `devenv test` is not a validation gate.
+`devenv.nix` supplies the locked toolbox, scripts and three explicitly invoked tasks: **`host:create`** (unready local scaffold), **`host:install`** (separately confirmed destructive nixos-anywhere installation), and **`deploy:run`** (guarded host/group deployment). See [task inputs and safety boundaries](.agents/skills/devenv/references/development.md#operator-tasks). They are uncached and have no lifecycle/dependency edges. Shell entry performs no repository checks, formatting, secret loading or deployment. `devenv test` is not a validation gate.
 
 Use the [validation skill](.agents/skills/validate/SKILL.md) for manual local checks and [devenv skill](.agents/skills/devenv/SKILL.md) for shell/lock details. Check ciphertext before staging or evaluating the flake: Nix copies tracked inputs into its public store.
 
