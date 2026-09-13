@@ -3,6 +3,6 @@ provider "registry.opentofu.org/tailscale/tailscale" {
   version     = "0.29.2"
   constraints = "0.29.2"
   hashes = [
-    "h1:LfwL6ACR7gmBM2YvL/n7eAQQLFM0A9/bDzPwOilpz9o=",
+    "h1:MowNbSBpxO0lY1XU/ld0RwJyo/1NA1vbJFpxKH5Saj4=",
   ]
 }
