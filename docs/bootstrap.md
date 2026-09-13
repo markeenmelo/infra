@@ -80,7 +80,7 @@ An unready host still has its commissioning assertion. Only after resolving all 
 
 ## Storage and installation
 
-**All three candidates compose their per-host fresh layouts; both servers now have pre-install commissioning approval, while ThinkPad remains blocked.** Use [hosts.md](hosts.md#current-status) for exact execution scope and results; other candidates and operations remain blocked.
+**Both servers have completed fresh installation and two-boot acceptance; ThinkPad remains blocked.** The operator selected the already-prepared MacBook for its later reinstall, not a Bastion workspace. Use [hosts.md](hosts.md#current-status) for exact scope and recovery requirements. The later minimal-server configuration removal uses [deploy-rs](operations.md#minimal-server-transition--2026-09-13), not any installer/disko command below.
 
 **Everything below the explicit execution boundary is a manual maintenance-window operation. Disko may erase the entire selected disk, including existing partitions and boot entries. It is not a migration tool. Never run it during ordinary deployment.**
 

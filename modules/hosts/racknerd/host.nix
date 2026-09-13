@@ -13,7 +13,6 @@
       "access"
       "server"
       "vps"
-      "editors"
     ];
     deployment = {
       # Ready export is not an instruction to activate deploy-rs.
@@ -45,10 +44,6 @@
         && cfg.nix.settings.trusted-users == [ "root" ]
         && cfg.nix.settings.require-sigs
         && lib.elem "racknerd-deploy-20260912:dJ7er88VXs6+ZiVlGu1LTnlXc+EujXsqdVYb3Grh2Ak=" cfg.nix.settings.trusted-public-keys
-        &&
-          cfg.users.users.marcos.openssh.authorizedKeys.keys == [
-            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJgH8hFXLCNPpNUWvohvn5y0S+KGtEIFs0gIj6ihV5PC"
-          ]
         && !cfg.users.mutableUsers
         && cfg.security.sudo.wheelNeedsPassword
         && !cfg.fleet.access.passwordlessSudo
@@ -56,6 +51,6 @@
         && cfg.services.fail2ban.enable
         && !(cfg ? home-manager)
       )
-    ) "Racknerd must retain its approved client, signed/root-only Nix trust and password sudo";
+    ) "Racknerd must retain signed/root-only Nix trust, strict SSH and password sudo";
     true;
 }

@@ -40,7 +40,8 @@ let
     ) "The deferred host module must reject composition into a non-NixOS class.";
     assert lib.assertMsg (
       builtins.attrNames config.fleet.validation.hostChecks == [
-        "bastionTools"
+        "administratorKeys"
+        "bastionAccess"
         "desktop"
         "editors"
         "kernel"
@@ -49,6 +50,7 @@ let
         "printing"
         "racknerdAccess"
         "secrets"
+        "serverBaseline"
         "storage"
         "tailscale"
         "workstation"

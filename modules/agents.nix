@@ -1,6 +1,6 @@
 let
-  # Public policy shared by the native headless and desktop/HM consumers.
-  # Every package/source is instantiated with that consumer's own pkgs.
+  # ThinkPad's desktop/HM agent policy. Servers have no agent capability.
+  # Keep its existing settings and package sources unchanged.
   policyFor = { lib, pkgs }: {
     sessionVariables = {
       CURSOR_AGENT_PATH = lib.getExe pkgs.cursor-cli;
@@ -20,8 +20,7 @@ let
       defaultModel = "gpt-6-astra";
       defaultThinkingLevel = "high";
       hideThinkingBlock = true;
-      # Retained on both tracks. Pi 0.75.4 does not implement project trust:
-      # the operator selected native pkgs, not a backport; see docs/pi.md.
+      # Native project-trust policy for the desktop's selected Pi.
       defaultProjectTrust = "ask";
       packages = [
         "npm:@99percentpeople/pi-codex-api@0.4.0"
@@ -35,8 +34,7 @@ let
           rev = "f1de050504936046c0f85b21fec0e0a93ef394eb";
           hash = "sha256-bvdJjLudTd9YQF8ip30jIvi6MY3MAcw5GXVONx1DLuQ=";
         }}"
-        # RTK 0.41 has the supported rewrite CLI but predates the Pi hook file.
-        # Pin the extension independently; do not backport/mix the RTK binary.
+        # Preserve the already-reviewed independent hook pin for ThinkPad.
         "${
           pkgs.fetchFromGitHub {
             owner = "rtk-ai";
@@ -149,39 +147,5 @@ in
         };
       };
 
-    # Independently selected by Bastion; no desktop or Home Manager bridge.
-    nixos.agents =
-      { lib, pkgs, ... }:
-      let
-        policy = policyFor { inherit lib pkgs; };
-        files =
-          policy.piFiles
-          // lib.mapAttrs' (name: source: lib.nameValuePair ".config/${name}" source) policy.xdgFiles
-          // {
-            ".pi/agent/settings.json" =
-              (pkgs.formats.json { }).generate "pi-coding-agent-settings.json"
-                policy.settings;
-          };
-      in
-      {
-        imports = [ cursorPolicy ];
-        environment = {
-          inherit (policy) sessionVariables;
-          systemPackages = [ pkgs.pi-coding-agent ] ++ policy.extraPackages;
-          etc = lib.mapAttrs' (
-            name: source: lib.nameValuePair "fleet-agents/${name}" { inherit source; }
-          ) files;
-        };
-        # Native, non-forcing links: fresh homes receive public configuration;
-        # existing user files are never replaced. Stable /etc paths follow the
-        # selected system generation without stale direct store symlinks.
-        systemd.user.tmpfiles.rules = [
-          "d %h/.pi 0700 - - -"
-          "d %h/.pi/agent 0700 - - -"
-          "d %h/.pi/agent/extensions 0700 - - -"
-        ]
-        ++ lib.mapAttrsToList (name: _: "L %h/${name} - - - - /etc/fleet-agents/${name}") files;
-        warnings = lib.optional (lib.versionOlder pkgs.pi-coding-agent.version "0.85.1") "agents: Pi ${pkgs.pi-coding-agent.version} retains the shared settings but lacks the reviewed 0.85.1 project-trust/retry contract; use only operator-reviewed checkouts and see docs/pi.md for native-version limitations.";
-      };
   };
 }

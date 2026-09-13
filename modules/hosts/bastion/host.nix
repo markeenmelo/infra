@@ -13,7 +13,6 @@
       "access"
       "server"
       "nas"
-      "agents"
     ];
     deployment = {
       enable = true;
@@ -25,9 +24,8 @@
         "StrictHostKeyChecking=yes"
       ];
     };
-    # Temporary workstation for the final ThinkPad reinstall: ordinary marcos,
-    # no new account/role, no desktop, and no credential copying or enrollment.
-    module = { config, pkgs, ... }: {
+    # Server-only baseline; administration and deployment live off-host.
+    module = {
       # Live-USB preflight 2026-09-12: verified DHCP MAC/routes/console without VPN.
       fleet.installation.networkReviewed = true;
       fleet.secrets = {
@@ -40,24 +38,10 @@
       nix.settings.trusted-public-keys = [
         "bastion-deploy-20260912:FYekV+z8HC3dmaBay30ThuDpgGWrWoLolsSRNs+2dJs="
       ];
-      # Agent-only workspace: removing editors must not restore default nano.
-      programs.nano.enable = false;
-      environment.systemPackages = [
-        pkgs.tmux
-        pkgs.devenv
-      ];
-      environment.persistence."/persist".directories = [
-        {
-          directory = config.users.users.marcos.home;
-          user = "marcos";
-          inherit (config.users.users.marcos) group;
-          mode = "0700";
-        }
-      ];
     };
   };
 
-  fleet.validation.hostChecks.bastionTools =
+  fleet.validation.hostChecks.bastionAccess =
     {
       name,
       system,
@@ -66,37 +50,19 @@
     let
       cfg = system.config;
     in
-    assert lib.assertMsg
-      (
-        name != "bastion"
-        || (
-          lib.all (p: lib.elem p cfg.environment.systemPackages) (
-            with system.pkgs;
-            [
-              pi-coding-agent
-              git
-              gh
-              tmux
-              devenv
-            ]
-          )
-          && !(cfg ? home-manager)
-          && !cfg.programs.neovim.enable
-          && !cfg.programs.nano.enable
-          && config.fleet.hosts.${name}.deployment.transport == "signed"
-          && !(lib.elem "marcos" cfg.nix.settings.trusted-users)
-          && !(lib.elem "@wheel" cfg.nix.settings.trusted-users)
-          && cfg.nix.settings.require-sigs
-          && lib.elem "bastion-deploy-20260912:FYekV+z8HC3dmaBay30ThuDpgGWrWoLolsSRNs+2dJs=" cfg.nix.settings.trusted-public-keys
-          && !cfg.networking.networkmanager.enable
-          && cfg.users.users.marcos.isNormalUser
-          && lib.any (
-            d: d.dirPath == "/home/marcos" && d.user == "marcos" && d.mode == "0700"
-          ) cfg.environment.persistence."/persist".directories
-          && cfg.fileSystems."/persist".fsType == "btrfs"
-        )
+    assert lib.assertMsg (
+      name != "bastion"
+      || (
+        config.fleet.hosts.${name}.deployment.transport == "signed"
+        && !(lib.elem "marcos" cfg.nix.settings.trusted-users)
+        && !(lib.elem "@wheel" cfg.nix.settings.trusted-users)
+        && cfg.nix.settings.require-sigs
+        && lib.elem "bastion-deploy-20260912:FYekV+z8HC3dmaBay30ThuDpgGWrWoLolsSRNs+2dJs=" cfg.nix.settings.trusted-public-keys
+        && !cfg.networking.networkmanager.enable
+        && cfg.users.users.marcos.isNormalUser
+        && cfg.fileSystems."/persist".fsType == "btrfs"
       )
-      "Bastion's temporary Pi workspace must use its normal admin, private OS persistence and own-track tools";
+    ) "Bastion must retain its normal admin, signed closure trust and OS persistence";
     true;
 
 }

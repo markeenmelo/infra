@@ -10,13 +10,9 @@ import { pathToFileURL } from 'node:url';
 const [piDir, codexConfig, toolRepairConfig] = process.argv.slice(2);
 const load = (path) => import(pathToFileURL(path).href);
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
-const { discoverAndLoadExtensions, AgentSession } = await load(join(piDir, 'dist/index.js'));
-const legacyPi = json(join(piDir, 'package.json')).version === '0.75.4';
-// Exercise the actual native classifier on each pin, never a copied regex.
-// Stable 0.75.4 keeps it on AgentSession and predates the compat export.
-const isRetryableAssistantError = legacyPi
-  ? (message) => AgentSession.prototype._isRetryableError.call({ model: undefined }, message)
-  : (await load(join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'))).isRetryableAssistantError;
+const { discoverAndLoadExtensions } = await load(join(piDir, 'dist/index.js'));
+// Exercise the desktop's actual native classifier, never a copied regex.
+const { isRetryableAssistantError } = await load(join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'));
 // Managed settings must carry the exact pinned package set.
 const settings = json(join(process.env.PI_CODING_AGENT_DIR, 'settings.json'));
 assert.equal(settings.defaultProjectTrust, 'ask');
@@ -112,14 +108,11 @@ for (const [label, override] of [
   );
 }
 
-// Native 0.75.4 retries this prefixed quota error; 0.85.1 rejects it. Keep the
-// modern regression strict and report, rather than hide, the legacy limitation.
 assert.equal(
   isRetryableAssistantError({ ...emptyEdit.message, errorMessage: 'provider returned error: insufficient_quota' }),
-  legacyPi,
-  'Native quota classification must match the separately reviewed runtime contract',
+  false,
+  'Native Pi must reject prefixed quota exhaustion',
 );
-if (legacyPi) console.log('Pi 0.75.4 limitation: no native project trust; prefixed quota errors use bounded retry');
 
 const missingArgs = retryEmptyArguments(
   assistant([call('edit', undefined)]), tools,
