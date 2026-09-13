@@ -11,11 +11,9 @@ let
     ];
     settings = {
       lastChangelogVersion = pkgs.pi-coding-agent.version;
-      theme = "dark";
       defaultProvider = "openai-codex";
       defaultModel = "gpt-6-astra";
       defaultThinkingLevel = "high";
-      hideThinkingBlock = true;
       defaultProjectTrust = "ask";
       packages = [
         "npm:@99percentpeople/pi-codex-api@0.4.0"

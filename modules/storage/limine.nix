@@ -7,7 +7,6 @@
         panicOnChecksumMismatch = true;
         enrollConfig = false;
         maxGenerations = 10;
-        style.wallpapers = [ ];
       };
     };
   };

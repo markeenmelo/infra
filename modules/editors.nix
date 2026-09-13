@@ -9,8 +9,6 @@ _: {
         -- Fleet console editor baseline: terminal-first and stateless,
         -- identical for root and users on every host. No plugins or language
         -- provider runtimes are wrapped into the system closures.
-        vim.opt.number = true
-        vim.opt.relativenumber = true
         vim.opt.mouse = "a"
         -- Case-insensitive search unless the pattern contains a capital letter.
         vim.opt.ignorecase = true
@@ -19,10 +17,6 @@ _: {
         vim.opt.expandtab = true
         vim.opt.tabstop = 4
         vim.opt.shiftwidth = 4
-        vim.opt.scrolloff = 8
-        vim.opt.signcolumn = "yes"
-        vim.opt.splitbelow = true
-        vim.opt.splitright = true
         -- Undo history lives under the user's XDG state directory, never next
         -- to the edited file; on tmpfs-root hosts it stays deliberately
         -- ephemeral instead of adding a persistence entry.

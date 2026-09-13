@@ -6,7 +6,6 @@
         settings = {
           session.default = "Hyprland (UWSM)";
           keyboard.layout = "us";
-          cursor.size = 24;
           auth = {
             allow_empty_password = true;
             request_timeout = 60;
@@ -43,35 +42,6 @@
           telemetry_enabled = false;
           offline_mode = true;
           clipboard_enabled = false;
-        };
-        theme = {
-          mode = "dark";
-          source = "builtin";
-          builtin = "Catppuccin";
-          templates = {
-            enable_builtin_templates = false;
-            enable_community_templates = false;
-          };
-        };
-        wallpaper.enabled = false;
-        bar.main = {
-          position = "top";
-          auto_hide = false;
-          start = [
-            "launcher"
-            "workspaces"
-          ];
-          center = [ "clock" ];
-          end = [
-            "privacy"
-            "tray"
-            "network"
-            "volume"
-            "brightness"
-            "battery"
-            "notifications"
-            "control-center"
-          ];
         };
         notification.enable_daemon = true;
         lockscreen = {

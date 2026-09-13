@@ -2,8 +2,6 @@
   flake.modules.homeManager.desktop =
     { pkgs, ... }:
     let
-      oled = builtins.fromJSON (builtins.readFile ../../assets/desktop/oled-graphite.json);
-
       bitwardenXpi = pkgs.fetchurl {
         name = "bitwarden-2026.8.0.xpi";
         url = "https://addons.mozilla.org/firefox/downloads/file/4970633/bitwarden_password_manager-2026.8.0.xpi";
@@ -249,16 +247,6 @@
         extraPolicies = policies;
         extraPrefs = ''
           lockPref("zen.welcome-screen.seen", true);
-          lockPref("zen.theme.accent-color", "${oled.colors.accent}");
-          lockPref("zen.theme.gradient", false);
-          lockPref("zen.theme.gradient.show-custom-colors", false);
-          lockPref("zen.view.compact.show-sidebar-and-toolbar-on-hover", false);
-          lockPref("zen.view.grey-out-inactive-windows", false);
-          lockPref("zen.widget.linux.transparency", false);
-          lockPref("browser.tabs.allow_transparent_browser", false);
-          lockPref("zen.view.window.scheme", 0);
-          lockPref("layout.css.prefers-color-scheme.content-override", 0);
-          lockPref("ui.systemUsesDarkTheme", 1);
         '';
       };
     in
