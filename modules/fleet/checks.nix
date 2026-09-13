@@ -47,6 +47,7 @@ let
         "nasMaintenance"
         "nh"
         "printing"
+        "racknerdAccess"
         "secrets"
         "storage"
         "tailscale"

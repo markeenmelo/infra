@@ -27,6 +27,9 @@ in
         inputs.disko.nixosModules.disko
         limine
       ];
+      fleet.bootstrap.missing = lib.optional (
+        device != null && !lib.hasPrefix "/dev/disk/by-id/" device
+      ) "ThinkPad requires its verified whole-disk by-id identity; no by-path exception.";
       system.build = lib.mkIf blocked (
         lib.genAttrs
           (

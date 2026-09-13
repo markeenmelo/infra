@@ -3,8 +3,16 @@ let
   limine = config.flake.modules.nixos.limine;
 in
 {
-  # No by-id was observed. The old /dev/vda bootloader exception does not
-  # authorize formatting: installation.osDevice stays null pending review.
+  # Authorized 2026-09-12: sole 100 GiB VirtIO disk, no serial/WWN/by-id.
+  # Both canonical PCI and legacy virtio-pci aliases resolve to /dev/vda.
+  # This identifies the VM attachment slot, not a unique physical disk:
+  # recheck VM identity, topology, size and current use before every install.
+  fleet.hosts.racknerd.module.fleet.installation = {
+    osDevice = "/dev/disk/by-path/pci-0000:00:04.0";
+    # Exact disk/reset approved; recovered fresh identities and native early
+    # delivery tested. Ten kernel/initrd pairs total 409,738,090 bytes (< 2 GiB).
+    storageReviewed = true;
+  };
   flake.modules.nixos.racknerd-disko =
     {
       config,
@@ -25,6 +33,11 @@ in
         inputs.disko.nixosModules.disko
         limine
       ];
+      fleet.bootstrap.missing = lib.optional (
+        device != null
+        && !lib.hasPrefix "/dev/disk/by-id/" device
+        && !lib.hasPrefix "/dev/disk/by-path/pci-" device
+      ) "Racknerd requires a reviewed whole-disk by-id or PCI by-path identity.";
       system.build = lib.mkIf blocked (
         lib.genAttrs
           (
@@ -94,9 +107,8 @@ in
         enable = true;
         efiSupport = false;
         biosSupport = true;
-        # Retain the observed bootloader-only identity while the fresh format
-        # target is unresolved. No build/install output is permitted meanwhile.
-        biosDevice = if device == null then "/dev/vda" else device;
+        # Use the same reviewed whole-disk identity for formatting and BIOS.
+        biosDevice = device;
         partitionIndex = 1;
       };
       fileSystems."/nix".neededForBoot = true;

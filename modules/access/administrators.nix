@@ -6,15 +6,16 @@ let
   recipients = [
     "age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht"
     "age15r7mf8n0ah32y9xf8jxjvj4yrzsf3y52cucqeyr6hlxtkw63vs0qjz7wgm"
-    "age1dpxn0ymj6jyt33yf9ukuekwh93w8r3gsmfx8d3g3g3vhh5dn7ygsdpy48t"
+    "age1n9krs7x7qrsw9zcz6mvumc9zyr5f7axhlvdf0fnnflzxsh3kkqmqp5rgdd"
     "age1su25ytldd4uye705w6jllwzkmpdkprruq5mzpcrth0e9zcmcyewspeck6q"
   ];
 in
 {
   # Explicit shared account/password policy; host identities remain distinct.
-  # Other hosts retain the previously selected key. Bastion's fresh install
-  # uses the explicitly requested local Racknerd-client key, independently
-  # derived/verified on 2026-09-12 (SHA256:rU2P8TOXVjL3ymRg1OyxA0YgxKrp9PBKKD56FhXWu/I).
+  # Both fresh servers use the explicitly approved current local client key,
+  # independently derived/verified on 2026-09-12
+  # (SHA256:rU2P8TOXVjL3ymRg1OyxA0YgxKrp9PBKKD56FhXWu/I).
+  # ThinkPad retains its previously selected key.
   fleet.hosts = lib.genAttrs [ "thinkpad" "racknerd" "bastion" ] (name: {
     module = { config, lib, ... }: {
       fleet = {
@@ -22,10 +23,10 @@ in
           admin = "marcos";
           authorizedKeys = [
             (
-              if name == "bastion" then
-                "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJgH8hFXLCNPpNUWvohvn5y0S+KGtEIFs0gIj6ihV5PC"
-              else
+              if name == "thinkpad" then
                 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAYdnogT40vOG0eZn4guvWq33q6VANCYXEYsxOSIsVbc"
+              else
+                "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJgH8hFXLCNPpNUWvohvn5y0S+KGtEIFs0gIj6ihV5PC"
             )
           ];
           passwordSecrets.marcos = "marcos-password-hash";

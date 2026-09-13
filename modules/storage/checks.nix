@@ -49,6 +49,19 @@ let
         partition = changed {
           fleet.installation.osDevice = lib.mkForce "/dev/disk/by-id/TEST-ONLY-part1";
         };
+        # Explicitly synthetic slot: never an install/deploy target or host fact.
+        pciDevice = "/dev/disk/by-path/pci-TEST-ONLY-NOT-A-REAL-DISK";
+        pci = changed { fleet.installation.osDevice = lib.mkForce pciDevice; };
+        pciPartition = changed {
+          fleet.installation.osDevice = lib.mkForce "${pciDevice}-part1";
+        };
+        pciUnreviewed = changed {
+          fleet.installation.osDevice = lib.mkForce pciDevice;
+          fleet.installation.storageReviewed = lib.mkForce false;
+        };
+        nonPci = changed {
+          fleet.installation.osDevice = lib.mkForce "/dev/disk/by-path/usb-TEST-ONLY";
+        };
         redirected = changed {
           disko.devices.disk.os.device = lib.mkForce "/dev/disk/by-id/TEST-ONLY-FOREIGN";
         };
@@ -149,9 +162,27 @@ let
         unreviewed
         missing
         partition
+        pciPartition
+        pciUnreviewed
+        nonPci
         redirected
         foreign
       ];
+      assert lib.assertMsg (
+        if name == "racknerd" then
+          pci.config.fleet.bootstrap.missing == [ ]
+          && lib.all (a: a.assertion) pci.config.assertions
+          && (builtins.tryEval pci.config.system.build.toplevel.drvPath).success
+          # Only native disk scripts are positive install outputs. Upstream
+          # VM/image variants redirect devices/change access and may correctly
+          # fail our guards; every alias retains the negative coverage above.
+          && lib.all (script: (builtins.tryEval pci.config.system.build.${script}.drvPath).success) (
+            builtins.attrNames (pci.config.disko.devices._scripts { inherit (pci) pkgs; })
+          )
+          && pci.config.boot.loader.limine.biosDevice == pciDevice
+        else
+          rejectsScripts pci && !(builtins.tryEval pci.config.system.build.toplevel.drvPath).success
+      ) "${track}/${name}: only reviewed Racknerd may use a whole PCI by-path device";
       assert !(builtins.tryEval unreviewed.config.system.build.toplevel.drvPath).success;
       assert
         !(builtins.tryEval
@@ -178,42 +209,53 @@ in
     let
       cfg = system.config;
     in
-    assert lib.assertMsg
-      (
-        # Independent commissioning oracle: only Bastion has the new reviews.
-        host.ready == (name == "bastion")
-        && cfg.fleet.installation.storageReviewed == (name == "bastion")
-        && host.storageMode == "provision"
-        && builtins.attrNames cfg.disko.devices.disk == [ "os" ]
-        && lib.all (collection: cfg.disko.devices.${collection} == { }) unused
-        && cfg.fileSystems."/".fsType == "tmpfs"
-        && cfg.fileSystems."/nix".neededForBoot
-        && cfg.fileSystems."/persist".neededForBoot
-        && cfg.boot.initrd.luks.devices == { }
-        && !cfg.boot.initrd.services.lvm.enable
-        && cfg.boot.loader.limine.enable
-        && !cfg.boot.loader.grub.enable
-        && !cfg.boot.loader.systemd-boot.enable
-        && (name != "racknerd" || host.osDisk == null)
-        && (
-          if name == "bastion" then
-            (builtins.tryEval cfg.system.build.diskoScript.drvPath).success
-            && rejectsScripts (
-              system.extendModules {
-                modules = [ { fleet.bootstrap.approved = lib.mkForce false; } ];
-              }
-            )
-          else
-            rejectsScripts system
-        )
+    assert lib.assertMsg (
+      # Independent commissioning oracle: both servers have fresh reviews.
+      host.ready == (name != "thinkpad")
+      && cfg.fleet.installation.storageReviewed == (name != "thinkpad")
+      && host.storageMode == "provision"
+      && builtins.attrNames cfg.disko.devices.disk == [ "os" ]
+      && lib.all (collection: cfg.disko.devices.${collection} == { }) unused
+      && cfg.fileSystems."/".fsType == "tmpfs"
+      && cfg.fileSystems."/nix".neededForBoot
+      && cfg.fileSystems."/persist".neededForBoot
+      && cfg.boot.initrd.luks.devices == { }
+      && !cfg.boot.initrd.services.lvm.enable
+      && cfg.boot.loader.limine.enable
+      && !cfg.boot.loader.grub.enable
+      && !cfg.boot.loader.systemd-boot.enable
+      && (name != "racknerd" || host.osDisk == "/dev/disk/by-path/pci-0000:00:04.0")
+      && (
+        if name != "thinkpad" then
+          (builtins.tryEval cfg.system.build.diskoScript.drvPath).success
+          && rejectsScripts (
+            system.extendModules {
+              modules = [ { fleet.bootstrap.approved = lib.mkForce false; } ];
+            }
+          )
+          && rejectsScripts (
+            system.extendModules {
+              modules = [ { fleet.installation.storageReviewed = lib.mkForce false; } ];
+            }
+          )
+        else
+          rejectsScripts system
       )
-      "${name}: only reviewed Bastion may provision; pending candidates and revoked approval must remain blocked";
+    ) "${name}: only reviewed servers may provision; ThinkPad and revoked approval must remain blocked";
     true;
 
   flake.validation = {
     storageLayouts =
-      assert builtins.attrNames config.flake.nixosConfigurations == [ "bastion" ];
-      assert builtins.attrNames config.flake.deploy.nodes == [ "bastion" ];
+      assert
+        builtins.attrNames config.flake.nixosConfigurations == [
+          "bastion"
+          "racknerd"
+        ];
+      assert
+        builtins.attrNames config.flake.deploy.nodes == [
+          "bastion"
+          "racknerd"
+        ];
       layouts;
     fixtures = lib.mapAttrs (_: fixture: {
       toplevel = fixture.config.system.build.toplevel.drvPath;

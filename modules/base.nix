@@ -21,7 +21,7 @@
         };
         installation = {
           osDevice = mkOption {
-            type = types.nullOr (types.strMatching "/dev/disk/by-id/[a-zA-Z0-9._:+-]+");
+            type = types.nullOr (types.strMatching "/dev/disk/by-(id|path)/[a-zA-Z0-9._:+-]+");
             default = null;
             apply =
               device:
@@ -29,7 +29,7 @@
                 device == null || builtins.match ".*-part[0-9]+" device == null
               ) "The installation device must be a whole OS disk, not a partition.";
               device;
-            description = "Whole OS disk identity for the per-host disko layout. Racknerd remains null pending a reviewed no-by-id provisioning exception.";
+            description = "Whole OS disk identity for the per-host disko layout. Each layout restricts its identifier policy; only Racknerd permits a reviewed PCI by-path exception when no serial/by-id exists.";
           };
           storageReviewed = mkOption {
             type = types.bool;

@@ -19,7 +19,7 @@ nix run --no-update-lock-file .#devenv -- shell
 devenv tasks run repo:inventory
 devenv tasks run repo:check        # fast inner gate (seconds)
 devenv tasks run repo:check-full   # canonical gate before handoff or deployment
-devenv shell ready racknerd  # expected refusal until identity/trust gates are resolved
+devenv shell ready racknerd  # local commissioning checks; never installation/activation
 ```
 
 Native **devenv** supplies the locked toolbox, language servers, SOPS/age and guarded deployment scripts ([development commands](docs/development.md)); it performs no deployment, secret retrieval or disk action. **Stage intended new files before evaluation** — Git flakes ignore untracked files — and stage only reviewed encrypted SOPS files/public recipients, never plaintext credentials or private identities.
@@ -30,11 +30,11 @@ Each host composes its single `modules/hosts/<host>/disko.nix`: native disko par
 
 - Order: **Bastion → Racknerd → ThinkPad**. Keep the running ThinkPad operational until both servers and Bastion's independent Pi/administration workspace are accepted.
 - GPT, FAT `/boot`, plain Btrfs `nix`/`persist`, tmpfs `/`; ThinkPad adds `home` and 8 GiB swap. BIOS Racknerd has a first 1 MiB EF02 partition. No LUKS/LVM or old UUIDs in the candidate.
-- Readiness and storage review gate standard NixOS/deploy targets and real disko scripts. Racknerd's installation device remains null pending a reviewed no-by-id exception; Racknerd/ThinkPad remain unready. Old-installation reviews do not commission freshly formatted storage.
+- Readiness and storage review gate standard NixOS/deploy targets and real disko scripts. Both servers now have fresh pre-install reviews; ThinkPad remains unready. Racknerd's approved no-serial exception uses its real PCI by-path attachment, with mandatory VM/topology/size checks. Bastion/ThinkPad still require by-id. Old-installation reviews do not commission freshly formatted storage.
 - Bastion's NVMe `/persist` is **not** `tank`; its legacy `/srv` mounts remain outside disko and unchanged. No NAS pool/dataset creation, conversion or migration is authorized.
 - Preserve scoped identity and service state through impermanence. Bastion's existing `marcos` gets stable Pi/Git/gh/tmux/devenv and private home persistence, not a new operator account; no Neovim/nano. Persistence is not backup.
 
-[Reinstall preparation](docs/reinstall.md) and the [manual installation runbook](docs/bootstrap.md#storage-and-installation) retain recovery and explicit execution boundaries. The historical adoption policy is [ADR 0005](docs/adr/0005-existing-headless-baseline.md); the current fresh design is [ADR 0003](docs/adr/0003-storage-and-impermanence.md). The operator now authorized full validation and Bastion-only installation/boot acceptance on its verified NVMe; [dated status](docs/hosts.md#current-status) records progress and exact boundaries. This does not authorize Racknerd/ThinkPad operations or deploy-rs activation.
+[Reinstall preparation](docs/reinstall.md) and the [manual installation runbook](docs/bootstrap.md#storage-and-installation) retain recovery and explicit execution boundaries. The historical adoption policy is [ADR 0005](docs/adr/0005-existing-headless-baseline.md); the current fresh design is [ADR 0003](docs/adr/0003-storage-and-impermanence.md). Bastion's NVMe installation and two boots are accepted. Racknerd's separately authorized single-disk installation, private credential/sudo checks and two-boot persistence acceptance also passed. [Dated status](docs/hosts.md#current-status) records progress and exact boundaries. ThinkPad operations and deploy-rs activation remain unauthorized.
 
 ## Access and deployment
 

@@ -32,6 +32,9 @@ in
         inputs.disko.nixosModules.disko
         limine
       ];
+      fleet.bootstrap.missing = lib.optional (
+        device != null && !lib.hasPrefix "/dev/disk/by-id/" device
+      ) "Bastion requires its verified whole-disk by-id identity; no by-path exception.";
       # Even empty legacy scripts may unmount /mnt. No pending public output.
       system.build = lib.mkIf blocked (
         lib.genAttrs
