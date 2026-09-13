@@ -58,7 +58,7 @@ This is a live-operation example, **not a command to run without current authori
 
 First complete [storage review](../../storage-disko/SKILL.md), independent backups/restore, live-installer console identity and exact OS-device review. `disk-plan HOST` builds without executing and prints the script SHA-256; read the entire plan before supplying `planHash`. Any changed hash requires renewed review.
 
-Prepare a private owned `0700` staging directory **outside the checkout/store**, containing only `persist/etc/machine-id`, `persist/etc/ssh/ssh_host_ed25519_key`, its `.pub`, and `persist/var/lib/sops-nix/key.txt`. Private files must be owned `0600` or stricter; no symlinks/group-writable entries. These are independently verified installed identities with off-host recovery, not live-USB identities. Do not generate/rotate/decrypt them implicitly. Set only runtime paths `FLEET_INSTALL_EXTRA_FILES` and `FLEET_INSTALL_IDENTITY`; no path/content goes in Nix or task inputs.
+Prepare a private owned `0700` staging directory **outside the checkout/store**, containing only `persist/etc/machine-id`, `persist/etc/ssh/ssh_host_ed25519_key`, its `.pub`, and `persist/var/lib/sops-nix/key.txt`. Private files must be owned and inaccessible to group/others (normally `0600`); no symlinks/group-writable entries. These are independently verified installed identities with off-host recovery, not live-USB identities. Do not generate/rotate/decrypt them implicitly. Set only runtime paths `FLEET_INSTALL_EXTRA_FILES` and `FLEET_INSTALL_IDENTITY`; no path/content goes in Nix or task inputs.
 
 ```sh
 : "${FLEET_INSTALL_EXTRA_FILES:?Set the reviewed private staging directory}"

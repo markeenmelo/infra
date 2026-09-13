@@ -3,6 +3,12 @@
 Initial research **2026-09-09 UTC**, with subsequent dated entries, against upstream documentation, source checkouts, GitHub release lists and recently updated issues. Pins below describe this implementation, not evergreen release recommendations. `flake.lock` is authoritative after future updates.
 
 
+## Initrd libcrypt alternative-name diagnostics — 2026-09-13
+
+The passing final gate emitted two new initrd warnings for `libcrypt.so.1`/`.1.1`, so they were investigated rather than waived as bootstrap noise. At stable **`21a67dc470149f337cecafbe965d8d252a390518`**, [make-initrd-ng](https://github.com/NixOS/nixpkgs/blob/21a67dc470149f337cecafbe965d8d252a390518/pkgs/build-support/kernel/make-initrd-ng/src/main.rs) appends every selected dlopen-note SONAME and warns for each missing alternative. Read [systemd 260.2 libcrypt-util.c](https://github.com/systemd/systemd/blob/v260.2/src/shared/libcrypt-util.c): the loader tries `.2`, `.1`, `.1.1` and stops on the first successful load. These names are alternatives, not three mandatory libraries.
+
+Actual systemd ELF notes confirm that list; its RUNPATH contains pinned libxcrypt **4.5.2**, and neither missing alternative is a DT_NEEDED entry. Parsed **both actual built server initrds** in memory, including the compressed main CPIO: each includes `libcrypt.so.2` and its ELF implementation. No archive extraction, mount, boot or credential access occurred. No package override, warning suppression, compatibility library or assertion change is warranted by these two messages. This explains artifact construction, not real boot/PAM acceptance.
+
 ## Nix-built provider checksum refresh — 2026-09-13
 
 The deferred full gate correctly rejected the old Tailscale provider checksum after unstable moved from `aff8a0b28396750446e5537a96461bc4facdb287` to `02f5696b0e6097e589076d886b317b83ff0437d7`. OpenTofu remains **1.12.6**, provider **0.29.2**. Compared the old/new [provider recipe](https://github.com/NixOS/nixpkgs/blob/02f5696b0e6097e589076d886b317b83ff0437d7/pkgs/applications/networking/cluster/terraform-providers/providers.json): source hash `sha256-1cQq2nM4EJFFRtsnE7mXKJv4ILfJDtZSTX4hG/jNdwM=` and vendor hash `sha256-rD4W2PkRrIQfACm8UWdF0yfZ+Qc5hTjH1lA6U7GJxpE=` are identical. Actual derivations share the exact source/vendor store paths but have rebuilt toolchain/dependency paths.
