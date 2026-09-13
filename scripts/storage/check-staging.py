@@ -68,9 +68,10 @@ try:
     assert re.fullmatch(r"SHA256:[A-Za-z0-9+/]{43}", binding["sshHostFingerprint"])
     private_key = staging / "persist/etc/ssh/ssh_host_ed25519_key"
     public_key = private_key.with_suffix(".pub")
-    derived = public_output(["ssh-keygen", "-y", "-P", "", "-f", str(private_key)]).split()
+    derived = public_output(["ssh-keygen", "-y", "-P", "", "-f", str(private_key)]).split()[:2]
     assert len(derived) == 2 and derived[0] == "ssh-ed25519"
-    assert public_key.read_text().split()[:2] == derived
+    public_lines = public_key.read_text().strip().splitlines()
+    assert len(public_lines) == 1 and public_lines[0].split()[:2] == derived
     fingerprint = public_output(["ssh-keygen", "-E", "sha256", "-lf", str(public_key)]).split()
     assert len(fingerprint) >= 2 and fingerprint[1] == binding["sshHostFingerprint"]
     if binding["ageRecipient"] is not None:

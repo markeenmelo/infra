@@ -6,6 +6,69 @@ Date: **2026-09-12**. Starting point: clean `redeploy` at `40ff4881552838b5e02dc
 
 **Updated execution scope:** Bastion's authorized NVMe install and two boots are accepted. Starting at `0cece65`, the operator separately authorized **Racknerd's exact single-disk fresh install through nixos-anywhere, new identities, signed/root-only trust and two boots**. [Authoritative dated status](../../fleet-operations/references/hosts.md#current-status) records reviews and remaining validation/runtime gates; ThinkPad stays unready and untouched. Each host composes its own `disko.nix`; no old/new storage framework remains. The 2026-09-13 follow-up removes Bastion's temporary workspace/home persistence and Racknerd's editor from the candidate; the operator will use the already-prepared MacBook instead. No deployment or data cleanup was performed. [ADR 0003](../../dendritic-nix/references/adr/0003-storage-and-impermanence.md) governs storage. Never activate these fresh layouts over old mounted disks, and do not broaden the [runbook](bootstrap.md#storage-and-installation) beyond the current task authorization.
 
+## Bastion operator reinstall — 2026-09-13
+
+The operator reports Bastion is now booted from a NixOS live USB and explicitly requested an **actual OS-reinstall command to run themselves**, not a deploy-rs update. No target was contacted and no installation/test was executed in this follow-up. PR fixes and secret-free server changes are committed but **not validated**, per the instruction to wait for test authorization; earlier batch results do not cover them. Do not treat the command below as a smoke test: after its gates pass it erases the OS disk, including old OS generations, homes and on-disk credentials. Boot rollback cannot undo that erasure.
+
+### Prerequisites
+
+- Use this reviewed checkout in the matching locked devenv shell on an **x86_64 Linux controller**. These repository tasks are not Darwin-native; a prepared MacBook still needs its independently verified Linux execution route. Keep the controller, private staging and recovery off the disk being erased.
+- Complete/review the [operator-run server-recipient rotation](../../../../secrets/README.md#retire-server-recipients--operator-run-pending), then required formatting/validation when authorized and a clean commit. Do not stage private identities or skip the ciphertext guard before Nix ingestion. The install task repeats full local preflight; there is no skip-checks switch.
+- Reverify independent backups/restore and the fresh console inventory. The recorded OS device is `/dev/disk/by-id/nvme-eui.6479a7a2ea200e8e`, serial **`511250213117000312`**. Use these values only if fresh console inspection agrees. Preserve the live USB and both SATA `tank` members; no imported pool, active swap, `/mnt` mounts, mounted OS partitions or kernel holders may remain. The task refuses rather than unmounting/exporting/deactivating them. Any required maintenance needs separate review/authorization.
+- Verify UEFI/boot recovery and live-installer networking from its console. Set `installer` to its **current** `root@IP-or-DNS` endpoint, `port` to the verified SSH port, and `fingerprint` to the console-derived **live USB ED25519** fingerprint. Historical `192.168.2.2` and old USB fingerprints are not fresh verification. Ensure the selected client key is authorized for root in the installer and retain a working private key for the candidate's reviewed `deploy` allowlist after reboot.
+- Prepare owned private runtime paths outside checkout/store: `FLEET_INSTALL_IDENTITY` is the installer-login private key; `FLEET_INSTALL_EXTRA_FILES` is a clean `0700` tree with exactly the preserved `persist/etc/machine-id` and `persist/etc/ssh/ssh_host_ed25519_key{,.pub}`. Private files are `0600`; no symlinks/unsafe modes. **No age key** goes onto this secret-free server. Preserve old age identities and recovery archives independently instead.
+- `FLEET_INSTALL_MANIFEST` names a separate owned `0600` JSON file outside that tree. Its host is `bastion`, age recipient is JSON `null`, machine ID comes from independently verified Bastion recovery, and SSH fingerprint must match its accepted installed identity. The last accepted installed fingerprint was **`SHA256:DiSj7jMXKQJchfzBDBBX8VsTSErDkDgLAdjsBPN3Ie4`**. This is not the USB fingerprint. Stop on mismatched recovery; do not relabel another host's bundle or derive an expected fingerprint from unreviewed staging to bypass the guard. The machine ID is not recorded here and must not be guessed.
+
+Once those recovery bindings are independently verified, this optional snippet creates a **new** sidecar without copying any private material or overwriting an existing file:
+
+```sh
+(
+  set -euo pipefail
+  umask 077
+  set -C
+  : "${FLEET_INSTALL_MANIFEST:?Choose a new private manifest path outside checkout/store/staging}"
+  : "${bastion_machine_id:?Set the independently verified existing Bastion machine ID}"
+  jq -n --arg machineId "$bastion_machine_id" \
+    --arg sshHostFingerprint 'SHA256:DiSj7jMXKQJchfzBDBBX8VsTSErDkDgLAdjsBPN3Ie4' \
+    '{host:"bastion",machineId:$machineId,sshHostFingerprint:$sshHostFingerprint,ageRecipient:null}' \
+    > "$FLEET_INSTALL_MANIFEST"
+)
+```
+
+In the locked Linux shell, after the pre-store ciphertext guard, build/read the current plan without executing it:
+
+```sh
+disk-plan bastion
+less result-disko-bastion
+```
+
+Read the entire script and its OS-only boundary; set `plan_hash` to its printed SHA-256 **only after review**. No current plan hash is asserted by this untested follow-up. Any candidate/plan change requires renewed review.
+
+### Destructive command — operator execution only
+
+From that same locked shell and clean reviewed checkout, with the prerequisites above complete:
+
+```sh
+(
+  set +x
+  set -euo pipefail
+  : "${installer:?Set current root@live-USB-endpoint}" "${port:?Set reviewed SSH port}"
+  : "${fingerprint:?Set console-verified live USB ED25519 SHA256 fingerprint}"
+  : "${plan_hash:?Set SHA256 of the fully reviewed current disko script}"
+  : "${FLEET_INSTALL_IDENTITY:?}" "${FLEET_INSTALL_EXTRA_FILES:?}" "${FLEET_INSTALL_MANIFEST:?}"
+  export FLEET_INSTALL_IDENTITY FLEET_INSTALL_EXTRA_FILES FLEET_INSTALL_MANIFEST
+  device='/dev/disk/by-id/nvme-eui.6479a7a2ea200e8e'
+  identity='511250213117000312'
+  input=$(jq -cn --arg target "$installer" --argjson port "$port" \
+    --arg device "$device" --arg identity "$identity" --arg fingerprint "$fingerprint" \
+    --arg planHash "$plan_hash" --arg confirm "ERASE bastion $installer $device $identity" \
+    '{host:"bastion",target:$target,port:$port,device:$device,identity:$identity,fingerprint:$fingerprint,planHash:$planHash,confirm:$confirm}')
+  devenv tasks run host:install --input-json "$input"
+)
+```
+
+The task runs full local checks/builds, rechecks a private host-bound snapshot against the candidate's no-age policy, pins installer SSH and verifies fresh disk use/identity before nixos-anywhere's **`disko,install` only** phases. No kexec, reboot or broad pool export is requested. Inspect resulting mounts, root-owned machine/SSH identities and EFI/Limine installation before separately authorized boot acceptance; then verify installed `deploy` login/elevation, persistent state and the exact NAS mounts/health. A reinstall does not need the old installed `deploy` account to bootstrap itself: it authenticates to the verified live installer as root. That does not authorize root SSH in the installed OS or waive post-boot access/recovery checks.
+
 ## Scope and evidence
 
 - Confirmed order: **Bastion → Racknerd → ThinkPad**. Both servers now have two-boot acceptance. The operator selected their already-prepared MacBook for the final reinstall, superseding the Bastion workspace prerequisite. Independent repository/lock, both reviewed administrator private keys (or an explicitly accepted recovery subset), operator age identity, signers and recovery must remain accessible outside ThinkPad's future wipe; MacBook readiness is operator-reported, not tested here. ThinkPad operations remain unauthorized.

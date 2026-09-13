@@ -69,7 +69,7 @@ elif name == "ssh-keyscan":
     print("evaluation-only.invalid ssh-ed25519 TEST-ONLY-NOT-A-KEY")
 elif name == "ssh-keygen":
     if "-y" in args:
-        print("ssh-ed25519 TEST-ONLY-PUBLIC-KEY")
+        print("ssh-ed25519 TEST-ONLY-PUBLIC-KEY TEST-ONLY PRIVATE-KEY COMMENT")
     else:
         wrong = os.environ.get("WRONG_FINGERPRINT") and "known_hosts" in args[-1]
         print("256 SHA256:" + ("B" if wrong else "A") * 43 + " TEST-ONLY (ED25519)")
@@ -131,7 +131,7 @@ class Workflows(unittest.TestCase):
         identity.write_text("TEST-ONLY-NOT-A-KEY\n")
         identity.chmod(0o600)
         (self.staging / "persist/etc/machine-id").write_text("1" * 32 + "\n")
-        (self.staging / "persist/etc/ssh/ssh_host_ed25519_key.pub").write_text("ssh-ed25519 TEST-ONLY-PUBLIC-KEY\n")
+        (self.staging / "persist/etc/ssh/ssh_host_ed25519_key.pub").write_text("ssh-ed25519 TEST-ONLY-PUBLIC-KEY TEST-ONLY PUBLIC COMMENT\n")
         self.manifest = self.root / "manifest.json"
         self.binding = dict(host="racknerd", machineId="1" * 32,
                             sshHostFingerprint=FINGERPRINT, ageRecipient=None)
@@ -292,8 +292,9 @@ class Workflows(unittest.TestCase):
             self.assertNotEqual(self.invoke("host-install.sh", self.install_data()).returncode, 0)
         self.manifest.write_text(json.dumps(self.binding))
         self.assertNotEqual(self.invoke("host-install.sh", self.install_data(), PYTHONOPTIMIZE="1").returncode, 0)
-        (self.staging / "persist/etc/ssh/ssh_host_ed25519_key.pub").write_text("ssh-ed25519 TEST-ONLY-WRONG-KEY\n")
-        self.assertNotEqual(self.invoke("host-install.sh", self.install_data()).returncode, 0)
+        for public in ["ssh-ed25519 TEST-ONLY-WRONG-KEY\n", "ssh-ed25519 TEST-ONLY-PUBLIC-KEY\n" * 2]:
+            (self.staging / "persist/etc/ssh/ssh_host_ed25519_key.pub").write_text(public)
+            self.assertNotEqual(self.invoke("host-install.sh", self.install_data()).returncode, 0)
         self.assert_no_remote()
 
     def test_unmounted_dm_lvm_raid_consumers_never_install(self):
