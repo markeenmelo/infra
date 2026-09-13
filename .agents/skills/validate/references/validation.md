@@ -2,6 +2,12 @@
 
 Current commands follow [local validation](../SKILL.md). Three explicit scaffold/install/deploy tasks now supersede the interim task-removal policy; live tasks run synchronous local preflight but must never be invoked as tests. Historical sections retain exact old task/just commands and results as dated evidence, not executable guidance or current authorization. `devenv test` is no longer a gate.
 
+## Guided installation follow-up — 2026-09-13, validation deferred
+
+The operator rejected the manual JSON/environment command and chose `devenv shell -- install HOST`. Added a foreground-only guide using existing native script registration, private-path prompts, configured OS/age lookup, temporary host-bound manifest creation, local plan/pager review and displayed-scope confirmation. It calls the same `host-install.sh` backend; no fourth task, skip flag, readiness change or alternate transport. Coreutils install invocations are preserved through an explicit pinned-binary dispatch. Only the script-scoped pager is added; locks/production configuration/ciphertext are unchanged.
+
+Offline cases were written for public-only backend input, private manifest cleanup, plan review/cancellation, unready/changed candidates, foreground rejection and native install forwarding. **No tests, formatter, static checks, evaluation/build, interactive guide, target contact or installation were run**, per the continuing instruction to wait for test authorization. Prior batch and PR evidence do not validate this new interface. Canonical local checks, actual locked-script/TTY acceptance and operation-specific recovery/console/device verification remain pending.
+
 ## PR #9 follow-up — 2026-09-13, validation deferred
 
 The operator requested individual task commits and **no tests until explicitly instructed**. Source/document review only; the preceding batch results below do not validate these follow-up changes.

@@ -23,6 +23,7 @@ Bodies live in `scripts/devenv/`; `devenv.nix` registers them with `builtins.rea
 | `devenv shell ready HOST` | Local commissioning checks only |
 | `devenv shell build HOST` | Readiness then local system build |
 | `devenv shell disk-plan HOST` | Local guarded script construction, never execution |
+| `devenv shell -- install HOST` | Guided destructive reinstall; prompts, plan review and shared full preflight; no reboot |
 | `devenv shell -- deploy TARGET MODE "DEPLOY TARGET MODE"` | Same guarded preflight/confirmation body as deploy:run, no raw overrides |
 | `devenv shell tailnet OPERATION` | Guarded operator workflow; live API/state actions need authorization |
 | `devenv shell tailnet-sops ENCRYPTED.yaml OPERATION` | Explicit private runtime credential delivery into that workflow |
@@ -55,6 +56,20 @@ devenv tasks run deploy:run --input target=servers --input mode=boot \
 This is a live-operation example, **not a command to run without current authorization**. Targets may be one commissioned host or `servers`/`workstations`. All members must be eligible before any contact. Server activation is ordered Racknerd then Bastion via explicit targets; upstream remote builds may overlap, and a later failure may roll back earlier successful activations. ThinkPad remains blocked. Bastion's current `bootOnly` metadata refuses switch mode. The first account/home transition still requires [staged old access or console](../../deploy/references/operations.md#minimal-server-transition--2026-09-13); the task cannot create its own missing login. Native deploy-rs Nix flags follow its final `--`; no arbitrary override passthrough is accepted.
 
 ### Separate destructive installation
+
+**Normal interactive command:**
+
+```sh
+devenv shell -- install bastion
+```
+
+The foreground-only guide looks up the host's configured OS device and age policy, prompts for verified live-USB/recovery information, creates a private temporary host-bound manifest and opens the built disk plan for review. You do not write JSON, export variables or copy hashes. Private file paths are entered without echo; no key/password contents are requested. Use independently verified recovery records for the preserved machine ID/SSH fingerprint, not values inferred from an unreviewed staging bundle. Staging preparation, backups and physical/console verification remain necessary; the guide does not mount/recover disks or generate/decrypt identities.
+
+After plan/recovery acknowledgement, it shows the exact scope and requires `ERASE HOST`. Only then does it compose the existing full target/device/identity confirmation and call `scripts/devenv/host-install.sh`, with full preflight and every existing guard retained. Enter at either approval or Ctrl-C cancels before handoff; interruption after handoff requires inspection before retrying. A changed/dirty candidate refuses. The guide never runs on shell entry and adds no task/DAG edge. `install` reserves exactly one host-like argument; normal GNU `install` options/file-copy invocations forward to the pinned coreutils executable rather than recursing into the guide.
+
+See the [Bastion guided procedure](../../storage-disko/references/reinstall.md#bastion-operator-reinstall--2026-09-13). The following explicit-input interface is retained for deliberate automation, **not required by the guide**.
+
+#### Advanced task interface
 
 First complete [storage review](../../storage-disko/SKILL.md), independent backups/restore, live-installer console identity and exact OS-device review. `disk-plan HOST` builds without executing and prints the script SHA-256; read the entire plan before supplying `planHash`. Any changed hash requires renewed review.
 

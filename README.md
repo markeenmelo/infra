@@ -18,6 +18,8 @@ nix run --no-update-lock-file .#devenv -- shell
 
 `devenv.nix` supplies the locked toolbox, scripts and three explicitly invoked tasks: **`host:create`** (unready local scaffold), **`host:install`** (separately confirmed destructive nixos-anywhere installation), and **`deploy:run`** (guarded host/group deployment). See [task inputs and safety boundaries](.agents/skills/devenv/references/development.md#operator-tasks). They are uncached and have no lifecycle/dependency edges. Shell entry performs no repository checks, formatting, secret loading or deployment. `devenv test` is not a validation gate.
 
+For a guided OS reinstall from a live USB, use `devenv shell -- install bastion` on the locked Linux controller. It prompts for missing information, handles JSON/temporary manifests internally and asks for explicit erasure confirmation after plan review; all checks remain mandatory. See the [Bastion prerequisites](.agents/skills/storage-disko/references/reinstall.md#bastion-operator-reinstall--2026-09-13). This is destructive installation, not a smoke test; no automatic reboot.
+
 Use the [validation skill](.agents/skills/validate/SKILL.md) for manual local checks and [devenv skill](.agents/skills/devenv/SKILL.md) for shell/lock details. Check ciphertext before staging or evaluating the flake: Nix copies tracked inputs into its public store.
 
 ## Architecture and procedures

@@ -40,6 +40,12 @@
     ready.exec = builtins.readFile ./scripts/devenv/ready.sh;
     build.exec = builtins.readFile ./scripts/devenv/build.sh;
     disk-plan.exec = builtins.readFile ./scripts/devenv/disk-plan.sh;
+    install = {
+      exec = lib.replaceStrings [ "@coreutilsInstall@" ] [ "${pkgs.coreutils}/bin/install" ] (
+        builtins.readFile ./scripts/devenv/install.sh
+      );
+      packages = [ pkgs.less ];
+    };
     deploy.exec = builtins.readFile ./scripts/devenv/deploy.sh;
     tailnet.exec = builtins.readFile ./scripts/devenv/tailnet.sh;
     tailnet-sops.exec = builtins.readFile ./scripts/devenv/tailnet-sops.sh;

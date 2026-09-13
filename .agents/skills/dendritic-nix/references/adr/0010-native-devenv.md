@@ -17,6 +17,8 @@ After removing the previous task graph, the operator explicitly requested three 
 
 Bodies are read from `scripts/devenv/`; helpers/checks remain with their script concern. Inputs default to null, contain no credentials/private paths and reject unknown fields. No cache/status rules or DAG/lifecycle edges exist, so selecting a namespace or `--mode all` cannot silently couple installation, deployment and scaffolding. Invalid inputs still refuse each selected task. `devenv test` remains no repository gate.
 
+The operator additionally selected `devenv shell -- install HOST` as the friendly interactive interface. Its script-backed Python guide uses a foreground terminal, prompts for unresolved verified facts/recovery paths, creates a private temporary manifest, opens the local disk plan and captures its hash internally. After the displayed scope and explicit `ERASE HOST` approval, it supplies the existing full-scope input to the same `host-install.sh` backend; no fourth task, skip flag, alternate transport or lifecycle operation is added. Normal coreutils install invocations forward to the pinned binary because `install` is also a standard file utility. Private paths remain child environment only; no new private input/configuration/profile is persisted.
+
 The synchronous report-only `scripts/devenv/preflight.sh` is invoked explicitly by live workflows, not as an automatic repository task graph. The actual generated native task JSON is checked separately from production, which must never import devenv. Source-quality runs isolated workflow and ciphertext regressions; mocks never become real targets or installers.
 
 ## Consequences

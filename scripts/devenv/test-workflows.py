@@ -1,4 +1,5 @@
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 SOURCE = Path(sys.argv.pop(1)).resolve()
 DISKO = Path(sys.argv.pop(1))
@@ -355,6 +357,19 @@ exec bash "$TEST_INVENTORY" /dev/disk/by-id/TEST-ONLY-OS
         self.assertEqual(result.returncode, 9)
         self.assertNotIn("returned successfully", result.stdout)
 
+    def test_guided_install_preserves_coreutils_invocations(self):
+        native = self.root / "coreutils-install"
+        native.write_text(f'#!{sys.executable}\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n')
+        native.chmod(0o700)
+        wrapper = self.root / "install-wrapper.sh"
+        wrapper.write_text((SOURCE / "scripts/devenv/install.sh").read_text().replace("@coreutilsInstall@", str(native)))
+        for arguments in [["--version"], ["-d", "TEST-ONLY-DIRECTORY"], ["-m", "0600", "SOURCE", "DESTINATION"]]:
+            result = subprocess.run(["bash", str(wrapper), *arguments], env=self.environment,
+                                    capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), arguments)
+        self.assertEqual(self.calls(), [])
+
     def test_native_ssh_settings_override_upstream_unsafe_defaults_without_connecting(self):
         result = subprocess.run(["bash", str(SOURCE / "scripts/storage/installer-ssh.sh"),
                                  "-G", "-F", "/dev/null", "-o", "StrictHostKeyChecking=no",
@@ -369,6 +384,129 @@ exec bash "$TEST_INVENTORY" /dev/disk/by-id/TEST-ONLY-OS
         self.assertIn("batchmode yes\n", result.stdout)
         self.assertIn(f"userknownhostsfile {self.root}/known_hosts\n", result.stdout)
         self.assertEqual(self.calls(), [])
+
+
+class GuidedInstall(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("install_guide", SOURCE / "scripts/storage/install-guide.py")
+        self.guide = importlib.util.module_from_spec(spec)
+        with mock.patch.object(sys, "dont_write_bytecode", True):
+            spec.loader.exec_module(self.guide)
+        temporary = tempfile.TemporaryDirectory(prefix="guided-install-test-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.key = self.root / "TEST-ONLY-KEY"
+        self.key.write_text("TEST-ONLY-NOT-A-KEY")
+        self.key.chmod(0o600)
+        self.staging = self.root / "staging"
+        self.staging.mkdir(mode=0o700)
+        self.calls = []
+        self.request = None
+        self.manifest = None
+        self.ready = True
+        self.changed = False
+        self.heads = 0
+        self.addCleanup(mock.patch.stopall)
+        mock.patch.dict(os.environ, {"DEVENV_ROOT": str(self.root)}, clear=True).start()
+        mock.patch.object(self.guide, "run", side_effect=self.run_command).start()
+
+    def run_command(self, arguments, *, capture=False, environment=None):
+        self.calls.append(arguments)
+        if arguments == ["git", "status", "--porcelain"]:
+            return ""
+        if arguments == ["git", "rev-parse", "HEAD"]:
+            self.heads += 1
+            return "CHANGED" if self.changed and self.heads > 1 else "TEST-ONLY-REVISION"
+        if arguments[0] == "nix" and "eval" in arguments:
+            if arguments[-1] == ".#fleet.bastion":
+                return json.dumps(dict(ready=self.ready, missing=[], failedAssertions=[],
+                                       storageMode="provision", osDisk="/dev/disk/by-id/TEST-ONLY-OS"))
+            if arguments[-1].endswith(".config.fleet.secrets"):
+                return json.dumps(dict(ageRecipient=None, ageKeyFile=None))
+        if arguments[0] == "nix" and "build" in arguments:
+            return str(DISKO)
+        if arguments[:2] == ["python3", "scripts/storage/check-staging.py"]:
+            self.assertEqual(arguments[2:], ["bastion", "null"])
+            binding = json.loads(Path(environment["FLEET_INSTALL_MANIFEST"]).read_text())
+            self.assertEqual(binding, dict(host="bastion", machineId="1" * 32,
+                                          sshHostFingerprint=FINGERPRINT, ageRecipient=None))
+            return ""
+        if arguments == ["bash", "scripts/devenv/host-install.sh"]:
+            self.request = json.loads(environment["DEVENV_TASK_INPUT"])
+            self.manifest = Path(environment["FLEET_INSTALL_MANIFEST"])
+            self.assertEqual(self.manifest.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(environment["FLEET_INSTALL_IDENTITY"], str(self.key))
+            return ""
+        if arguments in [["bash", "scripts/secrets/check.sh"], ["bash", "scripts/fleet/ready.sh", "bastion", "disk-plan"]]:
+            return ""
+        raise AssertionError(arguments)
+
+    def ui(self, *, review="y", confirm="ERASE bastion"):
+        terminal = mock.Mock()
+        terminal.ask.side_effect = ["evaluation-only.invalid", "", FINGERPRINT, "TEST-ONLY-SERIAL",
+                                    str(self.key), str(self.staging), "1" * 32, FINGERPRINT, review, confirm]
+        return terminal
+
+    def test_guide_builds_public_request_and_private_temporary_manifest(self):
+        terminal = self.ui()
+        self.assertEqual(self.guide.guide("bastion", terminal), 0)
+        self.assertEqual(self.request, dict(host="bastion", target="root@evaluation-only.invalid", port=22,
+            device="/dev/disk/by-id/TEST-ONLY-OS", identity="TEST-ONLY-SERIAL", fingerprint=FINGERPRINT,
+            planHash=hashlib.sha256(DISKO.read_bytes()).hexdigest(),
+            confirm="ERASE bastion root@evaluation-only.invalid /dev/disk/by-id/TEST-ONLY-OS TEST-ONLY-SERIAL"))
+        self.assertNotIn(str(self.root), json.dumps(self.request))
+        self.assertFalse(self.manifest.exists())
+        terminal.review.assert_called_once_with(DISKO)
+        guard = self.calls.index(["bash", "scripts/secrets/check.sh"])
+        evaluation = next(i for i, args in enumerate(self.calls) if args[0] == "nix")
+        self.assertLess(guard, evaluation)
+        self.assertEqual(self.calls[-1], ["bash", "scripts/devenv/host-install.sh"])
+        self.assertNotIn("FLEET_INSTALL_MANIFEST", os.environ)
+
+    def test_cancellation_never_invokes_installer(self):
+        for terminal in [self.ui(review=""), self.ui(confirm=""), self.ui(confirm="ERASE racknerd")]:
+            self.assertEqual(self.guide.guide("bastion", terminal), 1)
+        self.assertIsNone(self.request)
+
+    def test_unready_or_changed_candidate_never_invokes_installer(self):
+        self.ready = False
+        terminal = self.ui()
+        with self.assertRaises(ValueError):
+            self.guide.guide("bastion", terminal)
+        terminal.ask.assert_not_called()
+        self.ready = True
+        self.changed = True
+        self.heads = 0
+        with self.assertRaises(ValueError):
+            self.guide.guide("bastion", self.ui())
+        self.assertIsNone(self.request)
+
+    def test_pager_disables_shell_hooks_allow_overrides_and_history(self):
+        reader, writer = mock.Mock(), mock.Mock()
+        terminal = self.guide.Terminal(reader, writer)
+        with mock.patch.dict(os.environ, {"LESSOPEN": "TEST-ONLY", "LESSCLOSE": "TEST-ONLY", "LESSSECURE_ALLOW": "shell"}), \
+                mock.patch.object(self.guide.subprocess, "run") as execute:
+            terminal.review(DISKO)
+        arguments = execute.call_args
+        self.assertEqual(arguments.args[0], ["less", "--", str(DISKO)])
+        environment = arguments.kwargs["env"]
+        self.assertEqual(environment["LESSSECURE"], "1")
+        self.assertEqual(environment["LESSSECURE_ALLOW"], "")
+        self.assertEqual(environment["LESSHISTFILE"], "-")
+        self.assertNotIn("LESSOPEN", environment)
+        self.assertNotIn("LESSCLOSE", environment)
+
+    def test_background_terminal_is_refused_before_any_steps(self):
+        with mock.patch.object(self.guide.os, "open", return_value=99), \
+                mock.patch.object(self.guide.os, "close") as close, \
+                mock.patch.object(self.guide.os, "isatty", return_value=True), \
+                mock.patch.object(self.guide.os, "tcgetpgrp", return_value=10), \
+                mock.patch.object(self.guide.os, "getpgrp", return_value=20):
+            with self.assertRaises(ValueError):
+                with self.guide.foreground_terminal():
+                    self.fail("Background terminal was accepted")
+            close.assert_called_once_with(99)
+        self.assertEqual(self.calls, [])
 
 
 unittest.main()
