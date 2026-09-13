@@ -5,6 +5,8 @@
 /.env
 /.env.*
 /.local/
+/CLAUDE.local.md
+/.claude/settings.local.json
 *.qcow2
 *.raw
 

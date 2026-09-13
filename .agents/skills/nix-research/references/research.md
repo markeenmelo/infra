@@ -3,6 +3,12 @@
 Initial research **2026-09-09 UTC**, with subsequent dated entries, against upstream documentation, source checkouts, GitHub release lists and recently updated issues. Pins below describe this implementation, not evergreen release recommendations. `flake.lock` is authoritative after future updates.
 
 
+## Shared Pi and Claude Code guidance — 2026-09-13
+
+The [official Claude memory guide](https://code.claude.com/docs/en/memory#agentsmd) documents importing an existing AGENTS.md from CLAUDE.md. Its [skills guide](https://code.claude.com/docs/en/skills#where-skills-live) supports per-skill directory symlinks in the project skill directory and ordinary name/description frontmatter. Use a one-line `@AGENTS.md` import and individual relative `.claude/skills/NAME` links to canonical `.agents/skills/NAME`, not copied instructions or tool-permission grants.
+
+Read packaged Pi **0.85.1** `docs/skills.md` and `dist/core/resource-loader.js`: repository `.agents/skills` loads after trust; `/skill:NAME` differs from Claude's `/NAME`; AGENTS.md is preferred over CLAUDE.md in one directory. Shared prose uses harness-neutral operations and explicit authorization. Offline source-quality checks cover alias inventory/frontmatter/imports; no Claude installation, session/provider invocation, private memory inspection or local settings change occurs. Claude runtime discovery remains a separately observed acceptance item, not a claim inferred from the current rolling manual.
+
 ## Connector-independent external display selection — 2026-09-13
 
 The operator selected external above, laptop centered below, external preferred supported mode and scale 1 for both HDMI and USB-C hub paths. Unstable **`02f5696b0e6097e589076d886b317b83ff0437d7`** still packages Hyprland **0.56.2**; no live display query or modeset was performed.

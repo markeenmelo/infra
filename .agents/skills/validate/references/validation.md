@@ -75,6 +75,7 @@ There is no replacement task command. Run the [full manual sequence](../SKILL.md
 
 | Check | Actual scope |
 |---|---|
+| `source-quality` | Nix-only modules/entry-point placement, formatting/static/ShellCheck and shared Pi/Claude import, canonical skill frontmatter and exact relative alias inventory. No assistant installation or live skill/provider invocation |
 | `validation.hosts` | All three actual compositions; typed options/assertions; forced package-path, `/etc`, kernel/initrd, Bastion ZFS-module and ThinkPad home-activation derivations; desktop isolation from headless hosts; independent intended-track mapping; actual `pkgs.path` versus required input; Nixpkgs/Home Manager/Zen branch/follows policy; ThinkPad-only native nh package/path and no cleanup units |
 | `validation.fixtures` | Shared both-track synthetic infrastructure evaluation, toplevel/script paths and deployment contributions; never real installation targets |
 | `validation.fixtures.*.deploymentAccess` | Actual fleet metadata and dedicated deployment capability on both tracks; locked keyed deploy account, root-only activation, explicit Nix trust, NOPASSWD rules and root-SSH denial. Reject root/null/wrong/missing users, unlocked/empty-key accounts and missing trust/sudo. No fixture deployment targets or real remote operations |

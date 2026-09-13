@@ -28,6 +28,7 @@
                 pkgs.statix
                 pkgs.deadnix
                 pkgs.shellcheck
+                pkgs.python3
               ];
             }
             ''
@@ -44,6 +45,7 @@
               statix check .
               deadnix --fail .
               find scripts -name '*.sh' -print0 | xargs -0 shellcheck .envrc
+              python3 scripts/agents/check-guidance.py "$PWD"
               touch "$out"
             '';
       };

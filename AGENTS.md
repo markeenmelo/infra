@@ -2,6 +2,12 @@
 
 This is infrastructure for real machines and valuable storage. Read `README.md` and the matching [.agents/skills/](.agents/skills/README.md) procedure before editing. Skills own operational guidance, architecture decisions, research and dated host evidence; do not recreate `docs/` or explanatory code comments. Preserve shebangs, licenses and tool directives.
 
+## Pi and Claude Code
+
+This file is the shared authority: Pi reads `AGENTS.md`; root `CLAUDE.md` imports it for Claude Code. Canonical skills stay in `.agents/skills/`, with per-skill links under `.claude/skills/` rather than duplicate procedures. Pi uses `/skill:NAME` after project trust; Claude Code uses `/NAME`. Read the matching skill directly if discovery is unavailable. Resolve references from the skill file; run commands from the repository root.
+
+Use the current harness's read/edit/shell and question tools; no procedure requires a Pi-specific extension. Skill discovery is not operation authorization. Do not add automatic shell injection, tool-preapproval fields, permission-bypass settings or hooks just to make another harness work. Private local settings/memory and credentials stay outside tracked guidance; neither agent may infer consent from historical evidence.
+
 ## Non-negotiable safety
 
 - No deployment, remote activation (including `--dry-activate`), installation, mount, partition, format, data destruction or generated disko execution without explicit authorization for that operation in the current task. Local evaluation/build checks authorize none of these.

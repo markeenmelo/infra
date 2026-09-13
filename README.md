@@ -24,7 +24,7 @@ Use the [validation skill](.agents/skills/validate/SKILL.md) for manual local ch
 
 `flake.nix` discovers the Nix-only `modules/` tree in one top-level flake-parts evaluation. Executable sources/tests live in `scripts/`, static data in `assets/`, grouped by concern. Features own their class-checked NixOS/Home Manager contributions, facts and tests; hosts explicitly choose one package track. Native `devenv.nix` is the sole development-only entry-point exception.
 
-Operational guidance, architecture decisions, research and dated evidence live under [.agents/skills/](.agents/skills/README.md), not `docs/` or code comments. Start with [AGENTS.md](AGENTS.md), the matching skill and [secret handling](secrets/README.md).
+Operational guidance, architecture decisions, research and dated evidence live under [.agents/skills/](.agents/skills/README.md), not `docs/` or code comments. Start with [AGENTS.md](AGENTS.md), the matching skill and [secret handling](secrets/README.md). Pi reads the canonical skills directly; Claude Code imports the same instructions through `CLAUDE.md` and discovers linked `.claude/skills/` entries. No duplicate guidance or agent installation is required.
 
 Deployment policy lives in `modules/deploy.nix`: restricted `deploy` SSH account on all hosts, explicit root-equivalent Nix/activation privileges, remote builds, automatic/magic rollback, and servers ordered Racknerd before Bastion. The account transition is unactivated; see the [deployment procedure](.agents/skills/deploy/SKILL.md).
 
