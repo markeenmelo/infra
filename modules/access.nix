@@ -11,12 +11,18 @@ in
       configured = secret: secret != null && builtins.hasAttr secret config.sops.secrets;
     in
     {
+      key = "fleet.access";
       imports = [ secretsModule ];
       options.fleet.access = {
         admin = mkOption {
           type = types.nullOr (types.strMatching "[a-z_][a-z0-9_-]*");
           default = null;
-          description = "Real administration account name, not inferred from the repository owner.";
+          description = "Interactive administrator, or null on deployment-only servers.";
+        };
+        deploymentUser = mkOption {
+          type = types.nullOr (types.strMatching "[a-z_][a-z0-9_-]*");
+          default = null;
+          description = "Keyed administrator provisioned by the deployment capability, independently of an interactive account.";
         };
         authorizedKeys = mkOption {
           type = types.listOf types.nonEmptyStr;
@@ -36,7 +42,8 @@ in
       };
       config = {
         fleet.bootstrap.missing =
-          lib.optional (cfg.admin == null) "Set fleet.access.admin."
+          lib.optional (cfg.admin == null && cfg.deploymentUser == null)
+            "Set fleet.access.admin or provision fleet.access.deploymentUser."
           ++ lib.optional (cfg.authorizedKeys == [ ]) "Supply verified public fleet.access.authorizedKeys."
           ++ lib.optional (
             cfg.admin != null && !(builtins.hasAttr cfg.admin cfg.passwordSecrets) && !cfg.passwordlessSudo
@@ -44,7 +51,13 @@ in
           ++ lib.mapAttrsToList (
             user: _: "Supply a declared SOPS password-hash secret in fleet.access.passwordSecrets.${user}."
           ) (lib.filterAttrs (_: secret: !configured secret) cfg.passwordSecrets);
-        assertions = lib.mapAttrsToList (
+        assertions = lib.optional (cfg.deploymentUser != null) {
+          assertion = cfg.deploymentUser != "root"
+            && builtins.hasAttr cfg.deploymentUser config.users.users
+            && config.users.users.${cfg.deploymentUser}.openssh.authorizedKeys.keys != [ ]
+            && lib.elem "wheel" config.users.users.${cfg.deploymentUser}.extraGroups;
+          message = "A deployment-only administration path must be a real keyed non-root wheel account, not a readiness placeholder.";
+        } ++ lib.mapAttrsToList (
           user: name:
           let
             secret = config.sops.secrets.${name};

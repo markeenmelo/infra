@@ -72,9 +72,13 @@
             "emacs"
           ]
           && cfg.fileSystems."/".fsType == "tmpfs"
-          && cfg.users.users.marcos.home == "/home/marcos"
-          && cfg.users.users.marcos.createHome
-          && cfg.users.users.marcos.homeMode == "700"
+          && !(cfg.users.users ? marcos)
+          && cfg.fleet.access.admin == null
+          && cfg.fleet.access.passwordSecrets == { }
+          && cfg.sops.secrets == { }
+          && cfg.users.users.deploy.home == "/var/lib/deploy"
+          && cfg.users.users.deploy.createHome
+          && cfg.users.users.deploy.homeMode == "700"
           && !(lib.any homePath (lib.filter (path: path != "/") (lib.attrNames cfg.fileSystems)))
           && !(lib.any (mount: homePath mount.where) cfg.systemd.mounts)
           && lib.all (
@@ -86,13 +90,15 @@
           && !(cfg.environment.sessionVariables ? CURSOR_AGENT_PATH)
           && !(cfg.environment.sessionVariables ? RTK_TELEMETRY_DISABLED)
           && !(lib.any (rule: lib.hasInfix "/etc/fleet-agents" rule) cfg.systemd.user.tmpfiles.rules)
-          && cfg.nix.settings.trusted-users == [ "root" ]
+          && lib.sort builtins.lessThan cfg.nix.settings.trusted-users == [ "deploy" "root" ]
+          && !cfg.networking.networkmanager.enable
+          && cfg.fileSystems."/persist".fsType == "btrfs"
           && cfg.nix.settings.require-sigs
           && cfg.security.sudo.wheelNeedsPassword
           && !cfg.fleet.access.passwordlessSudo
           && !cfg.users.mutableUsers
         )
       )
-      "${name}: minimal servers must have ephemeral homes, no editor/agent workspace and unchanged least-privilege access";
+      "${name}: minimal servers must have only dedicated deployment administration, no human accounts/password delivery, home persistence or editor/agent workspace";
     true;
 }

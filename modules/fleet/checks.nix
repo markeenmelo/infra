@@ -38,14 +38,13 @@ let
     assert lib.assertMsg (
       builtins.attrNames config.fleet.validation.hostChecks == [
         "administratorKeys"
-        "bastionAccess"
+        "deployment"
         "desktop"
         "editors"
         "kernel"
         "nasMaintenance"
         "nh"
         "printing"
-        "racknerdAccess"
         "secrets"
         "serverBaseline"
         "storage"
@@ -120,7 +119,7 @@ let
         && !cfg.programs.steam.enable
         && cfg.systemd.enableEmergencyMode
         && cfg.services.openssh.settings.PermitRootLogin == "no"
-        && cfg.services.openssh.settings.AllowUsers == [ "marcos" ]
+        && cfg.services.openssh.settings.AllowUsers == ([ "deploy" ] ++ lib.optional (name == "thinkpad") "marcos")
         && cfg.security.sudo.wheelNeedsPassword
         && !cfg.fleet.access.passwordlessSudo
         && cfg.networking.firewall.allowedTCPPorts == [ 22 ]

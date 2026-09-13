@@ -101,12 +101,15 @@ in
       && cfg.sops.gnupg.sshKeyPaths == [ ]
       && cfg.sops.validateSopsFiles
       && !cfg.sops.useTmpfs
-      && cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
-      && !(lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." cfg.fleet.bootstrap.missing)
       && cfg.fleet.secrets.ageKeyFile != null
       && cfg.fleet.secrets.ageRecipient != null
-      && (
-        cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
+      && (if name != "thinkpad" then
+        cfg.fleet.access.passwordSecrets == { } && cfg.sops.secrets == { }
+        && !(cfg.users.users ? marcos)
+      else
+        cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
+        && !(lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." cfg.fleet.bootstrap.missing)
+        && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
         && cfg.sops.secrets.marcos-password-hash.sopsFile == ../../secrets/shared/marcos-password.yaml
         && cfg.sops.secrets.marcos-password-hash.key == "marcos-password-hash"
         && cfg.sops.secrets.marcos-password-hash.format == "yaml"
@@ -124,8 +127,8 @@ in
             )
           )
       )
-    ) "${name}: shared SOPS password/identity policy regressed or unrelated secrets enabled";
-    assert lib.all
+    ) "${name}: workstation password delivery, server credential removal or preserved machine identity policy regressed";
+    assert name != "thinkpad" || lib.all
       (
         recipient:
         let

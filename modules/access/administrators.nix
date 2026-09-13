@@ -13,12 +13,14 @@ let
   ];
 in
 {
-  fleet.hosts = lib.genAttrs [ "thinkpad" "racknerd" "bastion" ] (_name: {
-    module = { config, lib, ... }: {
+  fleet.hosts = lib.mkMerge [
+    (lib.genAttrs [ "thinkpad" "racknerd" "bastion" ] (_: {
+      module.fleet.access.authorizedKeys = administratorKeys;
+    }))
+    { thinkpad.module = { config, lib, ... }: {
       fleet = {
         access = {
           admin = "marcos";
-          authorizedKeys = administratorKeys;
           passwordSecrets.marcos = "marcos-password-hash";
           passwordlessSudo = false;
         };
@@ -36,8 +38,8 @@ in
             };
           };
       users.users.marcos.uid = 1000;
-    };
-  });
+    }; }
+  ];
 
   fleet.validation.hostChecks.administratorKeys =
     { name, system, ... }:
@@ -45,11 +47,16 @@ in
       cfg = system.config;
     in
     assert lib.assertMsg (
-      cfg.fleet.access.admin == "marcos"
-      && cfg.fleet.access.authorizedKeys == administratorKeys
-      && cfg.users.users.marcos.openssh.authorizedKeys.keys == administratorKeys
-      && lib.elem "marcos" cfg.services.openssh.settings.AllowUsers
-    ) "${name}: marcos must allow exactly the reviewed fleet administrator keys";
+      cfg.fleet.access.authorizedKeys == administratorKeys
+      && cfg.users.users.deploy.openssh.authorizedKeys.keys == map (key: "restrict ${key}") administratorKeys
+      && lib.elem "deploy" cfg.services.openssh.settings.AllowUsers
+      && (if name == "thinkpad" then
+        cfg.fleet.access.admin == "marcos"
+        && cfg.users.users.marcos.uid == 1000
+        && cfg.users.users.marcos.openssh.authorizedKeys.keys == administratorKeys
+        && lib.elem "marcos" cfg.services.openssh.settings.AllowUsers
+      else cfg.fleet.access.admin == null && !(cfg.users.users ? marcos))
+    ) "${name}: deployment and workstation administration must use exactly the two reviewed keys, with no interactive server account";
     true;
 
   perSystem = { pkgs, ... }: {
