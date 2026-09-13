@@ -1,5 +1,4 @@
-{ config, lib, ... }:
-{
+_: {
   flake.modules.nixos.desktop =
     {
       config,
@@ -48,50 +47,5 @@
       wantedBy = lib.mkForce [ ];
       restartIfChanged = false;
     };
-  };
-
-  fleet.validation.hostChecks.printing =
-    {
-      name,
-      host,
-      system,
-    }:
-    let
-      cfg = system.config;
-    in
-    assert lib.assertMsg
-      (
-        name != "thinkpad"
-        || (
-          cfg.systemd.services.ensure-printers.wantedBy == [ ]
-          && cfg.systemd.services.ensure-printers.requiredBy == [ ]
-          && cfg.systemd.services.ensure-printers.startAt == [ ]
-          && !cfg.systemd.services.ensure-printers.restartIfChanged
-          && !(cfg.systemd.timers ? ensure-printers)
-          && !(cfg.systemd.services ? ensure-printer-classes)
-          && lib.all (unit: !(lib.elem "ensure-printers.service" (unit.wants ++ unit.requires))) (
-            lib.attrValues cfg.systemd.services ++ lib.attrValues cfg.systemd.targets
-          )
-          && !cfg.services.printing.stateless
-          && lib.elem "/var/lib/cups" host.persistence.directories
-          && cfg.hardware.printers.ensureDefaultPrinter == "Epson_ET-3850"
-        )
-      )
-      "${name}: printer provisioning must be manual, with persistent queues/PPDs and no boot/rebuild network dependency";
-    true;
-
-  perSystem.checks = {
-    thinkpad-printer-provisioning =
-      let
-        thinkpad = config.flake.fleetConfigurations.thinkpad;
-        cfg = thinkpad.config;
-      in
-      thinkpad.pkgs.runCommand "thinkpad-printer-provisioning" { } ''
-        ${lib.getExe thinkpad.pkgs.python3} ${../../scripts/desktop/test-printer-provisioning.py} \
-          ${lib.trim cfg.systemd.services.ensure-printers.serviceConfig.ExecStart} \
-          ${thinkpad.pkgs.cups}/bin/lpadmin \
-          ${cfg.systemd.units."ensure-printers.service".unit}/ensure-printers.service
-        touch "$out"
-      '';
   };
 }

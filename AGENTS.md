@@ -1,6 +1,6 @@
 # Agent instructions
 
-This repository configures real machines and real storage. Read `README.md` and the matching [skill](.agents/skills/README.md) before editing. Skills hold the procedures; don't recreate them as `docs/` or explanatory code comments. Preserve shebangs, licenses and tool directives.
+This repository configures real machines and real storage. Read `README.md` and the matching [skill](.agents/skills/README.md) before editing. Skills hold the procedures; don't recreate them as `docs/` or explanatory code comments.
 
 This file is the shared authority: Pi reads `AGENTS.md`, and root `CLAUDE.md` imports it for Claude Code. Canonical skills live in `.agents/skills/`, linked from `.claude/skills/`. Pi invokes `/skill:NAME`, Claude Code `/NAME`; read the file directly if discovery is unavailable. Run commands from the repository root.
 
@@ -15,18 +15,18 @@ Finding a skill is not authorization to run what it describes. Never add shell i
 
 ## Architecture
 
-- `flake.nix` is the production entry point; root `devenv.nix` is the development-only exception and is never imported into production. Every other `.nix` file lives under `modules/` as a top-level flake-parts module, including tests and hardware facts. `modules/` is Nix only: executables and tests go in `scripts/<concern>/`, static data in `assets/<concern>/`.
+- `flake.nix` is the production entry point; root `devenv.nix` is the development-only exception and is never imported into production. Every other `.nix` file lives under `modules/` as a top-level flake-parts module, including hardware facts. `modules/` is Nix only: static data goes in `assets/<concern>/`. There is no `scripts/` tree and no test suite — the repository is declarative configuration and nothing else.
 - Capabilities are deferred, class-checked `flake.modules.nixos` / `flake.modules.homeManager` values, composed only in a matching evaluation. Per-host facts merge into `fleet.hosts.<name>.module`. No host import roots, no `common.nix`.
 - Each host declares `system` and `track`. ThinkPad follows `nixpkgs-unstable`; servers follow the supported numbered stable branch. Generic code uses its own evaluation's `pkgs` and `lib` — no injected inputs, global overlays or importing both package sets.
-- Track selection belongs in `modules/fleet.nix`, the independent track oracle in `modules/validation.nix`. `fleetConfigurations` evaluates everything; `nixosConfigurations` requires readiness; deploy outputs additionally require deployment intent.
-- A concern owns its configuration, state, facts, scripts and checks together. Features contribute their own fixtures and checks; `modules/validation.nix` only assembles them. Fixtures never become real hosts or install targets, and their sentinel values never reach fleet facts.
-- `devenv.nix` provides the toolbox, six scripts and exactly three tasks — `host:create`, `host:install`, `deploy:run` — uncached, null-default and independent of each other. Bodies live in `scripts/devenv/`. Its nixpkgs pin must match `flake.lock`.
+- Track selection belongs in `modules/fleet.nix`. `fleetConfigurations` and `nixosConfigurations` both evaluate every host regardless of readiness; deploy outputs still require readiness and deployment intent. `fleet.hosts.<name>.ready` and `fleet.bootstrap.missing` no longer block a build — they survive only to make each host's public disko aliases refuse an uncommissioned or fact-incomplete target.
+- A concern owns its configuration, state and facts together. Nothing in the repository verifies them: there are no fixtures, no `fleet.validation`, no `flake.validation` report and no `perSystem.checks`.
+- `devenv.nix` provides the locked toolbox and nothing else — no scripts, no tasks, no hooks. Its nixpkgs pin must match `flake.lock`.
 
 ## Workflow
 
 1. Inspect the staged and unstaged diff. Research anything dependency-sensitive against upstream at the current pin before changing it.
 2. Make the smallest coherent change using the existing typed boundaries. Leave facts, readiness, credentials and pins alone unless they are the task.
-3. Run `bash scripts/secrets/check.sh` before staging encrypted files or evaluating tracked secrets. Stage only the reviewed new files — a Git flake ignores untracked ones. Never stage plaintext, private identities or unrelated work. Commit only when asked.
-4. Validate per [devenv](.agents/skills/devenv/SKILL.md): the short documentation path, or formatting plus `bash scripts/devenv/preflight.sh` for anything substantive. Never run a live task as a test; `devenv test` is not a gate. Run the full sequence once on the final candidate, and always before deployment.
-5. For each affected commissioned host, also run `devenv shell ready HOST` and `devenv shell build HOST`. These prove neither boot, credentials, networking, devices nor backups.
+3. Read every encrypted file you touch before staging it — no automated ciphertext guard exists any more. Confirm by eye that each value is an `ENC[AES256_GCM,...]` payload and that the recipients match the matching `.sops.yaml` creation rule exactly. Stage only the reviewed new files — a Git flake ignores untracked ones. Never stage plaintext, private identities or unrelated work. Commit only when asked.
+4. Validate per [devenv](.agents/skills/README.md): documentation-only changes need `git diff --check` and working links; anything substantive needs `nix fmt` and `nix flake check`. `nix flake check` now builds no checks — it only evaluates the flake outputs, so it proves evaluation and nothing more.
+5. For each affected host run `nix eval --no-update-lock-file --json .#fleet.HOST` and `nix build --no-update-lock-file --no-link .#nixosConfigurations.HOST.config.system.build.toplevel`. These prove neither boot, credentials, networking, devices nor backups, and no longer prove policy either.
 6. Review the whole diff and report exactly what passed, what failed and what is still unknown. A timeout or failure is not success.

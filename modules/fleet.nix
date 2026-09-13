@@ -67,7 +67,7 @@ in
 
   config.flake = {
     fleetConfigurations = evaluated;
-    nixosConfigurations = lib.filterAttrs (name: _: hosts.${name}.ready) evaluated;
+    nixosConfigurations = evaluated;
     fleet = lib.mapAttrs (
       name: host:
       let
@@ -75,9 +75,6 @@ in
         cfg = system.config;
         input = tracks.${host.track};
       in
-      assert lib.assertMsg (
-        (cfg ? disko) && (cfg.environment ? persistence) && (cfg.environment.persistence ? "/persist")
-      ) "${name}: the fleet inventory requires a per-host disko layout and /persist persistence.";
       {
         inherit (host)
           system

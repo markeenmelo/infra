@@ -9,5 +9,4 @@
       lib.optional (!config.fleet.gaming.reviewed)
         "Choose gaming software/driver policy and acknowledge fleet.gaming.reviewed; nothing proprietary is enabled implicitly.";
   };
-  fleet.validation.fixtureModules.gaming = _: { fleet.gaming.reviewed = true; };
 }

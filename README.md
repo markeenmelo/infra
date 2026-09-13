@@ -4,9 +4,9 @@ Dendritic NixOS configurations for three `x86_64-linux` machines: `thinkpad` (un
 
 ## Layout
 
-`flake.nix` hands the whole `modules/` tree to `import-tree`, so every file in it is a top-level flake-parts module — features, host facts and tests alike. `modules/` holds Nix only; executables and their tests live in `scripts/<concern>/`, static data in `assets/<concern>/`. Root `devenv.nix` is the one development-only entry point and is never imported into production.
+`flake.nix` hands the whole `modules/` tree to `import-tree`, so every file in it is a top-level flake-parts module — features and host facts alike. `modules/` holds Nix only; static data lives in `assets/<concern>/`. Root `devenv.nix` is the one development-only entry point and is never imported into production.
 
-Features own their NixOS and Home Manager contributions, persistence, host facts and checks together. Hosts choose a package track explicitly.
+Features own their NixOS and Home Manager contributions, persistence and host facts together. Hosts choose a package track explicitly.
 
 ## Development
 
@@ -14,12 +14,21 @@ Features own their NixOS and Home Manager contributions, persistence, host facts
 nix run --no-update-lock-file .#devenv -- shell
 ```
 
-The shell provides the locked toolbox, the `ready`, `build`, `disk-plan`, `deploy`, `tailnet` and `tailnet-sops` scripts, and three explicitly invoked tasks: `host:create` (local scaffold), `host:install` (confirmed destructive nixos-anywhere installation) and `deploy:run` (guarded deployment). Entering the shell runs no checks, formatting, secret loading or deployment, and `devenv test` is not a validation gate.
+The shell provides the locked toolbox and nothing else — Nix, SOPS/age, nixos-anywhere, deploy-rs's inputs, the packaged OpenTofu/provider wrapper and the formatters. It defines no scripts, tasks or hooks; entering it runs no checks, formatting, secret loading or deployment.
 
-Run `bash scripts/secrets/check.sh` before staging encrypted files or evaluating the flake — Nix copies tracked files into the public store. `bash scripts/devenv/preflight.sh` runs the full report-only check sequence.
+Inspect and build with the flake directly:
+
+```sh
+nix fmt
+nix flake check --no-update-lock-file -L
+nix eval --no-update-lock-file --json .#fleet | jq 'map_values({track,ready,missing})'
+nix build --no-update-lock-file --no-link .#nixosConfigurations.HOST.config.system.build.toplevel
+```
+
+`nix flake check` builds no checks; it only evaluates the flake's outputs. Nothing in this repository verifies SOPS ciphertext shape or recipients, module layout, deployment-account policy or generated desktop configuration — review those by hand. Nix copies tracked files into the public store, so read any encrypted file before staging it.
 
 ## Where things are documented
 
 [AGENTS.md](AGENTS.md) is the shared contract, [.agents/skills/](.agents/skills/README.md) holds the procedures, and [secrets/README.md](secrets/README.md) covers secret handling. Deployment policy — the dedicated `deploy` account, groups, remote builds and rollback — lives in `modules/deploy.nix`.
 
-Checks and builds authorize no deployment, installation, disk operation or credential access. Persistence and rollback are not backups.
+Evaluation and builds authorize no deployment, installation, disk operation or credential access. Persistence and rollback are not backups.

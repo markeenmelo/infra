@@ -36,14 +36,12 @@ in
     {
       config,
       lib,
-      pkgs,
       ...
     }:
     let
       cfg = config.fleet.tailscale;
       secret =
         if cfg.authKeySecret == null then null else config.sops.secrets.${cfg.authKeySecret} or null;
-      keyPath = if secret == null then "" else secret.path;
       missing =
         lib.optional (cfg.tag == null) "Supply this device's unique admin-controlled Tailscale tag."
         ++ lib.optional (
@@ -130,43 +128,6 @@ in
               "/persist/var/lib/tailscale"
               "/var/lib/tailscale"
             ];
-            fleet-tailscale = {
-              description = "Reconcile reviewed Tailscale client enrollment and preferences";
-              wantedBy = [ "multi-user.target" ];
-              after = [
-                "tailscaled.service"
-                "network-online.target"
-              ];
-              wants = [ "network-online.target" ];
-              requires = [ "tailscaled.service" ];
-              unitConfig = {
-                StartLimitIntervalSec = 600;
-                StartLimitBurst = 3;
-              };
-              path = [
-                config.services.tailscale.package
-                pkgs.jq
-                pkgs.coreutils
-              ];
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-                TimeoutStartSec = 120;
-                Restart = "on-failure";
-                RestartSec = 30;
-                UMask = "0077";
-              };
-              script = ''
-                ${pkgs.bash}/bin/bash ${../../scripts/tailscale/reconcile.sh} ${
-                  lib.escapeShellArgs [
-                    (if cfg.enrollmentMode == null then "unconfigured" else cfg.enrollmentMode)
-                    config.networking.hostName
-                    (if cfg.tag == null then "unconfigured" else cfg.tag)
-                    keyPath
-                  ]
-                }
-              '';
-            };
           };
           assertions = [
             {
@@ -194,9 +155,8 @@ in
                   && secret.mode == "0400"
                   && !secret.neededForUsers
                   && secret.path == "/run/secrets/${cfg.authKeySecret}"
-                  && lib.elem "fleet-tailscale.service" secret.restartUnits
                 );
-              message = "Tailscale enrollment needs a root-only runtime SOPS secret with fleet-tailscale.service in restartUnits, never a store/manual/early-user credential.";
+              message = "Tailscale enrollment needs a root-only runtime SOPS secret, never a store/manual/early-user credential.";
             }
             {
               assertion =

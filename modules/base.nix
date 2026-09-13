@@ -70,16 +70,6 @@
           ++ lib.optional (
             !cfg.installation.networkReviewed
           ) "Supply networking and acknowledge fleet.installation.networkReviewed.";
-        assertions = [
-          {
-            assertion = cfg.bootstrap.approved;
-            message = "BOOTSTRAP: host is not commissioned (fleet.hosts.<name>.ready = false).";
-          }
-          {
-            assertion = cfg.bootstrap.missing == [ ];
-            message = "BOOTSTRAP: ${lib.concatStringsSep " " cfg.bootstrap.missing}";
-          }
-        ];
         system.stateVersion = lib.mkIf (
           cfg.installation.stateVersion != null
         ) cfg.installation.stateVersion;

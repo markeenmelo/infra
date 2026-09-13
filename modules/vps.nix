@@ -24,5 +24,4 @@
       systemd.services.fail2ban.unitConfig.RequiresMountsFor = [ "/var/lib/fail2ban" ];
     };
   };
-  fleet.validation.fixtureModules.vps = _: { fleet.vps.providerReviewed = true; };
 }

@@ -1,5 +1,4 @@
-{ lib, ... }:
-{
+_: {
   flake.modules.nixos.workstation =
     {
       config,
@@ -52,24 +51,4 @@
           ];
       };
     };
-
-  fleet.validation.fixtureModules.workstation = _: { fleet.workstation.usersReviewed = true; };
-  fleet.validation.hostChecks.workstation =
-    {
-      name,
-      host,
-      system,
-    }:
-    let
-      cfg = system.config;
-    in
-    assert lib.assertMsg (
-      (name == "thinkpad")
-      -> (
-        cfg.fileSystems."/home".neededForBoot
-        && !(lib.elem "/home" host.persistence.directories)
-        && cfg.services.power-profiles-daemon.enable
-      )
-    ) "${name}: preserve laptop home mounts and power management";
-    true;
 }

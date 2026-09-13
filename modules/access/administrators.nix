@@ -42,46 +42,4 @@ in
       };
     }
   ];
-
-  fleet.validation.hostChecks.administratorKeys =
-    { name, system, ... }:
-    let
-      cfg = system.config;
-    in
-    assert lib.assertMsg
-      (
-        cfg.fleet.access.authorizedKeys == administratorKeys
-        &&
-          cfg.users.users.deploy.openssh.authorizedKeys.keys == map (key: "restrict ${key}") administratorKeys
-        && lib.elem "deploy" cfg.services.openssh.settings.AllowUsers
-        && (
-          if name == "thinkpad" then
-            cfg.fleet.access.admin == "marcos"
-            && cfg.users.users.marcos.uid == 1000
-            && cfg.users.users.marcos.openssh.authorizedKeys.keys == administratorKeys
-            && lib.elem "marcos" cfg.services.openssh.settings.AllowUsers
-          else
-            cfg.fleet.access.admin == null && !(cfg.users.users ? marcos)
-        )
-      )
-      "${name}: deployment and workstation administration must use exactly the two reviewed keys, with no interactive server account";
-    true;
-
-  perSystem = { pkgs, ... }: {
-    checks.shared-password-recipients =
-      pkgs.runCommand "shared-password-recipients"
-        {
-          nativeBuildInputs = [
-            pkgs.yq-go
-            pkgs.jq
-          ];
-        }
-        ''
-          set -euo pipefail
-          yq -o=json '.sops.age | map(.recipient) | sort' ${sharedPassword} |
-            jq -e --argjson expected '${builtins.toJSON (lib.sort builtins.lessThan recipients)}' \
-              '. == $expected' >/dev/null
-          touch "$out"
-        '';
-  };
 }

@@ -1,13 +1,13 @@
 ---
 name: dendritic-nix
-description: Fleet architecture and composition — where a capability, host fact or test belongs, how NixOS and Home Manager values are kept apart, and how to add a feature or a host. Use for flake structure, refactors, module boundaries and new fleet members.
+description: Fleet architecture and composition — where a capability or host fact belongs, how NixOS and Home Manager values are kept apart, and how to add a feature or a host. Use for flake structure, refactors, module boundaries and new fleet members.
 ---
 
 # Architecture
 
 `flake.nix` is the only production entry point. It hands `modules/` to `import-tree`, so **every `.nix` file under `modules/` is a top-level flake-parts module**; paths beginning with `_` are excluded helpers. There are no host import roots and no `common.nix`. `modules/hosts/<name>/` groups files for humans, not for evaluation.
 
-One file owns one concern across every class it touches: NixOS config, Home Manager config, host facts, persistence and its own checks. `modules/desktop/printing.nix` is the worked example.
+One file owns one concern across every class it touches: NixOS config, Home Manager config, host facts and persistence. `modules/desktop/printing.nix` is the worked example.
 
 The pattern is [dendritic](https://github.com/mightyiam/dendritic): one feature per file, lower configurations merged as deferred option values. Flake-parts, import-tree and this repo's `fleet` schema are local choices, not part of the pattern.
 
@@ -25,19 +25,18 @@ The pattern is [dendritic](https://github.com/mightyiam/dendritic): one feature 
 3. Importing a capability should enable it. Add an option only for a real choice or a safety gate.
 4. A lower module reachable by two import routes needs a stable `key` so list contributions deduplicate — see `modules/ssh.nix`.
 5. Use the lower evaluation's own `pkgs` and `lib`. Developer tools belong in `devenv.nix`, never in a host package set, and never import both tracks. A real stable/unstable API difference gets one localized branch (`modules/logging.nix`).
-6. `modules/` is Nix only: executables and tests live in `scripts/<concern>/`, static data in `assets/<concern>/`.
+6. `modules/` is Nix only: static data lives in `assets/<concern>/`. There is no `scripts/` tree — an executable a host needs is built in Nix (`pkgs.writeShellApplication` and friends) inside the module that owns it.
 
 ## Adding a feature
 
-Name the single responsibility and its consumers first, then extend the cohesive existing file or add one under `modules/`. Keep the service, its persisted state, host policy and checks together. Features own their checks through `fleet.validation.fixtureModules`, `hostChecks`, `flake.validation` and `perSystem.checks`; `modules/validation.nix` only assembles fixtures and independent oracles. Fixture facts are synthetic — never copy a sentinel device or key into a real host.
+Name the single responsibility and its consumers first, then extend the cohesive existing file or add one under `modules/`. Keep the service, its persisted state and host policy together. Nothing verifies a feature: there are no fixtures, no `fleet.validation`/`flake.validation` and no `perSystem.checks`. Ordinary NixOS `assertions` inside a module are the only mechanism left, and they now run only when a host is actually evaluated.
 
 ## Adding a host
 
-1. `devenv tasks run host:create` scaffolds untracked `modules/hosts/<name>/{host,hardware,disko}.nix` with nothing filled in. It never stages, evaluates or installs.
+1. Create `modules/hosts/<name>/{host,hardware,disko}.nix` by hand, with nothing filled in and `ready = false`. Leave them untracked until the facts are real — a Git flake ignores untracked files, so nothing evaluates or installs meanwhile. Copy the shape from an existing host, never its values.
 2. `host.nix` defines `fleet.hosts.<name>` with required `system` and `track` plus its `capabilities`. Choose the track deliberately; a role or directory never implies one.
-3. Mirror that choice in the independent `expectedTracks` oracle in `modules/validation.nix`.
-4. Keep `ready = false` until the facts are real. Adapt an actual hardware scan; never borrow another machine's UUIDs, devices or keys.
-5. Follow [storage](../storage/SKILL.md) for the layout and persistence, then add deployment facts to `modules/deploy.nix`.
-6. Validate per [devenv](../devenv/SKILL.md) and read `nix eval --json .#fleet.<name>`.
+3. Keep `ready = false` until the facts are real. Adapt an actual hardware scan; never borrow another machine's UUIDs, devices or keys.
+4. Follow [storage](../storage/SKILL.md) for the layout and persistence, then add deployment facts to `modules/deploy.nix`.
+5. Run `nix fmt`, `nix flake check --no-update-lock-file -L` and read `nix eval --json .#fleet.<name>`.
 
-Unknown facts stay as blockers in `fleet.bootstrap.missing`. Never flip `ready`, `storageReviewed` or `identityReviewed` to make an evaluation pass.
+Unknown facts stay as blockers in `fleet.bootstrap.missing`. Those blockers no longer fail a build — they only make the host's public disko aliases refuse, so an incomplete host now builds a system closure quite happily. Never flip `ready`, `storageReviewed` or `identityReviewed` to make anything pass.

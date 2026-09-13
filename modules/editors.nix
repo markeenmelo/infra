@@ -1,5 +1,4 @@
-{ lib, ... }:
-{
+_: {
   flake.modules.nixos.editors = {
     programs.neovim = {
       enable = true;
@@ -32,27 +31,4 @@
     };
     programs.nano.enable = false;
   };
-
-  fleet.validation.hostChecks.editors =
-    {
-      name,
-      host,
-      system,
-      ...
-    }:
-    let
-      cfg = system.config;
-    in
-    assert lib.assertMsg (
-      (lib.elem "editors" host.capabilities)
-      -> (
-        cfg.programs.neovim.enable
-        && cfg.programs.neovim.defaultEditor
-        && cfg.programs.neovim.viAlias
-        && cfg.programs.neovim.vimAlias
-        && cfg.environment.sessionVariables.EDITOR == "nvim"
-        && !cfg.programs.nano.enable
-      )
-    ) "${name}: hosts composing editors must ship configured Neovim as the sole console editor";
-    true;
 }

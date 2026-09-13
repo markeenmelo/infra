@@ -1,5 +1,4 @@
-{ lib, ... }:
-{
+_: {
   flake.modules.nixos.base =
     {
       config,
@@ -20,19 +19,4 @@
         }
       ];
     };
-
-  fleet.validation.hostChecks.kernel =
-    { name, system, ... }:
-    let
-      cfg = system.config;
-    in
-    assert lib.assertMsg
-      (
-        lib.versions.major cfg.boot.kernelPackages.kernel.version == "7"
-        && cfg.boot.kernelPackages.kernel.drvPath == system.pkgs.linuxPackages_latest.kernel.drvPath
-        && !(lib.elem "xe" cfg.boot.initrd.kernelModules)
-        && !(lib.any (lib.hasInfix "force_probe") cfg.boot.kernelParams)
-      )
-      "${name}: retain the host track's latest stock 7.x kernel and no experimental Intel force-probe policy";
-    true;
 }

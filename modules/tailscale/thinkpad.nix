@@ -9,7 +9,6 @@
     sops.secrets.tailscale-auth-key = {
       sopsFile = ../../secrets/hosts/thinkpad-tailscale.yaml;
       owner = "root";
-      restartUnits = [ "fleet-tailscale.service" ];
     };
   };
 }

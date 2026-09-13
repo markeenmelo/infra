@@ -1,6 +1,6 @@
 ---
 name: storage
-description: Disk layouts, persistence and installation — disko OS-disk design, impermanence state decisions, and the guarded nixos-anywhere install. Use before any partitioning, formatting, mount, persistent-state or fresh-install change. Bastion NAS data is out of scope and protected.
+description: Disk layouts, persistence and installation — disko OS-disk design, impermanence state decisions, and the manual nixos-anywhere install. Use before any partitioning, formatting, mount, persistent-state or fresh-install change. Bastion NAS data is out of scope and protected.
 ---
 
 # Storage, persistence and installation
@@ -19,7 +19,7 @@ Identify the OS disk by a whole-disk `/dev/disk/by-id/` link and set it in `flee
 lsblk -o NAME,PATH,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL,SERIAL,UUID
 ```
 
-Never invent a device path or reuse a fixture sentinel. **Bastion's `tank` members are not OS storage**: no extra disk declarations, pools, RAID, LUKS or shares enter disko, and every public disk-script alias must refuse a redirected or extra device.
+Never invent a device path. **Bastion's `tank` members are not OS storage**: no extra disk declarations, pools, RAID, LUKS or shares enter disko, and every public disk-script alias must refuse a redirected or extra device.
 
 ## Persistence
 
@@ -34,8 +34,22 @@ Root is a tmpfs; only declared paths survive. Add state next to the feature that
 ## Installation
 
 1. Finish the review above, confirm independent backups and console recovery, and verify the live installer's identity from the provider console.
-2. `devenv shell disk-plan HOST` builds the disko script **without executing it** and prints its SHA-256. Read every destroy, format and mount command in `result-disko-HOST`; any input or config change invalidates that review.
-3. With explicit authorization, `devenv tasks run host:install`. Its exact inputs, staging layout and `FLEET_INSTALL_*` runtime paths are enforced in `scripts/devenv/host-install.sh` — read that file rather than a summary. It runs full local preflight, pins the scanned host key against the console fingerprint, re-checks the target is an idle live installer with one unmounted matching disk, and then runs nixos-anywhere with `--phases disko,install --build-on local`: **destructive install, no kexec, no reboot, no host-key copying**.
+2. Build the disko script **without executing it** and read every destroy, format and mount command in it. Any input or config change invalidates that review.
+
+   ```sh
+   nix build --no-update-lock-file -o result-disko-HOST \
+     .#nixosConfigurations.HOST.config.system.build.diskoScript
+   sha256sum result-disko-HOST
+   ```
+
+   The host's own aliases refuse while it is uncommissioned or missing facts — that refusal is the last automatic guard on this path, so never work around it.
+3. With explicit authorization, run `nixos-anywhere` by hand. The guarded installer that used to enforce all of this is gone; every item is now yours to verify before and during the run:
+   - the target is an idle live installer (`VARIANT_ID=installer`, overlay/tmpfs root) with exactly one unmounted disk matching `fleet.installation.osDevice`, held by no pool, swap, dm or kernel consumer;
+   - the scanned SSH host key matches the fingerprint read from the provider console, pinned via a private `UserKnownHostsFile` with `StrictHostKeyChecking=yes`, publickey-only, no agent or forwarding;
+   - staging files (`/persist/etc/machine-id`, the ed25519 host key pair, optionally the age identity) live outside the checkout and the store, owner-only;
+   - the built disko script's SHA-256 still equals the one you reviewed.
+
+   Then invoke it with `--phases disko,install --build-on local` and nothing else: **destructive install, no kexec, no reboot, no host-key copying**.
 4. Afterwards inspect mounts, identities and boot setup. First boot and reboot acceptance are separate authorizations.
 
 Never run disko, a generated script, `mkfs`, `wipefs` or a partition tool directly. Rollback cannot recover repartitioned data.

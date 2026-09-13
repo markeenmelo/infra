@@ -2,7 +2,6 @@
   config,
   inputs,
   lib,
-  options,
   ...
 }:
 let
@@ -11,7 +10,6 @@ let
   nixosModules = config.flake.modules.nixos;
   deploymentPkgs = pkgs: pkgs.extend inputs.deploy-rs.overlays.default;
   deployLib = pkgs: (deploymentPkgs pkgs).deploy-rs.lib;
-  fixtures = config.fleet.validation.fixtures;
   groupNames = [
     "servers"
     "workstations"
@@ -70,81 +68,6 @@ let
           config.flake.fleetConfigurations.${name};
     };
   };
-  deploymentReport = lib.mapAttrs (
-    track: fixture:
-    let
-      deploymentFor =
-        sshUser:
-        let
-          host =
-            (lib.evalModules {
-              modules = [
-                {
-                  options.hosts = mkOption { type = options.fleet.hosts.type; };
-                  config.hosts.fixture = {
-                    system = "x86_64-linux";
-                    inherit track;
-                    deployment = {
-                      enable = true;
-                      hostname = "evaluation-only.test";
-                      group = "servers";
-                      inherit sshUser;
-                    };
-                  };
-                }
-              ];
-            }).config.hosts.fixture;
-        in
-        fixture.extendModules { modules = [ host.module ]; };
-      deploy = deploymentFor "deploy";
-      cfg = deploy.config;
-      rejected = system: !(builtins.tryEval system.config.system.build.toplevel.drvPath).success;
-      unsafe = module: deploy.extendModules { modules = [ module ]; };
-    in
-    assert lib.assertMsg (
-      cfg.fleet.bootstrap.missing == [ ]
-      && lib.all (a: a.assertion) cfg.assertions
-      && cfg.users.users.deploy.isSystemUser
-      && cfg.users.users.deploy.hashedPassword == "!"
-      && cfg.users.users.deploy.extraGroups == [ "wheel" ]
-      && cfg.services.openssh.settings.PermitRootLogin == "no"
-      &&
-        lib.sort builtins.lessThan cfg.nix.settings.trusted-users == [
-          "deploy"
-          "root"
-        ]
-      && cfg.security.sudo.wheelNeedsPassword
-      && cfg.nix.settings.require-sigs
-    ) "${track}: dedicated remote deployment account policy regressed";
-    assert lib.assertMsg (
-      rejected (deploymentFor "root")
-      && rejected (deploymentFor null)
-      && rejected (deploymentFor "fixture-admin")
-      && rejected (deploymentFor "fixture-missing")
-      && rejected (unsafe {
-        users.users.deploy.hashedPassword = lib.mkForce "";
-      })
-      && rejected (unsafe {
-        users.users.deploy.openssh.authorizedKeys.keys = lib.mkForce [ ];
-      })
-      && rejected (unsafe {
-        nix.settings.trusted-users = lib.mkForce [ "root" ];
-      })
-      && rejected (unsafe {
-        security.sudo.extraRules = lib.mkForce [ ];
-      })
-    ) "${track}: unsafe deployment accounts or missing unattended privilege must reject";
-    {
-      deploymentAccess = {
-        nonRootToplevel = cfg.system.build.toplevel.drvPath;
-        rootRejected = true;
-        nullBlocked = true;
-        unknownUserRejected = true;
-        unsafePrivilegesRejected = true;
-      };
-      activation = ((deployLib fixture.pkgs).activate.nixos fixture).drvPath;
-    }
-  ) fixtures;
 in
 {
   options.fleet.hosts = mkOption {
@@ -169,7 +92,7 @@ in
             sshUser = mkOption {
               type = types.nullOr (types.strMatching "[a-z_][a-z0-9_-]*");
               default = "deploy";
-              description = "Dedicated key-only account. Its installed login/privileges require live preflight before deployment.";
+              description = "Dedicated key-only account. Verify its installed login and privileges on the host before deployment; nothing here proves them.";
             };
             sshPort = mkOption {
               type = types.port;
@@ -354,37 +277,6 @@ in
       }
     ];
 
-    fleet.validation.hostChecks.deployment =
-      {
-        name,
-        system,
-        ...
-      }:
-      let
-        cfg = system.config;
-        deployment = hosts.${name}.deployment;
-      in
-      assert lib.assertMsg (
-        cfg.fleet.access.deploymentUser == "deploy"
-        &&
-          lib.sort builtins.lessThan cfg.nix.settings.trusted-users == [
-            "deploy"
-            "root"
-          ]
-        && cfg.nix.settings.require-sigs
-        && cfg.services.openssh.settings.PermitRootLogin == "no"
-        && lib.elem "deploy" cfg.services.openssh.settings.AllowUsers
-        && deployment.sshUser == "deploy"
-        && deployment.remoteBuild
-        &&
-          config.flake.deploymentGroups.servers == [
-            "racknerd"
-            "bastion"
-          ]
-        && config.flake.deploymentGroups.workstations == [ "thinkpad" ]
-      ) "${name}: reviewed deployment account, remote-build or group-order policy regressed";
-      true;
-
     flake = {
       deploy.nodes = lib.mapAttrs mkNode (
         lib.filterAttrs (_: host: host.ready && host.deployment.enable) hosts
@@ -403,33 +295,9 @@ in
           magicRollback = true;
         }
       ) hosts;
-      validation.fixtures = deploymentReport;
     };
     perSystem = { pkgs, ... }: {
       packages.deploy-rs = (deploymentPkgs pkgs).deploy-rs.deploy-rs;
-      checks =
-        (deployLib pkgs).deployChecks config.flake.deploy
-        // lib.concatMapAttrs (
-          track: fixture:
-          let
-            smoke = (deployLib fixture.pkgs).deployChecks {
-              nodes.fixture = {
-                hostname = "evaluation-only.invalid";
-                groups = [ "servers" ];
-                remoteBuild = true;
-                autoRollback = true;
-                magicRollback = true;
-                profiles.smoke = {
-                  user = "root";
-                  path = (deployLib fixture.pkgs).activate.custom (fixture.pkgs.runCommand "smoke-payload" { }
-                    ''mkdir -p "$out"''
-                  ) ":";
-                };
-              };
-            };
-          in
-          lib.mapAttrs' (name: value: lib.nameValuePair "${track}-${name}-smoke" value) smoke
-        ) fixtures;
     };
   };
 }

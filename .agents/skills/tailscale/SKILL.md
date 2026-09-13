@@ -5,7 +5,7 @@ description: Staged Tailscale clients and the OpenTofu-managed tailnet policy, e
 
 # Tailscale and OpenTofu
 
-Clients live in `modules/tailscale/`, the tailnet policy in `tofu/tailscale/`. Keep three things separate: local configuration and tests, live policy management, and host enrollment. None of them authorizes the next.
+Clients live in `modules/tailscale/`, the tailnet policy in `tofu/tailscale/`. Keep three things separate: local configuration, live policy management, and host enrollment. None of them authorizes the next. Nothing here is tested or mocked any more — the offline policy, wrapper and reconciler suites are gone.
 
 ## Policy
 
@@ -19,24 +19,20 @@ MagicDNS is managed through `tailscale_dns_preferences`; resolvers and search do
 
 ## Provider and state
 
-The shell pins OpenTofu and a Nix-built Tailscale provider, used offline. `init` reports that mirrored provider as **unauthenticated** because it is not an upstream signed release archive — that is expected; trust comes from the pinned source and build. Do not swap in a registry binary. A nixpkgs update can change the mirror checksum without a provider version change: compare the derivations and wrappers before touching `.terraform.lock.hcl`, and never regenerate it to silence a mismatch.
+The shell pins OpenTofu and a Nix-built Tailscale provider (`nix build .#tailscale-tofu`), used offline. Confirm you are running that exact binary before any live operation — the wrapper that enforced it, pinned the tailnet and rejected base-URL or alternate-auth overrides has been removed, so those guards are now yours. `init` reports that mirrored provider as **unauthenticated** because it is not an upstream signed release archive — that is expected; trust comes from the pinned source and build. Do not swap in a registry binary. A nixpkgs update can change the mirror checksum without a provider version change: compare the derivations and wrappers before touching `.terraform.lock.hcl`, and never regenerate it to silence a mismatch.
 
 State stays private, encrypted and outside Git and the Nix store, with its existing passphrase. Never recreate state, rotate the passphrase, repeat a completed import, add a plaintext fallback or enable debug logging. OpenTofu rejects a saved plan from a different CLI version — get a fresh reviewed plan rather than working around it.
 
 ## Credentials and live operations
 
-Credentials belong only to a private runtime process:
+Credentials belong only to a private interactive runtime process, decrypted by hand with `sops` and exported into that shell alone — never into Nix, a shell hook, the environment of an unrelated command, or any file. Exactly three values are needed: the OAuth client ID, its secret, and the state passphrase. Use read-only API scopes for review; a write client is a separate, separately authorized credential.
 
-```sh
-devenv shell tailnet-sops ENCRYPTED.yaml OPERATION
-```
+`TAILSCALE_STATE_DIR` must be an absolute path outside the checkout and the store, and the state passphrase at least 32 characters. Nothing validates either now.
 
-The adapter decrypts exactly the OAuth client ID, secret and state passphrase into the child process. No task, shell hook or Nix evaluation may decrypt anything. Use read-only API scopes for review; a write client is a separate, separately authorized credential.
-
-`tailnet verify` saves no plan but **still contacts the API** — exit 0 means no changes, 2 drift, 1 error. Plan, apply and enrollment each need their own current authorization.
+`tofu plan` **contacts the API**. Plan, apply and enrollment each need their own current authorization.
 
 ## Clients
 
-Roll out one host at a time. A disabled host keeps its backing state without an active daemon; disabling is not revocation. Enrollment uses a single-use auth key delivered by a declared SOPS secret, referenced by file and only while the daemon reports `NeedsLogin`. Reconnect a stopped identity with a plain `up`, never a forced reset that loses preferences, and never let manual enrollment race the reconciler.
+Roll out one host at a time. A disabled host keeps its backing state without an active daemon; disabling is not revocation.
 
-Checks are offline and mocked: they prove no decryption, enrollment, policy application, traffic or restore.
+**Enrollment is now manual.** `fleet.tailscale` still declares the auth-key secret at `/run/secrets/NAME` and `tailscaled` still starts, but the `fleet-tailscale` reconciler that enrolled the node, applied its tag and reconciled preferences was removed. Nothing consumes the key; a freshly installed host comes up in `NeedsLogin` and stays there. Enroll it deliberately on the host with a single-use key, only while the daemon reports `NeedsLogin`, and verify the applied tag in the admin console afterwards — no code checks it. Reconnect a stopped identity with a plain `up`, never a forced reset that loses preferences.
