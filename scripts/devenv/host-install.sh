@@ -22,8 +22,8 @@ if [[ -v SSH_PRIVATE_KEY || -v SSHPASS || -v LOCAL_KEY ]]; then
 fi
 [[ -z $(git status --porcelain) ]] || { echo 'Commit the reviewed candidate before installation.' >&2; exit 1; }
 revision=$(git rev-parse HEAD)
-python3 scripts/storage/check-staging.py
 host=$(jq -r '.host' <<<"$input")
+python3 scripts/storage/check-staging.py "$host"
 target=$(jq -r '.target' <<<"$input")
 port=$(jq -r '.port' <<<"$input")
 device=$(jq -r '.device' <<<"$input")
@@ -50,6 +50,10 @@ plan_hash=$(sha256sum "$disko" | cut -d ' ' -f1)
 umask 077
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+cp -a "$FLEET_INSTALL_EXTRA_FILES" "$work/staging"
+cp "$FLEET_INSTALL_MANIFEST" "$work/manifest.json"
+export FLEET_INSTALL_EXTRA_FILES="$work/staging" FLEET_INSTALL_MANIFEST="$work/manifest.json"
+python3 scripts/storage/check-staging.py "$host"
 export FLEET_REAL_SSH
 FLEET_REAL_SSH=$(readlink -f "$(command -v ssh)")
 export FLEET_INSTALL_KNOWN_HOSTS="$work/known_hosts"
@@ -68,12 +72,13 @@ jq -e --arg identity "$identity" --arg device "$device" '
   .blockdevices | type == "array" and length == 1 and .[0].type == "disk"
   and (.[0].size | type == "number" and . > 0)
   and (all(.[0] | recurse(.children[]?);
-    (.mountpoints | type) == "array" and all(.mountpoints[]; . == null or . == "")
+    (.type == "disk" or .type == "part")
+    and (.mountpoints | type) == "array" and all(.mountpoints[]; . == null or . == "")
     and (if has("children") then (.children | type) == "array" else true end)))
   and (if ($device | startswith("/dev/disk/by-path/"))
     then ("size:" + (.[0].size | tostring)) == $identity
     else .[0].serial == $identity end)' <<<"$inventory" >/dev/null || {
-  echo 'Refusing: fresh target disk type, serial/size or mounted-use check failed.' >&2
+  echo 'Refusing: fresh target disk type/consumer, serial/size or mounted-use check failed.' >&2
   exit 1
 }
 [[ -z $(git status --porcelain) && $(git rev-parse HEAD) == "$revision" ]] || { echo 'Candidate changed during preflight; refusing.' >&2; exit 1; }

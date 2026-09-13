@@ -54,13 +54,23 @@ elif name == "ssh":
     elif "bash -s" in args[-1]:
         if os.environ.get("FAIL_INVENTORY"):
             sys.exit(8)
-        print(json.dumps({"blockdevices": [{"type": "disk", "size": 123,
+        disk = {"type": "disk", "size": 123,
             "serial": "WRONG" if os.environ.get("WRONG_SERIAL") else "TEST-ONLY-SERIAL",
-            "mountpoints": None if os.environ.get("MISSING_MOUNTPOINTS") else (["/TEST-ONLY-MOUNTED"] if os.environ.get("MOUNTED") else [None])}]}))
+            "mountpoints": None if os.environ.get("MISSING_MOUNTPOINTS") else (["/TEST-ONLY-MOUNTED"] if os.environ.get("MOUNTED") else [None])}
+        if os.environ.get("HOLDER_TYPE"):
+            disk["children"] = [{"type": "part", "mountpoints": [None],
+                "children": [{"type": os.environ["HOLDER_TYPE"], "mountpoints": [None]}]}]
+        print(json.dumps({"blockdevices": [disk]}))
 elif name == "ssh-keyscan":
     print("evaluation-only.invalid ssh-ed25519 TEST-ONLY-NOT-A-KEY")
 elif name == "ssh-keygen":
-    print("256 SHA256:" + ("B" if os.environ.get("WRONG_FINGERPRINT") else "A") * 43 + " TEST-ONLY (ED25519)")
+    if "-y" in args:
+        print("ssh-ed25519 TEST-ONLY-PUBLIC-KEY")
+    else:
+        wrong = os.environ.get("WRONG_FINGERPRINT") and "known_hosts" in args[-1]
+        print("256 SHA256:" + ("B" if wrong else "A") * 43 + " TEST-ONLY (ED25519)")
+elif name == "age-keygen":
+    print("age1testonly")
 elif name == "nixos-anywhere":
     if os.environ.get("FAIL_INSTALLER"):
         sys.exit(9)
@@ -89,7 +99,7 @@ class Workflows(unittest.TestCase):
             stream.write('test "${1:-}" != "${FAIL_READY:-}"\n')
         binaries = self.root / "bin"
         binaries.mkdir()
-        for name in ["git", "nix", "ssh", "ssh-keyscan", "ssh-keygen", "nixos-anywhere"]:
+        for name in ["git", "nix", "ssh", "ssh-keyscan", "ssh-keygen", "age-keygen", "nixos-anywhere"]:
             executable = binaries / name
             executable.write_text(f"#!{sys.executable}\n" + MOCK)
             executable.chmod(0o755)
@@ -116,7 +126,15 @@ class Workflows(unittest.TestCase):
         identity = self.root / "TEST-ONLY-identity"
         identity.write_text("TEST-ONLY-NOT-A-KEY\n")
         identity.chmod(0o600)
-        self.environment.update(FLEET_INSTALL_EXTRA_FILES=str(self.staging), FLEET_INSTALL_IDENTITY=str(identity))
+        (self.staging / "persist/etc/machine-id").write_text("1" * 32 + "\n")
+        (self.staging / "persist/etc/ssh/ssh_host_ed25519_key.pub").write_text("ssh-ed25519 TEST-ONLY-PUBLIC-KEY\n")
+        self.manifest = self.root / "manifest.json"
+        self.binding = dict(host="racknerd", machineId="1" * 32,
+                            sshHostFingerprint=FINGERPRINT, ageRecipient="age1testonly")
+        self.manifest.write_text(json.dumps(self.binding))
+        self.manifest.chmod(0o600)
+        self.environment.update(FLEET_INSTALL_EXTRA_FILES=str(self.staging), FLEET_INSTALL_IDENTITY=str(identity),
+                                FLEET_INSTALL_MANIFEST=str(self.manifest))
 
     def save_plan(self):
         (self.root / "plan.json").write_text(json.dumps(self.plan))
@@ -246,6 +264,40 @@ class Workflows(unittest.TestCase):
                                         FLEET_INSTALL_EXTRA_FILES=str(checkout_staging)).returncode, 0)
         self.assert_no_remote()
 
+    def test_staging_is_bound_to_host_and_all_public_identities(self):
+        for field, value in [("host", "bastion"), ("machineId", "2" * 32),
+                             ("sshHostFingerprint", "SHA256:" + "B" * 43), ("ageRecipient", "age1wrong")]:
+            self.manifest.write_text(json.dumps(dict(self.binding, **{field: value})))
+            self.assertNotEqual(self.invoke("host-install.sh", self.install_data()).returncode, 0)
+        self.manifest.write_text(json.dumps(self.binding))
+        self.assertNotEqual(self.invoke("host-install.sh", self.install_data(), PYTHONOPTIMIZE="1").returncode, 0)
+        (self.staging / "persist/etc/ssh/ssh_host_ed25519_key.pub").write_text("ssh-ed25519 TEST-ONLY-WRONG-KEY\n")
+        self.assertNotEqual(self.invoke("host-install.sh", self.install_data()).returncode, 0)
+        self.assert_no_remote()
+
+    def test_unmounted_dm_lvm_raid_consumers_never_install(self):
+        for holder in ["crypt", "lvm", "raid1", "mpath"]:
+            self.assertNotEqual(self.invoke("host-install.sh", self.install_data(), HOLDER_TYPE=holder).returncode, 0)
+        self.assertFalse(any(name == "nixos-anywhere" for name, _ in self.calls()))
+
+    def test_kernel_holders_are_checked_for_disk_and_partitions(self):
+        sysfs = self.root / "TEST-ONLY-SYSFS"
+        for node in ["testdisk", "testdisk1"]:
+            (sysfs / node / "holders").mkdir(parents=True)
+        def invoke():
+            return subprocess.run(["bash", "-c", 'source "$1"; check_kernel_holders "$2" "$3"', "test-only",
+                                   str(SOURCE / "scripts/storage/installer-inventory.sh"), str(sysfs), "testdisk\ntestdisk1"],
+                                  env=self.environment, capture_output=True, text=True, timeout=10)
+        self.assertEqual(invoke().returncode, 0)
+        for node in ["testdisk", "testdisk1"]:
+            holder = sysfs / node / "holders/test-holder"
+            holder.symlink_to(sysfs / "TEST-ONLY-DM")
+            self.assertNotEqual(invoke().returncode, 0)
+            holder.unlink()
+        (sysfs / "testdisk1/holders").rmdir()
+        self.assertNotEqual(invoke().returncode, 0)
+        self.assertEqual(self.calls(), [])
+
     def test_installer_identity_inventory_and_mount_failures_never_install(self):
         for environment in [{"WRONG_FINGERPRINT": "1"}, {"FAIL_INVENTORY": "1"},
                             {"WRONG_SERIAL": "1"}, {"MOUNTED": "1"}, {"MISSING_MOUNTPOINTS": "1"}]:
@@ -259,15 +311,17 @@ grep() { if [[ $* == *VARIANT_ID* ]]; then return 0; else command grep "$@"; fi;
 findmnt() { if [[ $* == *FSTYPE* ]]; then printf 'overlay\n'; else printf '%s\n' "$TEST_MOUNTS"; fi; }
 zpool() { printf '%s' "$TEST_POOLS"; return "${TEST_POOL_EXIT:-0}"; }
 readlink() { echo UNEXPECTED-DEVICE-ACCESS >&2; return 99; }
-export -f id grep findmnt zpool readlink
+swapon() { printf '%s' "${TEST_SWAP:-}"; }
+export -f id grep findmnt zpool readlink swapon
 exec bash "$TEST_INVENTORY" /dev/disk/by-id/TEST-ONLY-OS
 '''
         for mounts, pools, status, message in [("/mnt/persist", "", "0", "existing /mnt mounts"),
                                               ("/", "TEST-ONLY-POOL", "0", "ZFS pool is imported"),
-                                              ("/", "", "9", "")]:
+                                              ("/", "", "9", ""),
+                                              ("/", "", "0", "any swap is active")]:
             result = subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=10,
                                     env=dict(self.environment, TEST_MOUNTS=mounts, TEST_POOLS=pools,
-                                             TEST_POOL_EXIT=status,
+                                             TEST_POOL_EXIT=status, TEST_SWAP="TEST-ONLY-SWAP" if message == "any swap is active" else "",
                                              TEST_INVENTORY=str(SOURCE / "scripts/storage/installer-inventory.sh")))
             self.assertNotEqual(result.returncode, 0)
             self.assertIn(message, result.stderr)

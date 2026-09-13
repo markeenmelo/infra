@@ -2,6 +2,16 @@
 
 Current commands follow [local validation](../SKILL.md). Three explicit scaffold/install/deploy tasks now supersede the interim task-removal policy; live tasks run synchronous local preflight but must never be invoked as tests. Historical sections retain exact old task/just commands and results as dated evidence, not executable guidance or current authorization. `devenv test` is no longer a gate.
 
+## PR #9 follow-up — 2026-09-13, validation deferred
+
+The operator requested individual task commits and **no tests until explicitly instructed**. Source/document review only; the preceding batch results below do not validate these follow-up changes.
+
+- [Current P1: host-bound staging](https://github.com/markeenmelo/infra/pull/9#discussion_r4000461901) is valid. Add an independently reviewed selected-host manifest, machine-ID/derived-public-identity comparisons and a rechecked private staging snapshot consumed by the installer.
+- [Current P1: active non-mount consumers](https://github.com/markeenmelo/infra/pull/9#discussion_r4000461906) is valid. Reject kernel holders on disk/partitions, non-plain lsblk node types and active swap, retaining mounted-use/imported-pool checks and fail-closed query handling.
+- [Outdated P2: foreground TTY](https://github.com/markeenmelo/infra/pull/9#discussion_r3998607954) correctly described the old `true </dev/tty` check, but that `deploy:host` task was deleted. Current independent tasks do not claim foreground-only enforcement; do not resurrect the obsolete task/TTY/credential interface.
+
+Regression cases have been extended but **not executed**. No formatter, static gate, evaluation, build, credential operation or target contact was run for this follow-up. No GitHub review threads were modified. Full local validation and independent live prerequisites remain mandatory before installation/deployment.
+
 ## Seven-task batch and deferred final validation — 2026-09-13
 
 All seven requested tasks were committed separately (`57b4979` through `a2fcc28`), with tests deferred until implementation finished. Corrective commits `6d082be` and `05e5010` precede the final clean code candidate. This gate also covers the preceding stock Ponytail cleanup; the earlier aborted Pi check is not its success evidence.
