@@ -1,22 +1,42 @@
 ---
 name: tailscale
-description: Maintain staged Tailscale clients and guarded OpenTofu policy, encrypted state, credentials and recovery without implicit enrollment or live API operations.
+description: Staged Tailscale clients and the OpenTofu-managed tailnet policy, encrypted state and operator credentials. Use for client rollout, policy changes, provider or state maintenance, and enrollment planning.
 ---
 
 # Tailscale and OpenTofu
 
-Read `../../../AGENTS.md`, [operator procedure](references/tailscale.md), [current status](../fleet-operations/references/hosts.md#current-status), [ADR 0009](../dendritic-nix/references/adr/0009-tailscale-and-opentofu.md) and the affected `../../../modules/tailscale/` / `../../../tofu/tailscale/` files.
+Clients live in `modules/tailscale/`, the tailnet policy in `tofu/tailscale/`. Keep three things separate: local configuration and tests, live policy management, and host enrollment. None of them authorizes the next.
 
-## Procedure
+## Policy
 
-1. Separate local configuration/test work, live policy management and host enrollment. Current policy differs from the earlier operator-reported apply; do not reuse retained plans or interpret old approval as current permission.
-2. Preserve the single public tailnet binding, whole-policy ownership and exact ThinkPad-to-servers TCP 22/ICMP grant. Tags are not unique constraints: intended one-device cardinality needs real review. Public/LAN recovery remains independent.
-3. Keep one policy writer, protected existing encrypted state/passphrase and default-workspace/provider isolation. No plaintext fallback, debug overrides, silent permission repair, state recreation, repeated imports or automatic apply. Generated provider checksums identify the Nix-built linux_amd64 artifact, not a registry release; review changes rather than silently regenerating them.
-4. Credentials belong only in a private runtime process. Existing `tailnet-sops` accepts exactly the OAuth ID/secret and existing passphrase; no task, shell hook or Nix evaluation may decrypt. Follow the reference's minimal read/write scopes, independent recovery and emergency-state preservation procedure.
-5. Client rollout remains individually reviewed, with a separately maintained independent oracle. Preserve private state/mount requirements; use file-reference single-use auth keys only in `NeedsLogin`. Reconnect stopped identities with externally bounded bare `up`, never forced resets or preference loss. Native enrollment must not compete with the reconciler.
-6. Follow [manual validation](../validate/SKILL.md): native flake checks include mocked reconciliation/provider/wrapper/SOPS tests and synthetic encrypted local state. Do not call real `tailnet` or a daemon for validation.
-7. Only with current operation authorization, follow the detailed private-terminal plan/review/apply or per-host activation/acceptance procedure. Non-saving `verify` still contacts the API; statuses are 0 no changes, 2 drift, 1 error. Preserve rollback and independent access.
+`tofu/tailscale/policy.hujson` is applied through `tailscale_acl`, which **replaces the tailnet's entire policy file** — including any personal or family rules that are not in this repository. Export and review the current policy privately before the first apply of a change, and keep one writer: disable other GitOps publishers, and reconcile any emergency console edit back into Git before the next apply.
 
-## Completion
+The fleet grant is deliberately narrow: ThinkPad's tag to the two server tags, TCP 22 and ICMP; everything else is denied. Replies are stateful, the reverse direction is not granted. This is ordinary OpenSSH over the tailnet, not Tailscale SSH, and it never changes public or LAN firewall policy — that stays as independent recovery.
 
-Offline tests are not decryption, enrollment, live policy-engine, traffic, boot or restore tests. Report those boundaries and unresolved runtime acceptance without broadening scope or credentials.
+A tag is a role, not a hardware fingerprint and not a uniqueness constraint. Assign each fleet tag to exactly one intended device, verify cardinality in the admin console before applying or enrolling, and revoke an obsolete node before reusing its tag. Tagged nodes replace user ownership, which changes device-key expiry — decide that deliberately.
+
+MagicDNS is managed through `tailscale_dns_preferences`; resolvers and search domains are not. Auth keys, OAuth clients and subnet routes are deliberately outside this configuration.
+
+## Provider and state
+
+The shell pins OpenTofu and a Nix-built Tailscale provider, used offline. `init` reports that mirrored provider as **unauthenticated** because it is not an upstream signed release archive — that is expected; trust comes from the pinned source and build. Do not swap in a registry binary. A nixpkgs update can change the mirror checksum without a provider version change: compare the derivations and wrappers before touching `.terraform.lock.hcl`, and never regenerate it to silence a mismatch.
+
+State stays private, encrypted and outside Git and the Nix store, with its existing passphrase. Never recreate state, rotate the passphrase, repeat a completed import, add a plaintext fallback or enable debug logging. OpenTofu rejects a saved plan from a different CLI version — get a fresh reviewed plan rather than working around it.
+
+## Credentials and live operations
+
+Credentials belong only to a private runtime process:
+
+```sh
+devenv shell tailnet-sops ENCRYPTED.yaml OPERATION
+```
+
+The adapter decrypts exactly the OAuth client ID, secret and state passphrase into the child process. No task, shell hook or Nix evaluation may decrypt anything. Use read-only API scopes for review; a write client is a separate, separately authorized credential.
+
+`tailnet verify` saves no plan but **still contacts the API** — exit 0 means no changes, 2 drift, 1 error. Plan, apply and enrollment each need their own current authorization.
+
+## Clients
+
+Roll out one host at a time. A disabled host keeps its backing state without an active daemon; disabling is not revocation. Enrollment uses a single-use auth key delivered by a declared SOPS secret, referenced by file and only while the daemon reports `NeedsLogin`. Reconnect a stopped identity with a plain `up`, never a forced reset that loses preferences, and never let manual enrollment race the reconciler.
+
+Checks are offline and mocked: they prove no decryption, enrollment, policy application, traffic or restore.

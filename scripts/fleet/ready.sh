@@ -6,12 +6,12 @@ report=$(nix eval --no-update-lock-file --json ".#fleet.$host")
 jq '{track, revision, ready, missing, failedAssertions}' <<< "$report"
 if [[ ${2:-} == disk-plan ]]; then
   jq -e '.storageMode == "provision"' <<< "$report" > /dev/null || {
-    echo 'Refusing: existing installations have no provisioning plan. See .agents/skills/fleet-operations/references/hosts.md.' >&2
+    echo 'Refusing: this host has no provisioning plan. See .agents/skills/storage/SKILL.md.' >&2
     exit 1
   }
 fi
 jq -e '.ready and (.missing | length == 0) and (.failedAssertions | length == 0) and (.nixpkgsPath == .intendedNixpkgsPath)' <<< "$report" > /dev/null || {
-  echo 'Refusing: host is not commissioned. See .agents/skills/fleet-operations/SKILL.md for status and .agents/skills/storage-disko/SKILL.md for fresh installs.' >&2
+  echo 'Refusing: host is not commissioned. See .agents/skills/storage/SKILL.md for fresh installs.' >&2
   exit 1
 }
 nix eval --no-update-lock-file --json .#validation.hosts > /dev/null

@@ -1,22 +1,53 @@
 ---
 name: devenv
-description: Maintain the native locked toolbox and explicit scaffold, installation and deployment tasks without automatic operations, credential loading or production package mixing.
+description: The development shell, its scripts and tasks, the local validation sequence, and flake input updates. Use to run checks, validate a change before handoff, enter or maintain the toolbox, or update nixpkgs and other inputs.
 ---
 
-# Native development environment
+# Toolbox, checks and updates
 
-Read `../../../AGENTS.md`, `../../../devenv.nix`, `../../../devenv.yaml`, both locks and [development details](references/development.md). [ADR 0010](../dendritic-nix/references/adr/0010-native-devenv.md) records the native entry-point exception and explicitly requested task amendment.
+Enter the shell from the repository root:
 
-## Procedure
+```sh
+nix run --no-update-lock-file .#devenv -- shell
+```
 
-1. Check ciphertext before copying tracked inputs into the store, then bootstrap with `nix run --no-update-lock-file .#devenv -- shell`. Use the matching locked CLI. Commands run from the repository root; use `devenv shell -- bash -c 'COMMAND'` when passing shell flags so `-c` is not interpreted as the clean flag.
-2. Retain unstable tools, `stdenvNoCC`, explicit Nix and exact OpenTofu/provider parity. No parallel devShell, production import, second package universe, application service or automatic package installation.
-3. Exactly three repository tasks are now requested: `host:create`, `host:install` and `deploy:run`. They have null-default public inputs, no cache/status rules and no DAG/lifecycle edges. Source bodies live in `../../../scripts/devenv/`; feature helpers/tests live in concern-specific `scripts/` directories. Do not restore the old repo task graph, automatic formatter, hooks or test-entry gate. `devenv test` remains no validation gate.
-4. Scaffolding only writes new untracked/unready files. Installation and deployment require exact confirmations, a clean reviewed commit and synchronous full local preflight before target contact. Installation is a separate destructive live-installer operation with device/identity/plan-hash checks; deployment uses the dedicated account and explicit ordered targets. Neither task may pull the other into its graph.
-5. Keep `ready`, `build`, `disk-plan`, `install`, `deploy`, `tailnet` and `tailnet-sops` scripts. `install HOST` is the guided foreground frontend to the existing guarded installation body, not a fourth task or alternate installer; normal coreutils install invocations still forward to the pinned native binary. Deploy now uses the same guarded body as its task; no raw passthrough/override escape exists. Readiness/build/disk-plan remain local. Follow the corresponding storage/deploy/Tailscale skill before any live operation.
-6. Preserve dotenv/SecretSpec disablement and private runtime state. Task inputs contain no passwords, private key contents or secret paths; installer key/staging paths stay outside the checkout/store. The interactive guide prompts for paths and creates a temporary host-bound manifest, passing them only in the installer child environment; the advanced task interface uses explicit runtime environment variables. No evaluation, shell entry or test decrypts secrets.
-7. Research locked APIs before changes. Follow [validation](../validate/SKILL.md), including the actual native `DEVENV_TASK_FILE` contract, offline workflow regressions, native/flake pin parity and full flake checks. Shell entry alone proves none of these.
+`devenv.nix` is the one development-only entry point; it is never imported into production. It supplies unstable tooling, `stdenvNoCC`, Nix, SOPS/age, nixos-anywhere and the exact packaged OpenTofu/provider wrapper. Pass shell flags as `devenv shell -- bash -c 'COMMAND'`, otherwise `-c` is parsed as devenv's own clean flag. Shell entry runs no checks, formatting, secret loading or deployment.
 
-## Completion
+Scripts: `ready HOST`, `build HOST`, `disk-plan HOST` (all local), `deploy`, `tailnet`, `tailnet-sops`. Tasks: `host:create`, `host:install`, `deploy:run` — uncached, null-default inputs, no dependency edges, never invoked by shell entry. `devenv test` is not a validation gate. Script bodies live in `scripts/devenv/`.
 
-Report exact tooling/task validation, lock scope and remaining runtime acceptance. No local check authorizes activation, installation, credential access, disk actions or live API operations; do not change local hooks or assistant settings as a side effect.
+## Validating a change
+
+**Before staging ciphertext or evaluating the flake**, run the ciphertext guard — Nix copies tracked files into the public store, and a later check cannot undo that:
+
+```sh
+bash scripts/secrets/check.sh
+```
+
+Stage only the new files you reviewed; a Git flake ignores untracked ones. Then apply formatting and inspect what it changed:
+
+```sh
+treefmt
+tofu fmt -recursive tofu
+```
+
+Then run the whole report-only sequence:
+
+```sh
+bash scripts/devenv/preflight.sh
+```
+
+It re-runs the ciphertext guard and its regressions, the native task contract, `treefmt --ci`, `tofu fmt -check`, `statix`, `deadnix`, `shellcheck`, the guidance check, lock and tool parity, the fleet and validation reports, and `nix flake check`. It changes no files and contacts nothing. For each affected commissioned host also run `devenv shell ready HOST` and `devenv shell build HOST`; ThinkPad is unready and must refuse.
+
+Documentation-only changes need `git diff --check`, working links and claims, and a syntax check of any changed snippet — no fleet build.
+
+Report the exact commands and results. A timeout or failure is not a pass, and none of this proves boot, credentials, networking or backups.
+
+## Updating inputs
+
+Research the upstream change at the current pin before editing anything dependency-sensitive: read the project's own manual and the module source at the locked revision, and confirm a stable branch is still supported rather than assuming from the calendar.
+
+Pick one scope and keep it: `nix flake update nixpkgs-stable` (servers, currently `nixos-26.05`), `nix flake update nixpkgs` (ThinkPad and tooling, which must stay on `nixpkgs-unstable`), or a full `nix flake update`. Save `flake.lock` first and diff every changed node afterwards; a targeted update must not move unrelated revisions.
+
+After an unstable update, copy `flake.lock`'s `nixpkgs` node into `devenv.lock` so the toolbox matches — `scripts/devenv/preflight.sh` enforces that parity. `devenv update devenv` is a separate native-source update.
+
+`system.stateVersion` is a migration boundary, never an update knob. Run the full sequence above plus builds for affected hosts, and report exactly which revisions moved. An update authorizes no deployment.

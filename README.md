@@ -1,14 +1,12 @@
 # NixOS fleet
 
-Dendritic NixOS configurations for three `x86_64-linux` machines.
+Dendritic NixOS configurations for three `x86_64-linux` machines: `thinkpad` (unstable track, Hyprland/Noctalia desktop), `racknerd` and `bastion` (stable track, headless). Each host's own facts, layout and readiness live in `modules/hosts/<name>/`.
 
-| Host | Track | Candidate |
-|---|---|---|
-| `thinkpad` | `nixpkgs-unstable` | Hyprland/Noctalia desktop; fresh reinstall remains unready and local-only |
-| `racknerd` | Numbered stable | Minimal headless VPS; dedicated-account remote deployment candidate |
-| `bastion` | Numbered stable | Minimal headless NAS controller; existing `tank` stays separate from OS storage |
+## Layout
 
-[Current host evidence](.agents/skills/fleet-operations/references/hosts.md#current-status) distinguishes accepted boots from unactivated candidates. Never activate ThinkPad's fresh plain layout over its running encrypted installation.
+`flake.nix` hands the whole `modules/` tree to `import-tree`, so every file in it is a top-level flake-parts module — features, host facts and tests alike. `modules/` holds Nix only; executables and their tests live in `scripts/<concern>/`, static data in `assets/<concern>/`. Root `devenv.nix` is the one development-only entry point and is never imported into production.
+
+Features own their NixOS and Home Manager contributions, persistence, host facts and checks together. Hosts choose a package track explicitly.
 
 ## Development
 
@@ -16,18 +14,12 @@ Dendritic NixOS configurations for three `x86_64-linux` machines.
 nix run --no-update-lock-file .#devenv -- shell
 ```
 
-`devenv.nix` supplies the locked toolbox, scripts and three explicitly invoked tasks: **`host:create`** (unready local scaffold), **`host:install`** (separately confirmed destructive nixos-anywhere installation), and **`deploy:run`** (guarded host/group deployment). See [task inputs and safety boundaries](.agents/skills/devenv/references/development.md#operator-tasks). They are uncached and have no lifecycle/dependency edges. Shell entry performs no repository checks, formatting, secret loading or deployment. `devenv test` is not a validation gate.
+The shell provides the locked toolbox, the `ready`, `build`, `disk-plan`, `deploy`, `tailnet` and `tailnet-sops` scripts, and three explicitly invoked tasks: `host:create` (local scaffold), `host:install` (confirmed destructive nixos-anywhere installation) and `deploy:run` (guarded deployment). Entering the shell runs no checks, formatting, secret loading or deployment, and `devenv test` is not a validation gate.
 
-For a guided OS reinstall from a live USB, use `devenv shell -- install bastion` on the locked Linux controller. It prompts for missing information, handles JSON/temporary manifests internally and asks for explicit erasure confirmation after plan review; all checks remain mandatory. See the [Bastion prerequisites](.agents/skills/storage-disko/references/reinstall.md#bastion-operator-reinstall--2026-09-13). This is destructive installation, not a smoke test; no automatic reboot.
+Run `bash scripts/secrets/check.sh` before staging encrypted files or evaluating the flake — Nix copies tracked files into the public store. `bash scripts/devenv/preflight.sh` runs the full report-only check sequence.
 
-Use the [validation skill](.agents/skills/validate/SKILL.md) for manual local checks and [devenv skill](.agents/skills/devenv/SKILL.md) for shell/lock details. Check ciphertext before staging or evaluating the flake: Nix copies tracked inputs into its public store.
+## Where things are documented
 
-## Architecture and procedures
+[AGENTS.md](AGENTS.md) is the shared contract, [.agents/skills/](.agents/skills/README.md) holds the procedures, and [secrets/README.md](secrets/README.md) covers secret handling. Deployment policy — the dedicated `deploy` account, groups, remote builds and rollback — lives in `modules/deploy.nix`.
 
-`flake.nix` discovers the Nix-only `modules/` tree in one top-level flake-parts evaluation. Executable sources/tests live in `scripts/`, static data in `assets/`, grouped by concern. Features own their class-checked NixOS/Home Manager contributions, facts and tests; hosts explicitly choose one package track. Native `devenv.nix` is the sole development-only entry-point exception.
-
-Operational guidance, architecture decisions, research and dated evidence live under [.agents/skills/](.agents/skills/README.md), not `docs/` or code comments. Start with [AGENTS.md](AGENTS.md), the matching skill and [secret handling](secrets/README.md). Pi reads the canonical skills directly; Claude Code imports the same instructions through `CLAUDE.md` and discovers linked `.claude/skills/` entries. No duplicate guidance or agent installation is required.
-
-Deployment policy lives in `modules/deploy.nix`: restricted `deploy` SSH account on all hosts, explicit root-equivalent Nix/activation privileges, remote builds, automatic/magic rollback, and servers ordered Racknerd before Bastion. The account transition is unactivated; see the [deployment procedure](.agents/skills/deploy/SKILL.md).
-
-Checks/builds authorize no deployment, installation, disk operation or credential access. Persistence and rollback are not backups.
+Checks and builds authorize no deployment, installation, disk operation or credential access. Persistence and rollback are not backups.

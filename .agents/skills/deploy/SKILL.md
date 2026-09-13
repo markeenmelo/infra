@@ -1,22 +1,39 @@
 ---
 name: deploy
-description: Preflight and deploy commissioned hosts through the dedicated root-equivalent deploy account, ordered groups, remote builds and retained automatic/magic rollback.
+description: Deploy commissioned hosts with deploy-rs through the dedicated deploy account, ordered groups, remote builds and rollback. Use for activation, deployment preflight and recovery after a failed rollout.
 ---
 
 # Deploy
 
-Read `../../../AGENTS.md`, `../../../modules/deploy.nix`, `../../../scripts/fleet/ready.sh`, [current host evidence](../fleet-operations/references/hosts.md#current-status) and [operations/recovery](references/operations.md#deployment-and-recovery). Reading this skill authorizes no remote contact.
+Policy lives in `modules/deploy.nix`; the guarded runner is `scripts/devenv/deploy.sh`. Reading this authorizes no remote contact — deployment needs explicit authorization for that exact target and mode in the current task.
 
-## Procedure
+## Before contact
 
-1. Confirm the exact host/group and `boot` or `switch` operation. `servers` orders **Racknerd before Bastion**; `workstations` includes ThinkPad but does not commission it. Never silently skip an ineligible group member. Bastion's pending home-bind removal remains boot-only with a separately authorized reboot.
-2. Complete all [local validation](../validate/SKILL.md), including ciphertext inspection before Nix copies sources into the store. Run deployment readiness and build each commissioned target. Inspect `.#fleet`, `.#deploymentPlan` and `.#deploymentGroups`. Local checks cannot establish installed access, credentials, capacity or backups.
-3. The approved account is `deploy`, a locked-password system user with the two existing restricted SSH keys, private ephemeral `/var/lib/deploy`, explicit Nix trust and passwordless activation/confirmation sudo rules. This is **root-equivalent**, not a security sandbox. Wheel still requires a password; `marcos` retains password/fingerprint administration only on ThinkPad. Root SSH, forwarding and deploy-key PTYs stay prohibited.
-4. **Stage the first access-changing rollout through independently verified console/old access.** The accepted servers do not yet prove that `deploy` exists. A new account cannot bootstrap itself; the removed `marcos` account must not be your only recovery path. Preserve machine SSH/age identities, old generation and off-host recovery. See [transition](references/operations.md#minimal-server-transition--2026-09-13).
-5. With authorization, verify installed host fingerprints, both selected key logins, `sudo -n -l`, target Nix trust, store/build/boot capacity and independent console access. Keys/known-host paths stay in private operator SSH configuration, not task inputs. Remote builds use target packages and durable `/nix/var/nix/builds`, not the small tmpfs root. No signing-key read is needed for the new trusted-user policy; retained old public signers are recovery compatibility, not additional trusted users.
-6. Use `deploy:run` (or the guarded `deploy` script) with the exact public `target`, `mode` and `DEPLOY TARGET MODE` confirmation; see [task usage](../devenv/references/development.md#deployment). It requires a clean reviewed commit, runs full local preflight/readiness/builds, rejects any ineligible/boot-only mismatch before contact, checks installed login/elevation/Nix trust, then expands ordered targets. Raw deploy-rs does not implement the repository's whole preflight or group order. Native `--groups servers` filters but sorts nodes differently; select explicit ordered `--targets .#racknerd .#bastion` for ordered activation. Its remote builds may run concurrently. Do not pass overrides disabling rollback/signatures, changing identities, using `--skip-checks` or relaxing SSH. Preserve `--checksigs`, `--no-update-lock-file`, noninteractive sudo and strict/batch SSH.
-7. Verify intended generation, separate key logins, sudo policy, services and persistent mounts after an authorized operation. Reboot acceptance is separate, particularly after boot-only activation. Stop on any failure and allow rollback; do not retry blindly or use a disk operation as deployment repair.
+1. Confirm the exact target and mode. `boot` changes the boot selection without switching the running system; `switch` activates now. A host with `bootOnly` refuses `switch`.
+2. Groups: `servers` activates **racknerd before bastion**; `workstations` holds ThinkPad, which is unready and must make the run refuse rather than be skipped quietly.
+3. Complete the full local check sequence in [devenv](../devenv/SKILL.md) — the task runs `scripts/devenv/preflight.sh` itself and refuses a dirty or changed tree. Also run `devenv shell ready HOST` and `devenv shell build HOST` for every target.
+4. Local checks prove evaluation, not installed access, credentials, capacity or backups.
 
-## Completion
+## Account
 
-Report exact targets/order/mode, revisions, actual validation/activation results, remaining boot/access/backup checks and authorization scope. Configuration removal is not home-data erasure or credential revocation. No remote operation occurred merely because this skill or a local build passed.
+The approved account is `deploy`: locked password, restricted SSH keys, private `/var/lib/deploy`, explicit Nix trust and passwordless activation/confirmation sudo. That combination is **root-equivalent**, not a sandbox. Root SSH and agent forwarding stay off; `wheel` keeps its password requirement.
+
+A new account cannot bootstrap itself. For the first access-changing rollout, provision and test the new login through independently verified console or existing access, keep the old path until the new one is proven, and preserve machine SSH and age identities plus off-host recovery.
+
+## Running it
+
+```sh
+devenv shell -- deploy TARGET MODE "DEPLOY TARGET MODE"
+```
+
+or the equivalent `devenv tasks run deploy:run` inputs. Both take the same guarded body: exact confirmation string, clean reviewed commit, full preflight, eligibility and boot-only checks, then installed login, sudo and Nix-trust probes before expanding ordered targets.
+
+Raw `deploy-rs` skips all of that. If it is ever used under authorization: `--groups servers` filters but does not order, so pass explicit `--targets .#racknerd .#bastion`; keep `--checksigs`, `--no-update-lock-file`, batch/strict SSH and noninteractive sudo; never pass `--skip-checks`, relax SSH or disable rollback. Remote builds may overlap between hosts.
+
+## Rollback and recovery
+
+`autoRollback` re-activates the previous profile when activation fails. `magicRollback` waits for the deployer to confirm reachability after activation and reverts if it never arrives — which is why an SSH-affecting change can never be deployed without independent console access. A failure late in a multi-target run can roll back hosts that already succeeded.
+
+Rollback restores a system profile. It does not restore data, `/persist`, disks, databases or secrets, and it does not guarantee the next boot. On failure, stop and let rollback finish; inspect console, power and network instead of retrying blindly. A disk operation is never deployment repair.
+
+Afterwards verify the intended generation, both key logins, sudo policy, units, network and persistent mounts. Reboot acceptance is a separate step, especially after a boot-only activation.
