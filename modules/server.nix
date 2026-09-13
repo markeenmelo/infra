@@ -90,7 +90,11 @@
           && !(cfg.environment.sessionVariables ? CURSOR_AGENT_PATH)
           && !(cfg.environment.sessionVariables ? RTK_TELEMETRY_DISABLED)
           && !(lib.any (rule: lib.hasInfix "/etc/fleet-agents" rule) cfg.systemd.user.tmpfiles.rules)
-          && lib.sort builtins.lessThan cfg.nix.settings.trusted-users == [ "deploy" "root" ]
+          &&
+            lib.sort builtins.lessThan cfg.nix.settings.trusted-users == [
+              "deploy"
+              "root"
+            ]
           && !cfg.networking.networkmanager.enable
           && cfg.fileSystems."/persist".fsType == "btrfs"
           && cfg.nix.settings.require-sigs

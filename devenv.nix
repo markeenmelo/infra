@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   stdenv = pkgs.stdenvNoCC;
   cachix.enable = false;
@@ -50,7 +55,16 @@
     "host:install" = {
       description = "Confirmed OS-only installation from a pinned live installer; full preflight, no kexec or reboot.";
       exec = builtins.readFile ./scripts/devenv/host-install.sh;
-      input = lib.genAttrs [ "host" "target" "port" "device" "identity" "fingerprint" "planHash" "confirm" ] (_: null);
+      input = lib.genAttrs [
+        "host"
+        "target"
+        "port"
+        "device"
+        "identity"
+        "fingerprint"
+        "planHash"
+        "confirm"
+      ] (_: null);
       showOutput = true;
     };
     "deploy:run" = {

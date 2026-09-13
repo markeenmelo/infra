@@ -81,6 +81,7 @@ class Workflows(unittest.TestCase):
         (self.root / "calls").write_text("")
         for path, label in [("scripts/devenv/preflight.sh", "preflight"),
                             ("scripts/fleet/ready.sh", "ready")]:
+            (self.repo / path).chmod(0o600)
             (self.repo / path).write_text(f'printf \'["{label}", []]\\n\' >> "$TEST_ROOT/calls"\n')
         with (self.repo / "scripts/devenv/preflight.sh").open("a") as stream:
             stream.write('test -z "${FAIL_PREFLIGHT:-}"\n')

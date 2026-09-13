@@ -42,8 +42,9 @@ in
       };
       config = {
         fleet.bootstrap.missing =
-          lib.optional (cfg.admin == null && cfg.deploymentUser == null)
-            "Set fleet.access.admin or provision fleet.access.deploymentUser."
+          lib.optional (
+            cfg.admin == null && cfg.deploymentUser == null
+          ) "Set fleet.access.admin or provision fleet.access.deploymentUser."
           ++ lib.optional (cfg.authorizedKeys == [ ]) "Supply verified public fleet.access.authorizedKeys."
           ++ lib.optional (
             cfg.admin != null && !(builtins.hasAttr cfg.admin cfg.passwordSecrets) && !cfg.passwordlessSudo
@@ -51,44 +52,47 @@ in
           ++ lib.mapAttrsToList (
             user: _: "Supply a declared SOPS password-hash secret in fleet.access.passwordSecrets.${user}."
           ) (lib.filterAttrs (_: secret: !configured secret) cfg.passwordSecrets);
-        assertions = lib.optional (cfg.deploymentUser != null) {
-          assertion = cfg.deploymentUser != "root"
-            && builtins.hasAttr cfg.deploymentUser config.users.users
-            && config.users.users.${cfg.deploymentUser}.openssh.authorizedKeys.keys != [ ]
-            && lib.elem "wheel" config.users.users.${cfg.deploymentUser}.extraGroups;
-          message = "A deployment-only administration path must be a real keyed non-root wheel account, not a readiness placeholder.";
-        } ++ lib.mapAttrsToList (
-          user: name:
-          let
-            secret = config.sops.secrets.${name};
-            account = config.users.users.${user};
-          in
-          {
+        assertions =
+          lib.optional (cfg.deploymentUser != null) {
             assertion =
-              account.isNormalUser
-              && !config.users.mutableUsers
-              && secret.name == name
-              && secret.neededForUsers
-              && secret.path == "/run/secrets-for-users/${secret.name}"
-              && secret.mode == "0400"
-              && secret.uid == 0
-              && secret.gid == 0
-              && lib.elem secret.owner [
-                null
-                "root"
-              ]
-              && lib.elem secret.group [
-                null
-                "root"
-              ]
-              && account.hashedPasswordFile == secret.path
-              && account.hashedPassword == null
-              && account.password == null
-              && account.initialPassword == null
-              && account.initialHashedPassword == null;
-            message = "SOPS password for ${user} must be the sole credential source, root-only and neededForUsers at its early runtime path.";
+              cfg.deploymentUser != "root"
+              && builtins.hasAttr cfg.deploymentUser config.users.users
+              && config.users.users.${cfg.deploymentUser}.openssh.authorizedKeys.keys != [ ]
+              && lib.elem "wheel" config.users.users.${cfg.deploymentUser}.extraGroups;
+            message = "A deployment-only administration path must be a real keyed non-root wheel account, not a readiness placeholder.";
           }
-        ) (lib.filterAttrs (_: configured) cfg.passwordSecrets);
+          ++ lib.mapAttrsToList (
+            user: name:
+            let
+              secret = config.sops.secrets.${name};
+              account = config.users.users.${user};
+            in
+            {
+              assertion =
+                account.isNormalUser
+                && !config.users.mutableUsers
+                && secret.name == name
+                && secret.neededForUsers
+                && secret.path == "/run/secrets-for-users/${secret.name}"
+                && secret.mode == "0400"
+                && secret.uid == 0
+                && secret.gid == 0
+                && lib.elem secret.owner [
+                  null
+                  "root"
+                ]
+                && lib.elem secret.group [
+                  null
+                  "root"
+                ]
+                && account.hashedPasswordFile == secret.path
+                && account.hashedPassword == null
+                && account.password == null
+                && account.initialPassword == null
+                && account.initialHashedPassword == null;
+              message = "SOPS password for ${user} must be the sole credential source, root-only and neededForUsers at its early runtime path.";
+            }
+          ) (lib.filterAttrs (_: configured) cfg.passwordSecrets);
         users = {
           mutableUsers = false;
           users = lib.mkMerge [

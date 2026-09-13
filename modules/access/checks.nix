@@ -94,60 +94,65 @@ in
       cfg = system.config;
       tailscaleEnabled = cfg.fleet.tailscale.enable;
     in
-    assert lib.assertMsg (
-      cfg.sops.age.keyFile == cfg.fleet.secrets.ageKeyFile
-      && !cfg.sops.age.generateKey
-      && cfg.sops.age.sshKeyPaths == [ ]
-      && cfg.sops.gnupg.sshKeyPaths == [ ]
-      && cfg.sops.validateSopsFiles
-      && !cfg.sops.useTmpfs
-      && cfg.fleet.secrets.ageKeyFile != null
-      && cfg.fleet.secrets.ageRecipient != null
-      && (if name != "thinkpad" then
-        cfg.fleet.access.passwordSecrets == { } && cfg.sops.secrets == { }
-        && !(cfg.users.users ? marcos)
-      else
-        cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
-        && !(lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." cfg.fleet.bootstrap.missing)
-        && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
-        && cfg.sops.secrets.marcos-password-hash.sopsFile == ../../secrets/shared/marcos-password.yaml
-        && cfg.sops.secrets.marcos-password-hash.key == "marcos-password-hash"
-        && cfg.sops.secrets.marcos-password-hash.format == "yaml"
-        && cfg.sops.secrets.marcos-password-hash.neededForUsers
-        &&
-          builtins.attrNames cfg.sops.secrets == (
-            [ "marcos-password-hash" ]
-            ++ lib.optionals (name == "thinkpad") (
-              lib.optionals (cfg.fleet.wifi.senecaSopsFile != null) [
-                "seneca-identity"
-                "seneca-password"
-              ]
-              ++ lib.optional tailscaleEnabled "tailscale-auth-key"
-              ++ [ "wifi-psk" ]
-            )
-          )
-      )
-    ) "${name}: workstation password delivery, server credential removal or preserved machine identity policy regressed";
-    assert name != "thinkpad" || lib.all
+    assert lib.assertMsg
       (
-        recipient:
-        let
-          rejected =
-            (system.extendModules {
-              modules = [ { fleet.secrets.ageRecipient = lib.mkForce recipient; } ];
-            }).config;
-        in
-        lib.assertMsg (
-          (lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." rejected.fleet.bootstrap.missing)
-          && !(rejected.sops.secrets ? marcos-password-hash)
-          && rejected.users.users.marcos.hashedPassword == "!"
-          && rejected.users.users.marcos.hashedPasswordFile == null
-        ) "${name}: a missing/unlisted shared-password recipient must block commissioning"
+        cfg.sops.age.keyFile == cfg.fleet.secrets.ageKeyFile
+        && !cfg.sops.age.generateKey
+        && cfg.sops.age.sshKeyPaths == [ ]
+        && cfg.sops.gnupg.sshKeyPaths == [ ]
+        && cfg.sops.validateSopsFiles
+        && !cfg.sops.useTmpfs
+        && cfg.fleet.secrets.ageKeyFile != null
+        && cfg.fleet.secrets.ageRecipient != null
+        && (
+          if name != "thinkpad" then
+            cfg.fleet.access.passwordSecrets == { } && cfg.sops.secrets == { } && !(cfg.users.users ? marcos)
+          else
+            cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
+            && !(lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." cfg.fleet.bootstrap.missing)
+            && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
+            && cfg.sops.secrets.marcos-password-hash.sopsFile == ../../secrets/shared/marcos-password.yaml
+            && cfg.sops.secrets.marcos-password-hash.key == "marcos-password-hash"
+            && cfg.sops.secrets.marcos-password-hash.format == "yaml"
+            && cfg.sops.secrets.marcos-password-hash.neededForUsers
+            &&
+              builtins.attrNames cfg.sops.secrets == (
+                [ "marcos-password-hash" ]
+                ++ lib.optionals (name == "thinkpad") (
+                  lib.optionals (cfg.fleet.wifi.senecaSopsFile != null) [
+                    "seneca-identity"
+                    "seneca-password"
+                  ]
+                  ++ lib.optional tailscaleEnabled "tailscale-auth-key"
+                  ++ [ "wifi-psk" ]
+                )
+              )
+        )
       )
-      [
-        null
-        "age1testonlyunlisted"
-      ];
+      "${name}: workstation password delivery, server credential removal or preserved machine identity policy regressed";
+    assert
+      name != "thinkpad"
+      ||
+        lib.all
+          (
+            recipient:
+            let
+              rejected =
+                (system.extendModules {
+                  modules = [ { fleet.secrets.ageRecipient = lib.mkForce recipient; } ];
+                }).config;
+            in
+            lib.assertMsg (
+              (lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." rejected.fleet.bootstrap.missing)
+              && !(rejected.sops.secrets ? marcos-password-hash)
+              && rejected.users.users.marcos.hashedPassword == "!"
+              && rejected.users.users.marcos.hashedPasswordFile == null
+            ) "${name}: a missing/unlisted shared-password recipient must block commissioning"
+          )
+          [
+            null
+            "age1testonlyunlisted"
+          ];
     true;
   flake.validation.sops = sopsReport;
   fleet.validation.fixtureModules.access = _: {

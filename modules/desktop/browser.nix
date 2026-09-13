@@ -280,7 +280,8 @@
       );
 
       xdg.configFile = {
-        "sponsorblock/settings-v6.1.7.json".source = ../../assets/desktop/browser/sponsorblock-settings-v6.1.7.json;
+        "sponsorblock/settings-v6.1.7.json".source =
+          ../../assets/desktop/browser/sponsorblock-settings-v6.1.7.json;
         "youtube-enhancer/settings-v1.34.2.json".source =
           ../../assets/desktop/browser/youtube-enhancer-settings-v1.34.2.json;
       };

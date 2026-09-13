@@ -57,7 +57,10 @@ ssh-keyscan -T 15 -p "$port" -t ed25519 "${target#root@}" >"$FLEET_INSTALL_KNOWN
 actual=$(ssh-keygen -E sha256 -lf "$FLEET_INSTALL_KNOWN_HOSTS" | awk '{print $2}' | sort -u)
 [[ $actual == "$fingerprint" ]] || { echo 'Refusing: installer host fingerprint mismatch.' >&2; exit 1; }
 mkdir "$work/bin"
-cp scripts/storage/installer-ssh.sh "$work/bin/ssh"
+{
+  printf '#!%s\n' "$BASH"
+  printf 'source %q\n' "$PWD/scripts/storage/installer-ssh.sh"
+} >"$work/bin/ssh"
 chmod 0700 "$work/bin/ssh"
 export PATH="$work/bin:$PATH"
 inventory=$(ssh -p "$port" "$target" "bash -s -- '$device'" <scripts/storage/installer-inventory.sh)

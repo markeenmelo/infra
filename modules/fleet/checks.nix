@@ -119,7 +119,9 @@ let
         && !cfg.programs.steam.enable
         && cfg.systemd.enableEmergencyMode
         && cfg.services.openssh.settings.PermitRootLogin == "no"
-        && cfg.services.openssh.settings.AllowUsers == ([ "deploy" ] ++ lib.optional (name == "thinkpad") "marcos")
+        &&
+          cfg.services.openssh.settings.AllowUsers
+          == ([ "deploy" ] ++ lib.optional (name == "thinkpad") "marcos")
         && cfg.security.sudo.wheelNeedsPassword
         && !cfg.fleet.access.passwordlessSudo
         && cfg.networking.firewall.allowedTCPPorts == [ 22 ]
