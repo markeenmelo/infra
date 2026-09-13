@@ -18,4 +18,4 @@ Addresses and accounts may be unknown, and machines may be offline. Remote activ
 - The uncommissioned deployment set is empty rather than fake-address nodes. Upstream production checks are supplemented with non-empty both-track smoke checks; once real hosts are enabled, upstream activation checks may build full closures, including outside a selected deploy subset. CI only builds/evaluates, never deploys.
 - Rollback does not undo data migrations, disk provisioning or a future boot failure. SSH-breaking changes need staged access or console-controlled maintenance. An offline desktop is excluded by policy, not hidden by ignoring deployment errors.
 
-See [operations](../operations.md), [research](../research.md), `modules/deployment.nix`.
+See [operations](../../../deploy/references/operations.md), [research](../../../nix-research/references/research.md), `modules/deployment.nix`.

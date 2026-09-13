@@ -1,6 +1,6 @@
 # ADR 0003 — Explicit OS storage: tmpfs root, no NAS topology
 
-- Status: accepted; amended 2026-09-12 for per-host fresh candidates, superseding [ADR 0005](0005-existing-headless-baseline.md) for this branch only. All candidates began unready; subsequent host review, installation and boot acceptance are recorded in [current status](../hosts.md#current-status).
+- Status: accepted; amended 2026-09-12 for per-host fresh candidates, superseding [ADR 0005](0005-existing-headless-baseline.md) for this branch only. All candidates began unready; subsequent host review, installation and boot acceptance are recorded in [current status](../../../fleet-operations/references/hosts.md#current-status).
 - Date: 2026-09-09
 
 ## Context
@@ -27,4 +27,4 @@ The original scaffold targeted fresh disks whose identifiers, firmware modes and
 
 Ext4 is simpler but needs an explicit capacity split for `/nix`/state or extra early bind setup. Btrfs snapshot root rollback avoids tmpfs memory pressure but adds boot ordering and deletion logic.
 
-See [bootstrap](../bootstrap.md), [research](../research.md), `modules/hosts/` and shared `modules/storage/`.
+See [bootstrap](../../../storage-disko/references/bootstrap.md), [research](../../../nix-research/references/research.md), `modules/hosts/` and shared `modules/storage/`.

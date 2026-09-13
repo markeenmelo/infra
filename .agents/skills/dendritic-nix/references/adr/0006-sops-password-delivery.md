@@ -18,7 +18,7 @@ The existing ThinkPad already uses SOPS for its password hash. Replacing it with
 ## Consequences
 
 - Encrypted password hashes may live in Git and the Nix store; decrypted hashes and private identities may not. The private identity needs protected durable storage and recovery custody. Runtime paths and ciphertext metadata prove nothing about a valid hash, matching identity or working sudo.
-- Checks cover early password ordering, target-package sourcing, unsafe/missing-credential rejection, structural recipient drift and built upstream users manifests — without decryption ([validation scope](../validation.md)).
-- Review/readiness flags change only with recorded evidence in [hosts.md](../hosts.md#current-status). For an authorized fresh install, actual pinned early-users delivery may be rehearsed in the verified live USB with a protected runtime key and native RAMFS, before erasure. This establishes pre-install decryption/permissions review, not installed login, persistence or boot acceptance.
+- Checks cover early password ordering, target-package sourcing, unsafe/missing-credential rejection, structural recipient drift and built upstream users manifests — without decryption ([validation scope](../../../validate/references/validation.md)).
+- Review/readiness flags change only with recorded evidence in [hosts.md](../../../fleet-operations/references/hosts.md#current-status). For an authorized fresh install, actual pinned early-users delivery may be rehearsed in the verified live USB with a protected runtime key and native RAMFS, before erasure. This establishes pre-install decryption/permissions review, not installed login, persistence or boot acceptance.
 
-See [secret inventory and procedure](../../secrets/README.md).
+See [secret inventory and procedure](../../../../../secrets/README.md).

@@ -16,11 +16,11 @@ Servers need predictable stable service changes; the interactive machine needs `
 ## Consequences
 
 - No `pkgsStable`/`pkgsUnstable`, mixed-package overlays, cross-track defaults or package imports in generic features. A future package exception must be narrow, explicit and independently documented.
-- Validation independently checks required tracks, actual `pkgs.path` sources and locked branch names ([scope](../validation.md)); updates can move one track without the other.
+- Validation independently checks required tracks, actual `pkgs.path` sources and locked branch names ([scope](../../../validate/references/validation.md)); updates can move one track without the other.
 - Development tools advance with unstable; `stateVersion` never follows an input.
 
 ## Alternatives
 
 A shared `perSystem.pkgs` for all hosts, importing both trees into every host, or inferring tracks from roles/directory names all hide intent or cost evaluation.
 
-See [research](../research.md), `flake.nix`, `modules/fleet.nix`, `modules/validation.nix`.
+See [research](../../../nix-research/references/research.md), `flake.nix`, `modules/fleet.nix`, `modules/validation.nix`.

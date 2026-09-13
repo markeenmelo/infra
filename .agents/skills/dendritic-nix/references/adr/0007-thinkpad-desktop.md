@@ -20,4 +20,4 @@ The user requested Hyprland and Noctalia on ThinkPad — normally Intel graphics
 - The desktop is reproducible at file/package/service level without claiming runtime acceptance. GUI overrides created inside the new profile still take precedence and need deliberate reconciliation with declarative choices.
 - Existing browser/keyring/application profiles are neither migrated nor erased.
 
-The procedure and acceptance live in [desktop.md](../desktop.md); API pins and the stable-module compatibility decision in [research](../research.md).
+The procedure and acceptance live in [desktop.md](../../../desktop/references/desktop.md); API pins and the stable-module compatibility decision in [research](../../../nix-research/references/research.md).
