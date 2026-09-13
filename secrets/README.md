@@ -6,7 +6,7 @@ There is no automated ciphertext guard. Before staging an encrypted file or eval
 
 ## What is selected
 
-`.sops.yaml` has exact rules and no catch-all for the two retained files: `hosts/thinkpad.yaml` and `hosts/thinkpad-senecanet.yaml`. Both have exactly the existing operator and ThinkPad public recipients. Server, shared-password and Tailscale enrollment ciphertext has been removed; old Git objects, backups and generations may still remain decryptable by their historical recipients.
+`.sops.yaml` has exact rules and no catch-all for the two retained files: `hosts/thinkpad.yaml` and `hosts/thinkpad-senecanet.yaml`. Both have exactly the existing operator and ThinkPad public recipients. Removed ciphertext may still remain decryptable by its historical recipients in old Git objects, backups and generations.
 
 Only ThinkPad selects a secret: `marcos-password-hash` from `hosts/thinkpad.yaml`. Both servers select none, so they need no age identity — they use the locked-password `deploy` account with reviewed public SSH keys.
 
@@ -17,7 +17,6 @@ Only ThinkPad selects a secret: `marcos-password-hash` from `hosts/thinkpad.yaml
 - **Passwords:** `fleet.access.passwordSecrets` maps an account to a declared `sops.secrets` name. Declare the hash with `neededForUsers = true`; `hashedPasswordFile` then reads the secret's `.path`, normally `/run/secrets-for-users/NAME`, root-only `0400` on SOPS' ramfs. Nix never evaluates a hash. A null or undeclared name locks the account and blocks commissioning — that is the intended failure, not something to work around.
 - **Identity:** a host with selected secrets needs a private age identity as a runtime string path directly on early-mounted `/persist` (`/persist/var/lib/sops-nix/key.txt`), root-owned `0600` under a root-owned `0700` parent, with recovery copies outside Git. Never bind `/var/lib/sops-nix` to reach it, persist `/run/secrets*`, generate keys implicitly or import SSH identities. Disk persistence is not encryption.
 - **Wi-Fi:** nothing is delivered any more. Credentials entered by hand live in NetworkManager's own `system-connections` store, which stays persisted and root-only `0700`. Never inspect them with `nmcli --show-secrets` or shell tracing, and never disable campus CA or domain validation to compensate for a bad credential.
-- **Tailscale:** no enrollment credential is tracked or selected. ThinkPad preserves its reviewed existing `/var/lib/tailscale` state; a host without that state requires separately authorized manual enrollment with a runtime single-use key. Tailnet OAuth credentials and the OpenTofu state passphrase are operator-runtime secrets, never host inputs; see [tailscale](../.agents/skills/tailscale/SKILL.md).
 
 ## Editing
 

@@ -14,7 +14,7 @@ Features own their NixOS and Home Manager contributions, persistence and host fa
 nix run --no-update-lock-file .#devenv -- shell
 ```
 
-The shell provides the locked toolbox and nothing else — Nix, SOPS/age, nixos-anywhere, deploy-rs's inputs, the packaged OpenTofu/provider wrapper and the formatters. It defines no scripts, tasks or hooks; entering it runs no checks, formatting, secret loading or deployment.
+The shell provides the locked toolbox and nothing else — Nix, SOPS/age, nixos-anywhere, deploy-rs's inputs and the formatters. It defines no scripts, tasks or hooks; entering it runs no checks, formatting, secret loading or deployment.
 
 Inspect and build with the flake directly:
 

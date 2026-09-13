@@ -10,12 +10,4 @@
 *.qcow2
 *.raw
 
-**/.terraform/
-*.tfstate
-*.tfstate.*
-*.tfplan
-*.tfvars
-*.tfvars.json
-crash.log
-crash.*.log
 **/__pycache__/

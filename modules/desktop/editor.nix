@@ -269,7 +269,6 @@
           "biome"
           "neocmake"
           "nix"
-          "opentofu"
         ];
         extraPackages = [
           pkgs.bash-language-server
@@ -279,9 +278,7 @@
           pkgs.neocmakelsp
           pkgs.nixd
           pkgs.nixfmt
-          pkgs.opentofu
           pkgs.shfmt
-          pkgs.tofu-ls
           pkgs.typescript-language-server
         ];
         userSettings = {
@@ -290,13 +287,6 @@
           buffer_font_family = "JetBrainsMono Nerd Font";
           buffer_font_size = 15;
           cli_default_open_behavior = "existing_window";
-          file_types = {
-            OpenTofu = [
-              "tf"
-              "tofu"
-            ];
-            "OpenTofu Vars" = [ "tfvars" ];
-          };
           languages = {
             C = clangLanguageSettings;
             "C++" = clangLanguageSettings;
@@ -318,14 +308,6 @@
                 "!nil"
               ];
             };
-            OpenTofu = {
-              format_on_save = "on";
-              formatter = "language_server";
-            };
-            "OpenTofu Vars" = {
-              format_on_save = "on";
-              formatter = "language_server";
-            };
             "Shell Script" = {
               format_on_save = "on";
               formatter = "language_server";
@@ -344,7 +326,6 @@
             };
             clangd.binary.path = lib.getExe' pkgs.clang-tools "clangd";
             nixd.binary.path = lib.getExe pkgs.nixd;
-            tofu-ls.settings.tofu.path = lib.getExe pkgs.opentofu;
             "typescript-language-server".binary = {
               path = lib.getExe pkgs.typescript-language-server;
               arguments = [ "--stdio" ];
