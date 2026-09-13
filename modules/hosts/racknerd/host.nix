@@ -1,8 +1,6 @@
 { config, lib, ... }:
 {
   fleet.hosts.racknerd = {
-    # Fresh pre-install reviews completed 2026-09-12; actual installation and
-    # two-boot acceptance are separately recorded in docs/hosts.md.
     ready = true;
     system = "x86_64-linux";
     track = "stable";
@@ -15,12 +13,9 @@
       "vps"
     ];
     deployment = {
-      # Ready export is not an instruction to activate deploy-rs.
       enable = true;
       hostname = "72.11.150.242";
       sshUser = "marcos";
-      # Operator-chosen 2026-09-12: signed transport supersedes the old,
-      # never-commissioned trusted-user plan. Private signer stays off-host.
       transport = "signed";
       sshOpts = [
         "-o"

@@ -1,4 +1,3 @@
-"""Wrapper guards plus native CLI isolation; disposable data, no real provider/API access."""
 import json
 import os
 from pathlib import Path
@@ -139,7 +138,6 @@ if sys.argv[1] == 'plan':
                 self.assertEqual(self.calls(), [])
 
     def native_probe(self, *arguments):
-        # Replace only the executable boundary with a native, non-network probe.
         assert NATIVE_TOFU is not None
         (self.root / "tofu").write_text(f"#!{sys.executable}\nimport os\n"
                                       f"os.execv({NATIVE_TOFU!r}, {[NATIVE_TOFU, *arguments]!r})\n")
@@ -179,15 +177,13 @@ if sys.argv[1] == 'plan':
             path.parent.mkdir(exist_ok=True)
             path.write_text(cli)
         self.native_probe("providers", "schema", "-json")
-        # Prove this local override is executable without downloads/API access.
         assert NATIVE_TOFU is not None
         baseline = subprocess.run([NATIVE_TOFU, "providers", "schema", "-json"], cwd=config,
                                   env=self.env | {"TF_CLI_CONFIG_FILE": str(paths[-1])},
                                   capture_output=True, text=True, timeout=10)
-        self.assertNotEqual(baseline.returncode, 0)  # The sentinel speaks no provider protocol.
+        self.assertNotEqual(baseline.returncode, 0)
         self.assertTrue(marker.exists(), baseline.stderr)
         marker.unlink()
-        # No init/provider downloads: absent synthetic provider must fail before launch.
         for env in [{}, {"TF_CLI_CONFIG_FILE": str(paths[-1])},
                     {"TERRAFORM_CONFIG": str(paths[-1])}]:
             with self.subTest(env=env):

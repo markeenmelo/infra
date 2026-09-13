@@ -66,7 +66,6 @@ in
   };
 
   config.flake = {
-    # These values remain inspectable even when a machine cannot safely be built.
     fleetConfigurations = evaluated;
     nixosConfigurations = lib.filterAttrs (name: _: hosts.${name}.ready) evaluated;
     fleet = lib.mapAttrs (

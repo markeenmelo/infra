@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Only the enabled, reviewed NixOS unit executes this against a real daemon.
-# Checks execute it with a mocked CLI; no private state file is ever parsed.
 set -euo pipefail
 set +x
 
@@ -27,8 +25,6 @@ for ((attempt = 0; attempt < 30; attempt++)); do
   sleep 1
 done
 
-# Both up and set support these settings. Never reset unknown preferences or
-# force reauthentication: an incompatible old configuration must fail review.
 flags=(
   --accept-dns=true --accept-routes=false --ssh=false --shields-up=false
   --advertise-routes= --advertise-exit-node=false --advertise-connector=false
@@ -38,7 +34,6 @@ flags=(
 case "$state" in
   NeedsLogin)
     [[ "$mode" == auth-key ]] || fail 'Preserved node needs login; explicit enrollment review is required.'
-    # Keep keys out of argv and suppress possible login URLs/error payloads.
     tailscale up "--auth-key=file:$key_path" "--advertise-tags=$tag" --timeout=60s "${flags[@]}" >/dev/null 2>&1 \
       || fail 'Tailscale enrollment failed; check credentials/preferences privately. No forced reset was attempted.'
     ;;
@@ -56,9 +51,6 @@ esac
 tailscale set "${flags[@]}" --auto-update=false --webclient=false >/dev/null 2>&1 \
   || fail 'Tailscale preference reconciliation failed; inspect privately.'
 if [[ "$state" == Stopped ]]; then
-  # Reconnect the existing identity without supplying another enrollment key.
-  # Even --timeout counts as an explicit up flag and triggers upstream's
-  # accidental-preference-reset check. Bound a genuinely bare up externally.
   timeout 60s tailscale up >/dev/null 2>&1 || fail 'Could not reconnect the preserved Tailscale identity.'
 fi
 status | jq -e --arg tag "$tag" '

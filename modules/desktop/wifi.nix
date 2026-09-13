@@ -29,8 +29,6 @@
       config = {
         networking.networkmanager.wifi.powersave = true;
         users.users.marcos.extraGroups = [ "networkmanager" ];
-        # Operator-run private MAC/decryption and filled-scalar audit, 2026-09-10.
-        # No campus connection was tested; this refactor changes no review.
         fleet.wifi.senecaSopsFile = ../../secrets/hosts/thinkpad-senecanet.yaml;
         fleet.bootstrap.missing =
           lib.optional (!campus)
@@ -49,7 +47,6 @@
               connection = {
                 id = "MN-Home";
                 type = "wifi";
-                # Reuse the existing profile identity, not a hardware UUID.
                 uuid = "8d9f7dd6-a1fb-5afa-b745-19d00cc548dc";
                 autoconnect = true;
               };
@@ -93,9 +90,6 @@
             };
           };
         };
-        # Activation-based SOPS decryption is already required by fleet.secrets.
-        # This root-only, runtime-only adapter escapes raw secrets; NixOS still
-        # generates the profiles, substitutes the environment and reloads NM.
         systemd.services = {
           ${service} = {
             description = "Prepare private SOPS environment for native Wi-Fi profiles";
@@ -132,8 +126,6 @@
             after = [ "${service}.service" ];
           };
         };
-        # psk/password-flags=0: root-owned /run profiles, no competing file secret
-        # agent or Noctalia patch. Unknown networks can still prompt normally.
       };
     };
 }

@@ -1,4 +1,3 @@
-"""Synthetic subprocess tests: no real identities, decryption, OpenTofu or API."""
 import json
 import os
 from pathlib import Path

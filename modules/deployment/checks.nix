@@ -12,8 +12,6 @@ let
     track: fixture:
     let
       cfg = fixture.config;
-      # Reuse the actual host metadata type and its deferred deployment module.
-      # These hosts exist only in this isolated evaluation, never in fleet/deploy outputs.
       deploymentFor =
         sshUser:
         let
@@ -96,8 +94,6 @@ in
     track: fixture:
     let
       deployLib = (deploymentPkgs fixture.pkgs).deploy-rs.lib;
-      # Exercise real upstream activation checks on tiny, non-system payloads.
-      # The real NixOS activation derivations are evaluated separately above.
       smoke = deployLib.deployChecks {
         nodes.fixture = {
           hostname = "evaluation-only.invalid";

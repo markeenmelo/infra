@@ -1,6 +1,3 @@
-// Offline checks against the actual Pi loader, the Nix-pinned local
-// extensions and native RTK behavior. No real HOME, credentials, provider
-// calls or model runs.
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,9 +8,7 @@ const [piDir, codexConfig, toolRepairConfig] = process.argv.slice(2);
 const load = (path) => import(pathToFileURL(path).href);
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const { discoverAndLoadExtensions } = await load(join(piDir, 'dist/index.js'));
-// Exercise the desktop's actual native classifier, never a copied regex.
 const { isRetryableAssistantError } = await load(join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'));
-// Managed settings must carry the exact pinned package set.
 const settings = json(join(process.env.PI_CODING_AGENT_DIR, 'settings.json'));
 assert.equal(settings.defaultProjectTrust, 'ask');
 assert.equal(settings.defaultProvider, 'openai-codex');
@@ -45,7 +40,6 @@ const emptyArgsRetry = local.find((path) => path.endsWith('empty-args-retry.ts')
 assert.ok(emptyArgsRetry, 'empty-args-retry.ts must be pinned as a settings entry');
 const piReview = local.find((path) => path !== rtkHook && path !== emptyArgsRetry);
 json(codexConfig); // Generated extension config must stay valid JSON.
-// Grammar recovery stays opt-in and scoped to GLM model ids only.
 const toolRepair = json(toolRepairConfig);
 assert.equal(toolRepair.grammarRepair.enabled, undefined, 'No global grammar repair');
 assert.equal(toolRepair.grammarRepair.mode, 'recover');
@@ -54,7 +48,6 @@ assert.deepEqual(toolRepair.grammarRepair.grammars, ['glm']);
 assert.deepEqual(toolRepair.grammarRepair.leakModels, ['glm']);
 console.log('Settings pins and generated configs passed');
 
-// Load the Nix-pinned extensions through Pi's actual loader.
 const loaded = await discoverAndLoadExtensions(
   [rtkHook, join(piReview, 'review.ts'), emptyArgsRetry],
   process.cwd(), process.env.PI_CODING_AGENT_DIR,
@@ -71,10 +64,6 @@ assert.ok(rtk?.handlers.has('tool_call'), 'RTK hook must register the official t
 assert.ok(review?.commands.has('review') && review.commands.has('end-review'), 'pi-review must register its commands');
 console.log('Pi loader registration for pi-review, RTK and empty-args-retry passed');
 
-// Exercise empty-args-retry's pure transform: only schema-required tools with
-// a completely absent/empty arguments payload flip the message into a
-// retryable error, and every toolCall block is stripped so a retried turn
-// never leaves unmatched calls in the history.
 const { retryEmptyArguments } = await load(emptyArgsRetry);
 const tools = [
   { name: 'edit', parameters: { type: 'object', required: ['path', 'edits'] } },
@@ -92,8 +81,6 @@ assert.ok(emptyEdit.changed, 'Empty edit arguments must convert the message');
 assert.equal(emptyEdit.message.stopReason, 'error');
 assert.equal(toolCallsOf(emptyEdit.message).length, 0, 'All toolCall blocks must be stripped');
 assert.match(emptyEdit.message.errorMessage, /"edit".*path, edits/);
-// Exercise the classifier AgentSession actually uses. A local prefix check
-// would keep passing if a future Pi pin stopped recognizing that phrasing.
 assert.equal(
   isRetryableAssistantError(emptyEdit.message), true,
   'The pinned Pi runtime must classify the transformed message as retryable',
@@ -140,7 +127,6 @@ for (const [label, message] of [
 }
 console.log('empty-args-retry conversion behavior passed');
 
-// Exercise the RTK hook: rewrite only, never execute the commands.
 const ctx = { cwd: process.cwd(), hasUI: true, mode: 'tui' };
 const rewrite = async (command) => {
   const event = { toolName: 'bash', input: { command } };

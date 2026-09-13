@@ -1,7 +1,6 @@
 { config, lib, ... }:
 let
   fleet = config;
-  # Enable only the individually reviewed host, never the entire fleet at once.
   rollout = {
     thinkpad = true;
     racknerd = false;
@@ -10,8 +9,6 @@ let
   hosts = builtins.attrNames rollout;
 in
 {
-  # Deliberately staged: composing the capability records intent, but cannot
-  # change an installed machine until that machine's rollout is enabled.
   fleet.hosts = lib.genAttrs hosts (name: {
     capabilities = [ "tailscale" ];
     module.fleet.tailscale = {
@@ -133,14 +130,9 @@ in
               "/persist/var/lib/tailscale"
               "/var/lib/tailscale"
             ];
-            # Native autoconnect embeds the key value in argv. The assertion
-            # below keeps it disabled; this unit uses the CLI's file: argument.
             fleet-tailscale = {
               description = "Reconcile reviewed Tailscale client enrollment and preferences";
               wantedBy = [ "multi-user.target" ];
-              # SOPS uses activation scripts here, not a boot-time service.
-              # Those scripts finish before units start; a missing auth key
-              # still makes the CLI fail closed when enrollment is required.
               after = [
                 "tailscaled.service"
                 "network-online.target"

@@ -1,7 +1,4 @@
 {
-  # Zed, its language servers and the shared OLED Graphite theme. Settings are
-  # the reviewed current preferences; only the Nix formatter changed, so the
-  # editor and this repository's canonical `devenv tasks run repo:fmt` cannot disagree.
   flake.modules.homeManager.desktop =
     { lib, pkgs, ... }:
     let
@@ -266,8 +263,6 @@
     {
       programs.zed-editor = {
         enable = true;
-        # Zed's own settings UI cannot write back into the Nix store copy; every
-        # change belongs in this module so the editor stays reproducible.
         mutableUserSettings = false;
         themes.oled-graphite = zedTheme;
         extensions = [
@@ -290,7 +285,6 @@
           pkgs.typescript-language-server
         ];
         userSettings = {
-          # Nixpkgs owns this build; an in-app update would fight the store copy.
           auto_update = false;
           base_keymap = "Zed";
           buffer_font_family = "JetBrainsMono Nerd Font";
@@ -315,10 +309,6 @@
             JavaScript = biomeLanguageSettings;
             Nix = {
               format_on_save = "on";
-              # The repository formats with official nixfmt through nixfmt-tree,
-              # so the editor must not reformat files with a different style.
-              # "-" is the supported anonymous-stdin form; a bare invocation
-              # still works but is deprecated and warns on stderr.
               formatter.external = {
                 command = lib.getExe pkgs.nixfmt;
                 arguments = [ "-" ];
@@ -360,8 +350,6 @@
               arguments = [ "--stdio" ];
             };
           };
-          # Zed 1.19 enabled project search while typing by default. Preserve
-          # the previously reviewed explicit-submit behavior across the update.
           search.search_on_type = false;
           telemetry = {
             diagnostics = false;

@@ -5,7 +5,6 @@
       pkgs.networkmanagerapplet
     ];
     programs.btop.enable = true;
-    # The session owner replaces this packaged daemon autostart, not unrelated user state.
     xdg.autostart = {
       enable = true;
       entries = [

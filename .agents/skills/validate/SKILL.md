@@ -1,37 +1,62 @@
 ---
 name: validate
-description: Run the fleet canonical non-destructive formatting, static analysis, host and track evaluation, safety fixtures and deploy-rs checks before committing or deploying changes.
+description: Run manual non-destructive formatting, ciphertext, static, fleet and flake validation after task removal; distinguish local checks from real host acceptance.
 ---
 
 # Validate
 
-## Purpose / when
+Read `../../../AGENTS.md`, the actual staged/unstaged diff, [check scope and historical evidence](references/validation.md), `../../../modules/validation.nix` and affected feature checks. Repository devenv tasks were removed on 2026-09-13; **do not recreate them or use `devenv test` as a gate**.
 
-Choose validation proportional to the actual diff; full canonical checks remain required for infrastructure code and deployment preflight. Distinguish source/evaluation correctness from actual machine commissioning and runtime acceptance.
+## Documentation-only changes
 
-## Prerequisites
+1. Run `git diff --check` and `git diff --cached --check`; review intended changes and lock/status scope.
+2. Check local Markdown links/anchors, skill frontmatter and claims against [dated host status](../fleet-operations/references/hosts.md#current-status). Historical evidence is not current authorization.
+3. Check changed snippets without executing operations: `bash -n`/ShellCheck for complete shell blocks, strict JSON parsing, isolated Nix parse/option-shape checks as applicable. No deployment, disk, secret or live-service command is a documentation test.
+4. Report results. Prose-only changes need no fleet check/build.
 
-Read `../../../AGENTS.md` and `../../../docs/validation.md`. For code/configuration checks also read `../../../devenv.nix` and [native CLI details](../../../docs/development.md), the fixture/inventory harness `../../../modules/validation.nix` and the affected concern's checks; these require Nix with flakes/nix-command, x86_64-linux, network or cached locked dependencies, and sufficient build resources. For changed APIs/tools use `nix-research` and update the research ledger if behavior has changed. For composition changes or structural refactors, use [dendritic-nix](../dendritic-nix/SKILL.md) to record the baseline and review discovery, classes, config scopes and consumer wiring before evaluation.
+## Code, configuration, dependency, test or ciphertext changes
 
-## Procedure
+Run from the repository root in `devenv shell` (bootstrap: `nix run --no-update-lock-file .#devenv -- shell`). Tools/checks support `x86_64-linux`. For refactors first capture the baseline per [dendritic-nix](../dendritic-nix/SKILL.md).
 
-1. Inspect staged and unstaged status/diffs. For documentation-only edits, follow [whitespace, link/status and changed-snippet checks](../../../docs/validation.md#documentation-only-changes), report them and stop; no fleet check/build is required. For code, configuration, dependencies, tests, policy data or ciphertext changes, continue below. Ensure every `.nix` file except `flake.nix` and native `devenv.nix` is a top-level module under `modules/`. Stage intended new files (Git flakes ignore untracked files); do not stage unrelated changes, plaintext secrets or private identities. Run `devenv tasks run repo:secret-check` before staging intended SOPS ciphertext/public rules. Keep the lock unchanged unless updates are in scope.
-2. Enter `devenv shell` (bootstrap: `nix run --no-update-lock-file .#devenv -- shell`). Run `devenv tasks run repo:fmt` to apply the official formatter; inspect formatting changes. Never run broad automatic dead-code/lint fixes without reviewing them.
-3. Iterate with the fast inner gate `devenv tasks run repo:check` (seconds); run **`devenv tasks run repo:check-full`** once for the final coherent candidate (and for deployment preflight). [Canonical command and check inventory](../../../docs/validation.md#canonical-command) are maintained in `docs/validation.md`; native `devenv.nix` defines the dependency order; use the default `before` mode, never `--mode single`. Do not substitute targeted checks for this gate or run real `devenv shell tailnet` or `tailnet-sops` operations as validation.
-4. Inspect reported missing facts and failed assertions. Uncommissioned hosts intentionally remain outside standard build/deploy outputs. Only explicit bootstrap/access blockers are expected; do not label new option errors, persistence duplicates, wrong tracks or invalid disks “placeholders”. A ready host must have no blockers/assertion failures.
-5. For each commissioned host whose configuration/closure is affected, run `devenv shell ready HOST` and `devenv shell build HOST`. A later prose-only correction does not require rerunning unchanged builds. For an unready host, `devenv shell ready HOST` should refuse; inspect `.#fleetConfigurations.HOST.config` only for evaluation. No hardware fact may be fabricated to make a toplevel pass.
-6. Candidates use fresh per-host layouts; consult dated host status rather than assuming every host is unready or already installed. Cover all three layouts on both tracks, Limine UEFI/BIOS, early mounts, ThinkPad home/plain swap/no hibernation, fixed boot sizes and partition ordering. All public script/image aliases must reject unready/missing-review/invalid-device candidates and extra/redirected disks; non-OS destructive collections remain empty. Approved fixtures remain explicitly synthetic; real installer derivations require actual host review. Test Racknerd's narrow whole-PCI-by-path exception and rejection on other layouts without copying real device facts into fixtures. Real unready hosts must stay outside NixOS/deploy outputs; wrong tracks must fail the independent oracle. Never execute a generated script.
-7. Inspect the final Git diff, lock changes, documentation/skill references and local canonical command. Feature reports/checks must still be forced through the independent inventories, not merely defined. Preserve the independent track oracle in `modules/validation.nix` and rollout oracle in `modules/tailscale/checks.nix`; test-only fixture contributions must not create a fleet host. For a structural refactor, compare the recorded baseline: relevant generated settings, exact consumers, package sources, persistence/access policy and readiness/output eligibility must remain unchanged unless explicitly in scope. Check moved asset paths, duplicated deferred imports and `_`-prefixed files, which this repository still auto-imports. Preserve native HM `nixosConfig` context while rejecting custom input/package forwarding. Avoid unsafe unknown-output suppression: custom outputs are explicitly checked, not magically understood by Nix.
-8. Report exact commands/results. If unavailable due to network, cache, architecture, Nix version or build resources, record the precise remaining command and reason. Do not claim tests passed after a timeout/failure. Do not claim VM boot, physical boot, secret existence, SSH reachability, backup restore or deployment from evaluation-only tests.
+1. **Before staging ciphertext or evaluating the flake**, run the [manual ciphertext guard](references/ciphertext.md) in the current shell. It checks ambiguous YAML, encrypted payload shape and exact public recipients without decryption or value output. Review other intended new files for secrets and stage only those files: Git flakes ignore untracked inputs. Never stage identities/plaintext/unrelated work.
+2. Apply the existing formatters explicitly, inspect changes, then run report-only static checks. The shell's `treefmt` is now the packaged **Nix-only** wrapper, not the removed multi-language integration:
 
-## Safety
+   ```sh
+   treefmt
+   tofu fmt -recursive tofu
+   treefmt --ci
+   tofu fmt -check -recursive tofu
+   statix check .
+   deadnix --fail .
+   find modules -name '*.sh' -print0 | xargs -0 shellcheck .envrc
+   ```
 
-This procedure must not format, install, mount, activate remotely, reboot or deploy. Flake checks **build** activation scripts; they do not execute them. `deploy --dry-activate` is not a substitute for local validation.
+   Do not run unreviewed broad automatic lint/dead-code fixes.
+3. Verify tooling without updating inputs, after the ciphertext guard:
 
-## Completion criteria
+   ```sh
+   jq -e --slurpfile flake flake.lock \
+     '.nodes.nixpkgs.locked == $flake[0].nodes.nixpkgs.locked' devenv.lock >/dev/null
+   jq -e '.nodes.devenv.original == {owner: "cachix", repo: "devenv", type: "github"}' devenv.lock >/dev/null
+   packaged=$(nix eval --no-update-lock-file --raw .#packages.x86_64-linux.tailscale-tofu)
+   test "$(readlink -f "$(command -v tofu)")" = "$packaged/bin/tofu"
+   ```
 
-The applicable validation path passes: documentation-only whitespace/link/status/snippet checks, or full formatting/lint/dead-code, host/track/safety evaluations and flake/deploy checks with affected real builds accounted for. Final diff and lock scope are reviewed. Any incomplete runtime/hardware work is explicitly separated from verified results.
+   Inspect native shell/task inventory after development changes: no repository/deployment/treefmt tasks, no local hook installation, no credential loading. Native lifecycle tasks can remain. Do not grant trust or add another package set to repair a failure.
+4. Run the malformed-input regression block in [ciphertext checks](references/ciphertext.md#regressions), then serialize the local fleet/evaluation/full-flake commands; do not race Nix's eval-cache database:
 
-## Common failures
+   ```sh
+   nix eval --no-update-lock-file --json .#fleet | jq 'map_values({track,revision,ready,missing,failedAssertions})'
+   nix eval --no-update-lock-file --json .#validation | jq '{hosts,fixtures,compositions,storageLayouts,sops,desktop,wifi,tailscale}'
+   nix flake check --no-update-lock-file -L
+   ```
 
-Untracked modules, stale lock/API, wrong module class, duplicate deferred imports, assertions hidden by broad bootstrap exemptions, type-incorrect null substitutions, and accidentally retaining derivation string contexts in evaluation reports (which can turn an evaluation check into huge build dependencies). Fix the cause, not the safety policy.
+   Run the full sequence once for the final coherent candidate and before deployment; targeted tests are only iteration. Use `set -euo pipefail` for automation so pipeline failures cannot be hidden. No replacement task runner is provided.
+5. Inspect real blockers/assertions. Only documented bootstrap/client-setting/custom-output/deprecated-alias diagnostics are expected. Do not suppress new option, track, disk, persistence or credential failures. Both-track fixtures remain synthetic; all public disko aliases reject unready/missing-review/extra/redirected-device cases. Only native disk scripts have positive fixture expectations; VM/image variants may correctly refuse under real access/device guards. Never execute a generated script.
+6. For affected commissioned closures, run `devenv shell ready HOST` and `devenv shell build HOST`. ThinkPad's unready candidate must refuse; inspect only `fleetConfigurations` for its evaluation. No false facts/reviews to get a build.
+7. Compare refactor baselines: host facts/track/readiness/output sets, packages, access, mounts and persistence. Inspect expected derivation changes from immutable script/comment paths. Preserve the independent track/rollout/check inventories, native HM `nixosConfig` and stable SSH module key. `/_` paths are excluded helpers, not discovered modules.
+8. Review the full diff, locks, skill references and source placement. Report exact commands, exits, corrected failures and remaining unknowns; a timeout or failed run is not success. Do not claim real boot, credential validity, network reachability, backup restore, installation or deployment from pure fixtures.
+
+## Completion
+
+The applicable manual path passes, affected ready-host builds are accounted for and no unauthorized operation occurred. If blocked by resources/network/platform, report the precise uncompleted command and reason; do not call an incomplete candidate validated.

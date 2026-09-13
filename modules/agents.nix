@@ -1,6 +1,4 @@
 let
-  # ThinkPad's desktop/HM agent policy. Servers have no agent capability.
-  # Keep its existing settings and package sources unchanged.
   policyFor = { lib, pkgs }: {
     sessionVariables = {
       CURSOR_AGENT_PATH = lib.getExe pkgs.cursor-cli;
@@ -20,7 +18,6 @@ let
       defaultModel = "gpt-6-astra";
       defaultThinkingLevel = "high";
       hideThinkingBlock = true;
-      # Native project-trust policy for the desktop's selected Pi.
       defaultProjectTrust = "ask";
       packages = [
         "npm:@99percentpeople/pi-codex-api@0.4.0"
@@ -34,7 +31,6 @@ let
           rev = "f1de050504936046c0f85b21fec0e0a93ef394eb";
           hash = "sha256-bvdJjLudTd9YQF8ip30jIvi6MY3MAcw5GXVONx1DLuQ=";
         }}"
-        # Preserve the already-reviewed independent hook pin for ThinkPad.
         "${
           pkgs.fetchFromGitHub {
             owner = "rtk-ai";
@@ -98,7 +94,6 @@ let
           max_files = 20;
           max_file_size = 1048576;
         };
-        # Never put credentials in arguments; preserve infrastructure output.
         hooks.exclude_commands = [
           "git"
           "nix"
@@ -121,7 +116,6 @@ let
     };
   };
   cursorPolicy = { lib, ... }: {
-    # Sole unfree allowance: the CLI required by the selected Cursor extension.
     nixpkgs.config.allowUnfreePredicate = package: lib.getName package == "cursor-cli";
   };
 in

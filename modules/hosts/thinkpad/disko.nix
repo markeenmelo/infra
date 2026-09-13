@@ -3,7 +3,6 @@ let
   limine = config.flake.modules.nixos.limine;
 in
 {
-  # Fresh candidate only. Never activate this over the running LUKS/LVM disk.
   fleet.hosts.thinkpad.module.fleet.installation.osDevice =
     "/dev/disk/by-id/nvme-eui.00a075013a594e93";
 
@@ -98,7 +97,7 @@ in
       services.lvm.enable = false;
       boot.resumeDevice = "";
       boot.loader = {
-        efi.canTouchEfiVariables = true; # Proposed policy; fresh boot review pending.
+        efi.canTouchEfiVariables = true;
         limine = {
           enable = true;
           efiSupport = true;

@@ -59,8 +59,6 @@
           ConvenienceExceptions = false;
         };
 
-        # Firefox 152+ ignores updates_disabled for force_installed extensions.
-        # normal_installed keeps exact XPI pins but lets the user disable an extension.
         ExtensionSettings = {
           "{446900e4-71c2-419f-a6a7-df9c091e268b}" = {
             installation_mode = "normal_installed";
@@ -237,13 +235,9 @@
         };
       };
 
-      # Upstream's flake package output imports pkgs again, even with follows.
-      # Use this normal flake input's recipe with the consuming home's own pkgs.
       zenBrowserUnwrapped =
         (import inputs.zen-browser.outPath { inherit pkgs; }).zen-browser-unwrapped.overrideAttrs
           (previousAttrs: {
-            # Nixpkgs' Firefox wrapper renamed these passthru flags under RFC 169.
-            # Preserve the pinned Zen flake's declared media and GSSAPI support.
             passthru = previousAttrs.passthru // {
               withFFmpeg = previousAttrs.passthru.ffmpegSupport;
               withGSSAPI = previousAttrs.passthru.gssSupport;
@@ -285,7 +279,6 @@
           ]
       );
 
-      # These extensions only support UI-driven JSON import in these releases.
       xdg.configFile = {
         "sponsorblock/settings-v6.1.7.json".source = ./assets/browser/sponsorblock-settings-v6.1.7.json;
         "youtube-enhancer/settings-v1.34.2.json".source =

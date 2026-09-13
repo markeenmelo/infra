@@ -10,7 +10,6 @@
         description = "tmpfs root ceiling, a tunable policy, not reserved RAM. Review memory/build workloads.";
       };
       config = {
-        # Actual ephemeral-root semantics, independent of deprecated scripted-initrd hooks.
         fileSystems."/".neededForBoot = true;
         disko.devices.nodev."/" = {
           fsType = "tmpfs";

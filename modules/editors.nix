@@ -1,15 +1,8 @@
 { lib, ... }:
 {
-  # Console editor policy for composing hosts: one declaratively configured Neovim
-  # replaces the NixOS nano default. The wrapper loads this configuration from
-  # the Nix store, so a per-user ~/.config/nvim is deliberately ignored;
-  # ThinkPad's graphical editing stays with its separately composed Zed concern.
   flake.modules.nixos.editors = {
     programs.neovim = {
       enable = true;
-      # nano is no longer shipped, so EDITOR consumers (sudoedit, git,
-      # nixos-rebuild edit) resolve to nvim at priority 900: a deliberate
-      # session or host assignment can still override it.
       defaultEditor = true;
       viAlias = true;
       vimAlias = true;

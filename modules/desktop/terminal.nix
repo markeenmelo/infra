@@ -1,7 +1,4 @@
 {
-  # Terminal and multiplexer preferences for the ThinkPad desktop.
-  # These are the reviewed current application preferences, re-expressed through
-  # native Home Manager program modules instead of hand-written dotfiles.
   flake.modules.homeManager.desktop =
     {
       lib,
@@ -18,16 +15,12 @@
         settings.default = [ "com.mitchellh.ghostty.desktop" ];
       };
       home.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
-      # One patched family for Ghostty, Zed and prompt icons; no regular variant.
-      # Keep native sans/serif/emoji defaults, including Noto Color Emoji: Nerd
-      # Font symbols are not a replacement for a color-emoji font.
       fonts.fontconfig.defaultFonts.monospace = [ "JetBrainsMono Nerd Font" ];
 
       programs = {
         ghostty = {
           enable = true;
           settings = {
-            # Herdr owns panes/sessions inside the terminal, as it does today.
             command = "direct:${lib.getExe pkgs.herdr}";
             theme = theme.name;
             font-family = "JetBrainsMono Nerd Font";
@@ -81,8 +74,6 @@
             onboarding = false;
             terminal.default_shell = lib.getExe pkgs.zsh;
             update = {
-              # Herdr may check its own integration manifests, but this build is
-              # pinned by Nixpkgs: never advertise or fetch a newer release.
               manifest_check = true;
               version_check = false;
             };

@@ -1,6 +1,5 @@
 { inputs, ... }:
 {
-  # Make the CLI available outside this repository's development shell.
   flake.modules.homeManager.desktop = { pkgs, ... }: { home.packages = [ pkgs.devenv ]; };
 
   perSystem =
@@ -12,10 +11,8 @@
     }:
     {
       config = {
-        # Unstable development/check tools; host packages use their own explicit track.
         _module.args.pkgs = inputs.nixpkgs.legacyPackages.${system};
         formatter = pkgs.nixfmt-tree;
-        # Bootstrap without installing anything or retaining a parallel devShell.
         packages.devenv = pkgs.devenv;
         checks.source-quality =
           assert lib.assertMsg

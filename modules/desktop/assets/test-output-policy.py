@@ -1,5 +1,3 @@
-"""Synthetic CLI regressions: no real hardware/compositor; only disposable test sockets."""
-
 import json
 import os
 from pathlib import Path
@@ -31,8 +29,6 @@ SDR_RULE = ('hl.monitor({ output = "DP-TEST", mode = "2560x1440@60.00", position
 HDR_RULE = SDR_RULE.replace('bitdepth = 8, cm = "srgb"', 'bitdepth = 10, cm = "hdredid"')
 DISABLED_PANEL = 'hl.monitor({ output = "eDP-1", disabled = true })'
 
-# CLI doubles leave the policy's functions, errexit contexts, JSON decoding,
-# locks and event loop unchanged. Dedicated socket tests use native socat.
 MOCK = r'''
 import json
 import os
@@ -61,7 +57,6 @@ if command == "hyprctl":
             snapshot = json.loads(snapshots[min(query - 1, len(snapshots) - 1)])
             print(json.dumps([m for m in snapshot if not m["disabled"]]))
     elif args[:2] == ["keyword", "monitor"]:
-        # Hyprland's Lua manager rejects legacy IPC without a nonzero exit.
         print("keyword can't work with non-legacy parsers. Use eval.")
     else:
         assert len(args) == 2 and args[0] == "eval"
@@ -114,7 +109,6 @@ class OutputPolicyTests(unittest.TestCase):
             executable.write_text(f"#!{sys.executable}\n" + MOCK)
             executable.chmod(0o755)
         self.script = self.root / "policy.sh"
-        # Relocate only fixed hardware roots, never replace policy functions.
         assert "/sys/class/drm/" in POLICY and "/proc/acpi/button/lid/" in POLICY
         self.script.write_text(POLICY.replace("/sys/class/drm/", f"{self.root}/drm/")
                                .replace("/proc/acpi/button/lid/", f"{self.root}/lid/"))
@@ -290,7 +284,6 @@ class OutputPolicyTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             config = self.root / "hyprland.lua"
             config.write_text(result.stdout)
-            # Native parser only: never start a compositor or modeset.
             subprocess.run(["Hyprland", "--verify-config", "--config", str(config)],
                            env=dict(self.environment, HOME=str(self.root),
                                     XDG_CONFIG_HOME=str(self.root)),
@@ -314,7 +307,6 @@ class OutputPolicyTests(unittest.TestCase):
         invalid = ["", "[", "{}", "[] []", "[7]"]
         invalid += [[INTERNAL, dict(EXTERNAL, availableModes=modes)] for modes in
                     [[123], ["invalid"], ["0x1080@60Hz"], None]]
-        # A valid earlier row must not modeset before a later row fails parsing.
         self.connector("DP-A")
         invalid.append([dict(EXTERNAL, name="DP-A"), dict(EXTERNAL, availableModes=[123])])
         for snapshot in invalid:
@@ -346,7 +338,7 @@ class OutputPolicyTests(unittest.TestCase):
         disconnected = self.root / "drm/card0-DP-TEST"
         disconnected.mkdir()
         (disconnected / "status").write_text("disconnected\n")
-        (disconnected / "edid").write_text("")  # Not an EDID; must never be decoded.
+        (disconnected / "edid").write_text("")
         result = self.invoke()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.rules(), [[1, HDR_RULE], [1, DISABLED_PANEL]])
@@ -365,7 +357,7 @@ class OutputPolicyTests(unittest.TestCase):
         self.assertEqual(self.rules(), [])
 
     def test_native_socket_refusal_prevents_all_mutations(self):
-        (self.root / "bin/socat").unlink()  # Use the pinned real socat, not a live socket.
+        (self.root / "bin/socat").unlink()
         result = self.invoke("watch")
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual((self.root / "queries").read_text(), "0")

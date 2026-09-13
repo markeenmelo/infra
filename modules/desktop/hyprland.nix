@@ -40,10 +40,8 @@
         enable = true;
         package = null;
         portalPackage = null;
-        systemd.enable = false; # UWSM alone owns the session lifecycle.
+        systemd.enable = false;
         configType = "lua";
-        # Home Manager owns serialization. Only dispatcher expressions need the
-        # upstream mkLuaInline escape hatch; no hand-written whole Lua config.
         settings = {
           monitor = [
             {

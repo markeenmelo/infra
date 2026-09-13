@@ -2,7 +2,6 @@
   flake.modules.nixos.desktop.programs.kdeconnect.enable = true;
   flake.modules.homeManager.desktop = { pkgs, ... }: {
     services.kdeconnect.enable = true;
-    # The session owner replaces this packaged daemon autostart, not unrelated user state.
     xdg.autostart = {
       enable = true;
       entries = [

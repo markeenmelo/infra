@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Offline-only: mocked tailnet provider and a temporary built-in terraform_data
-# resource. The only apply writes synthetic local state; no fleet/cloud target.
 set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)
 python3 "$root/modules/tailscale/test-policy.py" "$root/tofu/tailscale/policy.hujson"
@@ -11,7 +9,6 @@ cp -R "$root/tofu/tailscale" "$scratch/config"
 chmod -R u+w "$scratch/config"
 mkdir -p "$scratch/home" "$scratch/state" "$scratch/smoke-state" "$scratch/smoke"
 cp "$root/tofu/tailscale/encryption.tf" "$scratch/smoke/"
-# This file is an explicitly synthetic, local-only encryption fixture.
 printf '%s\n' 'resource "terraform_data" "canary" { input = "TEST-ONLY-ENCRYPTION-CANARY" }' > "$scratch/smoke/main.tf"
 env -i PATH="$PATH" HOME="$scratch/home" SCRATCH="$scratch" \
   HTTP_PROXY=http://127.0.0.1:1 HTTPS_PROXY=http://127.0.0.1:1 NO_PROXY='' \
@@ -36,8 +33,6 @@ for file in "$SCRATCH/smoke-state/terraform.tfstate" "$SCRATCH/smoke-state/chang
     exit 1
   fi
 done
-# Normal non-saving plans must report 0 for no changes and 2 for drift,
-# without replacing the retained encrypted plan or updating this local state.
 cp "$SCRATCH/smoke-state/change.tfplan" "$SCRATCH/retained-plan"
 cp "$SCRATCH/smoke-state/terraform.tfstate" "$SCRATCH/retained-state"
 cp main.tf "$SCRATCH/original-smoke-config"
@@ -54,7 +49,6 @@ if TF_VAR_state_passphrase='TEST-ONLY-WRONG-PASSPHRASE-0123456789012345' tofu pl
   printf 'Wrong encryption key unexpectedly accepted.\n' >&2; exit 1
 fi
 grep -Eqi 'decrypt|cipher|authentication failed' "$SCRATCH/wrong-key.log"
-# Decrypt only this synthetic state to test fail-closed plaintext rejection.
 tofu state pull > "$SCRATCH/plaintext-fixture"
 cp "$SCRATCH/plaintext-fixture" "$SCRATCH/smoke-state/terraform.tfstate"
 if tofu plan -input=false > "$SCRATCH/plaintext.log" 2>&1; then

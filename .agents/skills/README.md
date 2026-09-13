@@ -1,19 +1,23 @@
-# Repository agent skills
+# Repository skills
 
-Standard Agent Skills using Pi's trusted-project discovery and the [Agent Skills specification](https://agentskills.io/specification). After trusting/reloading the repository in Pi, use `/skill:NAME`; otherwise read the corresponding file directly. No project plugin or executable extension is required.
+Skills own the repository's procedures, architecture decisions, research and dated evidence. `docs/` and explanatory code comments were removed; important details live in each skill's `references/` directory. Historical records retain their original commands/results, not current execution instructions.
 
-| Skill | Procedure |
+| Skill | Use |
 |---|---|
-| [nix-research](nix-research/SKILL.md) | Verify current upstream facts before dependency-sensitive edits |
-| [dendritic-nix](dendritic-nix/SKILL.md) | Plan/review structural refactors, class boundaries, shared values and discovery |
-| [add-host](add-host/SKILL.md) | Add explicit identity, track, composition and commissioning facts |
-| [add-feature](add-feature/SKILL.md) | Extend cohesive NixOS/Home Manager capabilities |
-| [storage-disko](storage-disko/SKILL.md) | Review OS disk changes without endangering NAS data |
-| [impermanence](impermanence/SKILL.md) | Decide, declare and migrate durable state |
-| [deploy](deploy/SKILL.md) | Preflight, deploy deliberately and preserve recovery |
-| [update-inputs](update-inputs/SKILL.md) | Separate stable, unstable and full dependency updates |
-| [validate](validate/SKILL.md) | Choose documentation-only checks or full canonical non-destructive validation |
+| [fleet-operations](fleet-operations/SKILL.md) | Authoritative dated host status, hardware/credential/boot evidence and operation scope |
+| [devenv](devenv/SKILL.md) | Native toolbox, existing scripts and synchronized locks; no replacement tasks yet |
+| [validate](validate/SKILL.md) | Ordered manual checks, ciphertext preflight and validation limits |
+| [nix-research](nix-research/SKILL.md) | Pinned upstream API/release evidence before dependency-sensitive edits |
+| [dendritic-nix](dendritic-nix/SKILL.md) | Architecture/refactors, class boundaries, retained ADRs and implementation rationale |
+| [add-host](add-host/SKILL.md) | Explicit host identity/track/composition and genuine commissioning |
+| [add-feature](add-feature/SKILL.md) | Cohesive concern-owned NixOS/Home Manager changes |
+| [storage-disko](storage-disko/SKILL.md) | OS-disk design, reinstall runbook and NAS exclusion |
+| [impermanence](impermanence/SKILL.md) | Durable state, ownership and explicitly authorized migration |
+| [desktop](desktop/SKILL.md) | ThinkPad desktop, authentication, displays, Wi-Fi and Pi policy |
+| [tailscale](tailscale/SKILL.md) | Staged clients, guarded policy/state/credential operations and recovery |
+| [deploy](deploy/SKILL.md) | Manual single-host preflight, activation boundaries and recovery |
+| [update-inputs](update-inputs/SKILL.md) | Scoped stable, unstable or full dependency updates |
 
-For a large refactor, start with [dendritic-nix](dendritic-nix/SKILL.md): record the baseline, move one concern at a time and compare behavior before expanding the change. Use `add-feature`/`add-host` for implementation and `validate` for the final candidate. The [reference comparison](../../docs/research.md#dendritic-skill-alignment--2026-09-11) explains why this repository retains its own importer and safety-gated fleet schema.
+Standard [Agent Skills](https://agentskills.io/specification): Pi discovers `.agents/skills/<name>/SKILL.md` after project trust. Use `/skill:NAME` after trust/reload, or read the file directly; no project extension is required.
 
-All commands assume the **repository root**, not the skill directory. Use [native devenv and its locked bootstrap](../../docs/development.md); `justfile` and the old devShell are removed. Resolve repository references from these skill directories via `../../..`. Each procedure remains subordinate to the current user's authorization and `AGENTS.md` safety rules. Their formatting/fleet-check/build steps apply to substantive implementation changes or deployment preflight; prose-only edits to any procedure instead use [documentation-only validation](../../docs/validation.md#documentation-only-changes).
+Commands run from the **repository root**, not the skill directory. Resolve file references relative to their containing skill/reference file. Start with [AGENTS.md](../../AGENTS.md); all procedures remain subordinate to current operation authorization. Prose-only changes use the [scoped documentation checks](validate/SKILL.md#documentation-only-changes), not fleet builds.

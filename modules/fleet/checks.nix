@@ -7,7 +7,6 @@
 }:
 let
   fixtureFor = config.fleet.validation.fixtureFor;
-  # Independent policy oracle: changing host metadata alone must fail validation.
   expectedTracks = config.fleet.validation.expectedTracks;
   tracks = {
     stable = inputs.nixpkgs-stable;
@@ -16,8 +15,6 @@ let
   report = config.flake.fleet;
   lock = builtins.fromJSON (builtins.readFile (inputs.self + "/flake.lock"));
   lockedInput = name: lock.nodes.${lock.nodes.root.inputs.${name}};
-  # Apply the real host module's type to an empty, evaluation-only definition.
-  # This isolates class checking from unrelated deployment option declarations.
   classFixture =
     (options.fleet.hosts.type.getSubOptions [ ]).module.type.merge
       [ ]
@@ -149,8 +146,6 @@ let
       );
       host
       // {
-        # Force real per-host packages, /etc/services and initrd even before the
-        # final toplevel is permitted. These are evaluations, not real builds.
         components = {
           systemPath = system.config.system.path.drvPath;
           etc = system.config.system.build.etc.drvPath;
@@ -174,8 +169,6 @@ let
       fixture = fixtureFor host.track "uefi" host.capabilities;
     in
     {
-      # Also check the exact shipped subsets: a combined fixture alone can mask
-      # a missing dependency by supplying another capability's configuration.
       toplevel = fixture.config.system.build.toplevel.drvPath;
     }
   ) config.fleet.hosts;

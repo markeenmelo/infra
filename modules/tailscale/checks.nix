@@ -11,7 +11,6 @@ let
     fixture.extendModules {
       modules = [
         ({ lib, ... }: {
-          # Synthetic evaluation-only identity, never an exported node/install target.
           networking.hostName = lib.mkForce "thinkpad";
           fleet.tailscale = {
             enable = true;
@@ -28,10 +27,6 @@ let
     track: fixture:
     let
       cfg = fixture.config;
-      # Assertion failures are data on config.assertions; the NixOS toplevel
-      # throws exactly when one is false. Force only the assertion booleans:
-      # upstream messages may legitimately throw while their assertion passes,
-      # because the toplevel renders failed messages only.
       rejected =
         extra:
         let
@@ -44,7 +39,6 @@ let
           {
             fleet.tailscale.enrollmentMode = lib.mkForce "auth-key";
             fleet.tailscale.authKeySecret = "TEST-ONLY-tailscale";
-            # Shape/key-selection fixture, deliberately NOT an actual auth key.
             sops.secrets.TEST-ONLY-tailscale = {
               sopsFile = ../../secrets/hosts/thinkpad.yaml;
               key = "wifi-psk";

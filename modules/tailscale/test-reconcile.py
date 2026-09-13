@@ -1,4 +1,3 @@
-"""Synthetic CLI tests: never connect to tailscaled or read an auth key."""
 import json
 import os
 from pathlib import Path

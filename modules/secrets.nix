@@ -30,14 +30,8 @@
       config = {
         sops.age = {
           keyFile = cfg.ageKeyFile;
-          # Not redundant: the upstream default derives this from the host's
-          # ed25519 SSH key; fleet policy requires the dedicated age identity.
-          # Validation, key generation and GPG import stay at their safe
-          # upstream defaults, enforced by the assertions below.
           sshKeyPaths = [ ];
         };
-        # Direct /persist contents survive already; no late bind, key generation
-        # or permission-changing migration is performed by this capability.
         fleet.bootstrap.missing =
           lib.optional (
             cfg.ageKeyFile == null

@@ -32,7 +32,6 @@
             cp ${settings} "$PI_CODING_AGENT_DIR/settings.json"
             cp ${rtkConfig} "$XDG_CONFIG_HOME/rtk/config.toml"
             cd "$TMPDIR/work"
-            # Native Pi may write version output to stderr without a TTY.
             version=$(env -i HOME="$HOME" PATH=${pkgs.coreutils}/bin ${pkgs.pi-coding-agent}/bin/pi --version 2>&1)
             test "$version" = '${pkgs.pi-coding-agent.version}'
             ${pkgs.lib.getExe pkgs.nodejs} ${./assets/test-extensions.mjs} \

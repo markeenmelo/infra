@@ -1,44 +1,23 @@
 ---
 name: deploy
-description: Safely preflight and deploy selected commissioned hosts using locked deploy-rs, verified Nixpkgs tracks, explicit closure trust and preserved rollback and recovery mechanisms.
+description: Safely preflight selected commissioned hosts for locked deploy-rs with explicit closure trust, strict SSH, retained rollback and current operation authorization.
 ---
 
 # Deploy
 
-## Purpose / when
-
-Prepare or perform a deploy-rs activation. Reading this skill never authorizes remote contact; require current explicit approval before deployment, dry activation, reboot or any connectivity-changing command.
-
-## Prerequisites
-
-Read `../../../AGENTS.md`, `../../../modules/deployment.nix`, `../../../modules/fleet/ready.sh`, `../../../docs/hosts.md`, `../../../docs/operations.md#deployment-and-recovery` and the target's metadata. Read [current access and rollout status](../../../docs/hosts.md#current-status), not the initial root-only inventory: Racknerd's temporary non-root bootstrap is not declarative commissioning. Targets deny root SSH; a disabled Tailscale rollout must preserve backing state without requiring an active daemon. Verify the separately authorized access/routing/credential transition before activation. Servers opt into deploy-rs only after commissioning; thinkpad stays local-only. Require real commissioned NixOS, SSH account/endpoint/port, verified host key, working elevation, closure trust, backups and independent recovery access. Use `nix-research` after deploy-rs/Nix API changes and inspect the **locked** `deploy --help`.
+Read `../../../AGENTS.md`, `../../../modules/deployment.nix`, `../../../modules/fleet/ready.sh`, target metadata, [current host evidence](../fleet-operations/references/hosts.md#current-status) and [operations/recovery](references/operations.md#deployment-and-recovery). Reading this skill authorizes no remote contact.
 
 ## Procedure
 
-1. From repository root enter `devenv shell` (bootstrap: `nix run --no-update-lock-file .#devenv -- shell`). Confirm exactly which host/subset is intended and whether it is online. Desktop eligibility is `deployment.enable`, not an assumption that all fleet entries should receive every change.
-2. Run `devenv tasks run repo:check-full` before remote contact. Inspect `devenv tasks run repo:inventory`; compare the target's track/revision and actual `nixpkgsPath` with intended input. `validation.nix` independently enforces the host-track policy; never change the oracle merely to bypass an unexpected track.
-3. Run `bash modules/fleet/ready.sh HOST deploy`. Inspect `nix eval --json .#deploymentPlan | jq .`; resolve all placeholders. `deployment.sshUser` must be a configured non-root account with public keys, while `deployment.profileUser` remains root for system activation. Never enable SSH root login to bypass the non-root deployment assertion. Build with `devenv shell build HOST` if prebuilding is appropriate. Review SOPS identity custody/recipients/early decryption and signing keys separately via `../../../secrets/README.md`: pure checks do not decrypt or verify working credentials. Missing password bindings and unreviewed identities must continue to block commissioning.
-4. Confirm closure upload trust and elevation independently. `transport = "trusted-user"` is root-equivalent Nix access; `"signed"` needs pre-provisioned target public trust and an operator `LOCAL_KEY`. Interactive sudo/doas must work as configured. Never add global wheel trust, disable signature checks or store credentials in Git to get past a deployment failure.
-5. With authorization, verify SSH fingerprint/reachability and console access. Keep an existing session for sensitive changes. If offline, stop or deliberately choose an online subset; do not remove rollback safeguards or retry blindly.
-6. Execute only the selected approved scope. The single-host task is a deliberately disconnected live-operation exception: it reruns the full gate/readiness, requires signed transport, matching `LOCAL_KEY`, a foreground terminal, explicit mode and an exact public confirmation, then retains interactive sudo/signature checking/rollback:
-   ```sh
-   LOCAL_KEY=/private/path/to/racknerd-signing-key \
-     devenv --no-tui tasks run deploy:host --show-output \
-       --input host=racknerd \
-       --input mode=switch \
-       --input confirm=deploy:racknerd:switch
-   # All eligible nodes, only if that whole scope was authorized:
-   devenv shell deploy-fleet
-   ```
-   Use `mode=boot` plus matching confirmation only with a separately planned reboot. Never put signer paths, key contents or passwords in task inputs. Raw multi-target deploy remains operator-only and is inappropriate when hosts use distinct signers.
-7. Preserve automatic and magic rollback. `--dry-activate` still contacts/copies to the target. SSH changes should preserve old/new access in a staged migration. If unavoidable, a separately authorized console-controlled maintenance may use `--magic-rollback false`; never persist that override in defaults. Review upstream subset `--rollback-succeeded` behavior before intentionally changing it.
-8. Confirm activation, reachability, intended generation, service health and persistent mounts. A future reboot/hardware acceptance test needs its own maintenance plan. Do not confuse successful activation with data restore or verified bootability.
-9. If activation or confirmation fails, wait for rollback and inspect status via existing access/console. Stop on unexplained host-key change. If necessary and authorized, use console generation selection or `sudo nixos-rebuild switch --rollback`; application data may need separate recovery.
+1. Confirm exactly one target and `boot` or `switch` intent with the operator. Both servers use distinct off-target signing keys; ThinkPad remains unready/local-only. Current Bastion home removal requires boot-only activation and a separately planned reboot, not a forced live unmount.
+2. In the supported locked development shell, complete **all** [manual validation](../validate/SKILL.md) before target contact, including ciphertext checks before staging/evaluation. Inspect `.#fleet` and `.#deploymentPlan`; compare actual package source/revision with independent host policy. No readiness flag or oracle changes to get a pass.
+3. Run `bash modules/fleet/ready.sh HOST deploy` and build the commissioned target with `devenv shell build HOST`. The connection account must be configured, keyed and non-root; root remains the system activation user. Resolve all real credential, recovery and trust prerequisites via `../../../secrets/README.md`; pure checks do not decrypt.
+4. Verify signed transport and interactive sudo. `LOCAL_KEY` is the selected host's existing readable private signing-key **path**, never key contents, a task input or flake value. Privately derive its public key with `nix key convert-secret-to-public` and compare exact membership in that target's `nix.settings.trusted-public-keys`. Fail on mismatch. No blanket wheel trust, disabled signatures or passwordless sudo shortcut.
+5. With current authorization, verify the installed host fingerprint, independent console/old generation, free store/boot space, administrative login and elevation. Keep an existing session for sensitive changes. Stop on an offline machine or unexplained changed key.
+6. **The live task and fleet wrapper are removed; no replacement wrapper exists.** The retained `devenv shell deploy ...` only invokes locked deploy-rs, so it does not enforce steps 1–5. Construct/review the exact single-target invocation from locked `deploy --help` only after those steps. Preserve `--interactive`, `--checksigs`, `--no-update-lock-file`, the target's port and strict SSH/liveness options described in the reference; `--boot` only for the agreed boot-only mode. Use a private foreground terminal for signer access and sudo. Never treat successful raw CLI startup as completed preflight.
+7. Keep automatic/magic rollback enabled. Dry activation still contacts/copies to targets; it is not local validation. Stage access-changing migrations with old/new paths and a console, rather than disabling recovery or retrying blindly.
+8. After an authorized activation, verify intended generation, reachability, both reviewed administrator logins, sudo, units and persistent mounts. A planned reboot and runtime/backup acceptance remain separate. On failure, wait for rollback and inspect through existing access/console; recovery may require an authorized prior-generation selection and independent data restoration.
 
-## Completion criteria
+## Completion
 
-Report exact target(s), locked revisions, preflight results, activation/health results and remaining reboot/runtime checks. If unreachable or unauthorized, completion is a documented preflight/plan only, never a claimed deployment.
-
-## Common failures
-
-Wrong/unknown endpoint, expired credentials, missing runtime password hash, unsigned closure rejection, sudo/run0 incompatibility, offline desktop, confirmation timeout after SSH changes or service data migration breaking rollback. Consult research and operations; no disk formatting or secret bypass is a valid deployment repair.
+Report exact target/revisions, preflight and actual activation results, remaining runtime/reboot checks and authorization scope. If no operation was authorized, report a local preflight/plan only. No disk operation is a deployment repair.

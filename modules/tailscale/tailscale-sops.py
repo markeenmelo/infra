@@ -1,4 +1,3 @@
-"""Operator-only SOPS delivery into the guarded OpenTofu process, never Nix/tasks."""
 import json
 import os
 from pathlib import Path
@@ -27,8 +26,6 @@ def main():
     if any(os.environ.get(key) for key in ("TF_LOG", "TF_LOG_PATH", "TF_LOG_CORE", "TF_LOG_PROVIDER", "DEVENV_TRACE_TO")):
         raise SystemExit("Disable debug/tracing for this credential-bearing workflow.")
 
-    # Capture decryption diagnostics too: no plaintext, identity or SOPS error
-    # payload is sent to the terminal. JSON is data, never sourced shell code.
     try:
         result = subprocess.run(
             ["sops", "decrypt", "--output-type", "json", str(Path(sys.argv[1]).resolve())],
@@ -42,8 +39,6 @@ def main():
                    for value in secrets.values())):
         raise SystemExit("Expected exactly the three documented nonempty, single-line operator credentials.")
 
-    # All existing target, state, encryption, provider and apply-confirmation
-    # guards still run. Never make credentials task outputs or shell exports.
     wrapper = Path(__file__).with_name("tailscale-tofu.sh")
     try:
         os.execvpe("bash", ["bash", str(wrapper), sys.argv[2]], os.environ | secrets)

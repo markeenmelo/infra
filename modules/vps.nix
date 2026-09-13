@@ -22,9 +22,7 @@
         }
       ];
       systemd.services.fail2ban.unitConfig.RequiresMountsFor = [ "/var/lib/fail2ban" ];
-      # No HTTP(S) port is opened until a real reverse proxy is commissioned.
     };
   };
-  # Synthetic evaluation-only provider review, never an observed machine fact.
   fleet.validation.fixtureModules.vps = _: { fleet.vps.providerReviewed = true; };
 }

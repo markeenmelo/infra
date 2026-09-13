@@ -1,7 +1,5 @@
-# Synthetic, offline provider. Never authenticates to a real tailnet.
 mock_provider "tailscale" {}
 
-# The real public ID is read locally, but the provider remains fully mocked.
 run "policy_and_dns" {
   command = plan
   assert {

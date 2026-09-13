@@ -1,8 +1,6 @@
 { lib, ... }:
 let
   sharedPassword = ../../secrets/shared/marcos-password.yaml;
-  # Reviewed public policy only. The built check compares the actual YAML
-  # recipients; Nix never parses or decrypts password material.
   administratorKeys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJgH8hFXLCNPpNUWvohvn5y0S+KGtEIFs0gIj6ihV5PC"
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAYdnogT40vOG0eZn4guvWq33q6VANCYXEYsxOSIsVbc"
@@ -15,8 +13,6 @@ let
   ];
 in
 {
-  # Explicit shared account/password and two-key SSH policy; host identities
-  # remain distinct. Both reviewed administrator keys are allowed on every host.
   fleet.hosts = lib.genAttrs [ "thinkpad" "racknerd" "bastion" ] (_name: {
     module = { config, lib, ... }: {
       fleet = {
@@ -30,8 +26,6 @@ in
           lib.optional (!(lib.elem config.fleet.secrets.ageRecipient recipients))
             "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning.";
       };
-      # Missing identity/recipient means no secret declaration: access keeps
-      # the unactivated candidate account locked instead of inventing a key.
       sops.secrets =
         lib.mkIf
           (config.fleet.secrets.ageKeyFile != null && lib.elem config.fleet.secrets.ageRecipient recipients)

@@ -9,17 +9,12 @@
     }:
     {
       services = {
-        # Discover IPP/eSCL devices via mDNS: upstream opens UDP 5353 but
-        # does not publish local services. CUPS below stays localhost-only
-        # with no shared queues or CUPS firewall opening.
         avahi = {
           enable = true;
           nssmdns4 = true;
         };
         printing = {
           enable = true;
-          # cups-browsed is the only deliberate deviation from the local-only
-          # upstream defaults.
           browsed.enable = false;
         };
       };
@@ -33,12 +28,9 @@
           "lp"
         ];
       };
-      # Native CUPS owns queues/PPDs here; caches and job spool remain ephemeral.
       environment.persistence."/persist".directories = [ "/var/lib/cups" ];
     };
   flake.modules.homeManager.desktop = { pkgs, ... }: { home.packages = [ pkgs.simple-scan ]; };
-  # Endpoint recovered from the current printer configuration, not a discovered
-  # scanner URI or a certificate-verification claim. Verify after authorization.
   fleet.hosts.thinkpad.module = { lib, ... }: {
     hardware.printers = {
       ensureDefaultPrinter = "Epson_ET-3850";
@@ -53,9 +45,6 @@
       ];
     };
     systemd.services.ensure-printers = {
-      # `-m everywhere` queries the printer even when its queue already exists.
-      # Keep native provisioning explicit; ordinary boots use persisted CUPS
-      # queues/PPDs without needing the home network. Never retry it on rebuild.
       wantedBy = lib.mkForce [ ];
       restartIfChanged = false;
     };

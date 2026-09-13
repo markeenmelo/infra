@@ -3,8 +3,6 @@
     fleet.tailscale = {
       enrollmentMode = "auth-key";
       authKeySecret = "tailscale-auth-key";
-      # Operator-reviewed retained profile/permissions and recoverable backup;
-      # deleted control-plane node needs the newly supplied exact-tag key.
       stateReviewed = true;
       policyReviewed = true;
     };

@@ -9,12 +9,9 @@ terraform {
 }
 
 locals {
-  # Public operator-supplied identity, not proof of API access or live review.
   tailnet = jsondecode(file("${path.module}/tailnet.json")).id
 }
 
-# Authentication comes from narrowly scoped runtime provider environment
-# variables; no OAuth/API secret is a Terraform variable or Nix input.
 provider "tailscale" {
   tailnet = local.tailnet
 }
@@ -38,8 +35,6 @@ resource "tailscale_acl" "policy" {
   }
 }
 
-# Only MagicDNS is owned here. Existing global/split resolvers and search
-# domains are deliberately untouched until their requirements are reviewed.
 resource "tailscale_dns_preferences" "tailnet" {
   magic_dns = true
   lifecycle {

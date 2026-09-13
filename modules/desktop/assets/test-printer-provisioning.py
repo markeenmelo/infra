@@ -1,5 +1,3 @@
-"""Check the native unit/script with mocked commands; never contact CUPS or a printer."""
-
 import json
 from pathlib import Path
 import shlex
@@ -35,9 +33,6 @@ with tempfile.TemporaryDirectory(prefix="printer-provisioning-test-") as directo
         mock = root / command
         mock.write_text(f"#!{sys.executable}\n" + MOCK)
         mock.chmod(0o755)
-    # Preserve the upstream generated shell (including set -e), changing only
-    # the absolute lpadmin path to a fixture command. PATH contains no real
-    # systemctl, lpadmin or network client.
     fixture = root / "provision"
     fixture.write_text(script.replace(lpadmin, shlex.quote(str(root / "lpadmin"))))
     fixture.chmod(0o755)

@@ -1,8 +1,5 @@
 { config, lib, ... }:
 let
-  # Evaluation-only campus profile/manifest branch, never an exported host.
-  # Key selection alone can pass on encrypted markers; actual credential/MAC
-  # verification is a separate private operation, not performed by checks.
   senecaTemplate =
     (config.flake.fleetConfigurations.thinkpad.extendModules {
       modules = [
@@ -80,7 +77,6 @@ in
           ${./assets/wifi-environment.py} ${lib.getLib pkgs.glib}/lib/libglib-2.0.so ${lib.getExe pkgs.envsubst}
         touch "$out"
       '';
-      # Ciphertext shape/key selection only, never credential/decryption acceptance.
       thinkpad-wifi-manifest =
         config.flake.fleetConfigurations.thinkpad.config.system.build.sops-nix-manifest;
       senecanet-template-manifest = senecaTemplate.system.build.sops-nix-manifest;

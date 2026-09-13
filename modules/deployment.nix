@@ -9,8 +9,6 @@ let
   hosts = config.fleet.hosts;
   deployConfig = config.flake.deploy;
   nixosModules = config.flake.modules.nixos;
-  # Scoped overlay: never installed into a host's nixpkgs.overlays. The activation
-  # helper AND its executable are built with the target's own pkgs, not another track.
   deploymentPkgs = pkgs: pkgs.extend inputs.deploy-rs.overlays.default;
   deployLib = pkgs: (deploymentPkgs pkgs).deploy-rs.lib;
   mkNode = name: host: {

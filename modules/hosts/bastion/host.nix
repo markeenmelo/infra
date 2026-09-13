@@ -3,8 +3,6 @@
   fleet.hosts.bastion = {
     system = "x86_64-linux";
     track = "stable";
-    # Pre-install commissioning facts reviewed 2026-09-12; boot acceptance is
-    # separately recorded in docs/hosts.md. No Racknerd/ThinkPad approval.
     ready = true;
     capabilities = [
       "bastion-disko"
@@ -24,17 +22,13 @@
         "StrictHostKeyChecking=yes"
       ];
     };
-    # Server-only baseline; administration and deployment live off-host.
     module = {
-      # Live-USB preflight 2026-09-12: verified DHCP MAC/routes/console without VPN.
       fleet.installation.networkReviewed = true;
       fleet.secrets = {
         ageKeyFile = "/persist/var/lib/sops-nix/key.txt";
         ageRecipient = "age1su25ytldd4uye705w6jllwzkmpdkprruq5mzpcrth0e9zcmcyewspeck6q";
-        # Protected recovery plus actual root-only early-delivery RAMFS rehearsal.
         identityReviewed = true;
       };
-      # Public closure trust only. The operator's signing identity stays off-host.
       nix.settings.trusted-public-keys = [
         "bastion-deploy-20260912:FYekV+z8HC3dmaBay30ThuDpgGWrWoLolsSRNs+2dJs="
       ];

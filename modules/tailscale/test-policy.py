@@ -1,9 +1,3 @@
-"""Independent exact policy oracle, not an implementation of Tailscale's engine.
-
-JSON is a valid HuJSON subset; intentionally keep the live policy in that subset
-so canonical checks can reject duplicate keys and unreviewed policy sections.
-Family identifiers are synthetic test inputs only, never live policy subjects.
-"""
 import copy
 import json
 from pathlib import Path
@@ -26,7 +20,6 @@ def check(policy):
     assert policy["acls"] == policy["ssh"] == []
     assert policy["autoApprovers"] == {}
     assert policy["grants"] == [{"src": [tags[0]], "dst": tags[1:], "ip": ["tcp:22", "icmp:*"]}]
-    # These are the exact native test intentions, independently enumerated.
     expected = [
         {"src": tags[0], "proto": "tcp", "accept": [f"{t}:22" for t in tags[1:]],
          "deny": [f"{tags[1]}:80", f"{tags[2]}:443"]},

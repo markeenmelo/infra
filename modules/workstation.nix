@@ -24,8 +24,6 @@
         };
       };
       config = {
-        # A workstation can be deliberately headless; desktop/gaming software
-        # is not a prerequisite for this baseline's commissioning.
         fleet.bootstrap.missing =
           lib.optional (!config.fleet.workstation.usersReviewed)
             "Configure interactive users and migrate credentials; acknowledge fleet.workstation.usersReviewed.";
@@ -43,8 +41,6 @@
         ];
         networking.networkmanager.enable = true;
         environment.systemPackages = [ pkgs.git ];
-        # Deliberate user-data boundary: games, saves, documents and credentials survive.
-        # No claim that /home is minimal per-application persistence or encrypted.
         environment.persistence."/persist".directories =
           lib.optional (config.fleet.workstation.homePersistence == "bind") "/home"
           ++ [
@@ -57,7 +53,6 @@
       };
     };
 
-  # Synthetic evaluation-only review, never a host commissioning fact.
   fleet.validation.fixtureModules.workstation = _: { fleet.workstation.usersReviewed = true; };
   fleet.validation.hostChecks.workstation =
     {

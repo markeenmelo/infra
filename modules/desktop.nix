@@ -3,8 +3,6 @@ let
   desktopHome = config.flake.modules.homeManager.desktop;
 in
 {
-  # One deliberately selected desktop bundle. Its files own concerns across
-  # classes; a new filename does not need another named capability/import list.
   flake.modules.nixos.desktop =
     {
       config,
@@ -13,9 +11,6 @@ in
       ...
     }:
     {
-      # modulesPath is supplied before module collection by the selected NixOS
-      # evaluator. Guard the actual track here, including indirect imports, rather
-      # than teaching fleet.nix or the fixture constructor about desktop names.
       imports =
         assert lib.assertMsg (
           toString modulesPath == "${inputs.nixpkgs}/nixos/modules"
@@ -49,11 +44,7 @@ in
     };
 
   fleet.hosts.thinkpad.module = {
-    # Pre-activation review, 2026-09-10: greeter/UWSM, password-first PAM,
-    # locking, portals, audio and mobile display. Runtime acceptance remains
-    # separately recorded in docs/hosts.md; this refactor changes no approval.
     fleet.desktop.reviewed = true;
-    # Deliberate initial compatibility baseline for this home, not its input version.
     home-manager.users.marcos.home.stateVersion = "26.05";
   };
 }

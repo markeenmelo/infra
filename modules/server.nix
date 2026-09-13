@@ -3,12 +3,9 @@
   flake.modules.nixos.server = {
     imports = [ config.flake.modules.nixos.ssh ];
     fleet.logging.persistent = true;
-    # Minimal server profile: no default editor or administration workspace.
     programs.nano.enable = false;
     networking.nftables.enable = true;
     systemd.coredump.enable = false;
-    # Conservative hardening, without a different kernel/profile that could
-    # break ZFS, virtualization, hardware drivers or console recovery.
     boot.kernel.sysctl = {
       "kernel.kptr_restrict" = 2;
       "kernel.dmesg_restrict" = 1;

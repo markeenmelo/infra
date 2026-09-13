@@ -26,7 +26,6 @@ read_lid_state() {
     fi
   done
 
-  # No lid switch means the internal panel must stay enabled.
   printf 'open\n'
 }
 
@@ -51,8 +50,6 @@ external_rows() {
   local connector name status active_only=${2:-false}
   local -a connected=()
 
-  # Hyprland 0.56 has no virtual flag in monitor JSON. Only connected DRM
-  # connectors may replace the panel, never FALLBACK or named headless outputs.
   for connector in /sys/class/drm/card*-*/status; do
     IFS= read -r status <"$connector"
     [[ "$status" == connected ]] || continue
@@ -109,8 +106,6 @@ apply_rule() {
   if [[ "$dry_run" == true ]]; then
     printf '%s\n' "$rule"
   else
-    # Lua IPC reports rejected operations on stdout even when hyprctl exits 0.
-    # Only the exact success token is acceptance; transport errors propagate.
     reply=$(hyprctl eval "$rule")
     if [[ "$reply" != ok ]]; then
       printf 'fleet-output-policy: monitor update rejected: %s\n' "$reply" >&2
@@ -126,8 +121,6 @@ sync_outputs_unlocked() {
   local external_width=0
   local bitdepth cm hdr height lid mode name rows width
 
-  # Decode the complete snapshot before any modeset; process substitution hides
-  # producer failures. Keep these calls out of conditionals so errexit applies.
   rows=$(external_rows "$monitors")
   lid=$(read_lid_state)
 
@@ -153,8 +146,6 @@ sync_outputs_unlocked() {
 
   if ((external_count > 0)) && [[ "$lid" == closed ]]; then
     if [[ "$dry_run" == false ]]; then
-      # hl.monitor only queues a rule. Confirm a usable physical output in a
-      # fresh active snapshot, not command acceptance or advertised modes.
       sleep 0.2
       hyprctl monitors -j >"$monitors"
       rows=$(external_rows "$monitors" true)
@@ -198,16 +189,10 @@ watch_outputs() {
   : "${HYPRLAND_INSTANCE_SIGNATURE:?HYPRLAND_INSTANCE_SIGNATURE is required}"
   socket="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
-  # Subscribe before waiting so monitor events are buffered. The Hyprland start
-  # callback can run before initial DRM/output publication; without this delay,
-  # its later static monitor rules can remain active until another event occurs.
-  # Socat opens the socket BEFORE exec (nofork). Its fixed local marker gates
-  # all mutations; pipefail preserves connection/read failures without reconnect.
   socat -u "UNIX-CONNECT:$socket" 'SYSTEM:echo subscribed; exec cat,nofork' | {
     if IFS= read -r event; then
       [[ "$event" == subscribed ]] || return 1
     else
-      # The producer failed before exec; leave its status to pipefail.
       return 0
     fi
     sleep 0.5
@@ -216,7 +201,6 @@ watch_outputs() {
     while IFS= read -r event; do
       case "${event%%>>*}" in
         monitoradded | monitorremoved | configreloaded)
-          # Let Hyprland finish publishing the new output set before querying it.
           sleep 0.2
           sync_outputs false
           ;;
@@ -227,7 +211,6 @@ watch_outputs() {
 
 case "${1:-}" in
   sync)
-    # The kernel switch state can settle just after the compositor bind fires.
     sleep 0.1
     sync_outputs false
     ;;

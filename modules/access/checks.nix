@@ -10,10 +10,6 @@ let
     track: fixture:
     let
       cfg = fixture.config;
-      # Assertion failures are data on config.assertions; the NixOS toplevel
-      # throws exactly when one is false. Force only the assertion booleans:
-      # upstream messages may legitimately throw while their assertion passes,
-      # because the toplevel renders failed messages only.
       rejected =
         module:
         let
@@ -53,7 +49,6 @@ let
       missing.users.users.fixture-admin.hashedPassword == "!"
       && missing.users.users.fixture-admin.hashedPasswordFile == null
       && lib.elem "Supply a declared SOPS password-hash secret in fleet.access.passwordSecrets.fixture-admin." missing.fleet.bootstrap.missing
-      # Force only the assertion booleans; the credential blocker must fail them.
       && (
         let
           forced = builtins.tryEval (lib.all (a: a.assertion) missing.assertions);
@@ -130,7 +125,6 @@ in
           )
       )
     ) "${name}: shared SOPS password/identity policy regressed or unrelated secrets enabled";
-    # Evaluation-only bad metadata; never a real recipient or commissioning flag.
     assert lib.all
       (
         recipient:
@@ -153,7 +147,6 @@ in
       ];
     true;
   flake.validation.sops = sopsReport;
-  # Test-only identity has no matching key and cannot decrypt shipped ciphertext.
   fleet.validation.fixtureModules.access = _: {
     fleet = {
       access = {

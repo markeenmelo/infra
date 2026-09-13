@@ -3,14 +3,8 @@ let
   limine = config.flake.modules.nixos.limine;
 in
 {
-  # Authorized 2026-09-12: sole 100 GiB VirtIO disk, no serial/WWN/by-id.
-  # Both canonical PCI and legacy virtio-pci aliases resolve to /dev/vda.
-  # This identifies the VM attachment slot, not a unique physical disk:
-  # recheck VM identity, topology, size and current use before every install.
   fleet.hosts.racknerd.module.fleet.installation = {
     osDevice = "/dev/disk/by-path/pci-0000:00:04.0";
-    # Exact disk/reset approved; recovered fresh identities and native early
-    # delivery tested. Ten kernel/initrd pairs total 409,738,090 bytes (< 2 GiB).
     storageReviewed = true;
   };
   flake.modules.nixos.racknerd-disko =
@@ -107,7 +101,6 @@ in
         enable = true;
         efiSupport = false;
         biosSupport = true;
-        # Use the same reviewed whole-disk identity for formatting and BIOS.
         biosDevice = device;
         partitionIndex = 1;
       };

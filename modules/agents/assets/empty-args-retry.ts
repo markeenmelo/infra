@@ -1,32 +1,3 @@
-// Retry provider responses whose tool-call arguments arrive empty.
-//
-// The ThinkPad session analysis recorded in PR #8 (2026-09-12) reports
-// empty `edit` arguments on zai's glm-5.3/glm-5.3-flash. Upstream pi#5194
-// reports the same misleading schema diagnostic, but does not establish a
-// GLM-specific root cause. See docs/research.md's dated retry-contract entry;
-// absence from the sampled flat-schema/provider calls is not a guarantee.
-//
-// pi-tool-repair deliberately cannot handle this class: every
-// validate-then-repair rule needs present (but malformed) fields, and `{}`
-// leaves nothing to repair. This extension instead converts the whole
-// response into a transient provider error (stopReason "error" plus a
-// descriptive errorMessage), which Pi's built-in agent retry (retry.enabled,
-// retry.maxRetries, default 3 retries) re-issues automatically. All toolCall
-// blocks are stripped from the returned message so a retried turn never
-// leaves unmatched calls in the persisted history (the failure spiral of
-// earendil-works/pi#5921).
-//
-// The errorMessage phrasing is load-bearing: Pi 0.85.1's
-// isRetryableAssistantError checks RETRYABLE_PROVIDER_ERROR_PATTERN after
-// excluding quota/billing errors. Our "provider returned error" prefix
-// matches that pattern; test-extensions.mjs calls Pi's actual classifier.
-// Recheck classification and message_end/retry ordering on Pi upgrades.
-//
-// Deliberately model-agnostic and schema-directed: a call with zero
-// arguments against an active tool that declares required properties can
-// never execute on any provider, so a bounded retry is always preferable to
-// a doomed tool error. Calls for unknown/inactive tools or tools without
-// required properties are left for Pi's own handling.
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 
 type AssistantMessage = {
@@ -57,9 +28,6 @@ const hasEmptyArguments = (call: Record<string, unknown>, required: Map<string, 
   return !isRecord(args) || Object.keys(args).length === 0
 }
 
-// Pure transform, exported for the offline extension checks: converts an
-// assistant message that contains at least one empty-arguments tool call
-// into a retryable error message with every toolCall block removed.
 export function retryEmptyArguments(
   message: AssistantMessage,
   tools: readonly ToolLike[],

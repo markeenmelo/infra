@@ -49,7 +49,6 @@ let
         partition = changed {
           fleet.installation.osDevice = lib.mkForce "/dev/disk/by-id/TEST-ONLY-part1";
         };
-        # Explicitly synthetic slot: never an install/deploy target or host fact.
         pciDevice = "/dev/disk/by-path/pci-TEST-ONLY-NOT-A-REAL-DISK";
         pci = changed { fleet.installation.osDevice = lib.mkForce pciDevice; };
         pciPartition = changed {
@@ -173,9 +172,6 @@ let
           pci.config.fleet.bootstrap.missing == [ ]
           && lib.all (a: a.assertion) pci.config.assertions
           && (builtins.tryEval pci.config.system.build.toplevel.drvPath).success
-          # Only native disk scripts are positive install outputs. Upstream
-          # VM/image variants redirect devices/change access and may correctly
-          # fail our guards; every alias retains the negative coverage above.
           && lib.all (script: (builtins.tryEval pci.config.system.build.${script}.drvPath).success) (
             builtins.attrNames (pci.config.disko.devices._scripts { inherit (pci) pkgs; })
           )
@@ -210,7 +206,6 @@ in
       cfg = system.config;
     in
     assert lib.assertMsg (
-      # Independent commissioning oracle: both servers have fresh reviews.
       host.ready == (name != "thinkpad")
       && cfg.fleet.installation.storageReviewed == (name != "thinkpad")
       && host.storageMode == "provision"
@@ -266,7 +261,6 @@ in
   fleet.validation.fixtureModules =
     (lib.genAttrs (map (name: "${name}-disko") hosts) (
       _: _: {
-        # Synthetic evaluation only: never imported into fleet.hosts.
         fleet.installation = {
           osDevice = "/dev/disk/by-id/TEST-ONLY-NOT-A-REAL-DISK";
           storageReviewed = true;

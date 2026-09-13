@@ -85,7 +85,6 @@ in
         "editors"
         "tailscale"
       ];
-      # Explicitly synthetic EVALUATION fixtures, never fleet/install/deploy targets.
       fixtureModules.base = _: { lib, pkgs, ... }: {
         nixpkgs.hostPlatform = "x86_64-linux";
         networking.hostName = "evaluation-fixture";
@@ -106,8 +105,6 @@ in
             (tests.fixtureModules.base bootMode)
           ]
           ++ map (name: config.flake.modules.nixos.${name}) capabilities
-          # Only the requested capabilities get facts. Importing every fixture
-          # contribution would hide missing dependencies in exact-subset tests.
           ++ map (name: (tests.fixtureModules.${name} or (_: { })) bootMode) capabilities;
         };
       fixtures = lib.genAttrs (builtins.attrNames tracks) (
@@ -116,8 +113,6 @@ in
     };
 
     perSystem = { config, pkgs, ... }: {
-      # Independent coverage inventory: deleting an owner must not silently turn
-      # a smaller aggregate into a successful validation result.
       checks.fleet-evaluation =
         assert lib.assertMsg (
           builtins.attrNames reports == [
@@ -157,8 +152,6 @@ in
             "wifi-secret-environment"
           ]
         ) "A built check is missing; review the independent check inventory.";
-        # Discard ONLY metadata context after forcing the reports. Fixtures are
-        # evaluated, not built as system closures or exported as install targets.
         pkgs.writeText "fleet-evaluation.json" (
           builtins.unsafeDiscardStringContext (builtins.toJSON reports)
         );

@@ -1,6 +1,5 @@
 { lib, ... }:
 let
-  # Observed networkd DHCP policy, not static addressing guessed from SSH endpoints.
   uplinks = {
     racknerd = {
       mac = "00:16:3c:ec:fa:6f";
@@ -33,8 +32,6 @@ in
         };
         linkConfig.RequiredForOnline = "routable";
       };
-      # No VPN. networkReviewed stays false until access works without the
-      # existing Tailscale sessions/routes and provider/LAN recovery is checked.
     };
   }) uplinks;
 }

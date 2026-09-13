@@ -6,8 +6,6 @@
 }:
 let
   fixtureFor = config.fleet.validation.fixtureFor;
-  # Force import collection, not a toplevel that can fail on unrelated missing
-  # options/facts or native stable API differences. Test both sides of the guard.
   desktopImports =
     track:
     (lib.evalModules {
@@ -34,10 +32,6 @@ let
     let
       cfg = fixture.config;
       home = cfg.home-manager.users.fixture-admin;
-      # Assertion failures are data on config.assertions; the NixOS toplevel
-      # throws exactly when one is false. Force only the assertion booleans:
-      # upstream messages may legitimately throw while their assertion passes,
-      # because the toplevel renders failed messages only.
       rejected =
         module:
         let
@@ -178,12 +172,9 @@ let
       export XDG_CONFIG_HOME="$HOME/.config"
       mkdir -p "$HOME" "$XDG_RUNTIME_DIR"
       chmod 700 "$XDG_RUNTIME_DIR"
-      # This upstream mode parses the config without starting a compositor.
       ${lib.getExe cfg.programs.hyprland.package} --verify-config --config ${
         home.xdg.configFile."hypr/hyprland.lua".source
       }
-      # Native HM validation is retained, plus a stricter warning gate: upstream
-      # exits zero even for ignored/obsolete settings. Neither starts a session.
       ${lib.getExe system.pkgs.noctalia} config validate ${
         home.xdg.configFile."noctalia/config.toml".source
       } > noctalia.log 2>&1
@@ -204,7 +195,7 @@ let
       }", "rb") as stream:
           greeter = tomllib.load(stream)
       assert greeter["session"]["default"] == "Hyprland (UWSM)"
-      assert greeter["auth"]["allow_empty_password"] is True  # UI submission only, not PAM nullok.
+      assert greeter["auth"]["allow_empty_password"] is True
       for filename in ["${home.xdg.configFile."zed/settings.json".source}", "${
         home.home.file."${home.programs.pi-coding-agent.configDir}/settings.json".source
       }"]:
@@ -214,14 +205,11 @@ let
       grep -qx 'Hidden=true' ${home.xdg.configFile.autostart.source}/org.kde.kdeconnect.daemon.desktop
       test -x ${browser}/bin/zen
       test -s ${browser}/share/applications/zen.desktop
-      # The sandbox has no system fontconfig file; use the package's supplied
-      # config for this direct TTF inspection, not the machine's /etc.
       export FONTCONFIG_FILE=${system.pkgs.fontconfig.out}/etc/fonts/fonts.conf
       find ${system.pkgs.nerd-fonts.jetbrains-mono} -iname '*Regular.ttf' \
         -exec ${lib.getExe' system.pkgs.fontconfig "fc-scan"} --format '%{family}\n' {} + > font-families
       grep -Eq '^JetBrainsMono Nerd Font(,|$)' font-families
       ${lib.optionalString cfg.programs.nh.enable ''
-        # Help/version only: no rebuild, activation, target contact or cleanup.
         ${lib.getExe cfg.programs.nh.package} --version
         ${lib.getExe cfg.programs.nh.package} os build --help > /dev/null
       ''}

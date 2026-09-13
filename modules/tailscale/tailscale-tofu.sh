@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Operator-only entry point. Never called by shell entry, checks or rebuilding.
 set -euo pipefail
 set +x
 umask 077
@@ -28,8 +27,6 @@ state=$(realpath -m -- "$TAILSCALE_STATE_DIR")
   || fail 'Encryption overrides and debug logging are forbidden for this credential-bearing workflow.'
 [[ ${TF_WORKSPACE:-default} == default ]] || fail 'Use one directory per tailnet, not workspaces.'
 [[ -z ${TF_REATTACH_PROVIDERS:-} ]] || fail 'TF_REATTACH_PROVIDERS overrides are forbidden; use the Nix-pinned provider.'
-# Ignore saved workspace selection and all home/XDG CLI provider overrides.
-# withPlugins supplies its own Nix mirror independently of the CLI config.
 export TF_WORKSPACE=default TF_CLI_CONFIG_FILE=/dev/null
 for variable in ${!TF_CLI_ARGS@}; do
   [[ -z ${!variable} ]] || fail 'Unset TF_CLI_ARGS overrides; locking and explicit application must remain enabled.'
@@ -47,8 +44,6 @@ else
     || fail 'An unbound/nonempty state directory requires manual recovery review.'
   printf '%s\n' "$TAILSCALE_TAILNET" > "$state/tailnet-id"
 fi
-# Auto-loaded files take precedence over environment variables. Do not let an
-# ignored local file silently redirect the confirmed tailnet/backend or crypto.
 [[ -z $(find "$root/tofu/tailscale" -maxdepth 1 \( -name '*.tfvars' -o -name '*.tfvars.json' -o -name '*override.tf' -o -name '*override.tf.json' \) -print -quit) ]] \
   || fail 'Remove/review auto-loaded variable or override files; this workflow uses runtime environment inputs only.'
 export TF_VAR_tailnet="$TAILSCALE_TAILNET" TF_VAR_state_directory="$state" TF_DATA_DIR="$state/provider-data"
@@ -59,12 +54,9 @@ case "$1" in
   import-policy) tofu import -input=false -lock-timeout=60s tailscale_acl.policy acl ;;
   import-dns) tofu import -input=false -lock-timeout=60s tailscale_dns_preferences.tailnet dns_preferences ;;
   verify)
-    # Read live resources without saving or replacing the retained apply plan.
-    # Preserve native exit codes: 0 = no changes, 2 = drift, 1 = error.
     tofu plan -input=false -lock-timeout=60s -detailed-exitcode
     ;;
   plan)
-    # Never leave an older plan available when a new plan attempt fails.
     [[ ! -e "$state/change.tfplan" ]] || fail 'A saved plan already exists. Review/archive it outside Git before creating another.'
     tofu plan -input=false -lock-timeout=60s -out="$state/change.tfplan"
     ;;

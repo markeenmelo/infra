@@ -1,6 +1,5 @@
 { config, ... }:
 let
-  # Verified ThinkPad panel facts, shared by the static rule and runtime policy.
   internal = {
     output = "eDP-1";
     mode = "1920x1200@60.003";
@@ -36,8 +35,6 @@ in
       in
       {
         wayland.windowManager.hyprland.settings = {
-          # Chimei Innolux 0x143F, observed locally 2026-09-09. The runtime
-          # policy keeps this exact safe rule when no external is present.
           monitor = lib.mkAfter [
             {
               inherit (internal) output mode;
@@ -78,10 +75,6 @@ in
           ];
         };
       };
-    # Read-only live/EDID review on 2026-09-10 confirmed the Samsung Odyssey's
-    # preferred 5120x1440 mode, PQ/BT.2020 HDR metadata and 10-bit capability.
-    # The generic policy still checks each connected EDID before enabling HDR,
-    # arranges externals above eDP-1 and never assumes a cardN/PRIME/eGPU path.
   };
   perSystem.checks = {
     thinkpad-output-policy =
