@@ -60,20 +60,20 @@ devenv shell ready thinkpad
 nh os build --hostname thinkpad --no-update-lock-file
 ```
 
-This selects the commissioned ThinkPad output. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
+**Currently blocked:** the fresh-install branch has no commissioned ThinkPad output. Do not use this build/activation workflow over its running encrypted disk. After separate fresh commissioning, this selects the ThinkPad output. Outstanding maintenance/runtime acceptance is an operator requirement, not an additional enforced nh build gate. Do not bypass validation or input review with helper flags. `nh os switch`, `test`, `boot`, remote target/build options and `nh clean` require their own operation authorization. Smoke tests run only `nh --version` and `nh os build --help`, not rebuilds or activation.
 
 ## Deployment and recovery
 
-### Current remote deployment status — 2026-09-11
+### Current remote deployment status — 2026-09-13
 
-See [authoritative current status](hosts.md#current-status) and [the dated deferral](hosts.md#deferred-remote-host-deployment--2026-09-11). Treat `ready`/evaluation records as configuration gates, not successful deployment or boot evidence. Any reinstall requires a separately reviewed and explicitly authorized fresh-install plan; no reinstall or storage action is part of validation.
+Both servers have fresh-install/two-boot acceptance and enabled signed deployment outputs; the later minimal-server candidate is not activated. See [authoritative current status](hosts.md#current-status). ThinkPad remains unready/local-only and must not receive this fresh layout over its running encrypted installation. The reviewed servers expose disko plans, but **do not run disko or nixos-anywhere for this configuration update**.
 
-All three hosts are already installed; follow the [baseline transition checklist](hosts.md) before commissioning. Their disko provisioning outputs are disabled, including `disk-plan`; [bootstrap's installation section](bootstrap.md#storage-and-installation) is fresh-install-only. deploy-rs assumes NixOS, reachable non-root SSH, working elevation and closure trust already exist. Consult current access/rollout evidence before planning a staged transition; a disabled Tailscale candidate preserves backing state, not an active daemon. Validate each host's access, closure trust and routing/recovery state before activation.
+The operator will deploy with deploy-rs themselves. It assumes reachable non-root SSH, working password sudo and existing closure trust. Validate host identity, access, space and console recovery before activation. No remote operation is performed by the local validation gate.
 
 ### Preflight
 
 1. `devenv tasks run repo:check-full`; inspect `devenv tasks run repo:inventory` and `nix eval --json .#deploymentPlan | jq .`.
-2. Use `bash modules/fleet/ready.sh HOST deploy` for deployment-specific readiness, or `devenv shell ready HOST` for build readiness. `devenv shell deploy-host HOST` performs the deploy-specific preflight automatically. The SSH user must be non-root with configured public keys; root is rejected to match the SSH root-login restriction. Keep the system activation `profileUser` as root and verify the chosen elevation path.
+2. Use `bash modules/fleet/ready.sh HOST deploy` for deployment-specific readiness, or `devenv shell ready HOST` for build readiness. the explicit `deploy:host` task performs the full gate and deployment-specific preflight internally. The SSH user must be non-root with configured public keys; root is rejected to match the SSH root-login restriction. Keep the system activation `profileUser` as root and verify the chosen elevation path.
 3. Confirm the reported revision/actual package source matches the independent host policy. Check a known-good generation and backup/restore status. The persistent SOPS identity, intended ciphertext/recipients and early-decryption path must be verified, alongside signing keys; pure checks cannot verify them. SOPS creates runtime password files during activation, not during builds. Follow the [secret procedure](../secrets/README.md).
 4. Verify host-key fingerprint, reachability, free `/nix`/`/boot` space, admin login, sudo/doas policy and Nix closure trust. Do not put credentials in flake arguments, source files or shell history. For signed transport, securely set `LOCAL_KEY` to the existing signing-key path; the target must already trust its public key.
 5. Keep an independent console and an existing SSH session open for sensitive changes. Consider `--dry-activate` only after authorization: it still contacts/copies to the target and is **not** a purely local check.
@@ -81,21 +81,70 @@ All three hosts are already installed; follow the [baseline transition checklist
 ### Commands (these really deploy)
 
 ```sh
-devenv shell deploy-host racknerd
+# LIVE switch of one host; use its own off-target signer.
+LOCAL_KEY=/private/path/to/racknerd-signing-key \
+  devenv --no-tui tasks run deploy:host --show-output \
+    --input host=racknerd \
+    --input mode=switch \
+    --input confirm=deploy:racknerd:switch
 
-# Subset: manually preflight each; --targets is the verified upstream API.
-devenv tasks run repo:check-full
-bash modules/fleet/ready.sh racknerd deploy
-bash modules/fleet/ready.sh bastion deploy
-deploy --targets .#racknerd .#bastion -- --no-update-lock-file
-
-# All currently commissioned and enabled nodes; refuses an empty set.
-devenv shell deploy-fleet
+# For Bastion's home-persistence removal, use mode=boot as specified below.
 ```
 
-`deploy .` means all **eligible** nodes, not every fleet identity. Thinkpad remains local-only. Prefer a named subset for intermittently online targets; an offline machine is not a reason to remove rollback safeguards.
+`deploy .` means all **eligible** nodes, not every fleet identity. ThinkPad remains local-only. Deploy these servers **one at a time** with their distinct signers: one `LOCAL_KEY` does not satisfy both targets' public trust. Do not use `deploy-fleet` or `--targets` for this transition. An offline machine is not a reason to remove rollback safeguards.
 
 deploy-rs builds from the locked input. Its default own checks may evaluate/build **all** eligible nodes even when a subset is selected; our `devenv tasks run repo:check-full` also covers the full fleet. This costs more once real machines are commissioned but does not contact them. `remoteBuild` moves the build to the target only when selected; review resources and trust before enabling it.
+
+### Minimal-server transition — 2026-09-13
+
+**Operator-run only; not an installation.** Review the exact candidate on the controller, retain console/old-generation recovery, and privately save anything wanted from Bastion's currently persisted home. Its old `/persist/home/marcos` is retained, not erased or securely deleted. Prefer **boot-only Bastion deployment followed by a planned reboot**: removing the live home bind underneath active shells/agents is unnecessary. Do not force-unmount it or run old acceptance helpers (they can reboot).
+
+The MacBook is the operator-selected, reportedly prepared controller. This repository exports its toolbox/checks only for `x86_64-linux`, not Darwin. Run the canonical gate/readiness/builds in the existing Linux environment, or a separately prepared Linux builder/checkout controlled from the MacBook; keep the exact candidate/locks synchronized. Native macOS use of `deploy` requires the compatible locked deploy-rs CLI and a working `x86_64-linux` build route. `nix run .#devenv`/`.#deploy-rs` are not native Darwin outputs, and `--remote-build` is not an automatic workaround for these root-only-trust targets. No MacBook/builder was audited here; do not install a workspace on either minimal server or add trusted users to bypass this requirement.
+
+Local preflight, inside the supported `devenv shell`:
+
+```sh
+devenv tasks run repo:fmt
+devenv tasks run repo:check-full
+bash modules/fleet/ready.sh bastion deploy
+bash modules/fleet/ready.sh racknerd deploy
+devenv shell build bastion
+devenv shell build racknerd
+```
+
+The new candidate authorizes both reviewed administrator keys for `marcos` on every host: `SHA256:rU2P8TOXVjL3ymRg1OyxA0YgxKrp9PBKKD56FhXWu/I` and `SHA256:mZ36DV6PDIt0lmhfqrO9qKKxQSlmQ7iMiH1NNYWvDRI`. For these initial server deployments, the controller must still have the first key's private half: both running servers accept that historically installed key until activation. Do not assume the newly added second key can bootstrap its own deployment. Use independently verified **installed**, not installer, host keys. Do not accept a changed key just to deploy:
+
+| Target | Installed ED25519 fingerprint | Required signer name |
+|---|---|---|
+| `marcos@192.168.2.2` | `SHA256:DiSj7jMXKQJchfzBDBBX8VsTSErDkDgLAdjsBPN3Ie4` | `bastion-deploy-20260912` |
+| `marcos@72.11.150.242` | `SHA256:A0QspM00bMLwnPwevkEvB9q8TTfjS4ewlFWfN0ss0B0` | `racknerd-deploy-20260912` |
+
+From that reviewed checkout/controller with the pinned devenv available, run in **Bash**. Prompts below request private-key **paths**, never key contents; signer paths remain in `LOCAL_KEY`, not public task inputs, and sudo's password prompt belongs only in the private terminal. The task derives and checks the signer's public key, enforces strict SSH/no agent or forwarding, preserves liveness limits, runs the full gate/readiness, and then invokes locked deploy-rs:
+
+```bash
+set -euo pipefail
+read -r -p 'Existing Bastion signing-key path: ' BASTION_SIGNER
+test -f "$BASTION_SIGNER" && test -r "$BASTION_SIGNER" || exit 1
+LOCAL_KEY="$BASTION_SIGNER" devenv --no-tui tasks run deploy:host --show-output \
+  --input host=bastion \
+  --input mode=boot \
+  --input confirm=deploy:bastion:boot
+```
+
+Wait for successful deploy completion before the **separate planned reboot**. `--boot` updates the system profile/boot selection but does not remove the running home bind; its reachability confirmation cannot validate the next boot. When ready, use the existing private SSH/console session to run `sudo systemctl reboot`. Reconnect with the same strict pin; privately verify separate `marcos` logins using both reviewed private keys, then verify the intended `/run/current-system`, no failed units, `/home/marcos` on tmpfs with `marcos:users 0700`, working password sudo, retained identity/service binds and unchanged eight `tank` legacy mounts/health. If boot fails, use the previous Limine generation/console; do not repeat deployment blindly. Do not read secret contents or delete old backing data for acceptance.
+
+After Bastion is accepted, deploy Racknerd separately, which removes the editor without changing its already-ephemeral home:
+
+```bash
+read -r -p 'Existing Racknerd signing-key path: ' RACKNERD_SIGNER
+test -f "$RACKNERD_SIGNER" && test -r "$RACKNERD_SIGNER" || exit 1
+LOCAL_KEY="$RACKNERD_SIGNER" devenv --no-tui tasks run deploy:host --show-output \
+  --input host=racknerd \
+  --input mode=switch \
+  --input confirm=deploy:racknerd:switch
+```
+
+Privately verify separate `marcos` logins with both reviewed keys, then confirm the new generation, unchanged strict SSH/password sudo, no failed units and healthy network/firewall/fail2ban. Neither command changes keys, clears Nix generations, prunes `/persist`, deploys ThinkPad or authorizes its wipe. Old store generations may retain removed tools for rollback. No automatic/magic rollback override is needed.
 
 ### Rollback semantics
 
@@ -126,6 +175,8 @@ Or select the previous generation in its bootloader. Inspect the result before r
 
 `devenv tasks run repo:inventory` lists declared persistent paths. New services must define ownership/mode and state requirements next to their configuration, ideally with a mount dependency so they cannot write into an ephemeral placeholder when their durable filesystem is missing. State outside declared paths is lost at reboot. State deliberately written directly into `/persist` remains even if not listed in the bind-mount inventory.
 
-Servers retain a bounded journal; interactive hosts use volatile logs. No monitoring endpoint, exporter, application database, NAS share, unattended backup or automatic garbage collection is silently enabled. Racknerd's fail2ban database persists; bastion retains its observed monthly `tank` scrub schedule, which is not a backup. Before production services, add separately reviewed backup/restore and observability features with runtime credentials and tested failure handling. A Btrfs subvolume and a persistent root policy are **not backups**. Removing an impermanence declaration leaves backing data; inspect it, do not automatically delete it.
+Neither minimal-server candidate persists an admin home. Bastion's accepted installed generation still does until the [boot-only transition](#minimal-server-transition--2026-09-13); removal leaves its private backing data on OS `/persist`. Administration/recovery belongs on the operator's MacBook or independent controller, not a new server role.
+
+Servers retain a bounded journal; interactive hosts use volatile logs. No monitoring endpoint, exporter, application database, NAS share, unattended backup or automatic garbage collection is silently enabled. Racknerd's fail2ban database persists; Bastion retains monthly `tank` scrub and now declares standard native opt-in snapshots in its unactivated candidate. Review actual dataset properties, snapshot capacity/naming/pruning and recovery before activation; the service can select no datasets if none opt in. Neither scrub nor snapshots are an independent backup. Before production services, add separately reviewed backup/restore and observability features with runtime credentials and tested failure handling. A Btrfs subvolume and a persistent root policy are **not backups**. Removing an impermanence declaration leaves backing data; inspect it, do not automatically delete it.
 
 Recommended future work, not implemented here: complete per-host SOPS identity/credential provisioning and acceptance, VPN access, ThinkPad's hardware-verified NVIDIA/Samsung HDR/VRR profile and desktop runtime acceptance, service-specific backups with restore exercises, and QEMU/real-hardware reboot tests. Thinkpad's existing LUKS encryption is preserved, not newly provisioned. Add only what the fleet actually needs.

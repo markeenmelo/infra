@@ -71,7 +71,7 @@ in
         bastion = "stable";
       };
       allCapabilities = [
-        "os-disk"
+        "bastion-disko"
         "headless"
         "persistence"
         "access"
@@ -123,10 +123,10 @@ in
           builtins.attrNames reports == [
             "compositions"
             "desktop"
-            "existingInstallations"
             "fixtures"
             "hosts"
             "sops"
+            "storageLayouts"
             "tailscale"
             "wifi"
           ]

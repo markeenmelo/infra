@@ -3,6 +3,8 @@
 - Status: accepted; amends [ADR 0003](0003-storage-and-impermanence.md) and [ADR 0004](0004-deployment-and-readiness.md); password delivery superseded by [ADR 0006](0006-sops-password-delivery.md), desktop scope extended by [ADR 0007](0007-thinkpad-desktop.md), VPN deferral amended by [ADR 0009](0009-tailscale-and-opentofu.md)
 - Date: 2026-09-09
 
+**2026-09-12 amendment:** the operator explicitly selected direct fresh per-host layouts now, rather than retaining old/new abstractions. [ADR 0003](0003-storage-and-impermanence.md) supersedes the storage implementation on this branch: `existing.nix`/`os-disk.nix` and old mount files are deleted. All fresh candidates initially remained unready; the subsequent [Bastion-only authorized preflight](../hosts.md#bastion-live-installer-preflight--2026-09-12) resumes validation and records its new reviews separately from boot acceptance. The decisions below document the prior adoption baseline and running-installation history; they do not authorize wiping or prove a fresh installation.
+
 ## Context
 
 All three hosts already run NixOS with disko/impermanence and Limine, and their disks do not match the fresh-disk scaffold: unprefixed Btrfs subvolume names, ThinkPad LUKS/LVM/swap with a separate `/home`, and a valuable separate ZFS mirror on bastion. Applying the original layout would not be a safe migration. The user explicitly requested no wipe, a headless baseline, password sudo, no VPN yet, and remote deploy capability everywhere except ThinkPad.

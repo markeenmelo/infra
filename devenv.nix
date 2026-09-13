@@ -271,6 +271,21 @@ in
           ]
         '
 
+        expect 'the isolated explicit single-host deployment task' '
+          [ .[] | select(.name | startswith("deploy:"))
+            | {name, after, before, input, status, exec_if_modified, show_output} ] == [
+            {
+              name: "deploy:host",
+              after: [],
+              before: [],
+              input: {confirm: null, host: null, mode: null},
+              status: null,
+              exec_if_modified: [],
+              show_output: true
+            }
+          ]
+        '
+
         expect 'every dependency to reference an existing task' '
           . as $t
           | all($t[]; ((.after // []) + (.before // []))
@@ -300,7 +315,7 @@ in
         # (secrets/ included) into the world-readable store before evaluation
         # even starts, so every such task must wait for the ciphertext guard
         # instead of racing it as a sibling dependency.
-        evaluators=$(jq -r '.[] | select(.command != null) | "\(.name)\t\(.command)"' "$tasks" \
+        evaluators=$(jq -r '.[] | select(.command != null and .name != "deploy:host") | "\(.name)\t\(.command)"' "$tasks" \
           | while IFS=$'\t' read -r task_name command; do
               grep -Eq 'nix (eval|build|flake check)' "$command" && printf '%s\n' "$task_name"
             done | jq -R -s 'split("\n") | map(select(length > 0))')
@@ -341,11 +356,35 @@ in
           | all(.status == null and ((.exec_if_modified // []) | length == 0))
         '
 
-        expect 'shell entry to run no repository or treefmt operation' '
+        expect 'shell entry to run no repository, deployment or treefmt operation' '
           ([.[] | select((.before // []) | index("devenv:enterShell")) | .name]
             + [.[] | select(.name == "devenv:enterShell") | (.after // [])[]])
-          | all(test("^(repo:|devenv:treefmt)") | not)
+          | all(test("^(repo:|deploy:|devenv:treefmt)") | not)
         '
+
+        deploy_command=$(jq -r '.[] | select(.name == "deploy:host") | .command' "$tasks")
+        for requirement in \
+          'devenv --no-tui tasks run repo:check-full --mode before' \
+          'bash modules/fleet/ready.sh "$host" deploy' \
+          'nix key convert-secret-to-public' \
+          '.interactiveSudo' \
+          'LOCAL_KEY' \
+          'deploy ".#$host"' \
+          '--interactive' \
+          '--checksigs' \
+          '--no-update-lock-file'; do
+          grep -Fq -- "$requirement" "$deploy_command" \
+            || { printf 'Native task contract violated: deploy:host lacks %s.\n' "$requirement" >&2; exit 1; }
+        done
+        if grep -Eq -- '--(skip-checks|dry-activate)|--(auto|magic)-rollback[ =]+false' "$deploy_command"; then
+          echo 'Native task contract violated: deploy:host weakens checks or rollback.' >&2
+          exit 1
+        fi
+        full_line=$(grep -nF 'devenv --no-tui tasks run repo:check-full --mode before' "$deploy_command" | cut -d: -f1)
+        ready_line=$(grep -nF 'bash modules/fleet/ready.sh "$host" deploy' "$deploy_command" | cut -d: -f1)
+        deploy_line=$(grep -nF 'exec deploy ".#$host"' "$deploy_command" | cut -d: -f1)
+        [[ $full_line -lt $ready_line && $ready_line -lt $deploy_line ]] \
+          || { echo 'Native task contract violated: deploy:host preflight order changed.' >&2; exit 1; }
 
         jq -e --slurpfile flake flake.lock \
           '.nodes.nixpkgs.locked == $flake[0].nodes.nixpkgs.locked' devenv.lock > /dev/null \
@@ -372,7 +411,7 @@ in
       exec = ''
         set -euo pipefail
         cd "$DEVENV_ROOT"
-        nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing, components})), fixtures, compositions, existingInstallations, sops, desktop, wifi, tailscale}'
+        nix eval --no-update-lock-file --json .#validation | jq '{hosts: (.hosts | map_values({track, revision, ready, missing, components})), fixtures, compositions, storageLayouts, sops, desktop, wifi, tailscale}'
       '';
     };
     "repo:check" = {
@@ -436,10 +475,83 @@ in
         jq '.nodes | with_entries(select(.value.locked)) | map_values(.locked | {rev, narHash, url})' flake.lock devenv.lock
       '';
     };
+    # Explicit operator-selected exception: a disconnected, uncached live task.
+    # Inputs are public selectors only; signer paths stay in LOCAL_KEY and sudo
+    # is read by deploy-rs from the private controlling terminal.
+    "deploy:host" = {
+      description = "LIVE: validate and deploy exactly one commissioned host";
+      input = {
+        host = null;
+        mode = null;
+        confirm = null;
+      };
+      showOutput = true;
+      exec = ''
+        set -euo pipefail
+        umask 077
+        cd "$DEVENV_ROOT"
+
+        refuse() {
+          printf 'Refusing deploy:host: %s\n' "$1" >&2
+          exit 1
+        }
+
+        task_input=''${DEVENV_TASK_INPUT-}
+        [[ -n $task_input ]] || task_input='{}'
+        jq -e 'keys | sort == ["confirm", "host", "mode"]' <<<"$task_input" >/dev/null \
+          || refuse 'inputs must be exactly host, mode and confirm.'
+        jq -e '.host | type == "string"' <<<"$task_input" >/dev/null \
+          || refuse 'supply --input host=HOST.'
+        jq -e '.mode | type == "string"' <<<"$task_input" >/dev/null \
+          || refuse 'supply --input mode=boot|switch.'
+        jq -e '.confirm | type == "string"' <<<"$task_input" >/dev/null \
+          || refuse 'supply the exact confirmation input.'
+        host=$(jq -r '.host' <<<"$task_input")
+        mode=$(jq -r '.mode' <<<"$task_input")
+        confirm=$(jq -r '.confirm' <<<"$task_input")
+
+        [[ $host =~ ^[a-z][a-z0-9-]*$ ]] || refuse 'host has invalid syntax.'
+        [[ $mode == boot || $mode == switch ]] || refuse 'mode must be boot or switch.'
+        [[ $confirm == "deploy:$host:$mode" ]] \
+          || refuse "confirmation must equal deploy:$host:$mode."
+        [[ -n ''${LOCAL_KEY:-} ]] || refuse "set LOCAL_KEY to this host's existing private signing-key path."
+        [[ -f $LOCAL_KEY && -r $LOCAL_KEY ]] || refuse 'LOCAL_KEY must be a readable regular file.'
+        { true </dev/tty; } 2>/dev/null \
+          || refuse 'run from a private foreground terminal; CI/background deployment is disabled.'
+
+        # Keep the live task disconnected from the DAG: selecting repo:* in any
+        # execution mode cannot pull in deployment. Run the full gate explicitly.
+        devenv --no-tui tasks run repo:check-full --mode before
+        bash modules/fleet/ready.sh "$host" deploy
+
+        plan=$(nix eval --no-update-lock-file --json ".#deploymentPlan.$host")
+        [[ $(jq -r '.transport' <<<"$plan") == signed ]] \
+          || refuse 'deploy:host currently permits only signed transport.'
+        [[ $(jq -r '.interactiveSudo' <<<"$plan") == true ]] \
+          || refuse 'deploy:host requires interactive password sudo.'
+        ssh_port=$(jq -r '.sshPort' <<<"$plan")
+        [[ $ssh_port =~ ^[0-9]+$ ]] || refuse 'deployment SSH port is invalid.'
+
+        signer_public=$(nix key convert-secret-to-public <"$LOCAL_KEY") \
+          || refuse 'LOCAL_KEY is not a valid Nix signing key.'
+        trusted_public=$(nix eval --no-update-lock-file --json \
+          ".#nixosConfigurations.$host.config.nix.settings.trusted-public-keys")
+        jq -e --arg signer "$signer_public" 'index($signer) != null' <<<"$trusted_public" >/dev/null \
+          || refuse "LOCAL_KEY does not match this host's configured public signing trust."
+
+        ssh_options="-p $ssh_port -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o IdentityAgent=none -o IdentitiesOnly=yes -o ForwardAgent=no -o ClearAllForwardings=yes -o ConnectTimeout=15 -o ServerAliveInterval=10 -o ServerAliveCountMax=3"
+        mode_args=()
+        [[ $mode == switch ]] || mode_args+=(--boot)
+        printf 'AUTHORIZED LIVE DEPLOYMENT: host=%s mode=%s; rollback remains enabled.\n' "$host" "$mode" >&2
+        exec deploy ".#$host" "''${mode_args[@]}" --interactive --checksigs \
+          --ssh-opts "$ssh_options" -- --no-update-lock-file
+      '';
+    };
   };
 
-  # Interactive/credential-bearing operations are scripts, NOT task graph nodes.
-  # `devenv tasks run repo` must never include a deploy, plan, import or apply.
+  # The live deploy:host task is an explicit isolated exception. It has no DAG
+  # edges, so selecting repo:* (even in all mode) cannot deploy. Other credential-
+  # bearing operations remain scripts and no shell-entry hook performs live work.
   scripts = {
     ready.exec = ''
       set -euo pipefail
@@ -464,14 +576,6 @@ in
       set -euo pipefail
       cd "$DEVENV_ROOT"
       exec nix run --no-update-lock-file .#deploy-rs -- "$@"
-    '';
-    deploy-host.exec = ''
-      set -euo pipefail
-      cd "$DEVENV_ROOT"
-      [[ $# == 1 ]] || { echo 'Usage: deploy-host HOST' >&2; exit 1; }
-      devenv tasks run repo:check-full --mode before
-      bash modules/fleet/ready.sh "$1" deploy
-      exec deploy ".#$1" -- --no-update-lock-file
     '';
     deploy-fleet.exec = ''
       set -euo pipefail

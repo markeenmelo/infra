@@ -2,17 +2,21 @@
 keys:
   - &operator age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht
   - &thinkpad age15r7mf8n0ah32y9xf8jxjvj4yrzsf3y52cucqeyr6hlxtkw63vs0qjz7wgm
-  - &racknerd age1dpxn0ymj6jyt33yf9ukuekwh93w8r3gsmfx8d3g3g3vhh5dn7ygsdpy48t
+  - &racknerd age1n9krs7x7qrsw9zcz6mvumc9zyr5f7axhlvdf0fnnflzxsh3kkqmqp5rgdd
+  # Unselected historical ciphertext only; not the fresh host's identity.
+  - &racknerd-previous age1dpxn0ymj6jyt33yf9ukuekwh93w8r3gsmfx8d3g3g3vhh5dn7ygsdpy48t
+  - &bastion age1su25ytldd4uye705w6jllwzkmpdkprruq5mzpcrth0e9zcmcyewspeck6q
 
 creation_rules:
   # Explicitly shared marcos password only; never include ThinkPad Wi-Fi here.
-  # Bastion stays blocked until its distinct recipient is verified and added.
+  # Bastion's distinct identity/recovery was prepared under explicit authorization.
   - path_regex: ^secrets/shared/marcos-password\.yaml$
     key_groups:
       - age:
           - *operator
           - *thinkpad
           - *racknerd
+          - *bastion
   - path_regex: ^secrets/hosts/thinkpad\.yaml$
     key_groups:
       - age:
@@ -34,7 +38,7 @@ creation_rules:
     key_groups:
       - age:
           - *operator
-          - *racknerd
+          - *racknerd-previous
   - path_regex: ^secrets/hosts/racknerd-tailscale\.yaml$
     key_groups:
       - age:

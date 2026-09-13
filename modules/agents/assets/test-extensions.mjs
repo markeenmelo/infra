@@ -11,11 +11,8 @@ const [piDir, codexConfig, toolRepairConfig] = process.argv.slice(2);
 const load = (path) => import(pathToFileURL(path).href);
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const { discoverAndLoadExtensions } = await load(join(piDir, 'dist/index.js'));
-// Load Pi's own ESM-only dependency, not an ambient npm install or a copied
-// regex. Use the same packaged compat entry that AgentSession imports.
-const { isRetryableAssistantError } = await load(
-  join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'),
-);
+// Exercise the desktop's actual native classifier, never a copied regex.
+const { isRetryableAssistantError } = await load(join(piDir, 'node_modules/@earendil-works/pi-ai/dist/compat.js'));
 // Managed settings must carry the exact pinned package set.
 const settings = json(join(process.env.PI_CODING_AGENT_DIR, 'settings.json'));
 assert.equal(settings.defaultProjectTrust, 'ask');
@@ -104,13 +101,18 @@ assert.equal(
 for (const [label, override] of [
   ['non-error response', { stopReason: 'toolUse' }],
   ['unrecognized error', { errorMessage: 'tool arguments are empty' }],
-  ['billing exhaustion', { errorMessage: 'provider returned error: insufficient_quota' }],
 ]) {
   assert.equal(
     isRetryableAssistantError({ ...emptyEdit.message, ...override }), false,
     `Pi must not retry ${label}`,
   );
 }
+
+assert.equal(
+  isRetryableAssistantError({ ...emptyEdit.message, errorMessage: 'provider returned error: insufficient_quota' }),
+  false,
+  'Native Pi must reject prefixed quota exhaustion',
+);
 
 const missingArgs = retryEmptyArguments(
   assistant([call('edit', undefined)]), tools,
@@ -145,6 +147,7 @@ const rewrite = async (command) => {
   for (const handler of rtk.handlers.get('tool_call')) await handler(event, ctx);
   return event.input.command;
 };
+assert.equal(await rewrite('ls -la'), 'rtk ls -la', 'Supported commands must really be rewritten');
 assert.equal(await rewrite('git status'), 'git status', 'Preserve exact Git output');
 assert.equal(await rewrite('rtk git status'), 'rtk git status');
 for (const command of ['nix flake check', 'just check', 'tofu plan', 'sops --version', 'printf hello']) {

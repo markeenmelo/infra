@@ -51,10 +51,22 @@ Argument-taking commands are scripts, usable inside the shell or through `devenv
 | `just ready HOST` | `devenv shell ready HOST` | Local preflight only |
 | `just build HOST` | `devenv shell build HOST` | Readiness, then local build |
 | `just disk-plan HOST` | `devenv shell disk-plan HOST` | Refuses every current existing installation |
-| `just deploy HOST` / `just deploy-fleet` | `devenv shell deploy-host HOST` / `devenv shell deploy-fleet` | Full check first; **real deployment**, separate authorization |
+| `just deploy HOST` / `just deploy-fleet` | `devenv tasks run deploy:host --input ...` (below) / `devenv shell deploy-fleet` | Full check first; **real deployment**, separate authorization |
 | `just tailnet OPERATION` | `devenv shell tailnet OPERATION` | Existing guarded operator workflow; API/state operations need authorization |
 
-The `deploy` script invokes the flake's source-matched deploy-rs package; raw deploy remains operator-only. Keep `deploy-rs` and `sops-nix` in the production flake: the fleet needs their activation helpers and NixOS modules independently of devenv. The development environment only exposes the deploy CLI and SOPS/age binaries. No deploy, SOPS decryption, OpenTofu init/import/plan/apply or disk operation is a task dependency or shell hook. Historical validation records retain the old commands that actually ran; this table is their current equivalent. System-wide `just` available for unrelated projects is not removed or activated by this local migration.
+The operator explicitly selected one live task exception. Run it only from a private foreground terminal, with the selected host's existing signing-key **path** in `LOCAL_KEY` and public inputs that exactly confirm target and activation mode:
+
+```sh
+LOCAL_KEY=/private/path/to/host-signing-key \
+  devenv --no-tui tasks run deploy:host --show-output \
+    --input host=bastion \
+    --input mode=boot \
+    --input confirm=deploy:bastion:boot
+```
+
+Use `mode=boot`/`confirm=deploy:bastion:boot` for the current Bastion home transition; after successful completion, reboot and verify it separately. Racknerd's normal live switch uses `host=racknerd`, `mode=switch` and `confirm=deploy:racknerd:switch`. The task accepts only `boot|switch`, only signed eligible targets, requires its derived signer public key in that target's configured trust and keeps strict SSH, `--checksigs`, interactive sudo and rollback. It internally runs `repo:check-full` and deployment readiness before contact. Never pass a password, private-key content or signer path through `--input`; task inputs/metadata are not secret storage.
+
+`deploy:host` is uncached and deliberately has no DAG edges: `repo:*`, shell entry and `devenv test` cannot pull it in, including dependency expansion modes. Missing/null inputs make broad accidental task selection refuse before local evaluation or network access. The `deploy` script invokes the flake's source-matched deploy-rs package; raw deploy and the fleet script remain operator-only. Keep `deploy-rs` and `sops-nix` in the production flake because the fleet consumes their activation helpers and NixOS modules independently of devenv. No SOPS decryption, OpenTofu init/import/plan/apply, disk operation or deployment task is a dependency or shell hook. Historical validation records retain the old commands that actually ran; this table is their current equivalent. System-wide `just` available for unrelated projects is not removed or activated by this local migration.
 
 ## SOPS → OpenTofu
 

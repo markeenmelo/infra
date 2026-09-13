@@ -3,7 +3,7 @@
     system = "x86_64-linux";
     track = "unstable";
     capabilities = [
-      "existing-storage"
+      "thinkpad-disko"
       "ssh"
       "desktop"
       "persistence"
@@ -14,8 +14,8 @@
       "editors"
     ];
     deployment.enable = false;
-    # 2026-09-10: commissioning reviews recorded (docs/hosts.md). Local
-    # activation target pending first-boot acceptance; not a deployment flag.
-    ready = true;
+    # Fresh reinstall candidate selected 2026-09-12. The running encrypted
+    # installation's acceptance does not approve this new plain layout.
+    ready = false;
   };
 }

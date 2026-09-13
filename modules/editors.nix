@@ -1,6 +1,6 @@
 { lib, ... }:
 {
-  # Console editor policy for every host: one declaratively configured Neovim
+  # Console editor policy for composing hosts: one declaratively configured Neovim
   # replaces the NixOS nano default. The wrapper loads this configuration from
   # the Nix store, so a per-user ~/.config/nvim is deliberately ignored;
   # ThinkPad's graphical editing stays with its separately composed Zed concern.
