@@ -10,6 +10,19 @@ let
     track: fixture:
     let
       cfg = fixture.config;
+      secretFree =
+        (config.fleet.validation.fixtureFor track "uefi" [
+          "bastion-disko"
+          "headless"
+          "persistence"
+          "deploy"
+        ]).extendModules
+          {
+            modules = [
+              { fleet.access.authorizedKeys = [ "ssh-ed25519 TEST-ONLY-NOT-A-VALID-KEY" ]; }
+            ];
+          };
+      empty = secretFree.config;
       rejected =
         module:
         let
@@ -22,6 +35,36 @@ let
           modules = [ { fleet.access.passwordSecrets.fixture-admin = lib.mkForce null; } ];
         }).config;
     in
+    assert lib.assertMsg (
+      empty.fleet.bootstrap.missing == [ ]
+      && lib.all (a: a.assertion) empty.assertions
+      && empty.sops.secrets == { }
+      && empty.sops.age.keyFile == null
+      && empty.fleet.secrets.ageRecipient == null
+      && !empty.fleet.secrets.identityReviewed
+      && !(empty.system.activationScripts ? setupSecrets)
+      && !(empty.system.activationScripts ? setupSecretsForUsers)
+      && !(empty.systemd.services ? sops-install-secrets)
+      && !(empty.systemd.services ? sops-install-secrets-for-users)
+    ) "${track}: secret-free deployment must need no age identity or SOPS activation";
+    assert lib.all
+      (
+        module:
+        let
+          broken = secretFree.extendModules { modules = [ module ]; };
+        in
+        lib.assertMsg (!(builtins.tryEval broken.config.system.build.toplevel.drvPath).success)
+          "${track}: unused identities or newly selected secrets without reviewed identity must reject"
+      )
+      [
+        { fleet.secrets.ageKeyFile = "/persist/var/lib/sops-nix/TEST-ONLY-UNUSED"; }
+        {
+          sops.secrets.TEST-ONLY-new-service = {
+            sopsFile = ../../secrets/shared/marcos-password.yaml;
+            key = "marcos-password-hash";
+          };
+        }
+      ];
     assert lib.assertMsg (
       cfg.users.users.fixture-admin.hashedPasswordFile == cfg.sops.secrets.TEST-ONLY-password.path
       && cfg.sops.secrets.TEST-ONLY-password.path == "/run/secrets-for-users/TEST-ONLY-password"
@@ -64,6 +107,7 @@ let
       [
         { fleet.access.passwordSecrets.fixture-admin = lib.mkForce "TEST-ONLY-UNDECLARED"; }
         { fleet.secrets.ageKeyFile = lib.mkForce null; }
+        { fleet.secrets.ageRecipient = lib.mkForce null; }
         { fleet.secrets.identityReviewed = lib.mkForce false; }
         { fileSystems."/persist".neededForBoot = lib.mkForce false; }
         { sops.secrets.TEST-ONLY-password.neededForUsers = lib.mkForce false; }
@@ -82,6 +126,7 @@ let
       usersManifest = cfg.system.build.sops-nix-users-manifest.drvPath;
       installer = cfg.sops.package.drvPath;
       toplevel = cfg.system.build.toplevel.drvPath;
+      secretFreeToplevel = empty.system.build.toplevel.drvPath;
       missingCredentialsBlocked = true;
       unsafeOverridesRejected = true;
     }
@@ -102,13 +147,18 @@ in
         && cfg.sops.gnupg.sshKeyPaths == [ ]
         && cfg.sops.validateSopsFiles
         && !cfg.sops.useTmpfs
-        && cfg.fleet.secrets.ageKeyFile != null
-        && cfg.fleet.secrets.ageRecipient != null
         && (
           if name != "thinkpad" then
-            cfg.fleet.access.passwordSecrets == { } && cfg.sops.secrets == { } && !(cfg.users.users ? marcos)
+            cfg.fleet.access.passwordSecrets == { }
+            && cfg.sops.secrets == { }
+            && cfg.fleet.secrets.ageKeyFile == null
+            && cfg.fleet.secrets.ageRecipient == null
+            && !cfg.fleet.secrets.identityReviewed
+            && !(cfg.users.users ? marcos)
           else
-            cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
+            cfg.fleet.secrets.ageKeyFile != null
+            && cfg.fleet.secrets.ageRecipient != null
+            && cfg.fleet.access.passwordSecrets.marcos == "marcos-password-hash"
             && !(lib.elem "Verify fleet.secrets.ageRecipient and include it in the shared marcos password recipient policy and YAML before commissioning." cfg.fleet.bootstrap.missing)
             && cfg.users.users.marcos.hashedPasswordFile == cfg.sops.secrets.marcos-password-hash.path
             && cfg.sops.secrets.marcos-password-hash.sopsFile == ../../secrets/shared/marcos-password.yaml
@@ -129,7 +179,7 @@ in
               )
         )
       )
-      "${name}: workstation password delivery, server credential removal or preserved machine identity policy regressed";
+      "${name}: workstation password delivery, server SOPS removal or reviewed identity policy regressed";
     assert
       name != "thinkpad"
       ||
@@ -165,6 +215,7 @@ in
       };
       secrets = {
         ageKeyFile = "/persist/var/lib/sops-nix/TEST-ONLY-NO-IDENTITY";
+        ageRecipient = "age1testonly";
         identityReviewed = true;
       };
     };

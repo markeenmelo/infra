@@ -76,6 +76,15 @@
           && cfg.fleet.access.admin == null
           && cfg.fleet.access.passwordSecrets == { }
           && cfg.sops.secrets == { }
+          && cfg.sops.templates == { }
+          && cfg.sops.age.keyFile == null
+          && cfg.fleet.secrets.ageKeyFile == null
+          && cfg.fleet.secrets.ageRecipient == null
+          && !cfg.fleet.secrets.identityReviewed
+          && !(cfg.system.activationScripts ? setupSecrets)
+          && !(cfg.system.activationScripts ? setupSecretsForUsers)
+          && !(cfg.systemd.services ? sops-install-secrets)
+          && !(cfg.systemd.services ? sops-install-secrets-for-users)
           && cfg.users.users.deploy.home == "/var/lib/deploy"
           && cfg.users.users.deploy.createHome
           && cfg.users.users.deploy.homeMode == "700"
@@ -103,6 +112,6 @@
           && !cfg.users.mutableUsers
         )
       )
-      "${name}: minimal servers must have only dedicated deployment administration, no human accounts/password delivery, home persistence or editor/agent workspace";
+      "${name}: minimal servers must have only dedicated deployment administration, no human accounts/SOPS delivery or identity, home persistence or editor/agent workspace";
     true;
 }

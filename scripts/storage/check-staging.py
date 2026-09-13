@@ -26,7 +26,7 @@ def public_output(arguments):
 
 
 try:
-    assert len(sys.argv) == 2 and re.fullmatch(r"[a-z][a-z0-9-]*", sys.argv[1])
+    assert len(sys.argv) in {2, 3} and re.fullmatch(r"[a-z][a-z0-9-]*", sys.argv[1])
     host = sys.argv[1]
     root = Path(os.environ["DEVENV_ROOT"]).resolve()
     paths = [Path(os.environ[key]) for key in ["FLEET_INSTALL_EXTRA_FILES", "FLEET_INSTALL_IDENTITY", "FLEET_INSTALL_MANIFEST"]]
@@ -39,12 +39,18 @@ try:
     staging, identity, manifest = paths
     assert staging.is_dir() and identity.is_file() and manifest.is_file()
     assert not manifest.resolve().is_relative_to(staging.resolve())
+    binding = json.loads(manifest.read_text(), object_pairs_hook=unique_object)
+    assert set(binding) == {"host", "machineId", "sshHostFingerprint", "ageRecipient"}
+    assert binding["host"] == host
+    if len(sys.argv) == 3:
+        assert binding["ageRecipient"] == json.loads(sys.argv[2])
     expected = {
         "persist/etc/machine-id",
         "persist/etc/ssh/ssh_host_ed25519_key",
         "persist/etc/ssh/ssh_host_ed25519_key.pub",
-        "persist/var/lib/sops-nix/key.txt",
     }
+    if binding["ageRecipient"] is not None:
+        expected.add("persist/var/lib/sops-nix/key.txt")
     files = set()
     for path in staging.rglob("*"):
         info = path.lstat()
@@ -57,9 +63,6 @@ try:
             if relative.endswith("key.txt") or relative.endswith("ssh_host_ed25519_key"):
                 assert not info.st_mode & 0o077
     assert files == expected
-    binding = json.loads(manifest.read_text(), object_pairs_hook=unique_object)
-    assert set(binding) == {"host", "machineId", "sshHostFingerprint", "ageRecipient"}
-    assert binding["host"] == host
     assert re.fullmatch(r"[a-f0-9]{32}", binding["machineId"]) and binding["machineId"] != "0" * 32
     assert (staging / "persist/etc/machine-id").read_text().strip() == binding["machineId"]
     assert re.fullmatch(r"SHA256:[A-Za-z0-9+/]{43}", binding["sshHostFingerprint"])
@@ -70,8 +73,9 @@ try:
     assert public_key.read_text().split()[:2] == derived
     fingerprint = public_output(["ssh-keygen", "-E", "sha256", "-lf", str(public_key)]).split()
     assert len(fingerprint) >= 2 and fingerprint[1] == binding["sshHostFingerprint"]
-    assert re.fullmatch(r"age1[a-z0-9]+", binding["ageRecipient"])
-    assert public_output(["age-keygen", "-y", str(staging / "persist/var/lib/sops-nix/key.txt")]) == binding["ageRecipient"]
+    if binding["ageRecipient"] is not None:
+        assert re.fullmatch(r"age1[a-z0-9]+", binding["ageRecipient"])
+        assert public_output(["age-keygen", "-y", str(staging / "persist/var/lib/sops-nix/key.txt")]) == binding["ageRecipient"]
 except (KeyError, OSError, AssertionError, ValueError, TypeError, subprocess.SubprocessError):
     sys.exit("Refusing: unsafe installer paths/staging or selected-host machine/SSH/age identity mismatch against the independently reviewed manifest; contents withheld")
 print("Selected-host staging ownership, allowlist, machine ID and derived public identities match the reviewed manifest; no secret contents disclosed.")

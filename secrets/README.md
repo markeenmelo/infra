@@ -8,17 +8,49 @@ Only SOPS ciphertext and verified **public** recipients belong here. Never add p
 
 Declared sources/bindings are below. **Dated credential, recovery and boot acceptance lives in [current host status](../.agents/skills/fleet-operations/references/hosts.md#current-status)**, including ThinkPad's completed password/Wi-Fi two-boot delivery and the separate unverified Tailscale credential. A declared path or ciphertext is not proof of decryption.
 
-The current candidate selects **`shared/marcos-password.yaml` only on ThinkPad**. Both servers remove `marcos` and password delivery, replacing it with the locked-password `deploy` account and the two reviewed public SSH keys. No password/private key is provisioned for deploy. This configuration-only transition has not changed running accounts or erased credentials. Machine SSH/age identities and recovery remain intact. Ciphertext/public recipients remain unchanged: removing delivery is not password rotation or revocation of historical decryption access. The dated three-host password evidence below describes the accepted older installations.
+The current candidate selects **`shared/marcos-password.yaml` only on ThinkPad**. Both servers remove `marcos` and password delivery, replacing it with the locked-password `deploy` account and the two reviewed public SSH keys. No password/private key is provisioned for deploy. This configuration-only transition has not changed running accounts or erased credentials. The follow-up candidate also removes server age-key paths/recipients and active SOPS identity-review metadata: there are no selected server secrets, templates or SOPS activation hooks, so no server age key is required or staged for reinstall. Machine ID/SSH identities still require preservation; old age identities and encrypted recovery archives remain off-host recovery material and are not automatically deleted. **Ciphertext/public recipient policy is still unchanged pending the operator-run rotation below**: configuration removal alone has not revoked existing ciphertext access. The dated three-host password evidence below describes the accepted older installations.
 
 | Host | Additional host-specific ciphertext | Dedicated identity binding |
 |---|---|---|
 | thinkpad | `hosts/thinkpad.yaml` (Wi-Fi plus retained, unselected original password), `hosts/thinkpad-senecanet.yaml`, `hosts/thinkpad-tailscale.yaml` | `/persist/var/lib/sops-nix/key.txt` |
-| racknerd | `hosts/racknerd.yaml` (retained, no longer selected); enrollment file not supplied | `/persist/var/lib/sops-nix/key.txt`; fresh recovery/early-delivery and installed two-boot acceptance passed |
-| bastion | None selected; no password, Wi-Fi or enrollment delivery | `/persist/var/lib/sops-nix/key.txt`; protected recovery and native early-delivery rehearsal verified |
+| racknerd | `hosts/racknerd.yaml` retained but unselected; no active enrollment secret | None in the candidate; historical identity/recovery remains protected off-host |
+| bastion | None selected; no password, Wi-Fi or enrollment delivery | None in the candidate; historical identity/recovery remains protected off-host |
 
 The ThinkPad file contains encrypted `marcos-password-hash` **and** `wifi-psk`. Keep it intact: removing entries without authorized SOPS editing invalidates its MAC. Only `wifi-psk` is now selected from this file; the password comes from the separate shared source. `wifi-psk` supplies native root-owned runtime NetworkManager profiles through a private environment adapter. The old file-secret agent and Noctalia patch are not imported. SenecaNET identity/password use a separate encrypted file, filled privately by the operator and now selected after successful MAC/decryption and marker/format checks; see [Wi-Fi procedure](../.agents/skills/desktop/references/desktop.md#wi-fi-credentials). This does not prove the campus account/password or server-certificate policy works on the real network. Do not delete/edit ciphertext fields by hand.
 
 `.sops.yaml` preserves the previous exact ThinkPad rule and has separate exact rules for `secrets/hosts/thinkpad-senecanet.yaml` and the prepared `secrets/hosts/thinkpad-tailscale.yaml`, using the **same operator + dedicated ThinkPad public recipients**. The operator has now supplied the enrollment file via `sops edit`; ThinkPad's unactivated candidate selects it. These host-specific rules/ciphertexts have no recipient expansion, new identity or key rotation. The explicitly authorized shared-password rule below is separate; there is no catch-all. Initial creation encrypted only public replacement markers without decrypting the existing password/PSK file. The later **2026-09-10 operator-run private audit** verified both filled ciphertext files in memory; neither ciphertext was modified by that audit or this commissioning change. See [partial preflight evidence](../.agents/skills/fleet-operations/references/hosts.md#partial-commissioning-preflight-2026-09-10-utc).
+
+## Retire server recipients — operator-run, pending
+
+**2026-09-13:** the operator chose to perform ciphertext rotation privately, not authorize agent access to the recovery identity. No ciphertext, `.sops.yaml` recipient rule, secret value or private identity was changed by this follow-up. The existing Nix recipient list remains an honest oracle for current ciphertext, not evidence of completed revocation. Configuration removal and omitted reinstall staging do not erase keys already present in old `/persist`, backups or generations.
+
+Use the locked Linux shell, independently verified operator recovery identity (owned `0600`, private parent, outside checkout/store) and an off-repository recovery copy. Retain access to recovery archives: do not delete old server identities merely because the new OS no longer needs them. Before the following native SOPS operations, edit **only the public policy**:
+
+- In `.sops.yaml`, retain `operator` and `thinkpad` key aliases. Remove `racknerd`, `racknerd-previous` and `bastion` aliases. Set the shared-password rule to operator + ThinkPad, the retained Racknerd archive rule to **operator only**, and remove the unused Racknerd Tailscale creation rule. Keep all three ThinkPad host-file rules unchanged; there is no catch-all.
+- In `modules/access/administrators.nix`, remove only the Racknerd and Bastion age strings from `recipients`, retaining operator + ThinkPad. Do not modify administrator/deployment SSH keys.
+
+Do not evaluate, stage or commit the intermediate policy/ciphertext mismatch. SOPS **3.13.3** supports simultaneous removal and data-key rotation; run these commands in your private operator terminal, not an agent/logged session:
+
+```sh
+(
+  set +x
+  set -euo pipefail
+  umask 077
+  : "${SOPS_AGE_KEY_FILE:?Set the reviewed private operator age identity path}"
+  export SOPS_AGE_KEY_FILE
+  sops rotate --in-place --rm-age \
+    'age1n9krs7x7qrsw9zcz6mvumc9zyr5f7axhlvdf0fnnflzxsh3kkqmqp5rgdd,age1su25ytldd4uye705w6jllwzkmpdkprruq5mzpcrth0e9zcmcyewspeck6q' \
+    secrets/shared/marcos-password.yaml
+  sops rotate --in-place --rm-age \
+    'age1dpxn0ymj6jyt33yf9ukuekwh93w8r3gsmfx8d3g3g3vhh5dn7ygsdpy48t' \
+    secrets/hosts/racknerd.yaml
+  bash scripts/secrets/check.sh
+)
+```
+
+These operations preserve secret values, verify existing MACs and re-encrypt with fresh data keys after removing the server recipients; they are not password rotation. Do not use `--ignore-mac`, hand-delete ciphertext envelopes, or substitute recipient-only `updatekeys` without data-key rotation. If either operation fails, stop and finish/recover the coherent pair before any staging/evaluation. Review that only the two intended ciphertext files and two public-policy files changed, with no plaintext/private files; the guard must pass before staging and a separate commit. Full validation/builds remain required once testing is authorized.
+
+**Historical access cannot be revoked:** old Git/store/backups may still contain ciphertext decryptable by old server keys. The retained password/hash is consequently still recoverable from those old copies. Actual password/API-key rotation is a distinct operation, not performed or authorized here. Fresh data keys prevent old recipients from decrypting future changed values in these new ciphertext lineages; keep future rules server-free until a real service justifies new scoped credentials.
 
 ## Shared marcos password
 
@@ -54,7 +86,7 @@ The operator supplied the existing marcos password hash as encrypted `marcos-pas
 
 Declare password hashes with `neededForUsers = true`. Account `hashedPasswordFile` values come from the secret's `.path`, normally `/run/secrets-for-users/NAME`, root-only mode `0400`, in SOPS' default ramfs. Password values/hashes are never evaluated by Nix. The ordinary activation-script account backend installs these secrets before creating immutable users. ThinkPad's interactive account retains password/fingerprint sudo. The dedicated deploy account on all hosts instead has narrowly described NOPASSWD activation/confirmation commands plus explicitly approved root-equivalent Nix trust; root SSH remains disabled. See the [deployment policy and transition](../.agents/skills/deploy/SKILL.md).
 
-The private age identity is a **runtime string path**, directly on early-mounted `/persist`. Parent must be root-owned `0700`, key root-owned `0600` (or stricter), with protected recovery copies outside Git. Do not bind `/var/lib/sops-nix` merely to reach it, persist `/run/secrets*`, auto-generate keys or import SSH identities implicitly. Disk persistence is not encryption: review physical access/backups on each host.
+Only hosts with selected SOPS secrets require a private age identity and genuine identity review; a future service secret reintroduces those blockers rather than silently provisioning an identity. Secret-free hosts must leave the age path/recipient null and active review metadata absent. Where required, the private age identity is a **runtime string path**, directly on early-mounted `/persist`. Parent must be root-owned `0700`, key root-owned `0600` (or stricter), with protected recovery copies outside Git. Do not bind `/var/lib/sops-nix` merely to reach it, persist `/run/secrets*`, auto-generate keys or import SSH identities implicitly. Disk persistence is not encryption: review physical access/backups on each host.
 
 ## Wi-Fi provisioning boundary
 

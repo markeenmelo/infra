@@ -36,6 +36,12 @@ jq -e --arg device "$device" '.storageMode == "provision" and .osDisk == $device
   echo 'Refusing: confirmed disk differs from the commissioned OS layout.' >&2
   exit 1
 }
+secrets=$(nix eval --no-update-lock-file --json ".#fleetConfigurations.$host.config.fleet.secrets")
+jq -e 'if .ageRecipient == null then .ageKeyFile == null else .ageKeyFile == "/persist/var/lib/sops-nix/key.txt" end' <<<"$secrets" >/dev/null || {
+  echo 'Refusing: installer staging does not support the configured age identity path.' >&2
+  exit 1
+}
+age_recipient=$(jq -c '.ageRecipient' <<<"$secrets")
 if [[ $device == /dev/disk/by-path/* ]]; then
   [[ $host == racknerd && $device == /dev/disk/by-path/pci-* && $identity =~ ^size:[1-9][0-9]*$ ]] || {
     echo 'Only reviewed Racknerd PCI identity may use a size confirmation instead of a serial.' >&2
@@ -53,7 +59,7 @@ trap 'rm -rf "$work"' EXIT
 cp -a "$FLEET_INSTALL_EXTRA_FILES" "$work/staging"
 cp "$FLEET_INSTALL_MANIFEST" "$work/manifest.json"
 export FLEET_INSTALL_EXTRA_FILES="$work/staging" FLEET_INSTALL_MANIFEST="$work/manifest.json"
-python3 scripts/storage/check-staging.py "$host"
+python3 scripts/storage/check-staging.py "$host" "$age_recipient"
 export FLEET_REAL_SSH
 FLEET_REAL_SSH=$(readlink -f "$(command -v ssh)")
 export FLEET_INSTALL_KNOWN_HOSTS="$work/known_hosts"

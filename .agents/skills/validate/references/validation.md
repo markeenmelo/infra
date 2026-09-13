@@ -10,6 +10,8 @@ The operator requested individual task commits and **no tests until explicitly i
 - [Current P1: active non-mount consumers](https://github.com/markeenmelo/infra/pull/9#discussion_r4000461906) is valid. Reject kernel holders on disk/partitions, non-plain lsblk node types and active swap, retaining mounted-use/imported-pool checks and fail-closed query handling.
 - [Outdated P2: foreground TTY](https://github.com/markeenmelo/infra/pull/9#discussion_r3998607954) correctly described the old `true </dev/tty` check, but that `deploy:host` task was deleted. Current independent tasks do not claim foreground-only enforcement; do not resurrect the obsolete task/TTY/credential interface.
 
+The secret-access follow-up removes unused server SOPS identity facts and conditions identity blockers on actual secret selection. Both-track secret-free deployment fixtures reject unused identities and future secrets without verified identities. Installer staging now rejects server age keys and checks nullable age policy against the selected host's evaluation. ThinkPad delivery remains intact. The operator chose [private recipient/data-key rotation](../../../../secrets/README.md#retire-server-recipients--operator-run-pending); ciphertext/public rules and their existing matching oracle remain unchanged pending that separate step, so existing decryption access is not claimed revoked.
+
 Regression cases have been extended but **not executed**. No formatter, static gate, evaluation, build, credential operation or target contact was run for this follow-up. No GitHub review threads were modified. Full local validation and independent live prerequisites remain mandatory before installation/deployment.
 
 ## Seven-task batch and deferred final validation — 2026-09-13

@@ -38,6 +38,10 @@ elif name == "nix":
         elif attribute.startswith(".#deploy.nodes."):
             host = attribute.rsplit(".", 1)[1]
             print(json.dumps({"sshUser": "deploy", "hostname": host + ".invalid", "sshOpts": ["-o", "StrictHostKeyChecking=yes", "-o", "BatchMode=yes"]}))
+        elif attribute.startswith(".#fleetConfigurations.") and attribute.endswith(".config.fleet.secrets"):
+            recipient = os.environ.get("TEST_AGE_RECIPIENT")
+            print(json.dumps({"ageRecipient": recipient, "ageKeyFile": "/persist/var/lib/sops-nix/key.txt" if recipient else None,
+                              "identityReviewed": recipient is not None}))
         elif attribute.startswith(".#fleet."):
             print(json.dumps({"storageMode": "provision", "osDisk": "/dev/disk/by-id/TEST-ONLY-OS"}))
         else:
@@ -118,7 +122,7 @@ class Workflows(unittest.TestCase):
         self.staging = self.root / "staging"
         self.staging.mkdir(mode=0o700)
         for relative in ["persist/etc/machine-id", "persist/etc/ssh/ssh_host_ed25519_key",
-                         "persist/etc/ssh/ssh_host_ed25519_key.pub", "persist/var/lib/sops-nix/key.txt"]:
+                         "persist/etc/ssh/ssh_host_ed25519_key.pub"]:
             path = self.staging / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("TEST-ONLY-NOT-A-SECRET\n")
@@ -130,7 +134,7 @@ class Workflows(unittest.TestCase):
         (self.staging / "persist/etc/ssh/ssh_host_ed25519_key.pub").write_text("ssh-ed25519 TEST-ONLY-PUBLIC-KEY\n")
         self.manifest = self.root / "manifest.json"
         self.binding = dict(host="racknerd", machineId="1" * 32,
-                            sshHostFingerprint=FINGERPRINT, ageRecipient="age1testonly")
+                            sshHostFingerprint=FINGERPRINT, ageRecipient=None)
         self.manifest.write_text(json.dumps(self.binding))
         self.manifest.chmod(0o600)
         self.environment.update(FLEET_INSTALL_EXTRA_FILES=str(self.staging), FLEET_INSTALL_IDENTITY=str(identity),
@@ -249,7 +253,7 @@ class Workflows(unittest.TestCase):
         self.staging.chmod(0o755)
         self.assertNotEqual(self.invoke("host-install.sh", self.install_data()).returncode, 0)
         self.staging.chmod(0o700)
-        key = self.staging / "persist/var/lib/sops-nix/key.txt"
+        key = self.staging / "persist/etc/ssh/ssh_host_ed25519_key"
         key.chmod(0o644)
         self.assertNotEqual(self.invoke("host-install.sh", self.install_data()).returncode, 0)
         key.unlink()
@@ -262,6 +266,23 @@ class Workflows(unittest.TestCase):
         shutil.copytree(self.staging, checkout_staging)
         self.assertNotEqual(self.invoke("host-install.sh", self.install_data(),
                                         FLEET_INSTALL_EXTRA_FILES=str(checkout_staging)).returncode, 0)
+        self.assert_no_remote()
+
+    def test_install_requires_age_only_for_selected_secrets(self):
+        result = self.invoke("host-install.sh", self.install_data(), TEST_AGE_RECIPIENT="age1testonly")
+        self.assertNotEqual(result.returncode, 0)
+        self.assert_no_remote()
+        key = self.staging / "persist/var/lib/sops-nix/key.txt"
+        key.parent.mkdir(parents=True)
+        key.write_text("TEST-ONLY-NOT-A-SECRET\n")
+        key.chmod(0o600)
+        self.manifest.write_text(json.dumps(dict(self.binding, ageRecipient="age1testonly")))
+        result = self.invoke("host-install.sh", self.install_data(), TEST_AGE_RECIPIENT="age1testonly")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        (self.root / "calls").write_text("")
+        self.assertNotEqual(self.invoke("host-install.sh", self.install_data()).returncode, 0)
+        self.manifest.write_text(json.dumps(dict(self.binding, ageRecipient="age1wrong")))
+        self.assertNotEqual(self.invoke("host-install.sh", self.install_data(), TEST_AGE_RECIPIENT="age1testonly").returncode, 0)
         self.assert_no_remote()
 
     def test_staging_is_bound_to_host_and_all_public_identities(self):
