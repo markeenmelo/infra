@@ -73,7 +73,7 @@ The operator will deploy with deploy-rs themselves. It assumes reachable non-roo
 ### Preflight
 
 1. `devenv tasks run repo:check-full`; inspect `devenv tasks run repo:inventory` and `nix eval --json .#deploymentPlan | jq .`.
-2. Use `bash modules/fleet/ready.sh HOST deploy` for deployment-specific readiness, or `devenv shell ready HOST` for build readiness. `devenv shell deploy-host HOST` performs the deploy-specific preflight automatically. The SSH user must be non-root with configured public keys; root is rejected to match the SSH root-login restriction. Keep the system activation `profileUser` as root and verify the chosen elevation path.
+2. Use `bash modules/fleet/ready.sh HOST deploy` for deployment-specific readiness, or `devenv shell ready HOST` for build readiness. the explicit `deploy:host` task performs the full gate and deployment-specific preflight internally. The SSH user must be non-root with configured public keys; root is rejected to match the SSH root-login restriction. Keep the system activation `profileUser` as root and verify the chosen elevation path.
 3. Confirm the reported revision/actual package source matches the independent host policy. Check a known-good generation and backup/restore status. The persistent SOPS identity, intended ciphertext/recipients and early-decryption path must be verified, alongside signing keys; pure checks cannot verify them. SOPS creates runtime password files during activation, not during builds. Follow the [secret procedure](../secrets/README.md).
 4. Verify host-key fingerprint, reachability, free `/nix`/`/boot` space, admin login, sudo/doas policy and Nix closure trust. Do not put credentials in flake arguments, source files or shell history. For signed transport, securely set `LOCAL_KEY` to the existing signing-key path; the target must already trust its public key.
 5. Keep an independent console and an existing SSH session open for sensitive changes. Consider `--dry-activate` only after authorization: it still contacts/copies to the target and is **not** a purely local check.
@@ -81,11 +81,14 @@ The operator will deploy with deploy-rs themselves. It assumes reachable non-roo
 ### Commands (these really deploy)
 
 ```sh
-# First select Racknerd's existing private signer as LOCAL_KEY, off-target.
-devenv shell deploy-host racknerd
+# LIVE switch of one host; use its own off-target signer.
+LOCAL_KEY=/private/path/to/racknerd-signing-key \
+  devenv --no-tui tasks run deploy:host --show-output \
+    --input host=racknerd \
+    --input mode=switch \
+    --input confirm=deploy:racknerd:switch
 
-# For Bastion's home-persistence removal, use the boot-only procedure below,
-# not a live deploy-host switch.
+# For Bastion's home-persistence removal, use mode=boot as specified below.
 ```
 
 `deploy .` means all **eligible** nodes, not every fleet identity. ThinkPad remains local-only. Deploy these servers **one at a time** with their distinct signers: one `LOCAL_KEY` does not satisfy both targets' public trust. Do not use `deploy-fleet` or `--targets` for this transition. An offline machine is not a reason to remove rollback safeguards.
@@ -116,26 +119,29 @@ The new candidate authorizes both reviewed administrator keys for `marcos` on ev
 | `marcos@192.168.2.2` | `SHA256:DiSj7jMXKQJchfzBDBBX8VsTSErDkDgLAdjsBPN3Ie4` | `bastion-deploy-20260912` |
 | `marcos@72.11.150.242` | `SHA256:A0QspM00bMLwnPwevkEvB9q8TTfjS4ewlFWfN0ss0B0` | `racknerd-deploy-20260912` |
 
-From that reviewed checkout/controller with the pinned `deploy` available, run in **Bash**. Prompts below request private-key **paths**, never key contents; sudo's password prompt belongs only in the private terminal. SSH uses the configured identity/known-host files, disables the agent/forwarding, and preserves liveness limits because `--ssh-opts` replaces node options:
+From that reviewed checkout/controller with the pinned devenv available, run in **Bash**. Prompts below request private-key **paths**, never key contents; signer paths remain in `LOCAL_KEY`, not public task inputs, and sudo's password prompt belongs only in the private terminal. The task derives and checks the signer's public key, enforces strict SSH/no agent or forwarding, preserves liveness limits, runs the full gate/readiness, and then invokes locked deploy-rs:
 
 ```bash
 set -euo pipefail
-SSH_OPTIONS='-p 22 -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o IdentityAgent=none -o IdentitiesOnly=yes -o ForwardAgent=no -o ClearAllForwardings=yes -o ConnectTimeout=15 -o ServerAliveInterval=10 -o ServerAliveCountMax=3'
 read -r -p 'Existing Bastion signing-key path: ' BASTION_SIGNER
 test -f "$BASTION_SIGNER" && test -r "$BASTION_SIGNER" || exit 1
-LOCAL_KEY="$BASTION_SIGNER" deploy .#bastion --boot --interactive --checksigs \
-  --ssh-opts "$SSH_OPTIONS" -- --no-update-lock-file
+LOCAL_KEY="$BASTION_SIGNER" devenv --no-tui tasks run deploy:host --show-output \
+  --input host=bastion \
+  --input mode=boot \
+  --input confirm=deploy:bastion:boot
 ```
 
 Wait for successful deploy completion before the **separate planned reboot**. `--boot` updates the system profile/boot selection but does not remove the running home bind; its reachability confirmation cannot validate the next boot. When ready, use the existing private SSH/console session to run `sudo systemctl reboot`. Reconnect with the same strict pin; privately verify separate `marcos` logins using both reviewed private keys, then verify the intended `/run/current-system`, no failed units, `/home/marcos` on tmpfs with `marcos:users 0700`, working password sudo, retained identity/service binds and unchanged eight `tank` legacy mounts/health. If boot fails, use the previous Limine generation/console; do not repeat deployment blindly. Do not read secret contents or delete old backing data for acceptance.
 
-After Bastion is accepted, deploy Racknerd separately (same Bash session/options), which removes the editor without changing its already-ephemeral home:
+After Bastion is accepted, deploy Racknerd separately, which removes the editor without changing its already-ephemeral home:
 
 ```bash
 read -r -p 'Existing Racknerd signing-key path: ' RACKNERD_SIGNER
 test -f "$RACKNERD_SIGNER" && test -r "$RACKNERD_SIGNER" || exit 1
-LOCAL_KEY="$RACKNERD_SIGNER" deploy .#racknerd --interactive --checksigs \
-  --ssh-opts "$SSH_OPTIONS" -- --no-update-lock-file
+LOCAL_KEY="$RACKNERD_SIGNER" devenv --no-tui tasks run deploy:host --show-output \
+  --input host=racknerd \
+  --input mode=switch \
+  --input confirm=deploy:racknerd:switch
 ```
 
 Privately verify separate `marcos` logins with both reviewed keys, then confirm the new generation, unchanged strict SSH/password sudo, no failed units and healthy network/firewall/fail2ban. Neither command changes keys, clears Nix generations, prunes `/persist`, deploys ThinkPad or authorizes its wipe. Old store generations may retain removed tools for rollback. No automatic/magic rollback override is needed.

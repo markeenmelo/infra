@@ -22,7 +22,7 @@ devenv tasks run repo:check-full   # canonical gate before handoff or deployment
 devenv shell ready racknerd  # local commissioning checks; never installation/activation
 ```
 
-Native **devenv** supplies the locked toolbox, language servers, SOPS/age and guarded deployment scripts ([development commands](docs/development.md)); it performs no deployment, secret retrieval or disk action. **Stage intended new files before evaluation** — Git flakes ignore untracked files — and stage only reviewed encrypted SOPS files/public recipients, never plaintext credentials or private identities.
+Native **devenv** supplies the locked toolbox, language servers, SOPS/age, guarded operator scripts and the explicit live single-host deploy task ([development commands](docs/development.md)); shell entry and `repo:*` tasks perform no deployment, secret retrieval or disk action. **Stage intended new files before evaluation** — Git flakes ignore untracked files — and stage only reviewed encrypted SOPS files/public recipients, never plaintext credentials or private identities.
 
 ## Fresh candidates and execution boundaries
 
@@ -47,7 +47,11 @@ After commissioning, **with separate deployment authorization**:
 ```sh
 devenv shell ready racknerd
 devenv shell build racknerd        # local build; no deployment
-devenv shell deploy-host racknerd  # really activates remotely
+# LIVE: exact public confirmation + that host's LOCAL_KEY are required.
+LOCAL_KEY=/private/path/to/racknerd-signing-key \
+  devenv --no-tui tasks run deploy:host --show-output \
+  --input host=racknerd --input mode=switch \
+  --input confirm=deploy:racknerd:switch
 ```
 
 `--dry-activate` also contacts targets. Rollback does not restore data, secrets, storage layouts or guarantee the next boot. See [operations and recovery](docs/operations.md#deployment-and-recovery).
@@ -63,7 +67,7 @@ devenv shell deploy-host racknerd  # really activates remotely
 - `modules/desktop.nix` + `modules/desktop/` — the desktop bundle, its HM bridge, compositor/greeter/apps/peripherals and their tests.
 - `modules/kernel.nix` — per-track latest stock 7.x policy; `modules/tailscale/` + `tofu/tailscale/` — review-gated enrollment and OpenTofu policy.
 - `modules/deployment.nix` — deploy metadata and upstream checks; `modules/tooling.nix` — unstable bootstrap CLI and source/lock checks.
-- `devenv.nix` — native developer packages/tasks and guarded script entry points; `modules/validation.nix` — typed synthetic fixture assembly and independent inventories. Feature-owned `checks.nix` files, scripts and assets stay beside their owners.
+- `devenv.nix` — native developer packages/tasks, including the disconnected live single-host deployment task, and guarded script entry points; `modules/validation.nix` — typed synthetic fixture assembly and independent inventories. Feature-owned `checks.nix` files, scripts and assets stay beside their owners.
 
 Each host's explicit `track` selects exactly one input's `lib.nixosSystem`; NixOS instantiates its own `pkgs`. The desktop concern imports Home Manager only for its unstable bundle; headless hosts have no HM. `home-manager` and `zen-browser` use default-branch URLs following unstable, pinned only in `flake.lock`; Zen's recipe is instantiated with the host's `pkgs`. See [ADR 0001](docs/adr/0001-dendritic-composition.md) and [ADR 0002](docs/adr/0002-nixpkgs-tracks.md).
 

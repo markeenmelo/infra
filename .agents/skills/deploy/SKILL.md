@@ -20,14 +20,17 @@ Read `../../../AGENTS.md`, `../../../modules/deployment.nix`, `../../../modules/
 3. Run `bash modules/fleet/ready.sh HOST deploy`. Inspect `nix eval --json .#deploymentPlan | jq .`; resolve all placeholders. `deployment.sshUser` must be a configured non-root account with public keys, while `deployment.profileUser` remains root for system activation. Never enable SSH root login to bypass the non-root deployment assertion. Build with `devenv shell build HOST` if prebuilding is appropriate. Review SOPS identity custody/recipients/early decryption and signing keys separately via `../../../secrets/README.md`: pure checks do not decrypt or verify working credentials. Missing password bindings and unreviewed identities must continue to block commissioning.
 4. Confirm closure upload trust and elevation independently. `transport = "trusted-user"` is root-equivalent Nix access; `"signed"` needs pre-provisioned target public trust and an operator `LOCAL_KEY`. Interactive sudo/doas must work as configured. Never add global wheel trust, disable signature checks or store credentials in Git to get past a deployment failure.
 5. With authorization, verify SSH fingerprint/reachability and console access. Keep an existing session for sensitive changes. If offline, stop or deliberately choose an online subset; do not remove rollback safeguards or retry blindly.
-6. Execute only the selected approved scope:
+6. Execute only the selected approved scope. The single-host task is a deliberately disconnected live-operation exception: it reruns the full gate/readiness, requires signed transport, matching `LOCAL_KEY`, a foreground terminal, explicit mode and an exact public confirmation, then retains interactive sudo/signature checking/rollback:
    ```sh
-   devenv shell deploy-host racknerd
-   # Approved subset, after individual preflights:
-   deploy --targets .#racknerd .#bastion -- --no-update-lock-file
+   LOCAL_KEY=/private/path/to/racknerd-signing-key \
+     devenv --no-tui tasks run deploy:host --show-output \
+       --input host=racknerd \
+       --input mode=switch \
+       --input confirm=deploy:racknerd:switch
    # All eligible nodes, only if that whole scope was authorized:
    devenv shell deploy-fleet
    ```
+   Use `mode=boot` plus matching confirmation only with a separately planned reboot. Never put signer paths, key contents or passwords in task inputs. Raw multi-target deploy remains operator-only and is inappropriate when hosts use distinct signers.
 7. Preserve automatic and magic rollback. `--dry-activate` still contacts/copies to the target. SSH changes should preserve old/new access in a staged migration. If unavoidable, a separately authorized console-controlled maintenance may use `--magic-rollback false`; never persist that override in defaults. Review upstream subset `--rollback-succeeded` behavior before intentionally changing it.
 8. Confirm activation, reachability, intended generation, service health and persistent mounts. A future reboot/hardware acceptance test needs its own maintenance plan. Do not confuse successful activation with data restore or verified bootability.
 9. If activation or confirmation fails, wait for rollback and inspect status via existing access/console. Stop on unexplained host-key change. If necessary and authorized, use console generation selection or `sudo nixos-rebuild switch --rollback`; application data may need separate recovery.
