@@ -16,10 +16,23 @@ in
     networking.hostId = "ebbb349e";
     boot.supportedFilesystems = [ "zfs" ];
     boot.zfs.forceImportRoot = false;
-    fileSystems = lib.mapAttrs (_: device: {
-      inherit device;
-      fsType = "zfs";
-    }) datasets;
+    fileSystems =
+      lib.mapAttrs (_: device: {
+        inherit device;
+        fsType = "zfs";
+      }) datasets
+      // {
+        "/mnt/backup" = {
+          device = "/dev/disk/by-uuid/299d5130-226c-4d2f-b677-d4613da171db";
+          fsType = "ext4";
+          options = [
+            "nofail"
+            "x-systemd.automount"
+            "x-systemd.device-timeout=5s"
+            "x-systemd.mount-timeout=30s"
+          ];
+        };
+      };
     services.zfs = {
       autoScrub = {
         enable = true;
