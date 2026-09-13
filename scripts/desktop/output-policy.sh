@@ -4,7 +4,6 @@ shopt -s inherit_errexit nullglob
 
 internal_output="@internalOutput@"
 internal_mode="@internalMode@"
-internal_width=@internalWidth@
 
 usage() {
   printf 'usage: fleet-output-policy {sync|dry-run|watch}\n' >&2
@@ -68,35 +67,16 @@ external_rows() {
       | select(.name as $name | $name != $internal and ($ARGS.positional | index($name)) != null)
       | if (.name | test("^[A-Za-z0-9_-]+$")) then .
         else error("invalid DRM output name") end
+      | if (.disabled | type) != "boolean" or (.dpmsStatus | type) != "boolean"
+          or (.width | type) != "number" or (.height | type) != "number"
+        then error("invalid monitor state") else . end
       | if $activeOnly then
-          if (.disabled | type) != "boolean" or (.dpmsStatus | type) != "boolean"
-            or (.width | type) != "number" or (.height | type) != "number"
-          then error("invalid active monitor state")
-          else select(.disabled == false and .dpmsStatus == true and .width > 0 and .height > 0) end
+          select(.disabled == false and .dpmsStatus == true and .width > 0 and .height > 0)
         else . end
-      | (
-          if (.availableModes | type) != "array" then error("invalid availableModes")
-          elif (.availableModes | length) > 0 then .availableModes[0]
-          else
-            ((.width | tostring) + "x" + (.height | tostring) + "@" + (.refreshRate | tostring))
-          end
-        ) as $rawMode
-      | ($rawMode | sub("Hz$"; "")) as $mode
-      | ($mode | capture("^(?<width>[0-9]+)x(?<height>[0-9]+)@[0-9]+(\\.[0-9]+)?$")
-          // error("invalid monitor mode")) as $size
-      | if ($size.width | tonumber) > 0 and ($size.height | tonumber) > 0 then .
-        else error("invalid monitor dimensions") end
-      | {
-          name: .name,
-          mode: $mode,
-          width: ($size.width | tonumber),
-          height: ($size.height | tonumber)
-        }
     )
     | sort_by(.name)
     | .[]
-    | [.name, .mode, .width, .height]
-    | @tsv
+    | .name
   ' --args "${connected[@]}"
 }
 
@@ -117,14 +97,12 @@ apply_rule() {
 sync_outputs_unlocked() {
   local dry_run=$1 monitors=$2
   local external_count=0
-  local external_height=0
-  local external_width=0
-  local bitdepth cm hdr height lid mode name rows width
+  local bitdepth cm hdr lid name position rows
 
   rows=$(external_rows "$monitors")
   lid=$(read_lid_state)
 
-  while IFS=$'\t' read -r name mode width height; do
+  while IFS= read -r name; do
     [[ -n "$name" ]] || continue
 
     bitdepth=8
@@ -134,14 +112,14 @@ sync_outputs_unlocked() {
       bitdepth=10
       cm=hdredid
     fi
+    position=auto-center-up
+    if [[ "$lid" == closed ]] && ((external_count == 0)); then
+      position=0x0
+    fi
     apply_rule "$dry_run" \
-      "output = \"$name\", mode = \"$mode\", position = \"${external_width}x0\", scale = 1, bitdepth = $bitdepth, cm = \"$cm\", vrr = 0, disabled = false"
+      "output = \"$name\", mode = \"preferred\", position = \"$position\", scale = 1, bitdepth = $bitdepth, cm = \"$cm\", vrr = 0, disabled = false"
 
     ((external_count += 1))
-    ((external_width += width))
-    if ((height > external_height)); then
-      external_height=$height
-    fi
   done <<<"$rows"
 
   if ((external_count > 0)) && [[ "$lid" == closed ]]; then
@@ -156,15 +134,8 @@ sync_outputs_unlocked() {
     fi
     apply_rule "$dry_run" "output = \"$internal_output\", disabled = true"
   else
-    local internal_x=0
-    local internal_y=0
-    if ((external_count > 0)); then
-      internal_x=$(((external_width - internal_width) / 2))
-      internal_y=$external_height
-    fi
-
     apply_rule "$dry_run" \
-      "output = \"$internal_output\", mode = \"$internal_mode\", position = \"${internal_x}x${internal_y}\", scale = 1, bitdepth = 8, cm = \"srgb\", vrr = 0, disabled = false"
+      "output = \"$internal_output\", mode = \"$internal_mode\", position = \"0x0\", scale = 1, bitdepth = 8, cm = \"srgb\", vrr = 0, disabled = false"
   fi
 }
 

@@ -3,6 +3,15 @@
 Initial research **2026-09-09 UTC**, with subsequent dated entries, against upstream documentation, source checkouts, GitHub release lists and recently updated issues. Pins below describe this implementation, not evergreen release recommendations. `flake.lock` is authoritative after future updates.
 
 
+## Connector-independent external display selection — 2026-09-13
+
+The operator selected external above, laptop centered below, external preferred supported mode and scale 1 for both HDMI and USB-C hub paths. Unstable **`02f5696b0e6097e589076d886b317b83ff0437d7`** still packages Hyprland **0.56.2**; no live display query or modeset was performed.
+
+- [Pinned monitor JSON](https://github.com/hyprwm/Hyprland/blob/v0.56.2/src/debug/HyprCtl.cpp) emits available modes in backend order with rounded refresh rates, without a preferred flag. Choosing `availableModes[0]` therefore does not implement preferred-mode selection.
+- [Native mode selection](https://github.com/hyprwm/Hyprland/blob/v0.56.2/src/output/Monitor.cpp) tries the actual preferred mode and supported fallbacks through backend state tests. Use `mode = "preferred"`, avoiding connector-specific custom modelines or a guessed maximum-bandwidth mode.
+- [Position controller](https://github.com/hyprwm/Hyprland/blob/v0.56.2/src/state/MonitorPositionController.cpp), [parser](https://github.com/hyprwm/Hyprland/blob/v0.56.2/src/config/shared/monitor/Parser.cpp) and [official positioning guide](https://wiki.hypr.land/configuring/core/monitors/positioning/) support `auto-center-up`. Explicit positions are arranged first; auto centering uses current logical dimensions. Anchor the observed eDP-1 at 0x0 and let the compositor place externals above. This also handles negotiated hub fallback resolution without stale offsets. Multiple externals now use a centered vertical stack, not manual top-row arithmetic.
+- Static fallback and watcher agree before/during hotplug. Retain physical DRM eligibility, EDID-gated HDR, exact Lua acknowledgements, subscriber-first initialization and fresh active-external verification before disabling the panel. Add synthetic connector/mode-order/geometry-change regressions; native parsing and source inspection are not runtime monitor acceptance. Tests remain deferred to the final batch.
+
 ## Dedicated deployment account and ordered groups — 2026-09-13
 
 The operator selected `deploy` on every host with both existing administrator keys, removal of server marcos/home data/credentials, retention of workstation marcos, remote builds and Racknerd-before-Bastion order. This is configuration work, not authorization exercised for activation, deletion or secret access. Tests are deferred to the end of the requested batch.

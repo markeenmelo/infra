@@ -24,7 +24,7 @@ FALLBACK = {
 HDR = "BT2020RGB\nSMPTE ST2084\nHDR Static Metadata Data Block:\n"
 PANEL = ('hl.monitor({ output = "eDP-1", mode = "1920x1200@60.003", position = "0x0", '
          'scale = 1, bitdepth = 8, cm = "srgb", vrr = 0, disabled = false })')
-SDR_RULE = ('hl.monitor({ output = "DP-TEST", mode = "2560x1440@60.00", position = "0x0", '
+SDR_RULE = ('hl.monitor({ output = "DP-TEST", mode = "preferred", position = "0x0", '
             'scale = 1, bitdepth = 8, cm = "srgb", vrr = 0, disabled = false })')
 HDR_RULE = SDR_RULE.replace('bitdepth = 8, cm = "srgb"', 'bitdepth = 10, cm = "hdredid"')
 DISABLED_PANEL = 'hl.monitor({ output = "eDP-1", disabled = true })'
@@ -191,10 +191,10 @@ class OutputPolicyTests(unittest.TestCase):
         (self.root / "lid/TEST-ONLY/state").write_text("state: open\n")
         result = self.invoke("dry-run")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.splitlines(), [HDR_RULE, PANEL.replace('"0x0"', '"320x1440"')])
+        self.assertEqual(result.stdout.splitlines(), [HDR_RULE.replace('"0x0"', '"auto-center-up"'), PANEL])
         self.assertEqual(self.rules(), [])
 
-    def test_multiple_externals_sorted_above_centered_panel(self):
+    def test_multiple_externals_use_native_centered_stack(self):
         self.connector("DP-A")
         self.connector("DP-B")
         (self.root / "lid/TEST-ONLY/state").write_text("state: open\n")
@@ -202,17 +202,59 @@ class OutputPolicyTests(unittest.TestCase):
         result = self.invoke()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.rules(), [
-            [1, SDR_RULE.replace("DP-TEST", "DP-A")],
-            [1, SDR_RULE.replace("DP-TEST", "DP-B").replace('"0x0"', '"2560x0"')],
-            [1, PANEL.replace('"0x0"', '"1600x1440"')],
+            [1, SDR_RULE.replace("DP-TEST", "DP-A").replace('"0x0"', '"auto-center-up"')],
+            [1, SDR_RULE.replace("DP-TEST", "DP-B").replace('"0x0"', '"auto-center-up"')],
+            [1, PANEL],
         ])
 
-    def test_empty_available_modes_uses_current_mode(self):
+    def test_native_preferred_does_not_guess_from_available_modes(self):
         self.connector()
-        self.snapshots([INTERNAL, dict(EXTERNAL, availableModes=[])])
-        result = self.invoke()
+        for modes in [[], ["1280x720@60Hz", "2560x1440@60Hz"],
+                      ["2560x1440@60Hz", "1280x720@60Hz"]]:
+            with self.subTest(modes=modes):
+                (self.root / "rules").write_text("")
+                self.snapshots([INTERNAL, dict(EXTERNAL, availableModes=modes)])
+                result = self.invoke()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(self.rules()[0][1], SDR_RULE)
+
+    def test_hdmi_and_usb_c_connector_names_get_same_native_layout(self):
+        (self.root / "lid/TEST-ONLY/state").write_text("state: open\n")
+        for name in ["HDMI-A-TEST", "DP-TEST-1", "DP-TEST-7"]:
+            self.connector(name)
+            with self.subTest(name=name):
+                (self.root / "rules").write_text("")
+                self.snapshots([INTERNAL, dict(EXTERNAL, name=name)])
+                result = self.invoke()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([rule for _, rule in self.rules()], [
+                    SDR_RULE.replace("DP-TEST", name).replace('"0x0"', '"auto-center-up"'), PANEL])
+
+    def test_actual_resolution_changes_do_not_freeze_coordinates(self):
+        self.connector()
+        (self.root / "lid/TEST-ONLY/state").write_text("state: open\n")
+        for width, height in [(1280, 720), (2560, 1440), (5120, 1440), (3840, 2160)]:
+            with self.subTest(size=(width, height)):
+                (self.root / "rules").write_text("")
+                self.snapshots([INTERNAL, dict(EXTERNAL, width=width, height=height)])
+                result = self.invoke()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([rule for _, rule in self.rules()], [
+                    SDR_RULE.replace('"0x0"', '"auto-center-up"'), PANEL])
+
+    def test_connector_migration_reapplies_without_old_external_name(self):
+        self.connector("HDMI-A-TEST")
+        self.connector("DP-TEST-7")
+        (self.root / "lid/TEST-ONLY/state").write_text("state: open\n")
+        self.snapshots([INTERNAL, dict(EXTERNAL, name="HDMI-A-TEST")],
+                       [INTERNAL, dict(EXTERNAL, name="DP-TEST-7")])
+        (self.root / "events").write_text("monitoradded>>DP-TEST-7\n")
+        result = self.invoke("watch")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.rules()[0], [1, SDR_RULE.replace("2560x1440@60.00", "1280x720@60")])
+        above = SDR_RULE.replace('"0x0"', '"auto-center-up"')
+        self.assertEqual(self.rules(), [
+            [1, above.replace("DP-TEST", "HDMI-A-TEST")], [1, PANEL],
+            [2, above.replace("DP-TEST", "DP-TEST-7")], [2, PANEL]])
 
     def test_watch_waits_for_initial_output_publication(self):
         self.connector(connected=False)
@@ -243,8 +285,8 @@ class OutputPolicyTests(unittest.TestCase):
         (self.root / "events").write_text("workspace>>2\nconfigreloaded>>\n")
         result = self.invoke("watch")
         self.assertEqual(result.returncode, 0, result.stderr)
-        panel = PANEL.replace('"0x0"', '"320x1440"')
-        self.assertEqual(self.rules(), [[1, HDR_RULE], [1, panel], [2, HDR_RULE], [2, panel]])
+        above = HDR_RULE.replace('"0x0"', '"auto-center-up"')
+        self.assertEqual(self.rules(), [[1, above], [1, PANEL], [2, above], [2, PANEL]])
 
     def test_failed_hotplug_rule_stops_before_panel_and_next_event(self):
         self.connector()
@@ -305,10 +347,10 @@ class OutputPolicyTests(unittest.TestCase):
     def test_json_and_row_decoding_fail_before_any_rules(self):
         self.connector()
         invalid = ["", "[", "{}", "[] []", "[7]"]
-        invalid += [[INTERNAL, dict(EXTERNAL, availableModes=modes)] for modes in
-                    [[123], ["invalid"], ["0x1080@60Hz"], None]]
+        invalid += [[INTERNAL, dict(EXTERNAL, **fields)] for fields in
+                    [{"disabled": "false"}, {"dpmsStatus": None}, {"width": "2560"}, {"height": None}]]
         self.connector("DP-A")
-        invalid.append([dict(EXTERNAL, name="DP-A"), dict(EXTERNAL, availableModes=[123])])
+        invalid.append([dict(EXTERNAL, name="DP-A"), dict(EXTERNAL, disabled=None)])
         for snapshot in invalid:
             with self.subTest(snapshot=snapshot):
                 self.snapshots(snapshot)
@@ -319,7 +361,7 @@ class OutputPolicyTests(unittest.TestCase):
 
     def test_watch_row_decoding_failure_stops_next_event(self):
         self.connector()
-        self.snapshots([INTERNAL, EXTERNAL], [INTERNAL, dict(EXTERNAL, availableModes=[123])])
+        self.snapshots([INTERNAL, EXTERNAL], [INTERNAL, dict(EXTERNAL, disabled=None)])
         (self.root / "events").write_text("monitoradded>>DP-TEST\nconfigreloaded>>\n")
         result = self.invoke("watch")
         self.assertNotEqual(result.returncode, 0)

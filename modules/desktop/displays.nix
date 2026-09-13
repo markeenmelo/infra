@@ -1,14 +1,13 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   internal = {
     output = "eDP-1";
     mode = "1920x1200@60.003";
-    width = 1920;
   };
   outputPolicyText =
     builtins.replaceStrings
-      [ "@internalOutput@" "@internalMode@" "@internalWidth@" ]
-      [ internal.output internal.mode (toString internal.width) ]
+      [ "@internalOutput@" "@internalMode@" ]
+      [ internal.output internal.mode ]
       (builtins.readFile ../../scripts/desktop/output-policy.sh);
 in
 {
@@ -38,7 +37,7 @@ in
           monitor = lib.mkAfter [
             {
               inherit (internal) output mode;
-              position = "auto";
+              position = "0x0";
               scale = 1;
               cm = "srgb";
               bitdepth = 8;
@@ -79,9 +78,15 @@ in
   perSystem.checks = {
     thinkpad-output-policy =
       let
-        targetPkgs = config.flake.fleetConfigurations.thinkpad.pkgs;
+        target = config.flake.fleetConfigurations.thinkpad;
+        targetPkgs = target.pkgs;
+        rules = target.config.home-manager.users.marcos.wayland.windowManager.hyprland.settings.monitor;
         script = targetPkgs.writeText "output-policy.sh" outputPolicyText;
       in
+      assert lib.assertMsg (
+        lib.any (rule: rule.output == "" && rule.mode == "preferred" && rule.position == "auto-center-up" && rule.scale == 1) rules
+        && lib.any (rule: rule.output == "eDP-1" && rule.mode == "1920x1200@60.003" && rule.position == "0x0" && rule.scale == 1) rules
+      ) "ThinkPad static defaults must center connector-independent preferred externals above the observed panel before the watcher starts.";
       targetPkgs.runCommand "thinkpad-output-policy"
         {
           nativeBuildInputs = with targetPkgs; [
