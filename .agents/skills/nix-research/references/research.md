@@ -3,6 +3,10 @@
 Initial research **2026-09-09 UTC**, with subsequent dated entries, against upstream documentation, source checkouts, GitHub release lists and recently updated issues. Pins below describe this implementation, not evergreen release recommendations. `flake.lock` is authoritative after future updates.
 
 
+## Native devenv script extraction — 2026-09-13
+
+Operator-requested follow-up to **`57b4979`**: the six existing native devenv script bodies move to `scripts/devenv/*.sh`; `devenv.nix` retains only their registrations via `builtins.readFile`. Preserve arguments, working-directory handling, runtime helper paths and the absence of automatic operations. This is a source move, not a replacement task system or deployment authorization. No pins/API changes; tests remain deferred to the batch's final validation.
+
 ## Nix-only modules and concern-owned scripts — 2026-09-13
 
 Operator-requested mechanical move from clean **`b2015c0`**: executable sources/tests move from `modules/` to `scripts/<concern>/`; static JSON preferences move to `assets/desktop/`. Nix definitions remain feature-owned top-level modules. Existing Bash repository-root traversal retains the same two-level depth; update callers, synthetic wrapper paths and ShellCheck discovery. The source-quality check now rejects non-Nix files under `modules/`. No upstream API/pin change, activation or source behavior change beyond path references is intended. Per the operator's batch workflow, commit each task and defer tests until all tasks are implemented; these intermediate commits are not validated deployment candidates.

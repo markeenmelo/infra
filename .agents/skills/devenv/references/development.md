@@ -16,6 +16,8 @@ Use `devenv shell -- bash -c 'COMMAND'` for shell flags: without the separator, 
 
 ## Existing scripts
 
+Bodies live in `scripts/devenv/`; `devenv.nix` registers them with `builtins.readFile`. Keep future devenv helpers there, not inline or under `modules/`.
+
 | Command | Boundary |
 |---|---|
 | `devenv shell ready HOST` | Local commissioning checks only |
