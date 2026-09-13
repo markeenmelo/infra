@@ -2,14 +2,12 @@ let
   policyFor = { lib, pkgs }: {
     sessionVariables = {
       CURSOR_AGENT_PATH = lib.getExe pkgs.cursor-cli;
-      RTK_TELEMETRY_DISABLED = "1";
     };
     extraPackages = with pkgs; [
       cursor-cli
       gh
       git
       nodejs
-      rtk
     ];
     settings = {
       lastChangelogVersion = pkgs.pi-coding-agent.version;
@@ -22,33 +20,9 @@ let
       packages = [
         "npm:@99percentpeople/pi-codex-api@0.4.0"
         "npm:@akepka/pi-cursor-cli-provider@0.10.1"
-        "npm:@ayulab/pi-rewind@0.4.6"
+        "npm:@dietrichgebert/ponytail@4.9.0"
         "npm:@juicesharp/rpiv-ask-user-question@2.9.0"
-        "npm:pi-tool-repair@0.2.5"
-        "${pkgs.fetchFromGitHub {
-          owner = "earendil-works";
-          repo = "pi-review";
-          rev = "f1de050504936046c0f85b21fec0e0a93ef394eb";
-          hash = "sha256-bvdJjLudTd9YQF8ip30jIvi6MY3MAcw5GXVONx1DLuQ=";
-        }}"
-        "${
-          pkgs.fetchFromGitHub {
-            owner = "rtk-ai";
-            repo = "rtk";
-            tag = "v0.47.0";
-            hash = "sha256-qYVkFLS6G4Tf1NmD9B3kJkyb47XREoVE65EqBtbzzjs=";
-          }
-        }/hooks/pi/rtk.ts"
-        "${./agents/assets/empty-args-retry.ts}"
       ];
-      ayu = {
-        rewind.restoreOnTree = "ask";
-        checkpoint = {
-          restoreOnResume = false;
-          restoreOnFork = false;
-          restoreOnClone = false;
-        };
-      };
     };
     piFiles = {
       ".pi/agent/99extensions.json" = (pkgs.formats.json { }).generate "pi-99extensions.json" {
@@ -67,47 +41,8 @@ let
           usagePollInterval = 5;
         };
       };
-      ".pi/agent/extensions/pi-tool-repair.json" =
-        (pkgs.formats.json { }).generate "pi-tool-repair.json"
-          {
-            grammarRepair = {
-              mode = "recover";
-              requireKnownTool = true;
-              grammars = [ "glm" ];
-              leakModels = [ "glm" ];
-            };
-          };
     };
     xdgFiles = {
-      "rtk/config.toml" = (pkgs.formats.toml { }).generate "rtk-config.toml" {
-        telemetry = {
-          enabled = false;
-          consent_given = false;
-        };
-        tracking = {
-          enabled = true;
-          history_days = 90;
-        };
-        tee = {
-          enabled = false;
-          mode = "never";
-          max_files = 20;
-          max_file_size = 1048576;
-        };
-        hooks.exclude_commands = [
-          "git"
-          "nix"
-          "nixos-rebuild"
-          "just"
-          "deploy"
-          "disko"
-          "tofu"
-          "terraform"
-          "ssh"
-          "sops"
-          "age"
-        ];
-      };
       "rpiv-ask-user-question/config.json" =
         (pkgs.formats.json { }).generate "rpiv-ask-user-question.json"
           {
@@ -131,7 +66,6 @@ in
       {
         home = {
           inherit (policy) sessionVariables;
-          packages = [ pkgs.rtk ];
           file = lib.mapAttrs (_: source: { inherit source; }) policy.piFiles;
         };
         xdg.configFile = lib.mapAttrs (_: source: { inherit source; }) policy.xdgFiles;

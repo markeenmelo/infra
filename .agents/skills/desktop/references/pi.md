@@ -1,65 +1,47 @@
 # Pi extensions
 
-For current local checks, follow [manual validation](../../validate/SKILL.md), including the ciphertext guard before staging/evaluation. Repository tasks and the automatic test gate were removed; no replacements exist yet. Historical results below retain their original dates and do not authorize new operations.
-
-ThinkPad's public agent configuration lives in `modules/agents.nix`, with checks/assets under `modules/agents/`, and contributes through native Home Manager to the desktop bundle. Neither minimal-server candidate selects agents, editors or Home Manager. The extension set is declared directly in Pi's managed `settings.packages`: pinned `npm:` specs for published packages plus three immutable Nix store entries (hash-pinned `pi-review`, the official RTK hook and the repository's `empty-args-retry.ts`). No vendored `package.json`, npm lock, patch set or Nix npm build exists anymore. Changes require a separately authorized system/Home Manager activation and a **new Pi session** afterward. This work does not activate or reload a running session. Do not overwrite managed settings using `pi install`, `/curator` or settings-writing commands; change the declaration instead. Credentials, sessions, trust decisions, artifacts and Pi's installed package trees remain private mutable home state.
-
-Bastion's temporary [administration workspace](../../storage-disko/references/reinstall.md#bastions-temporary-administration-workspace) was removed from the candidate on 2026-09-13 because the operator will use the MacBook. The accepted installed generation still has Pi 0.75.4/RTK 0.41.0 and its home bind until the operator applies the boot-only transition. Its historical limitation remains relevant until then: Pi 0.75.4 cannot enforce `defaultProjectTrust = "ask"`; use only operator-reviewed checkouts. Removal does not erase old credentials, sessions or Nix generations. Herdr was never installed on either server; ThinkPad's Herdr program, provider dependencies, package pins and settings are unchanged.
+ThinkPad's public configuration lives in `modules/agents.nix`, with checks under `modules/agents/`, and contributes through native Home Manager to the desktop bundle. Neither minimal-server candidate selects agents, editors or Home Manager. Follow [manual validation](../../validate/SKILL.md), including the ciphertext guard before staging/evaluation; no repository tasks or automatic test gate exist.
 
 ## Package management
 
-Versioned `npm:` specs are pinned and skipped by `pi update`; Pi installs them into mutable `~/.pi/agent/npm` (running `npm install` itself) on the first start after they are missing, which needs network access. `pi-review` stays a fixed-revision, fixed-hash `fetchFromGitHub` store path, the official RTK hook is independently source/hash-pinned to v0.47.0 (its documented CLI minimum is 0.23.0), and `empty-args-retry.ts` is copied from the repository into its own store path. The Home Manager settings file is read-only, so package identity can only change through the declaration. `nodejs` stays in Pi's wrapper PATH because Pi shells out to npm for these installs.
+Extensions are declared directly in managed `settings.packages` as pinned `npm:` specs. There are no local store extensions, vendored npm manifest/lock, patches or Nix npm builds. Versioned specs are skipped by `pi update --extensions`; Pi installs missing packages into mutable `~/.pi/agent/npm` using npm on startup, requiring network access. `nodejs` stays in Pi's wrapper PATH for this. Package versions are pinned, not their entire mutable npm dependency trees.
 
-## Enabled additions
+The Home Manager settings file is read-only. Change the declaration rather than using `pi install`, `/curator` or settings-writing commands. A separately authorized activation and a **new Pi session** are required; changing this repository does not alter the running session. Credentials, installed package trees, sessions, trust decisions and artifacts stay private mutable home state. Declarative removal does not erase old npm trees, RTK history, credentials or generations, and does not disable a separately installed project-local extension.
+
+## Enabled packages
 
 | Package | Pin | Configuration / use |
 |---|---|---|
-| `@99percentpeople/pi-codex-api` | 0.4.0 | Codex search/quota/image tools; `~/.pi/agent/99extensions.json` keeps `gpt-image-2`, quota status; `allowOtherProviders` |
-| `@akepka/pi-cursor-cli-provider` | 0.10.1 | Cursor provider; resolves its CLI through `CURSOR_AGENT_PATH` |
-| `@ayulab/pi-rewind` | 0.4.6 | `ayu.rewind.restoreOnTree = "ask"`; checkpoint restore never automatic on resume/fork/clone |
+| `@99percentpeople/pi-codex-api` | 0.4.0 | Codex search/quota/image tools; `~/.pi/agent/99extensions.json` retains `gpt-image-2`, quota status and `allowOtherProviders` |
+| `@akepka/pi-cursor-cli-provider` | 0.10.1 | Cursor provider; its CLI resolves through `CURSOR_AGENT_PATH` |
+| `@dietrichgebert/ponytail` | 4.9.0 | Native Pi extension and six skills; stock upstream package, no restored patches/config |
 | `@juicesharp/rpiv-ask-user-question` | 2.9.0 | `~/.config/rpiv-ask-user-question/config.json`: collapse key `ctrl+]` |
-| `pi-tool-repair` | 0.2.5 | Repairs malformed tool-call arguments (stringified `edits` arrays, field aliases, null optionals) before Pi validation — covers the `edit` failures seen from z.ai GLM models. `~/.pi/agent/extensions/pi-tool-repair.json` keeps grammar recovery opt-in per model id (`leakModels: ["glm"]`, `recover` mode, known-tool gated); default argument repairs need no config |
-| `pi-review` | commit `f1de050504936046c0f85b21fec0e0a93ef394eb` (Nix hash pin) | `/review`, `/end-review` |
-| RTK | Native desktop CLI 0.47.0; hook v0.47.0 | Existing official source/hash-pinned hook and native CLI; no binary backport |
-| `empty-args-retry.ts` | Repository source / Nix store path; native Pi 0.85.1 contract | Converts empty-argument calls for active tools with required schema properties into a transient provider error; uses Pi's bounded agent retry, not argument repair |
 
-Pi's declarative defaults use `openai-codex/gpt-6-astra` with thinking level **high**. This is a setting change only; it does not activate or reload a running session.
+Pi retains `openai-codex/gpt-6-astra`, thinking level **high**, and project trust **ask**. Use `codex_search` for search/navigation; the old `pi-web-access` direct-fetch tools remain absent.
 
-Use existing `codex_search` for search/navigation. The former direct-URL `fetch_content`/`get_search_content` tools were provided by `pi-web-access`, which is removed (below).
+## Ponytail
 
-## Removed by operator decision
+The published manifest loads `pi-extension/index.js` and `skills/`, not installers/hooks for other agents. With no environment or private config override, upstream defaults are **full** mode, visible status and a startup notification. This re-addition does not restore the former managed `~/.config/ponytail/config.json` or patches. Existing private config/session entries can affect the effective mode; review them after authorized activation.
 
-The following were removed together with the npm manifest/lock build that carried them; none of their commands, tools, skills, configs or patches remain:
+- `/ponytail lite|full|ultra|off` changes the session mode; `/ponytail status` reports it. Bare `/ponytail` sets the configured default (or full when the default is off), despite the upstream README's report-only claim.
+- Prefer explicit `/skill:ponytail-review`, `/skill:ponytail-audit`, `/skill:ponytail-debt`, `/skill:ponytail-gain` and `/skill:ponytail-help`. Stock 4.9.0's shorthand aliases send messages without Pi 0.85.1's explicit expansion opt-in, so they are not reliable native skill expansion.
+- Stock 4.9.0 restores mode on `session_start`, not `session_tree`; after tree navigation explicitly select the intended mode. The former tree/alias patches are not carried into mutable npm installs.
+- Ponytail is style guidance, not deployment authorization or a substitute for correctness/security review. Repository safety, validation and the no-prose-code-comments policy still apply; put rationale in skills, not `ponytail:` comments. Its gain card describes upstream benchmarks, not savings measured here.
 
-- `pi-subagents` (and the `subagents` settings block, role overrides, `~/.pi/agent/extensions/subagent/config.json`): no subagent/workflow tooling.
-- `pi-web-access` (and both generated `web-search.json` policy files): no `fetch_content`/`get_search_content` tools.
-- `pi-plan` (and its patch): no plan mode.
-- `pi-lsp-extension` (and its patch): no LSP tools; the `nil`/`pyright`/`typescript-language-server`/`clang-tools` servers left Pi's wrapper PATH with it.
-- `@dietrichgebert/ponytail` (and its patch plus `~/.config/ponytail/config.json`).
-- `i-have-adhd` (vendored skill/extension plus `~/.pi/agent/i-have-adhd.json`).
-- `@juicesharp/rpiv-todo` (plus `~/.config/rpiv-todo/config.json`).
-- `pi-claude-bridge` (plus `~/.pi/agent/claude-bridge.json` and the `claude-code` unfree allowance/package): no `AskClaude` tool and no Claude provider through Pi. Upstream 0.7.0 (latest) hardcodes Claude-native `settingSources: ["user", "project"]` for AskClaude with no config override, so the former build-time adaptation could not be carried into a pi-managed install; the operator chose removal over retaining a Nix-patched package.
-- The two vendored Herdr Pi extensions (`~/.pi/agent/extensions/herdr-agent-state.ts` and `herdr-ui-prompts.ts`): Pi no longer reports session/prompt state to Herdr panes. The Herdr program itself is unchanged.
+See [package/source research](../../nix-research/references/research.md#pi-extension-removals-and-ponytail-restoration--2026-09-13).
 
-Removals are declarative history: `git log`/`git show` on this file recover the exact prior pins, patches and configuration if any capability is wanted again.
+## Removed packages
 
-## Empty-argument retries
+On 2026-09-13 the operator removed RTK, `pi-tool-repair`, `@ayulab/pi-rewind`, the local `empty-args-retry.ts` and `pi-review`. Their hook/source pins, RTK home/wrapper package and telemetry/config wiring, tool-repair config and `ayu` rewind/checkpoint settings are removed too. There is no replacement argument repair/retry, command compression, checkpoint restoration or `/review` extension. Pi's own provider retry behavior remains unchanged; Ponytail review is a distinct over-engineering skill.
 
-The local extension handles a class `pi-tool-repair` cannot reconstruct: missing, empty or non-object arguments for an active tool declaring required properties. At `message_end`, it converts the whole assistant `toolUse` response to an error and removes **every** tool-call block, including valid siblings, so none is executed or left unmatched by that discarded response. Populated argument objects, unknown/inactive tools, tools without required properties and non-`toolUse` responses are left to Pi's normal handling. It is model-agnostic, not restricted by the separate GLM grammar-repair configuration.
+Earlier removals remain: `pi-subagents`, `pi-web-access`, `pi-plan`, `pi-lsp-extension`, `i-have-adhd`, `@juicesharp/rpiv-todo`, `pi-claude-bridge` and both Herdr Pi extensions. No subagents, plan mode, LSP tools, direct-fetch tools, AskClaude or Herdr pane reporting are restored. The Herdr program remains unchanged; only `cursor-cli` is allowed by the desktop unfree predicate. Git history and the research ledger retain prior pins/configuration.
 
-Automatic continuation depends on `retry.enabled` and `retry.maxRetries` (Pi 0.85.1 defaults: enabled, at most **three retries** after the initial failure, with 2/4/8-second backoff). Disabled or exhausted retry leaves an error, not repaired arguments. The `provider returned error` phrasing must remain recognized by Pi's actual retry classifier. On Pi upgrades, recheck that classifier and message replacement/persistence ordering; see [pinned retry-contract research](../../nix-research/references/research.md#pi-empty-argument-retry-contract--2026-09-12). Offline tests do not establish a provider-side fix or live-session acceptance.
+## Installed-server boundary
 
-## RTK
-
-`rtk` is available in the home profile and Pi wrapper. Its official hook delegates supported **bash** rewrites to the same pinned binary with a two-second timeout; missing/unsupported rewrites pass through. Existing read/grep tools are unchanged. Config at `~/.config/rtk/config.toml` excludes infrastructure/credential command families (`nix`, `nixos-rebuild`, `just`, `deploy`, `disko`, `tofu`, `terraform`, `ssh`, `sops`, `age`) from automatic compression. This is not an authorization policy: these commands still require their normal review.
-
-- `rtk gain` or `rtk gain --format json`: local token statistics, **not** subscription quota.
-- `rtk proxy COMMAND ...`: run without filtering; the offline test checks raw stdout and a failing exit status.
-- `RTK_DISABLED=1 pi`: disable automatic rewriting for a session. An explicitly requested `rtk ...` command remains explicit.
-- Do not run `rtk init`: Home Manager already supplies the hook/config. Do not install a second `pi-rtk`/token-killer wrapper.
-
-**Privacy choice:** telemetry and full raw-output tee capture are disabled; `RTK_TELEMETRY_DISABLED=1` is also declared for the home session. The operator chose stock **local usage statistics** after testing found that RTK 0.47 ignores `tracking.enabled` and `history_days` overrides. Keep its actual enabled/90-day defaults; do not claim tracking can be disabled merely by editing that table. Its private `~/.local/share/rtk/history.db` contains command text, timing, paths and token counts; parse-failure records can include error messages. Never put passwords/tokens in command arguments. Existing home persistence covers this mutable state; nothing is committed or moved to the Nix store. RTK's output is lossy: use a raw rerun when details matter, especially before acting on a filtered diff or failure. No percentage-savings claim was measured against a real workload here.
+Bastion's temporary [administration workspace](../../storage-disko/references/reinstall.md#bastions-temporary-administration-workspace) was removed from the candidate because the operator uses the MacBook. Its accepted installed generation still has Pi 0.75.4/RTK 0.41.0 and the home bind until the separately authorized boot-only transition. Pi 0.75.4 cannot enforce project trust **ask**: use only operator-reviewed checkouts until then. No package removal here changes that installed generation or erases its private home.
 
 ## Validation
 
-`checks.x86_64-linux.pi-extensions` is part of [full manual validation](../../validate/SKILL.md). The obsolete `bastion-pi` check/native fixtures were removed with the server capability; `serverBaseline` instead checks both actual servers for absent tools/public links and ephemeral homes. ThinkPad's settings and HM activation derivation remain unchanged. In a sandbox with an empty HOME and no credentials it loads the managed settings through **Pi 0.85.1's actual loader**, asserts the exact pinned `npm:` spec set and the absence of every removed package, verifies all three local store entries exist and the generated `99extensions.json`/pi-tool-repair configs stay valid and correctly scoped, loads `pi-review`, the RTK hook and `empty-args-retry.ts` through the real loader (command/handler registration), and exercises native RTK rewrite/config/statistics/raw-bypass privacy behavior. The retry transform tests cover empty/missing arguments, stripping all sibling calls and valid/unknown/no-required/non-toolUse pass-through; retryability is checked with **the packaged Pi dependency's `isRetryableAssistantError`**, including non-error, unrecognized-error and quota-exhaustion rejection, not a copied prefix regex. A positive `ls` rewrite prevents a disabled hook from passing only passthrough tests. It cannot load the `npm:` packages themselves (offline sandbox, mutable install tree), so their runtime behavior is not covered by checks; a new Pi session after activation is the real acceptance step. It makes no model request and activates no host.
+`checks.x86_64-linux.pi-extensions` checks generated settings/configuration and runs the packaged Pi version command with empty HOME and no credentials. It asserts exactly the four reviewed npm pins with no local entries, unchanged model/trust/Codex preferences, absent rewind settings, and no managed tool-repair config, RTK config/environment or RTK home/wrapper packages. Obsolete local-loader, retry-transform and RTK runtime tests were deleted with their implementations; the check name/count stays unchanged.
+
+The offline sandbox does **not** install or load these mutable npm packages or establish provider/session compatibility. Real acceptance requires a new Pi session after authorized activation, including Ponytail mode/status and explicit skill invocations. ThinkPad's fresh-layout candidate remains unready; no assertion bypass or live activation is a test. Server closures are unaffected, and `serverBaseline` continues checking absent desktop/workspace tools and ephemeral homes.
