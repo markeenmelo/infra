@@ -11,3 +11,15 @@
 *.raw
 
 **/__pycache__/
+
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+/opentofu/**/*.backup
+/opentofu/**/*.bak

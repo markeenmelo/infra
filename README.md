@@ -14,7 +14,7 @@ Features own their NixOS and Home Manager contributions, persistence and host fa
 nix run --no-update-lock-file .#devenv -- shell
 ```
 
-The shell provides the locked toolbox — Nix, SOPS/age, a locally hardened pinned nixos-anywhere, deploy-rs's inputs and the formatters — plus two explicitly invoked tasks backed by `scripts/devenv/`. Entering it runs no fleet checks, formatting, secret loading, installation or deployment. The shell supports x86_64-linux only.
+The shell provides the locked toolbox — Nix, SOPS/age, a locally hardened pinned nixos-anywhere, deploy-rs's inputs, OpenTofu and the formatters — plus three explicitly invoked tasks backed by `scripts/devenv/`. Entering it runs no fleet checks, formatting, secret loading, installation or deployment. The shell supports x86_64-linux only.
 
 Prepare and validate local installer files explicitly (generates missing identities, preserves existing ones, never contacts the host):
 
@@ -38,6 +38,16 @@ devenv tasks run fleet:deploy --input target=servers --input boot=true
 ```
 
 Installation accepts any fleet host and requires private installer setup. Deployment accepts `racknerd`, `bastion`, or `servers` (Racknerd then Bastion); ThinkPad is install-only. Normal deployment switches without rebooting. `boot=true` stages and then requests a reboot for each successful target; it requires the reboot sudo permission to have been commissioned first. These commands change real machines and need separate explicit authorization.
+
+Manage the hosted tailnet separately, after the [Tailscale procedure](.agents/skills/tailscale/SKILL.md) and a reviewed commit:
+
+```sh
+devenv tasks run tailnet:deploy --input action=plan
+# Separate authorization for the exact saved plan, Grafite tagging and key issuance:
+devenv tasks run tailnet:deploy --input action=apply --input plan=/ABSOLUTE/PRIVATE/SAVED_PLAN
+```
+
+Native HCL in `opentofu/tailscale/` pins the provider; the task keeps encrypted state/plans under `${XDG_STATE_HOME:-$HOME/.local/state}/infra/tailscale`. Only the explicit operator process decrypts `secrets/tailscale/operator.yaml`. It never deploys hosts or enrolls devices. The NixOS base contribution enables Tailscale and root-only identity persistence without an auth key; activation and enrollment need their own authorization. Existing SSH/deploy endpoints are unchanged.
 
 Inspect and build with the flake directly:
 

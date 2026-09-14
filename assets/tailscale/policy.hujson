@@ -1,0 +1,44 @@
+{
+  "tagOwners": {
+    "tag:infra-provisioner": ["autogroup:admin"],
+    "tag:admin-client": ["tag:infra-provisioner"],
+    "tag:server": ["tag:infra-provisioner"]
+  },
+  "grants": [
+    {"src": ["tag:admin-client"], "dst": ["tag:server"], "ip": ["tcp:22"]}
+  ],
+  "ssh": [],
+  "tests": [
+    {
+      "src": "tag:admin-client",
+      "proto": "tcp",
+      "accept": ["tag:server:22"],
+      "deny": ["tag:server:80", "tag:server:443", "tag:server:445", "tag:admin-client:22"]
+    },
+    {
+      "src": "naralidy.anjos@gmail.com",
+      "proto": "tcp",
+      "deny": ["tag:server:22", "tag:admin-client:22", "tag:server:443"]
+    },
+    {
+      "src": "markeenmelo@github",
+      "proto": "tcp",
+      "deny": ["tag:server:22", "tag:admin-client:22", "tag:server:443"]
+    },
+    {
+      "src": "tag:server",
+      "proto": "tcp",
+      "deny": ["tag:server:22", "tag:admin-client:22", "naralidy.anjos@gmail.com:22", "tag:server:443"]
+    },
+    {
+      "src": "tag:infra-provisioner",
+      "proto": "tcp",
+      "deny": ["tag:server:22", "tag:admin-client:22"]
+    },
+    {
+      "src": "tag:admin-client",
+      "proto": "udp",
+      "deny": ["tag:server:22", "tag:server:53", "tag:server:443"]
+    }
+  ]
+}

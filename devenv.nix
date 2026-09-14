@@ -38,9 +38,16 @@ in
     pkgs.sops
     pkgs.age
     pkgs.yq-go
+    pkgs.opentofu
   ];
 
   tasks = {
+    "tailnet:deploy" = {
+      description = "Plan tailnet changes or apply one explicitly authorized saved plan; no host operations.";
+      cwd = config.devenv.root;
+      showOutput = true;
+      exec = "exec ${pkgs.bash}/bin/bash scripts/devenv/tailnet.sh";
+    };
     "fleet:install" = {
       description = "Install one reviewed host (destructive); prepare=true prepares private files, with optional explicit authorizeKey=true live-installer key upload.";
       cwd = config.devenv.root;
