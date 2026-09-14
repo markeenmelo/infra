@@ -16,6 +16,18 @@ nix run --no-update-lock-file .#devenv -- shell
 
 The shell provides the locked toolbox — Nix, SOPS/age, a locally hardened pinned nixos-anywhere, deploy-rs's inputs and the formatters — plus two explicitly invoked tasks backed by `scripts/devenv/`. Entering it runs no fleet checks, formatting, secret loading, installation or deployment. The shell supports x86_64-linux only.
 
+Prepare and validate local installer files explicitly (generates missing identities, preserves existing ones, never contacts the host):
+
+```sh
+devenv tasks run fleet:install --input host=racknerd --input prepare=true
+```
+
+Missing or invalid required files return nonzero with troubleshooting steps; generated files are kept for the next run. Supply `installerHost` and a console-verified `installerHostKey` to also generate private SSH configuration and `known_hosts` (optional integer `installerPort`, default 22). Your personal SSH configuration is untouched; no network scanning or trust-on-first-use is performed.
+
+After local checks pass, preparation can explicitly upload the generated client public key using existing verified live-installer root access: add `--input authorizeKey=true --input bootstrapIdentityFile=/ABSOLUTE/PRIVATE/KEY`. This contacts the host and modifies only live-installer SSH authorization; it requires separate authorization and never starts installation. Without `authorizeKey=true`, preparation stays local.
+
+These checks are not Nix configuration validation or installation readiness: console trust, disk/backup safety, disko review/digest equality and decryption remain operator responsibilities. See the [storage skill](.agents/skills/storage/SKILL.md) for all inputs, troubleshooting and identity preservation on reinstalls.
+
 After completing the [installation](.agents/skills/storage/SKILL.md) or [deployment](.agents/skills/deploy/SKILL.md) prerequisites:
 
 ```sh
