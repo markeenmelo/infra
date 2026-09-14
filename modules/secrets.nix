@@ -37,9 +37,12 @@
           lib.optional (
             cfg.ageKeyFile == null
           ) "Supply fleet.secrets.ageKeyFile from verified identity provisioning."
-          ++ lib.optional (cfg.ageRecipient == null) "Supply the verified fleet.secrets.ageRecipient for selected SOPS secrets."
-          ++ lib.optional (!cfg.identityReviewed)
-            "Verify SOPS identity custody, recipients, early decryption and recovery; acknowledge fleet.secrets.identityReviewed."
+          ++ lib.optional (
+            cfg.ageRecipient == null
+          ) "Supply the verified fleet.secrets.ageRecipient for selected SOPS secrets."
+          ++
+            lib.optional (!cfg.identityReviewed)
+              "Verify SOPS identity custody, recipients, early decryption and recovery; acknowledge fleet.secrets.identityReviewed."
         );
         assertions = [
           {
