@@ -6,7 +6,7 @@ let
   ];
   recipients = [
     "age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht"
-    "age15r7mf8n0ah32y9xf8jxjvj4yrzsf3y52cucqeyr6hlxtkw63vs0qjz7wgm"
+    "age1uyv2jhru0fyy63ae3rwvzx4gzd42k8v0hl2rvjpaz6fqr5qhs5fshqat7p"
   ];
 in
 {
