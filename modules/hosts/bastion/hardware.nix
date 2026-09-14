@@ -1,6 +1,6 @@
 {
   fleet.hosts.bastion.module = {
-    fleet.installation.stateVersion = "26.05";
+    system.stateVersion = "26.05";
     boot.initrd.availableKernelModules = [
       "xhci_pci"
       "nvme"

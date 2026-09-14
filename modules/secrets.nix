@@ -1,13 +1,12 @@
 { inputs, ... }:
 {
-  flake.modules.nixos.secrets =
+  flake.modules.nixos.base =
     { config, lib, ... }:
     let
       cfg = config.fleet.secrets;
       active = config.sops.secrets != { };
     in
     {
-      key = "fleet-secrets";
       imports = [ inputs.sops-nix.nixosModules.sops ];
       options.fleet.secrets = {
         ageKeyFile = lib.mkOption {

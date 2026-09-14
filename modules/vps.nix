@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.vps = _: {
+  flake.modules.nixos.vps = {
     config = {
       services.fail2ban = {
         enable = true;

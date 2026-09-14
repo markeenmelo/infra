@@ -1,6 +1,3 @@
-{ lib, ... }:
 {
-  fleet.hosts = lib.genAttrs [ "thinkpad" "racknerd" "bastion" ] (_: {
-    module.time.timeZone = "America/Toronto";
-  });
+  flake.modules.nixos.base.time.timeZone = "America/Toronto";
 }

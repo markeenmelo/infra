@@ -7,7 +7,7 @@ description: Disk layouts, persistence and installation — disko OS-disk design
 
 **Disko destroys data irreversibly.** Designing a layout is never permission to run one. Default to evaluation-only unless the current task explicitly authorizes the operation.
 
-Read the host's `modules/hosts/<host>/disko.nix`, `modules/storage/persistence.nix` and `modules/storage/limine.nix`.
+Read the host's `modules/hosts/<host>/disko.nix`, `modules/storage/persistence.nix` and `modules/storage/limine.nix`. `persistence.nix` puts disko, the tmpfs root, the empty-pool guards and the `/nix`/`/persist` `neededForBoot` flags into `base`; a host file declares only its disk.
 
 ## Layout
 
@@ -26,7 +26,7 @@ Never invent a device path. **Bastion's `tank` members are not OS storage**: no 
 Root is a tmpfs; only declared paths survive. Add state next to the feature that owns it via `environment.persistence."/persist".directories` or `.files`, setting owner, group and mode where the defaults are wrong.
 
 - Every persistent *and* ephemeral filesystem needs `neededForBoot`. `/nix` must be a real mounted subvolume, never an impermanence binding.
-- Workstations use `fleet.workstation.homePersistence` — `"filesystem"` for a separately mounted home, `"bind"` for an impermanence bind. Never both.
+- A durable `/home` is its own subvolume with `neededForBoot` in the host layout (ThinkPad), never an impermanence bind as well.
 - Persist what has a reason: machine identity (`/etc/machine-id`, user/group allocation state), SSH host keys, service data with its ownership, and the SOPS age identity at `/persist/var/lib/sops-nix/`. Never persist `/run/secrets*`, `/etc` or `/var` wholesale.
 - Audit with `nix eval --json .#fleet.HOST.persistence | jq .`. The report lists declarations only — direct `/persist` contents also survive, and removing a declaration deletes nothing.
 - Plan migration *before* the reboot that needs it: back up, seed the backing paths with correct ownership, then boot.

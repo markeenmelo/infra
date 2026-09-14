@@ -1,4 +1,3 @@
-{ lib, ... }:
 let
   thinkpadSecrets = ../../secrets/hosts/thinkpad.yaml;
   administratorKeys = [
@@ -11,28 +10,22 @@ let
   ];
 in
 {
-  fleet.hosts = lib.mkMerge [
-    (lib.genAttrs [ "thinkpad" "racknerd" "bastion" ] (_: {
-      module.fleet.access.authorizedKeys = administratorKeys;
-    }))
-    {
-      thinkpad.module = { config, lib, ... }: {
-        fleet.access = {
-          admin = "marcos";
-          passwordSecrets.marcos = "marcos-password-hash";
-          passwordlessSudo = false;
+  flake.modules.nixos.base.fleet.access.authorizedKeys = administratorKeys;
+
+  fleet.hosts.thinkpad.module = { config, lib, ... }: {
+    fleet.access = {
+      admin = "marcos";
+      passwordSecrets.marcos = "marcos-password-hash";
+    };
+    sops.secrets =
+      lib.mkIf
+        (config.fleet.secrets.ageKeyFile != null && lib.elem config.fleet.secrets.ageRecipient recipients)
+        {
+          marcos-password-hash = {
+            sopsFile = thinkpadSecrets;
+            neededForUsers = true;
+          };
         };
-        sops.secrets =
-          lib.mkIf
-            (config.fleet.secrets.ageKeyFile != null && lib.elem config.fleet.secrets.ageRecipient recipients)
-            {
-              marcos-password-hash = {
-                sopsFile = thinkpadSecrets;
-                neededForUsers = true;
-              };
-            };
-        users.users.marcos.uid = 1000;
-      };
-    }
-  ];
+    users.users.marcos.uid = 1000;
+  };
 }

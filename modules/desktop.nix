@@ -30,7 +30,10 @@ in
         home-manager = {
           useGlobalPkgs = true;
           useUserPackages = true;
-          sharedModules = [ desktopHome ];
+          sharedModules = [
+            desktopHome
+            ({ osConfig, ... }: { home.stateVersion = osConfig.system.stateVersion; })
+          ];
         };
       };
     };

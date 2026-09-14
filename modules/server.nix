@@ -1,9 +1,5 @@
-{ config, ... }:
 {
   flake.modules.nixos.server = {
-    imports = [ config.flake.modules.nixos.ssh ];
-    fleet.logging.persistent = true;
-    programs.nano.enable = false;
     networking.nftables.enable = true;
     systemd.coredump.enable = false;
     boot.kernel.sysctl = {

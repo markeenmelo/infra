@@ -1,6 +1,5 @@
 {
-  flake.modules.nixos.ssh = { config, lib, ... }: {
-    key = "fleet.ssh";
+  flake.modules.nixos.base = { config, lib, ... }: {
     config = {
       services.openssh = {
         enable = true;

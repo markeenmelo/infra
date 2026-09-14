@@ -16,9 +16,9 @@ Finding a skill is not authorization to run what it describes. Never add shell i
 ## Architecture
 
 - `flake.nix` is the production entry point; root `devenv.nix` is the development-only exception and is never imported into production. Every other `.nix` file lives under `modules/` as a top-level flake-parts module, including hardware facts. `modules/` is Nix only: static data goes in `assets/<concern>/`. There is no `scripts/` tree and no test suite — the repository is declarative configuration and nothing else.
-- Capabilities are deferred, class-checked `flake.modules.nixos` / `flake.modules.homeManager` values, composed only in a matching evaluation. Per-host facts merge into `fleet.hosts.<name>.module`. No host import roots, no `common.nix`.
+- Capabilities are deferred, class-checked `flake.modules.nixos` / `flake.modules.homeManager` values, composed only in a matching evaluation. Every host gets `base`; a host's facts and the named values it imports merge into `fleet.hosts.<name>.module`. No host import roots, no `common.nix`.
 - Each host declares `system` and `track`. ThinkPad follows `nixpkgs-unstable`; servers follow the supported numbered stable branch. Generic code uses its own evaluation's `pkgs` and `lib` — no injected inputs, global overlays or importing both package sets.
-- Track selection belongs in `modules/fleet.nix`. `fleetConfigurations` and `nixosConfigurations` always evaluate every host; deploy nodes require only `deployment.enable`.
+- Track selection belongs in `modules/fleet.nix`. `nixosConfigurations` always evaluates every host; deploy nodes are only the hosts listed in `modules/deploy.nix`.
 - A concern owns its configuration, state and facts together. Nothing in the repository verifies them: there are no fixtures, no `fleet.validation`, no `flake.validation` report and no `perSystem.checks`.
 - `devenv.nix` provides the locked toolbox and nothing else — no scripts, no tasks, no hooks. Its nixpkgs pin must match `flake.lock`.
 

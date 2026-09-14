@@ -1,5 +1,5 @@
-_: {
-  fleet.hosts.thinkpad.module = _: {
+{
+  fleet.hosts.thinkpad.module = {
     home-manager.users.marcos =
       { lib, ... }:
       {

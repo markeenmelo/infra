@@ -1,5 +1,5 @@
-_: {
-  flake.modules.nixos.editors = {
+{
+  flake.modules.nixos.base = {
     programs.neovim = {
       enable = true;
       defaultEditor = true;

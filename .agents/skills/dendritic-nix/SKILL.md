@@ -15,7 +15,7 @@ The pattern is [dendritic](https://github.com/mightyiam/dendritic): one feature 
 
 - `flake.modules.nixos.<name>` and `flake.modules.homeManager.<name>` hold deferred, class-checked configuration. They do nothing until a matching-class consumer imports them.
 - `fleet.hosts.<name>.module` carries host facts; it is deferred and NixOS-class-checked, and independent features merge into it.
-- `modules/fleet.nix` evaluates each host: it picks nixpkgs by `track`, then composes `base`, the host module and the named capabilities.
+- `modules/fleet.nix` evaluates each host: it picks nixpkgs by `track`, then composes `base` with the host module. Hosts pick features with `module.imports = with config.flake.modules.nixos; [ … ]`. Keep names few — `base` (every host), `desktop`, `laptop`, `server`, `vps` — and merge a new feature into one of them before inventing another; host-only configuration merges straight into `fleet.hosts.<name>.module`.
 - Home Manager reaches a host only through `modules/desktop.nix`, which imports the HM NixOS module and feeds `flake.modules.homeManager.desktop` into `home-manager.sharedModules` with `useGlobalPkgs` and `useUserPackages`. Headless hosts never import HM.
 
 ## Rules that bite
@@ -23,7 +23,7 @@ The pattern is [dendritic](https://github.com/mightyiam/dendritic): one feature 
 1. Top-level `config` and a lower module's `config` are different scopes. Bind `config.flake.modules` in a `let` before the deferred function shadows it.
 2. Never resolve local values through `inputs.self`, and never forward packages or inputs via `specialArgs`/`extraSpecialArgs`.
 3. Importing a capability should enable it. Add an option only for a real choice or a safety gate.
-4. A lower module reachable by two import routes needs a stable `key` so list contributions deduplicate — see `modules/ssh.nix`.
+4. A lower module reachable by two import routes needs a stable `key` so list contributions deduplicate. Prefer merging into `base` so there is only one route.
 5. Use the lower evaluation's own `pkgs` and `lib`. Developer tools belong in `devenv.nix`, never in a host package set, and never import both tracks. A real stable/unstable API difference gets one localized branch (`modules/logging.nix`).
 6. `modules/` is Nix only: static data lives in `assets/<concern>/`. There is no `scripts/` tree — an executable a host needs is built in Nix (`pkgs.writeShellApplication` and friends) inside the module that owns it.
 
@@ -34,7 +34,7 @@ Name the single responsibility and its consumers first, then extend the cohesive
 ## Adding a host
 
 1. Create `modules/hosts/<name>/{host,hardware,disko}.nix` by hand, with nothing filled in. Leave them untracked until the facts are real — a Git flake ignores untracked files, so nothing evaluates meanwhile. Copy the shape from an existing host, never its values.
-2. `host.nix` defines `fleet.hosts.<name>` with required `system` and `track` plus its `capabilities`. Choose the track deliberately; a role or directory never implies one.
+2. `host.nix` defines `fleet.hosts.<name>` with required `system` and `track` plus `module.imports` of the named values it needs. Choose the track deliberately; a role or directory never implies one.
 3. Adapt an actual hardware scan; never borrow another machine's UUIDs, devices or keys. The exact destructive candidate, backups and recovery need explicit acceptance before any install.
 4. Follow [storage](../storage/SKILL.md) for the layout and persistence, then add deployment facts to `modules/deploy.nix`.
 5. Run `nix fmt`, `nix flake check --no-update-lock-file -L` and read `nix eval --json .#fleet.<name>`.

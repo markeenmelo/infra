@@ -1,9 +1,5 @@
-{ config, ... }:
-let
-  secretsModule = config.flake.modules.nixos.secrets;
-in
 {
-  flake.modules.nixos.access =
+  flake.modules.nixos.base =
     { config, lib, ... }:
     let
       inherit (lib) mkOption types;
@@ -11,18 +7,11 @@ in
       configured = secret: secret != null && builtins.hasAttr secret config.sops.secrets;
     in
     {
-      key = "fleet.access";
-      imports = [ secretsModule ];
       options.fleet.access = {
         admin = mkOption {
           type = types.nullOr (types.strMatching "[a-z_][a-z0-9_-]*");
           default = null;
           description = "Interactive administrator, or null on deployment-only servers.";
-        };
-        deploymentUser = mkOption {
-          type = types.nullOr (types.strMatching "[a-z_][a-z0-9_-]*");
-          default = null;
-          description = "Keyed administrator provisioned by the deployment capability, independently of an interactive account.";
         };
         authorizedKeys = mkOption {
           type = types.listOf types.nonEmptyStr;
@@ -34,54 +23,40 @@ in
           default = { };
           description = "Account to declared SOPS password-hash secret name. Null is a commissioning blocker, never a fake runtime file.";
         };
-        passwordlessSudo = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Explicit root-equivalent privilege for the admin, if unattended deployment is required.";
-        };
       };
       config = {
-        assertions =
-          lib.optional (cfg.deploymentUser != null) {
+        assertions = lib.mapAttrsToList (
+          user: name:
+          let
+            secret = config.sops.secrets.${name};
+            account = config.users.users.${user};
+          in
+          {
             assertion =
-              cfg.deploymentUser != "root"
-              && builtins.hasAttr cfg.deploymentUser config.users.users
-              && config.users.users.${cfg.deploymentUser}.openssh.authorizedKeys.keys != [ ]
-              && lib.elem "wheel" config.users.users.${cfg.deploymentUser}.extraGroups;
-            message = "A deployment-only administration path must be a real keyed non-root wheel account, not a readiness placeholder.";
+              account.isNormalUser
+              && !config.users.mutableUsers
+              && secret.name == name
+              && secret.neededForUsers
+              && secret.path == "/run/secrets-for-users/${secret.name}"
+              && secret.mode == "0400"
+              && secret.uid == 0
+              && secret.gid == 0
+              && lib.elem secret.owner [
+                null
+                "root"
+              ]
+              && lib.elem secret.group [
+                null
+                "root"
+              ]
+              && account.hashedPasswordFile == secret.path
+              && account.hashedPassword == null
+              && account.password == null
+              && account.initialPassword == null
+              && account.initialHashedPassword == null;
+            message = "SOPS password for ${user} must be the sole credential source, root-only and neededForUsers at its early runtime path.";
           }
-          ++ lib.mapAttrsToList (
-            user: name:
-            let
-              secret = config.sops.secrets.${name};
-              account = config.users.users.${user};
-            in
-            {
-              assertion =
-                account.isNormalUser
-                && !config.users.mutableUsers
-                && secret.name == name
-                && secret.neededForUsers
-                && secret.path == "/run/secrets-for-users/${secret.name}"
-                && secret.mode == "0400"
-                && secret.uid == 0
-                && secret.gid == 0
-                && lib.elem secret.owner [
-                  null
-                  "root"
-                ]
-                && lib.elem secret.group [
-                  null
-                  "root"
-                ]
-                && account.hashedPasswordFile == secret.path
-                && account.hashedPassword == null
-                && account.password == null
-                && account.initialPassword == null
-                && account.initialHashedPassword == null;
-              message = "SOPS password for ${user} must be the sole credential source, root-only and neededForUsers at its early runtime path.";
-            }
-          ) (lib.filterAttrs (_: configured) cfg.passwordSecrets);
+        ) (lib.filterAttrs (_: configured) cfg.passwordSecrets);
         users = {
           mutableUsers = false;
           users = lib.mkMerge [
@@ -99,17 +74,6 @@ in
               hashedPasswordFile = lib.mkIf (configured secret) config.sops.secrets.${secret}.path;
             }) cfg.passwordSecrets)
           ];
-        };
-        security.sudo = {
-          extraRules = lib.optional (cfg.admin != null && cfg.passwordlessSudo) {
-            users = [ cfg.admin ];
-            commands = [
-              {
-                command = "ALL";
-                options = [ "NOPASSWD" ];
-              }
-            ];
-          };
         };
       };
     };

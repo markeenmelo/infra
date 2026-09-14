@@ -1,6 +1,6 @@
 {
   fleet.hosts.thinkpad.module = {
-    fleet.installation.stateVersion = "26.05";
+    system.stateVersion = "26.05";
     boot = {
       initrd = {
         availableKernelModules = [

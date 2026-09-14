@@ -1,40 +1,47 @@
 { inputs, ... }:
 {
-  flake.modules.nixos.persistence =
-    { config, lib, ... }:
+  flake.modules.nixos.base =
+    { lib, ... }:
     {
-      imports = [ inputs.impermanence.nixosModules.impermanence ];
-      options.fleet.persistence.rootSize = lib.mkOption {
-        type = lib.types.strMatching "([1-9][0-9]*[MG]|[1-9][0-9]?%)";
-        default = "25%";
-        description = "tmpfs root ceiling, a tunable policy, not reserved RAM. Review memory/build workloads.";
-      };
-      config = {
-        fileSystems."/".neededForBoot = true;
-        disko.devices.nodev."/" = {
+      imports = [
+        inputs.disko.nixosModules.disko
+        inputs.impermanence.nixosModules.impermanence
+      ];
+      disko.devices = {
+        lvm_vg = lib.mkForce { };
+        mdadm = lib.mkForce { };
+        zpool = lib.mkForce { };
+        bcachefs_filesystems = lib.mkForce { };
+        nodev."/" = {
           fsType = "tmpfs";
           mountOptions = [
             "mode=755"
-            "size=${config.fleet.persistence.rootSize}"
+            "size=25%"
           ];
         };
-        environment.persistence."/persist" = {
-          hideMounts = true;
-          directories = [
-            "/var/lib/nixos"
-            "/var/lib/systemd/timers"
-            {
-              directory = "/var/lib/systemd/timesync";
-              user = "systemd-timesync";
-              group = "systemd-timesync";
-              mode = "0755";
-            }
-          ];
-          files = [
-            "/etc/machine-id"
-            "/var/lib/systemd/random-seed"
-          ];
-        };
+      };
+      services.lvm.enable = false;
+      fileSystems = {
+        "/".neededForBoot = true;
+        "/nix".neededForBoot = true;
+        "/persist".neededForBoot = true;
+      };
+      environment.persistence."/persist" = {
+        hideMounts = true;
+        directories = [
+          "/var/lib/nixos"
+          "/var/lib/systemd/timers"
+          {
+            directory = "/var/lib/systemd/timesync";
+            user = "systemd-timesync";
+            group = "systemd-timesync";
+            mode = "0755";
+          }
+        ];
+        files = [
+          "/etc/machine-id"
+          "/var/lib/systemd/random-seed"
+        ];
       };
     };
 }

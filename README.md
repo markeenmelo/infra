@@ -21,7 +21,7 @@ Inspect and build with the flake directly:
 ```sh
 nix fmt
 nix flake check --no-update-lock-file -L
-nix eval --no-update-lock-file --json .#fleet | jq 'map_values({track,capabilities,osDisk})'
+nix eval --no-update-lock-file --json .#fleet | jq 'map_values({track,osDisk})'
 nix build --no-update-lock-file --no-link .#nixosConfigurations.HOST.config.system.build.toplevel
 ```
 
@@ -29,6 +29,6 @@ nix build --no-update-lock-file --no-link .#nixosConfigurations.HOST.config.syst
 
 ## Where things are documented
 
-[AGENTS.md](AGENTS.md) is the shared contract, [.agents/skills/](.agents/skills/README.md) holds the procedures, and [secrets/README.md](secrets/README.md) covers secret handling. Deployment policy — the dedicated `deploy` account, groups, remote builds and rollback — lives in `modules/deploy.nix`.
+[AGENTS.md](AGENTS.md) is the shared contract, [.agents/skills/](.agents/skills/README.md) holds the procedures, and [secrets/README.md](secrets/README.md) covers secret handling. Deployment policy — the dedicated `deploy` account, remote builds and rollback for racknerd and bastion — lives in `modules/deploy.nix`.
 
 Evaluation and builds authorize no deployment, installation, disk operation or credential access. Persistence and rollback are not backups.
