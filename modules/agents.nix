@@ -29,6 +29,7 @@
               defaultThinkingLevel = "high";
               defaultProjectTrust = "ask";
               packages = [
+                "npm:@99percentpeople/pi-codex-api@0.4.0"
                 "npm:@dietrichgebert/ponytail@4.10.0"
                 "npm:@janvitos/pi-plan-build@0.1.101"
                 "npm:@juicesharp/rpiv-ask-user-question@2.10.1"
