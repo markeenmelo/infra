@@ -18,8 +18,6 @@
         enable = true;
         autosuggestion.enable = true;
         syntaxHighlighting.enable = true;
-        # Home Manager #9349: the stock zoxide hook is ordered before Starship
-        # and clobbers its precmd chain, so zoxide is initialised last instead.
         initContent = lib.mkOrder 2000 ''
           eval "$(${lib.getExe config.programs.zoxide.package} init zsh)"
         '';
@@ -27,10 +25,6 @@
 
       starship.enable = true;
 
-      # Automatic environment loading for the repository's `use devenv` .envrc.
-      # The hook lands at default initContent order, ahead of the zoxide init
-      # ordered last above; HM's default nix-direnv stdlib also caches
-      # `use nix`/`use flake` in other projects.
       direnv = {
         enable = true;
         enableBashIntegration = false;
@@ -50,7 +44,6 @@
         enableBashIntegration = false;
         enableFishIntegration = false;
         enableNushellIntegration = false;
-        # Initialised explicitly above; see the ordering note.
         enableZshIntegration = false;
       };
 
@@ -61,16 +54,6 @@
         enable = true;
         icons = "auto";
         git = true;
-      };
-
-      git = {
-        enable = true;
-        settings.user = {
-          name = "Marcos Melo";
-          email = "marcosmelo@proton.me";
-          # Refuse to guess an identity from the hostname/login for new repos.
-          useConfigOnly = true;
-        };
       };
     };
   };

@@ -40,58 +40,22 @@
         enable = true;
         package = null;
         portalPackage = null;
-        systemd.enable = false; # UWSM alone owns the session lifecycle.
+        systemd.enable = false;
         configType = "lua";
-        # Home Manager owns serialization. Only dispatcher expressions need the
-        # upstream mkLuaInline escape hatch; no hand-written whole Lua config.
         settings = {
           monitor = [
             {
               output = "";
               mode = "preferred";
-              position = "auto";
+              position = "auto-center-up";
               scale = 1;
               cm = "srgb";
               bitdepth = 8;
               vrr = 0;
             }
           ];
-          env = [
-            {
-              _args = [
-                "XCURSOR_SIZE"
-                "24"
-              ];
-            }
-            {
-              _args = [
-                "HYPRCURSOR_SIZE"
-                "24"
-              ];
-            }
-          ];
           config = {
-            general = {
-              layout = "dwindle";
-              gaps_in = 4;
-              gaps_out = 8;
-              border_size = 2;
-              resize_on_border = true;
-              allow_tearing = false;
-              col = {
-                active_border = "#89b4fa";
-                inactive_border = "#45475a";
-              };
-            };
-            decoration = {
-              rounding = 8;
-              active_opacity = 1.0;
-              inactive_opacity = 1.0;
-              blur.enabled = false;
-              shadow.enabled = false;
-            };
-            animations.enabled = true;
-            dwindle.preserve_split = true;
+            general.allow_tearing = false;
             input = {
               kb_layout = "us";
               touchpad = {
@@ -99,11 +63,6 @@
                 tap_to_click = true;
                 disable_while_typing = true;
               };
-            };
-            misc = {
-              disable_hyprland_logo = true;
-              disable_splash_rendering = true;
-              background_color = "#11111b";
             };
           };
           bind = [

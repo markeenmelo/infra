@@ -2,8 +2,6 @@
   flake.modules.homeManager.desktop =
     { pkgs, ... }:
     let
-      oled = builtins.fromJSON (builtins.readFile ./assets/oled-graphite.json);
-
       bitwardenXpi = pkgs.fetchurl {
         name = "bitwarden-2026.8.0.xpi";
         url = "https://addons.mozilla.org/firefox/downloads/file/4970633/bitwarden_password_manager-2026.8.0.xpi";
@@ -59,8 +57,6 @@
           ConvenienceExceptions = false;
         };
 
-        # Firefox 152+ ignores updates_disabled for force_installed extensions.
-        # normal_installed keeps exact XPI pins but lets the user disable an extension.
         ExtensionSettings = {
           "{446900e4-71c2-419f-a6a7-df9c091e268b}" = {
             installation_mode = "normal_installed";
@@ -237,13 +233,9 @@
         };
       };
 
-      # Upstream's flake package output imports pkgs again, even with follows.
-      # Use this normal flake input's recipe with the consuming home's own pkgs.
       zenBrowserUnwrapped =
         (import inputs.zen-browser.outPath { inherit pkgs; }).zen-browser-unwrapped.overrideAttrs
           (previousAttrs: {
-            # Nixpkgs' Firefox wrapper renamed these passthru flags under RFC 169.
-            # Preserve the pinned Zen flake's declared media and GSSAPI support.
             passthru = previousAttrs.passthru // {
               withFFmpeg = previousAttrs.passthru.ffmpegSupport;
               withGSSAPI = previousAttrs.passthru.gssSupport;
@@ -255,16 +247,6 @@
         extraPolicies = policies;
         extraPrefs = ''
           lockPref("zen.welcome-screen.seen", true);
-          lockPref("zen.theme.accent-color", "${oled.colors.accent}");
-          lockPref("zen.theme.gradient", false);
-          lockPref("zen.theme.gradient.show-custom-colors", false);
-          lockPref("zen.view.compact.show-sidebar-and-toolbar-on-hover", false);
-          lockPref("zen.view.grey-out-inactive-windows", false);
-          lockPref("zen.widget.linux.transparency", false);
-          lockPref("browser.tabs.allow_transparent_browser", false);
-          lockPref("zen.view.window.scheme", 0);
-          lockPref("layout.css.prefers-color-scheme.content-override", 0);
-          lockPref("ui.systemUsesDarkTheme", 1);
         '';
       };
     in
@@ -285,11 +267,11 @@
           ]
       );
 
-      # These extensions only support UI-driven JSON import in these releases.
       xdg.configFile = {
-        "sponsorblock/settings-v6.1.7.json".source = ./assets/browser/sponsorblock-settings-v6.1.7.json;
+        "sponsorblock/settings-v6.1.7.json".source =
+          ../../assets/desktop/browser/sponsorblock-settings-v6.1.7.json;
         "youtube-enhancer/settings-v1.34.2.json".source =
-          ./assets/browser/youtube-enhancer-settings-v1.34.2.json;
+          ../../assets/desktop/browser/youtube-enhancer-settings-v1.34.2.json;
       };
     };
 }

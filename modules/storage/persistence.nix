@@ -1,23 +1,49 @@
 { inputs, ... }:
 {
-  flake.modules.nixos.persistence =
-    { config, lib, ... }:
+  flake.modules.nixos.base =
+    { lib, ... }:
+    let
+      inherit (lib) mkOption types;
+    in
     {
-      imports = [ inputs.impermanence.nixosModules.impermanence ];
-      options.fleet.persistence.rootSize = lib.mkOption {
-        type = lib.types.strMatching "([1-9][0-9]*[MG]|[1-9][0-9]?%)";
-        default = "25%";
-        description = "tmpfs root ceiling, a tunable policy, not reserved RAM. Review memory/build workloads.";
+      imports = [
+        inputs.disko.nixosModules.disko
+        inputs.impermanence.nixosModules.impermanence
+      ];
+      options.fleet = {
+        installation = {
+          osDevice = mkOption {
+            type = types.nullOr (types.strMatching "/dev/disk/by-(id|path)/[a-zA-Z0-9._:+-]+");
+            default = null;
+            apply =
+              device:
+              assert lib.assertMsg (
+                device == null || builtins.match ".*-part[0-9]+" device == null
+              ) "The installation device must be a whole OS disk, not a partition.";
+              device;
+            description = "Whole OS disk identity for the per-host disko layout. Each layout restricts its identifier policy; only Racknerd permits a PCI by-path exception when no serial/by-id exists.";
+          };
+        };
       };
       config = {
-        # Actual ephemeral-root semantics, independent of deprecated scripted-initrd hooks.
-        fileSystems."/".neededForBoot = true;
-        disko.devices.nodev."/" = {
-          fsType = "tmpfs";
-          mountOptions = [
-            "mode=755"
-            "size=${config.fleet.persistence.rootSize}"
-          ];
+        disko.devices = {
+          lvm_vg = lib.mkForce { };
+          mdadm = lib.mkForce { };
+          zpool = lib.mkForce { };
+          bcachefs_filesystems = lib.mkForce { };
+          nodev."/" = {
+            fsType = "tmpfs";
+            mountOptions = [
+              "mode=755"
+              "size=25%"
+            ];
+          };
+        };
+        services.lvm.enable = false;
+        fileSystems = {
+          "/".neededForBoot = true;
+          "/nix".neededForBoot = true;
+          "/persist".neededForBoot = true;
         };
         environment.persistence."/persist" = {
           hideMounts = true;
@@ -36,9 +62,6 @@
             "/var/lib/systemd/random-seed"
           ];
         };
-        fleet.bootstrap.missing = lib.optional (
-          !(config.fileSystems ? "/persist") || !(config.fileSystems ? "/nix")
-        ) "Configure real persistent /persist and /nix filesystems with neededForBoot.";
       };
     };
 }

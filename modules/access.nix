@@ -1,9 +1,5 @@
-{ config, ... }:
-let
-  secretsModule = config.flake.modules.nixos.secrets;
-in
 {
-  flake.modules.nixos.access =
+  flake.modules.nixos.base =
     { config, lib, ... }:
     let
       inherit (lib) mkOption types;
@@ -11,12 +7,11 @@ in
       configured = secret: secret != null && builtins.hasAttr secret config.sops.secrets;
     in
     {
-      imports = [ secretsModule ];
       options.fleet.access = {
         admin = mkOption {
           type = types.nullOr (types.strMatching "[a-z_][a-z0-9_-]*");
           default = null;
-          description = "Real administration account name, not inferred from the repository owner.";
+          description = "Interactive administrator, or null on deployment-only servers.";
         };
         authorizedKeys = mkOption {
           type = types.listOf types.nonEmptyStr;
@@ -28,22 +23,8 @@ in
           default = { };
           description = "Account to declared SOPS password-hash secret name. Null is a commissioning blocker, never a fake runtime file.";
         };
-        passwordlessSudo = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Explicit root-equivalent privilege for the admin, if unattended deployment is required.";
-        };
       };
       config = {
-        fleet.bootstrap.missing =
-          lib.optional (cfg.admin == null) "Set fleet.access.admin."
-          ++ lib.optional (cfg.authorizedKeys == [ ]) "Supply verified public fleet.access.authorizedKeys."
-          ++ lib.optional (
-            cfg.admin != null && !(builtins.hasAttr cfg.admin cfg.passwordSecrets) && !cfg.passwordlessSudo
-          ) "Declare the admin in fleet.access.passwordSecrets or explicitly approve passwordlessSudo."
-          ++ lib.mapAttrsToList (
-            user: _: "Supply a declared SOPS password-hash secret in fleet.access.passwordSecrets.${user}."
-          ) (lib.filterAttrs (_: secret: !configured secret) cfg.passwordSecrets);
         assertions = lib.mapAttrsToList (
           user: name:
           let
@@ -93,17 +74,6 @@ in
               hashedPasswordFile = lib.mkIf (configured secret) config.sops.secrets.${secret}.path;
             }) cfg.passwordSecrets)
           ];
-        };
-        security.sudo = {
-          extraRules = lib.optional (cfg.admin != null && cfg.passwordlessSudo) {
-            users = [ cfg.admin ];
-            commands = [
-              {
-                command = "ALL";
-                options = [ "NOPASSWD" ];
-              }
-            ];
-          };
         };
       };
     };

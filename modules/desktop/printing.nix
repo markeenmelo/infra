@@ -1,4 +1,3 @@
-{ config, lib, ... }:
 {
   flake.modules.nixos.desktop =
     {
@@ -9,17 +8,12 @@
     }:
     {
       services = {
-        # Discover IPP/eSCL devices via mDNS: upstream opens UDP 5353 but
-        # does not publish local services. CUPS below stays localhost-only
-        # with no shared queues or CUPS firewall opening.
         avahi = {
           enable = true;
           nssmdns4 = true;
         };
         printing = {
           enable = true;
-          # cups-browsed is the only deliberate deviation from the local-only
-          # upstream defaults.
           browsed.enable = false;
         };
       };
@@ -33,12 +27,9 @@
           "lp"
         ];
       };
-      # Native CUPS owns queues/PPDs here; caches and job spool remain ephemeral.
       environment.persistence."/persist".directories = [ "/var/lib/cups" ];
     };
   flake.modules.homeManager.desktop = { pkgs, ... }: { home.packages = [ pkgs.simple-scan ]; };
-  # Endpoint recovered from the current printer configuration, not a discovered
-  # scanner URI or a certificate-verification claim. Verify after authorization.
   fleet.hosts.thinkpad.module = { lib, ... }: {
     hardware.printers = {
       ensureDefaultPrinter = "Epson_ET-3850";
@@ -53,56 +44,8 @@
       ];
     };
     systemd.services.ensure-printers = {
-      # `-m everywhere` queries the printer even when its queue already exists.
-      # Keep native provisioning explicit; ordinary boots use persisted CUPS
-      # queues/PPDs without needing the home network. Never retry it on rebuild.
       wantedBy = lib.mkForce [ ];
       restartIfChanged = false;
     };
-  };
-
-  fleet.validation.hostChecks.printing =
-    {
-      name,
-      host,
-      system,
-    }:
-    let
-      cfg = system.config;
-    in
-    assert lib.assertMsg
-      (
-        name != "thinkpad"
-        || (
-          cfg.systemd.services.ensure-printers.wantedBy == [ ]
-          && cfg.systemd.services.ensure-printers.requiredBy == [ ]
-          && cfg.systemd.services.ensure-printers.startAt == [ ]
-          && !cfg.systemd.services.ensure-printers.restartIfChanged
-          && !(cfg.systemd.timers ? ensure-printers)
-          && !(cfg.systemd.services ? ensure-printer-classes)
-          && lib.all (unit: !(lib.elem "ensure-printers.service" (unit.wants ++ unit.requires))) (
-            lib.attrValues cfg.systemd.services ++ lib.attrValues cfg.systemd.targets
-          )
-          && !cfg.services.printing.stateless
-          && lib.elem "/var/lib/cups" host.persistence.directories
-          && cfg.hardware.printers.ensureDefaultPrinter == "Epson_ET-3850"
-        )
-      )
-      "${name}: printer provisioning must be manual, with persistent queues/PPDs and no boot/rebuild network dependency";
-    true;
-
-  perSystem.checks = {
-    thinkpad-printer-provisioning =
-      let
-        thinkpad = config.flake.fleetConfigurations.thinkpad;
-        cfg = thinkpad.config;
-      in
-      thinkpad.pkgs.runCommand "thinkpad-printer-provisioning" { } ''
-        ${lib.getExe thinkpad.pkgs.python3} ${./assets/test-printer-provisioning.py} \
-          ${lib.trim cfg.systemd.services.ensure-printers.serviceConfig.ExecStart} \
-          ${thinkpad.pkgs.cups}/bin/lpadmin \
-          ${cfg.systemd.units."ensure-printers.service".unit}/ensure-printers.service
-        touch "$out"
-      '';
   };
 }

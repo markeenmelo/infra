@@ -5,16 +5,9 @@
 /.env
 /.env.*
 /.local/
+/CLAUDE.local.md
+/.claude/settings.local.json
 *.qcow2
 *.raw
 
-# Runtime OpenTofu data/credentials never belong in Git. Keep provider locks.
-**/.terraform/
-*.tfstate
-*.tfstate.*
-*.tfplan
-*.tfvars
-*.tfvars.json
-crash.log
-crash.*.log
 **/__pycache__/

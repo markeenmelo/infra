@@ -20,10 +20,8 @@ let
         {
           networking.hostName = name;
           nixpkgs.hostPlatform = host.system;
-          fleet.bootstrap.approved = host.ready;
         }
-      ]
-      ++ map (capability: config.flake.modules.nixos.${capability}) host.capabilities;
+      ];
     }
   ) hosts;
 in
@@ -36,7 +34,7 @@ in
         options = {
           system = mkOption {
             type = types.enum [ "x86_64-linux" ];
-            description = "Required architecture; extend platform tests and CI before widening this type.";
+            description = "Required architecture.";
           };
           track = mkOption {
             type = types.enum [
@@ -45,20 +43,10 @@ in
             ];
             description = "Required primary Nixpkgs input. Never inferred from a role or directory.";
           };
-          capabilities = mkOption {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "Names of deferred flake.modules.nixos values to compose.";
-          };
           module = mkOption {
             type = types.deferredModuleWith { staticModules = [ { _class = "nixos"; } ]; };
             default = { };
-            description = "Host-specific facts, merged by independent top-level features.";
-          };
-          ready = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Explicit commissioning approval. Missing facts still block builds.";
+            description = "Host facts and the named flake.modules.nixos values it imports, merged by independent top-level features.";
           };
         };
       }
@@ -66,9 +54,7 @@ in
   };
 
   config.flake = {
-    # These values remain inspectable even when a machine cannot safely be built.
-    fleetConfigurations = evaluated;
-    nixosConfigurations = lib.filterAttrs (name: _: hosts.${name}.ready) evaluated;
+    nixosConfigurations = evaluated;
     fleet = lib.mapAttrs (
       name: host:
       let
@@ -76,30 +62,15 @@ in
         cfg = system.config;
         input = tracks.${host.track};
       in
-      assert lib.assertMsg
-        (
-          ((cfg.fleet ? osDisk) || (cfg.fleet ? existingStorage))
-          && (cfg.environment ? persistence)
-          && (cfg.environment.persistence ? "/persist")
-        )
-        "${name}: the fleet inventory requires an existing-storage or OS-disk interface and /persist persistence capability; compose them or adapt the inventory with a new storage design.";
       {
-        inherit (host)
-          system
-          track
-          capabilities
-          ready
-          ;
+        inherit (host) system track;
         input = if host.track == "stable" then "nixpkgs-stable" else "nixpkgs";
         revision = input.rev;
         nixpkgsPath = toString system.pkgs.path;
         intendedNixpkgsPath = toString input.outPath;
         nixosVersion = cfg.system.nixos.version;
-        missing = cfg.fleet.bootstrap.missing;
         failedAssertions = map (a: a.message) (lib.filter (a: !a.assertion) cfg.assertions);
-        storageMode = if cfg.fleet ? existingStorage then "existing" else "provision";
-        osDisk =
-          if cfg.fleet ? existingStorage then cfg.fleet.existingStorage.osDevice else cfg.fleet.osDisk.device;
+        osDisk = cfg.fleet.installation.osDevice;
         filesystems = lib.mapAttrs (_: fs: {
           inherit (fs)
             device

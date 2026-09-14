@@ -7,8 +7,6 @@
       ...
     }:
     {
-      # fprintd.enable normally enables fingerprint PAM on ALL services. Extend
-      # the existing PAM submodule with a safer default, then opt in narrowly.
       options.security.pam.services = lib.mkOption {
         type = lib.types.attrsOf (
           lib.types.submodule {
@@ -19,13 +17,8 @@
       config = {
         services.fprintd.enable = true;
         security.pam.services = {
-          # greetd normally delegates to login. Keep console login password-only
-          # and provide a separate graphical stack with the standard final deny.
           greetd.rules = {
             auth.login.modulePath = lib.mkForce "noctalia-greetd";
-            # greetd disables generated PAM rules: enableGnomeKeyring there is
-            # ineffective. Keep login's session/account/recovery stack and add
-            # only the keyring session hook for the token stashed below.
             session.gnome_keyring = {
               order = config.security.pam.services.greetd.rules.session.login.order + 10;
               control = "optional";
@@ -36,9 +29,6 @@
           noctalia-greetd = {
             fprintAuth = true;
             enableGnomeKeyring = true;
-            # Native unix-early collects the password before stashing it for
-            # the keyring. Reuse it exactly once: an empty/wrong submission must
-            # reach fingerprint fallback, not ask for that password twice.
             rules.auth.unix.settings = {
               try_first_pass = lib.mkForce false;
               use_first_pass = true;
@@ -96,8 +86,6 @@
             message = "Desktop PAM must remain password-first, reject empty passwords and retain its final deny rule.";
           }
         ];
-        # Native Noctalia locking uses fprintd alongside its password field.
-        # Templates are sensitive identity state: persist, never export/enroll here.
         environment.persistence."/persist".directories = [
           {
             directory = "/var/lib/fprint";
