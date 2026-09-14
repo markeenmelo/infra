@@ -46,7 +46,7 @@
           monitor = [
             {
               output = "";
-              mode = "preferred";
+              mode = "highres";
               position = "auto-center-up";
               scale = 1;
               cm = "srgb";
