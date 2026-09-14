@@ -16,16 +16,8 @@ _: {
           default = "bind";
           description = "Preserve /home through impermanence, or retain an existing separate early-mounted filesystem without a duplicate bind.";
         };
-        usersReviewed = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "Interactive accounts, passwords and privileges have been explicitly configured.";
-        };
       };
       config = {
-        fleet.bootstrap.missing =
-          lib.optional (!config.fleet.workstation.usersReviewed)
-            "Configure interactive users and migrate credentials; acknowledge fleet.workstation.usersReviewed.";
         assertions = [
           {
             assertion =

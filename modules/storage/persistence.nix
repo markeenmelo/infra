@@ -35,9 +35,6 @@
             "/var/lib/systemd/random-seed"
           ];
         };
-        fleet.bootstrap.missing = lib.optional (
-          !(config.fileSystems ? "/persist") || !(config.fileSystems ? "/nix")
-        ) "Configure real persistent /persist and /nix filesystems with neededForBoot.";
       };
     };
 }

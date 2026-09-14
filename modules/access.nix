@@ -41,17 +41,6 @@ in
         };
       };
       config = {
-        fleet.bootstrap.missing =
-          lib.optional (
-            cfg.admin == null && cfg.deploymentUser == null
-          ) "Set fleet.access.admin or provision fleet.access.deploymentUser."
-          ++ lib.optional (cfg.authorizedKeys == [ ]) "Supply verified public fleet.access.authorizedKeys."
-          ++ lib.optional (
-            cfg.admin != null && !(builtins.hasAttr cfg.admin cfg.passwordSecrets) && !cfg.passwordlessSudo
-          ) "Declare the admin in fleet.access.passwordSecrets or explicitly approve passwordlessSudo."
-          ++ lib.mapAttrsToList (
-            user: _: "Supply a declared SOPS password-hash secret in fleet.access.passwordSecrets.${user}."
-          ) (lib.filterAttrs (_: secret: !configured secret) cfg.passwordSecrets);
         assertions =
           lib.optional (cfg.deploymentUser != null) {
             assertion =

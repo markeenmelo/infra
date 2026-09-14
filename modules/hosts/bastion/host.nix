@@ -7,10 +7,6 @@
       "persistence"
       "access"
       "server"
-      "nas"
     ];
-    module = {
-      fleet.installation.networkReviewed = true;
-    };
   };
 }

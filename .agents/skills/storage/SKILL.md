@@ -19,7 +19,7 @@ Identify the OS disk by a whole-disk `/dev/disk/by-id/` link and set it in `flee
 lsblk -o NAME,PATH,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL,SERIAL,UUID
 ```
 
-Never invent a device path. **Bastion's `tank` members are not OS storage**: no extra disk declarations, pools, RAID, LUKS or shares enter disko, and every public disk-script alias must refuse a redirected or extra device.
+Never invent a device path. **Bastion's `tank` members are not OS storage**: no extra disk declarations, pools, RAID, LUKS or shares enter disko.
 
 ## Persistence
 
@@ -41,8 +41,6 @@ Root is a tmpfs; only declared paths survive. Add state next to the feature that
      .#nixosConfigurations.HOST.config.system.build.diskoScript
    sha256sum result-disko-HOST
    ```
-
-   The host's own aliases refuse unless `fleet.installation.approved` is true and all facts are complete — that refusal is the last automatic guard on this path, so never work around it.
 3. With explicit authorization, run `nixos-anywhere` by hand. The guarded installer that used to enforce all of this is gone; every item is now yours to verify before and during the run:
    - the target is an idle live installer (`VARIANT_ID=installer`, overlay/tmpfs root) with exactly one unmounted disk matching `fleet.installation.osDevice`, held by no pool, swap, dm or kernel consumer;
    - the scanned SSH host key matches the fingerprint read from the provider console, pinned via a private `UserKnownHostsFile` with `StrictHostKeyChecking=yes`, publickey-only, no agent or forwarding;

@@ -41,6 +41,5 @@ in
       };
       autoSnapshot.enable = true;
     };
-    fleet.nas.storageReviewed = true;
   };
 }

@@ -133,13 +133,6 @@ in
           config.module = { lib, ... }: {
             imports = lib.optional deployment.enable nixosModules.deploy;
             config = lib.mkIf deployment.enable {
-              fleet.bootstrap.missing =
-                lib.optional (deployment.hostname == null) "Supply deployment.hostname (real SSH endpoint)."
-                ++ lib.optional (deployment.sshUser == null) "Supply deployment.sshUser and verify elevation."
-                ++ lib.optional (deployment.group == null) "Choose deployment.group."
-                ++ lib.optional (
-                  deployment.hostname != null && lib.hasSuffix ".invalid" deployment.hostname
-                ) "Replace the reserved .invalid deployment endpoint.";
               services.openssh.ports = [ deployment.sshPort ];
               assertions = [
                 {

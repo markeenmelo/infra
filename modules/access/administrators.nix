@@ -17,15 +17,10 @@ in
     }))
     {
       thinkpad.module = { config, lib, ... }: {
-        fleet = {
-          access = {
-            admin = "marcos";
-            passwordSecrets.marcos = "marcos-password-hash";
-            passwordlessSudo = false;
-          };
-          bootstrap.missing =
-            lib.optional (!(lib.elem config.fleet.secrets.ageRecipient recipients))
-              "Verify fleet.secrets.ageRecipient and include it in the ThinkPad password recipient policy and YAML before commissioning.";
+        fleet.access = {
+          admin = "marcos";
+          passwordSecrets.marcos = "marcos-password-hash";
+          passwordlessSudo = false;
         };
         sops.secrets =
           lib.mkIf

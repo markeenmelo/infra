@@ -1,6 +1,6 @@
 # NixOS fleet
 
-Dendritic NixOS configurations for three `x86_64-linux` machines: `thinkpad` (unstable track, Hyprland/Noctalia desktop), `racknerd` and `bastion` (stable track, headless). Each host's own facts, layout and installation approval live in `modules/hosts/<name>/`.
+Dendritic NixOS configurations for three `x86_64-linux` machines: `thinkpad` (unstable track, Hyprland/Noctalia desktop), `racknerd` and `bastion` (stable track, headless). Each host's own facts and layout live in `modules/hosts/<name>/`.
 
 ## Layout
 
@@ -21,7 +21,7 @@ Inspect and build with the flake directly:
 ```sh
 nix fmt
 nix flake check --no-update-lock-file -L
-nix eval --no-update-lock-file --json .#fleet | jq 'map_values({track,installationApproved,missing})'
+nix eval --no-update-lock-file --json .#fleet | jq 'map_values({track,capabilities,osDisk})'
 nix build --no-update-lock-file --no-link .#nixosConfigurations.HOST.config.system.build.toplevel
 ```
 

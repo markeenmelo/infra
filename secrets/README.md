@@ -14,7 +14,7 @@ Only ThinkPad selects a secret: `marcos-password-hash` from `hosts/thinkpad.yaml
 
 ## How delivery works
 
-- **Passwords:** `fleet.access.passwordSecrets` maps an account to a declared `sops.secrets` name. Declare the hash with `neededForUsers = true`; `hashedPasswordFile` then reads the secret's `.path`, normally `/run/secrets-for-users/NAME`, root-only `0400` on SOPS' ramfs. Nix never evaluates a hash. A null or undeclared name locks the account and blocks commissioning — that is the intended failure, not something to work around.
+- **Passwords:** `fleet.access.passwordSecrets` maps an account to a declared `sops.secrets` name. Declare the hash with `neededForUsers = true`; `hashedPasswordFile` then reads the secret's `.path`, normally `/run/secrets-for-users/NAME`, root-only `0400` on SOPS' ramfs. Nix never evaluates a hash. A null or undeclared name locks the account — that is the intended failure, not something to work around.
 - **Identity:** a host with selected secrets needs a private age identity as a runtime string path directly on early-mounted `/persist` (`/persist/var/lib/sops-nix/key.txt`), root-owned `0600` under a root-owned `0700` parent, with recovery copies outside Git. Never bind `/var/lib/sops-nix` to reach it, persist `/run/secrets*`, generate keys implicitly or import SSH identities. Disk persistence is not encryption.
 - **Wi-Fi:** nothing is delivered any more. Credentials entered by hand live in NetworkManager's own `system-connections` store, which stays persisted and root-only `0700`. Never inspect them with `nmcli --show-secrets` or shell tracing, and never disable campus CA or domain validation to compensate for a bad credential.
 
@@ -30,4 +30,4 @@ Keep the existing keys, recipients and metadata and let SOPS update the MAC. Use
 
 A new encrypted source needs: an exact `.sops.yaml` rule with verified recipients, the `sops.secrets.NAME` declaration in the owning module under `modules/`, and its selection in the relevant `fleet.*` option. Keep `secrets/hosts/thinkpad-senecanet.yaml` unselected until its credentials and server-certificate policy are separately reviewed for delivery.
 
-Set `fleet.secrets.identityReviewed` only after verifying permissions, custody, recovery and real early decryption with independent console access. Reading a file is not a decryption, login or recovery test, and never obtain key material merely to record a review.
+Verify a host identity's permissions, custody, recovery and real early decryption with independent console access before relying on it. Reading a file is not a decryption, login or recovery test, and never obtain key material merely to record a review.

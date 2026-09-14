@@ -33,10 +33,10 @@ Name the single responsibility and its consumers first, then extend the cohesive
 
 ## Adding a host
 
-1. Create `modules/hosts/<name>/{host,hardware,disko}.nix` by hand, with nothing filled in and `fleet.hosts.<name>.module.fleet.installation.approved = false`. Leave them untracked until the facts are real — a Git flake ignores untracked files, so nothing evaluates or installs meanwhile. Copy the shape from an existing host, never its values.
+1. Create `modules/hosts/<name>/{host,hardware,disko}.nix` by hand, with nothing filled in. Leave them untracked until the facts are real — a Git flake ignores untracked files, so nothing evaluates meanwhile. Copy the shape from an existing host, never its values.
 2. `host.nix` defines `fleet.hosts.<name>` with required `system` and `track` plus its `capabilities`. Choose the track deliberately; a role or directory never implies one.
-3. Keep installation approval false until the exact destructive candidate, backups and recovery are accepted. Adapt an actual hardware scan; never borrow another machine's UUIDs, devices or keys.
+3. Adapt an actual hardware scan; never borrow another machine's UUIDs, devices or keys. The exact destructive candidate, backups and recovery need explicit acceptance before any install.
 4. Follow [storage](../storage/SKILL.md) for the layout and persistence, then add deployment facts to `modules/deploy.nix`.
 5. Run `nix fmt`, `nix flake check --no-update-lock-file -L` and read `nix eval --json .#fleet.<name>`.
 
-Unknown facts stay as blockers in `fleet.bootstrap.missing`. They never fail a system build; together with `fleet.installation.approved`, they only make the host's public disko aliases refuse. Never set installation approval or `identityReviewed` to make anything pass.
+Unknown facts stay typed nulls, never invented values. Nothing in evaluation guards installation — the storage skill's review procedure and explicit authorization are the only guards on that path.

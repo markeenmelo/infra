@@ -1,12 +1,7 @@
 {
   fleet.hosts.racknerd.module = { modulesPath, ... }: {
     imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
-    fleet.installation = {
-      stateVersion = "26.05";
-      hardwareReviewed = true;
-      networkReviewed = true;
-    };
-    fleet.vps.providerReviewed = true;
+    fleet.installation.stateVersion = "26.05";
     boot.initrd.availableKernelModules = [
       "ata_piix"
       "uhci_hcd"

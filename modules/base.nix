@@ -7,17 +7,7 @@
     in
     {
       options.fleet = {
-        bootstrap.missing = mkOption {
-          type = types.listOf types.str;
-          default = [ ];
-          description = "Actionable commissioning blockers contributed by capabilities.";
-        };
         installation = {
-          approved = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Expose this host's destructive disko aliases after the exact OS layout, backups and recovery have been approved. This never authorizes an installation run.";
-          };
           osDevice = mkOption {
             type = types.nullOr (types.strMatching "/dev/disk/by-(id|path)/[a-zA-Z0-9._:+-]+");
             default = null;
@@ -27,39 +17,16 @@
                 device == null || builtins.match ".*-part[0-9]+" device == null
               ) "The installation device must be a whole OS disk, not a partition.";
               device;
-            description = "Whole OS disk identity for the per-host disko layout. Each layout restricts its identifier policy; only Racknerd permits a reviewed PCI by-path exception when no serial/by-id exists.";
+            description = "Whole OS disk identity for the per-host disko layout. Each layout restricts its identifier policy; only Racknerd permits a PCI by-path exception when no serial/by-id exists.";
           };
           stateVersion = mkOption {
             type = types.nullOr (types.strMatching "[0-9]{2}\\.(05|11)");
             default = null;
             description = "Original installation stateVersion, or a deliberate value for a new installation. Never track the input automatically.";
           };
-          hardwareReviewed = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Real hardware scan has been reviewed and adapted into a top-level module.";
-          };
-          networkReviewed = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Actual network/console recovery configuration has been reviewed.";
-          };
         };
       };
       config = {
-        fleet.bootstrap.missing =
-          lib.optional (
-            cfg.installation.osDevice == null
-          ) "Supply fleet.installation.osDevice after verifying the whole OS disk and identifier policy."
-          ++ lib.optional (
-            cfg.installation.stateVersion == null
-          ) "Set fleet.installation.stateVersion from the installation history."
-          ++ lib.optional (
-            !cfg.installation.hardwareReviewed
-          ) "Supply hardware facts and acknowledge fleet.installation.hardwareReviewed."
-          ++ lib.optional (
-            !cfg.installation.networkReviewed
-          ) "Supply networking and acknowledge fleet.installation.networkReviewed.";
         system.stateVersion = lib.mkIf (
           cfg.installation.stateVersion != null
         ) cfg.installation.stateVersion;

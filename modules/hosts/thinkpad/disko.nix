@@ -3,52 +3,23 @@ let
   limine = config.flake.modules.nixos.limine;
 in
 {
-  fleet.hosts.thinkpad.module.fleet.installation = {
-    approved = false;
-    osDevice = "/dev/disk/by-id/nvme-eui.00a075013a594e93";
-  };
+  fleet.hosts.thinkpad.module.fleet.installation.osDevice =
+    "/dev/disk/by-id/nvme-eui.00a075013a594e93";
 
   flake.modules.nixos.thinkpad-disko =
     {
       config,
       lib,
-      pkgs,
       ...
     }:
     let
       device = config.fleet.installation.osDevice;
-      blocked =
-        !config.fleet.installation.approved
-        || config.fleet.bootstrap.missing != [ ]
-        || builtins.attrNames config.disko.devices.disk != [ "os" ]
-        || config.disko.devices.disk.os.device != device;
     in
     {
       imports = [
         inputs.disko.nixosModules.disko
         limine
       ];
-      fleet.bootstrap.missing = lib.optional (
-        device != null && !lib.hasPrefix "/dev/disk/by-id/" device
-      ) "ThinkPad requires its verified whole-disk by-id identity; no by-path exception.";
-      system.build = lib.mkIf blocked (
-        lib.genAttrs
-          (
-            builtins.attrNames (config.disko.devices._scripts { inherit pkgs; })
-            ++ [
-              "disko"
-              "diskoNoDeps"
-              "installTest"
-              "vmWithDisko"
-              "diskoImages"
-              "diskoImagesScript"
-            ]
-          )
-          (
-            name:
-            lib.mkForce (throw "ThinkPad: ${name} requires an approved, fact-complete OS-only installation.")
-          )
-      );
       disko.devices = {
         lvm_vg = lib.mkForce { };
         mdadm = lib.mkForce { };

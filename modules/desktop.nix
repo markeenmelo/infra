@@ -16,15 +16,7 @@ in
           toString modulesPath == "${inputs.nixpkgs}/nixos/modules"
         ) "The desktop/Home Manager capability is supported only on the unstable track.";
         [ inputs.home-manager.nixosModules.home-manager ];
-      options.fleet.desktop.reviewed = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Graphical login, fingerprint/password fallback, locking/sleep, portals, audio and mobile displays have been reviewed. Not an eGPU/HDR certification.";
-      };
       config = {
-        fleet.bootstrap.missing =
-          lib.optional (!config.fleet.desktop.reviewed)
-            "Verify desktop login, fingerprint/password fallback, locking/sleep, portals, audio and mobile display; acknowledge fleet.desktop.reviewed.";
         assertions = [
           {
             assertion = !(config.services.greetd.settings ? initial_session);
@@ -43,5 +35,4 @@ in
       };
     };
 
-  fleet.hosts.thinkpad.module.fleet.desktop.reviewed = true;
 }

@@ -3,53 +3,21 @@ let
   limine = config.flake.modules.nixos.limine;
 in
 {
-  fleet.hosts.racknerd.module.fleet.installation = {
-    approved = true;
-    osDevice = "/dev/disk/by-path/pci-0000:00:04.0";
-  };
+  fleet.hosts.racknerd.module.fleet.installation.osDevice = "/dev/disk/by-path/pci-0000:00:04.0";
   flake.modules.nixos.racknerd-disko =
     {
       config,
       lib,
-      pkgs,
       ...
     }:
     let
       device = config.fleet.installation.osDevice;
-      blocked =
-        !config.fleet.installation.approved
-        || config.fleet.bootstrap.missing != [ ]
-        || builtins.attrNames config.disko.devices.disk != [ "os" ]
-        || config.disko.devices.disk.os.device != device;
     in
     {
       imports = [
         inputs.disko.nixosModules.disko
         limine
       ];
-      fleet.bootstrap.missing = lib.optional (
-        device != null
-        && !lib.hasPrefix "/dev/disk/by-id/" device
-        && !lib.hasPrefix "/dev/disk/by-path/pci-" device
-      ) "Racknerd requires a reviewed whole-disk by-id or PCI by-path identity.";
-      system.build = lib.mkIf blocked (
-        lib.genAttrs
-          (
-            builtins.attrNames (config.disko.devices._scripts { inherit pkgs; })
-            ++ [
-              "disko"
-              "diskoNoDeps"
-              "installTest"
-              "vmWithDisko"
-              "diskoImages"
-              "diskoImagesScript"
-            ]
-          )
-          (
-            name:
-            lib.mkForce (throw "Racknerd: ${name} requires an approved, fact-complete OS-only installation.")
-          )
-      );
       disko.devices = {
         lvm_vg = lib.mkForce { };
         mdadm = lib.mkForce { };

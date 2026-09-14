@@ -71,13 +71,11 @@ in
       in
       {
         inherit (host) system track capabilities;
-        installationApproved = cfg.fleet.installation.approved;
         input = if host.track == "stable" then "nixpkgs-stable" else "nixpkgs";
         revision = input.rev;
         nixpkgsPath = toString system.pkgs.path;
         intendedNixpkgsPath = toString input.outPath;
         nixosVersion = cfg.system.nixos.version;
-        missing = cfg.fleet.bootstrap.missing;
         failedAssertions = map (a: a.message) (lib.filter (a: !a.assertion) cfg.assertions);
         storageMode = "provision";
         osDisk = cfg.fleet.installation.osDevice;

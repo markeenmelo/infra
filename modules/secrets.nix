@@ -22,32 +22,16 @@
           default = null;
           description = "Verified public recipient of this host's dedicated age identity. Null is expected without selected secrets and blocks active delivery; never infer it from a key-file path.";
         };
-        identityReviewed = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "Identity custody, matching recipients, root-only permissions, recovery and early decryption have actually been verified.";
-        };
       };
       config = {
         sops.age = {
           keyFile = cfg.ageKeyFile;
           sshKeyPaths = [ ];
         };
-        fleet.bootstrap.missing = lib.optionals active (
-          lib.optional (
-            cfg.ageKeyFile == null
-          ) "Supply fleet.secrets.ageKeyFile from verified identity provisioning."
-          ++ lib.optional (
-            cfg.ageRecipient == null
-          ) "Supply the verified fleet.secrets.ageRecipient for selected SOPS secrets."
-          ++
-            lib.optional (!cfg.identityReviewed)
-              "Verify SOPS identity custody, recipients, early decryption and recovery; acknowledge fleet.secrets.identityReviewed."
-        );
         assertions = [
           {
-            assertion = active || (cfg.ageKeyFile == null && cfg.ageRecipient == null && !cfg.identityReviewed);
-            message = "Hosts without selected SOPS secrets must not provision an unused age identity or carry active identity review metadata.";
+            assertion = active || (cfg.ageKeyFile == null && cfg.ageRecipient == null);
+            message = "Hosts without selected SOPS secrets must not provision an unused age identity.";
           }
           {
             assertion =
