@@ -40,21 +40,26 @@ For each host, configure a private OpenSSH alias `HOST-installer` with the conso
 Prepare this runtime directory outside both the checkout and `/nix/store`:
 
 ```text
-${XDG_DATA_HOME:-$HOME/.local/share}/infra/install/HOST/
-├── identity                         (client key authorized on the live installer)
-├── known_hosts                      (key verified against the provider console)
-├── disko.sha256                     (only the reviewed script's 64-character digest)
-└── extra-files/
-    └── persist/
-        ├── etc/
-        │   ├── machine-id
-        │   └── ssh/
-        │       ├── ssh_host_ed25519_key
-        │       └── ssh_host_ed25519_key.pub
-        └── var/lib/sops-nix/key.txt  (required only for hosts selecting secrets)
+${XDG_DATA_HOME:-$HOME/.local/share}/infra/install/HOST/  (0700)
+├── identity                         (0600; client key authorized on the live installer)
+├── known_hosts                      (0600; key verified against the provider console)
+├── disko.sha256                     (0600; only the reviewed script's 64-character digest)
+└── extra-files/                     (0755)
+    └── persist/                    (0755)
+        ├── etc/                    (0755)
+        │   ├── machine-id          (0444)
+        │   └── ssh/                (0755)
+        │       ├── ssh_host_ed25519_key      (0600)
+        │       └── ssh_host_ed25519_key.pub  (0600)
+        └── var/                    (0755; only needed for hosts selecting secrets)
+            └── lib/                (0755)
+                └── sops-nix/       (0700)
+                    └── key.txt     (0600)
 ```
 
-Use an operator-owned `0700` directory and owner-only regular files/directories throughout (normally `0600` files, `0700` directories), with no symlinks. The resolved setup path may contain only letters, digits and `/._+-`, because upstream flattens SSH options into `NIX_SSHOPTS`. The client identity must be usable noninteractively; there is no agent or password fallback. Staging is not a backup: preserve independent recovery copies and correct remote ownership/modes. Nixos-anywhere copies these files as root while preserving modes. ThinkPad selects secrets and needs its reviewed age identity; neither server does. The wrapper never generates identities or decrypts anything, and file presence does not prove a key matches or decrypts.
+Keep the entire tree operator-owned inside the `0700` setup directory, with no symlinks or group/other write access. All files except payload machine-id remain owner-only. The private outer directory protects the payload locally; the payload itself needs the target modes shown above. Nixos-anywhere copies it as root while preserving modes, and impermanence mirrors persistent directory modes into the running system. Recursive `chmod 700`/`600` on the payload can make `/etc` inaccessible and break D-Bus/networking. Machine-id must be readable by unprivileged system services; private keys must not be.
+
+The resolved setup path may contain only letters, digits and `/._+-`, because upstream flattens SSH options into `NIX_SSHOPTS`. The client identity must be usable noninteractively; there is no agent or password fallback. Staging is not a backup: preserve independent recovery copies and correct remote ownership/modes. ThinkPad selects secrets and needs its reviewed age identity; neither server does. The wrapper rejects incorrect system-directory/machine-id modes; it never changes permissions, generates identities or decrypts anything. File presence does not prove a key matches or decrypts.
 
 The pinned nixos-anywhere 1.13.0 hardcodes disabled host-key checking before user flags; OpenSSH takes the first value. `devenv.nix` locally removes those defaults and changes ssh-copy-id's conflicting identity override, without changing pins. The task then enforces a private known-hosts file, strict/publickey-only/batch SSH, no agent or forwarding, and no host-key updates. Review these substitutions again whenever the upstream package changes.
 
@@ -71,7 +76,7 @@ The pinned nixos-anywhere 1.13.0 hardcodes disabled host-key checking before use
 3. After reading the generated script, record only its digest in the private `disko.sha256` file. Confirm the tree is clean, committed and the revision is the one reviewed. With explicit installation authorization, invoke the task. Its local input, staging and digest checks do **not** replace the live-machine review; every item below remains yours to verify before and during the run:
    - the target is an idle live installer (`VARIANT_ID=installer`, overlay/tmpfs root) with exactly one unmounted disk matching `fleet.installation.osDevice`, held by no pool, swap, dm or kernel consumer;
    - the scanned SSH host key matches the fingerprint read from the provider console, pinned via a private `UserKnownHostsFile` with `StrictHostKeyChecking=yes`, publickey-only, no agent or forwarding;
-   - staging files (`/persist/etc/machine-id`, the ed25519 host key pair, optionally the age identity) live outside the checkout and the store, owner-only;
+   - staging lives outside the checkout and the store in a private `0700` container; payload system directories are `0755`, machine-id is `0444`, and key files remain owner-only;
    - the built disko script's SHA-256 still equals the one you reviewed.
 
    ```sh
@@ -79,6 +84,6 @@ The pinned nixos-anywhere 1.13.0 hardcodes disabled host-key checking before use
    ```
 
    The task validates the hostname against `fleet`, refuses a dirty tree or missing/unsafe staging, and builds the disko script and system from the same immutable local Git revision. It compares the script to the private review digest and passes those exact store outputs to the hardened installer with `--store-paths`, `--extra-files` and `--phases disko,install --build-on local`: **destructive install, no kexec, no reboot, no host-key copying**. It does not inspect live disk consumers, backups or installer state for you. Never use a successful evaluation/build as authorization.
-4. Afterwards inspect mounts, identities and boot setup. First boot and reboot acceptance are separate authorizations.
+4. Afterwards inspect mounts, identities and boot setup, including persistent directory permissions and unprivileged machine-id readability. Private keys must remain inaccessible to unprivileged users. First boot and reboot acceptance are separate authorizations.
 
 Never run disko, a generated script, `mkfs`, `wipefs` or a partition tool directly. Rollback cannot recover repartitioned data.

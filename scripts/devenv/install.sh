@@ -25,8 +25,11 @@ private=$(realpath -e -- "${XDG_DATA_HOME:-$HOME/.local/share}/infra/install/$ho
 case "$private" in
   "$root"|"$root"/*|/nix/store|/nix/store/*) die 'Installer setup must be outside the checkout and Nix store.' ;;
 esac
-unsafe=$(find "$private" \( ! -uid "$EUID" -o -perm /077 -o \( ! -type f -a ! -type d \) \) -print -quit)
-[[ -z $unsafe ]] || die 'Installer setup must contain only operator-owned, owner-only regular files and directories (no symlinks).'
+[[ $(stat -c %a "$private") == 700 ]] || die 'Installer setup directory must have mode 0700.'
+unsafe=$(find "$private" \( ! -uid "$EUID" -o -perm /022 -o \( ! -type f -a ! -type d \) \) -print -quit)
+[[ -z $unsafe ]] || die 'Installer setup must contain only operator-owned regular files and directories, without group/other write access or symlinks.'
+unsafe=$(find "$private" -type f ! -path "$private/extra-files/persist/etc/machine-id" -perm /077 -print -quit)
+[[ -z $unsafe ]] || die 'Installer files other than payload machine-id must be owner-only.'
 for file in identity known_hosts disko.sha256 \
   extra-files/persist/etc/machine-id \
   extra-files/persist/etc/ssh/ssh_host_ed25519_key \
@@ -34,6 +37,15 @@ for file in identity known_hosts disko.sha256 \
   [[ -f $private/$file && -s $private/$file && -r $private/$file ]] \
     || die "Missing readable, nonempty installer file: $file"
 done
+for dir in extra-files extra-files/persist extra-files/persist/etc extra-files/persist/etc/ssh \
+  extra-files/persist/var extra-files/persist/var/lib; do
+  if [[ -e $private/$dir ]]; then
+    [[ -d $private/$dir && $(stat -c %a "$private/$dir") == 755 ]] \
+      || die "Payload system directory must have mode 0755: $dir"
+  fi
+done
+[[ $(stat -c %a "$private/extra-files/persist/etc/machine-id") == 444 ]] \
+  || die 'Payload machine-id must have mode 0444 for unprivileged system services.'
 has_secrets=$(nix eval --no-update-lock-file --json \
   "$flake#nixosConfigurations.$host.config.sops.secrets" --apply 'secrets: secrets != {}')
 if [[ $has_secrets == true ]]; then
