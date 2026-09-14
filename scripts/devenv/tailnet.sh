@@ -38,6 +38,14 @@ def run(*args, **kwargs):
     return subprocess.run(args, check=True, **kwargs)
 
 
+def reject_auto_vars():
+    for path in (repo / 'opentofu/tailscale').iterdir():
+        if (path.name in ('terraform.tfvars', 'terraform.tfvars.json')
+                or path.name.endswith(('.auto.tfvars', '.auto.tfvars.json'))):
+            fail(f'Automatic OpenTofu variable file is forbidden: {path.name!r}. '
+                 'Review and move it outside opentofu/tailscale before retrying.')
+
+
 def private(path, directory=False):
     info = path.lstat()
     kind = stat.S_ISDIR if directory else stat.S_ISREG
@@ -50,6 +58,7 @@ def private(path, directory=False):
 
 os.umask(0o077)
 repo = Path.cwd()
+reject_auto_vars()
 revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
 inputs = json.loads(os.environ['DEVENV_TASK_INPUT'])
 root = Path(os.environ.get('XDG_STATE_HOME', str(Path.home() / '.local/state'))) / 'infra/tailscale'
@@ -138,6 +147,7 @@ env['TAILSCALE_API_KEY'] = read_token
 
 
 def tofu(*args):
+    reject_auto_vars()
     run('tofu', '-chdir=opentofu/tailscale', *args, env=env)
 
 

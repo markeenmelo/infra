@@ -21,6 +21,8 @@ Read [AGENTS.md](../../../AGENTS.md), [secrets](../../../secrets/README.md) and,
 
 The only source is `secrets/tailscale/operator.yaml`, copied unchanged from the reviewed operator-local ciphertext. It has exactly the existing operator recipient and four encrypted fields: OAuth client ID/secret, tailnet ID and `TF_VAR_state_passphrase`. Never select it in sops-nix or send OAuth credentials to hosts. Shell entry, dotenv, SecretSpec, task outputs and Nix never load these secrets. Review all four encrypted scalars, the encrypted MAC and sole age recipient by eye before staging any change.
 
+Automatic variable files are forbidden in `opentofu/tailscale`: `terraform.tfvars`, `terraform.tfvars.json`, `*.auto.tfvars` and `*.auto.tfvars.json` (including dot-prefixed names). OpenTofu loads them with higher precedence than the SOPS-provided `TF_VAR_state_passphrase`, risking state/plan encryption with an unbacked-up passphrase. Git intentionally ignores these files to avoid credential commits. The task rejects matching entries, including directories and dangling symlinks, before runtime-directory creation or secret access and before every OpenTofu invocation; it never reads their contents. Review and move any such entry outside the configuration directory before retrying. Direct operator OpenTofu commands also require this directory to be free of automatic variable files. Do not modify it concurrently: the guard is not an atomic filesystem snapshot.
+
 Only explicit operator processes decrypt with SOPS. The task requests read-only OAuth scopes for validation/planning, then a write-scoped token only for an explicitly selected apply. Tokens stay in process memory/provider environment, never arguments. Do not enable provider debug logs, shell tracing, task exports or plaintext `tofu show -json`/`output` in logs/chat.
 
 Runtime root: `${XDG_STATE_HOME:-$HOME/.local/state}/infra/tailscale`, outside the checkout and store. Use operator-owned `0700` directories and `0600` files, no symlinks or writable ancestry. The task refuses unsafe existing paths; it never recursively repairs permissions. `data/` holds `TF_DATA_DIR`; `terraform.tfstate` and its native backups hold the local backend; `plans/review-*/` holds each encrypted `plan.tfplan`, a revision/hash manifest and an attempted marker. Use only the default workspace. State and saved plans have enforced PBKDF2/AES-GCM encryption, no plaintext fallback. Native local-backend locking remains enabled.
@@ -128,5 +130,73 @@ From ThinkPad **and** Grafite, test real SSH to both servers using trusted OpenS
 - Run `shellcheck scripts/devenv/tailnet.sh` and `devenv tasks run tailnet:deploy --input action=invalid`; it must fail before secret access/API calls.
 - Submit the final policy using a token restricted to `policy_file:read devices:core:read devices:posture_attributes:read`; require HTTP 200 and `{}`. Submit an in-memory variant replacing the grants with `src=["*"], dst=["*"], ip=["*"]`; require native deny-test failures, not an authentication/syntax failure. Never POST either policy to the live `/acl` update endpoint during verification. Test sources use the two verified ordinary accounts because autogroup selectors are not valid test sources.
 - Only after user review/commit, generate and inspect the saved plan and encryption envelopes. Applying it, host activation, recovery/access and persistence checks remain separately authorized operations, not local verification.
+
+### Credential-free automatic-variable guard check
+
+Run this from the repository root in the locked shell. It compiles the embedded Python and exercises only the actual guard and wrapper definitions against temporary entries outside the checkout, with a fake dispatcher. It never runs the operational body, reads credentials, invokes OpenTofu or contacts the tailnet. Expected result: `Automatic-variable guard checks passed.`
+
+```sh
+python3 - <<'PY'
+import ast
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+source = Path('scripts/devenv/tailnet.sh').read_text().split("<<'PY'\n", 1)[1].rsplit('\nPY', 1)[0]
+compile(source, 'tailnet.sh', 'exec')
+names = {'fail', 'reject_auto_vars', 'tofu'}
+functions = [node for node in ast.parse(source).body
+             if isinstance(node, ast.FunctionDef) and node.name in names]
+assert {node.name for node in functions} == names
+calls = []
+namespace = {'env': {}, 'run': lambda *args, **kwargs: calls.append((args, kwargs))}
+exec(compile(ast.Module(body=functions, type_ignores=[]), 'tailnet.sh', 'exec'), namespace)
+with TemporaryDirectory(prefix='tailnet-guard-', dir='/tmp') as temporary:
+    namespace['repo'] = Path(temporary)
+    config = Path(temporary) / 'opentofu/tailscale'
+    config.mkdir(parents=True)
+    namespace['reject_auto_vars']()
+    for name in ('manual.tfvars', 'manual.tfvars.json'):
+        (config / name).touch()
+    commands = ('init', 'validate', 'plan', 'apply')
+    for command in commands:
+        namespace['tofu'](command, 'dummy-argument')
+        assert calls[-1] == (('tofu', '-chdir=opentofu/tailscale', command, 'dummy-argument'), {'env': {}})
+    assert len(calls) == len(commands)
+    forbidden = ('terraform.tfvars', 'terraform.tfvars.json',
+                 'local.auto.tfvars', 'local.auto.tfvars.json',
+                 '.auto.tfvars', '.hidden.auto.tfvars.json')
+    for name in forbidden:
+        path = config / name
+        for kind in ('file', 'directory', 'symlink'):
+            if kind == 'file':
+                path.write_text('dummy-content-never-print')
+            elif kind == 'directory':
+                path.mkdir()
+            else:
+                path.symlink_to(config / 'missing-target')
+            for command in (None, *commands):
+                try:
+                    if command is None:
+                        namespace['reject_auto_vars']()
+                    else:
+                        namespace['tofu'](command)
+                except SystemExit as error:
+                    assert repr(name) in str(error)
+                    assert 'dummy-content-never-print' not in str(error)
+                else:
+                    raise AssertionError(f'Accepted {kind}: {name}')
+                assert len(calls) == len(commands), 'Dispatched despite automatic variables'
+            path.rmdir() if kind == 'directory' else path.unlink()
+    namespace['reject_auto_vars']()
+    config.rename(config.with_name('absent'))
+    try:
+        namespace['reject_auto_vars']()
+    except OSError:
+        pass
+    else:
+        raise AssertionError('Accepted missing configuration directory')
+print('Automatic-variable guard checks passed.')
+PY
+```
 
 Upstream references at the chosen boundaries: [provider v0.29.2](https://github.com/tailscale/terraform-provider-tailscale/tree/v0.29.2/docs), [OpenTofu encryption](https://opentofu.org/docs/language/state/encryption/), [OAuth scopes](https://tailscale.com/kb/1623/trust-credentials), [policy syntax](https://tailscale.com/kb/1337/policy-syntax). Recheck these when changing dependencies.
