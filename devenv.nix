@@ -3,6 +3,15 @@
   pkgs,
   ...
 }:
+let
+  nixosAnywhere = pkgs.nixos-anywhere.overrideAttrs (old: {
+    postPatch = (old.postPatch or "") + ''
+      substituteInPlace src/nixos-anywhere.sh \
+        --replace-fail ' "-o" "UserKnownHostsFile=/dev/null" "-o" "StrictHostKeyChecking=no"' "" \
+        --replace-fail '-o IdentitiesOnly=no' '-o IdentitiesOnly=yes'
+    '';
+  });
+in
 {
   stdenv = pkgs.stdenvNoCC;
   cachix.enable = false;
@@ -20,7 +29,7 @@
     pkgs.jq
     pkgs.git
     pkgs.openssh
-    pkgs.nixos-anywhere
+    nixosAnywhere
     pkgs.shellcheck
     pkgs.bash-language-server
     pkgs.python3
@@ -28,6 +37,21 @@
     pkgs.age
     pkgs.yq-go
   ];
+
+  tasks = {
+    "fleet:install" = {
+      description = "Install one reviewed fleet host with nixos-anywhere (destructive).";
+      cwd = config.devenv.root;
+      showOutput = true;
+      exec = "exec ${pkgs.bash}/bin/bash scripts/devenv/install.sh";
+    };
+    "fleet:deploy" = {
+      description = "Deploy a server or the servers group; boot=true stages then requests reboot.";
+      cwd = config.devenv.root;
+      showOutput = true;
+      exec = "exec ${pkgs.bash}/bin/bash scripts/devenv/deploy.sh";
+    };
+  };
 
   assertions = [
     {

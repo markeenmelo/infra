@@ -15,12 +15,12 @@ Finding a skill is not authorization to run what it describes. Never add shell i
 
 ## Architecture
 
-- `flake.nix` is the production entry point; root `devenv.nix` is the development-only exception and is never imported into production. Every other `.nix` file lives under `modules/` as a top-level flake-parts module, including hardware facts. `modules/` is Nix only: static data goes in `assets/<concern>/`. There is no `scripts/` tree and no test suite — the repository is declarative configuration and nothing else.
+- `flake.nix` is the production entry point; root `devenv.nix` is the development-only exception and is never imported into production. Every other `.nix` file lives under `modules/` as a top-level flake-parts module, including hardware facts. `modules/` is Nix only: static data goes in `assets/<concern>/`. The only standalone scripts are `scripts/devenv/install.sh` and `scripts/devenv/deploy.sh`, backing the two explicit development tasks. There is no test suite or general-purpose scripts tree.
 - Capabilities are deferred, class-checked `flake.modules.nixos` / `flake.modules.homeManager` values, composed only in a matching evaluation. Every host gets `base`; a host's facts and the named values it imports merge into `fleet.hosts.<name>.module`. No host import roots, no `common.nix`.
 - Each host declares `system` and `track`. ThinkPad follows `nixpkgs-unstable`; servers follow the supported numbered stable branch. Generic code uses its own evaluation's `pkgs` and `lib` — no injected inputs, global overlays or importing both package sets.
 - Track selection belongs in `modules/fleet.nix`. `nixosConfigurations` always evaluates every host; deploy nodes are only the hosts listed in `modules/deploy.nix`.
 - A concern owns its configuration, state and facts together. Nothing in the repository verifies them: there are no fixtures, no `fleet.validation`, no `flake.validation` report and no `perSystem.checks`.
-- `devenv.nix` provides the locked toolbox and nothing else — no scripts, no tasks, no hooks. Its nixpkgs pin must match `flake.lock`.
+- `devenv.nix` provides the locked toolbox and references only `fleet:install` and `fleet:deploy` under `scripts/devenv/`. These tasks require explicit invocation: no shell-entry dependencies, hooks or automatic operations. Keep task logic in those two scripts and the development-only package override in Nix. Its nixpkgs pin must match `flake.lock`.
 
 ## Workflow
 

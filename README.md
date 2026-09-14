@@ -14,7 +14,18 @@ Features own their NixOS and Home Manager contributions, persistence and host fa
 nix run --no-update-lock-file .#devenv -- shell
 ```
 
-The shell provides the locked toolbox and nothing else — Nix, SOPS/age, nixos-anywhere, deploy-rs's inputs and the formatters. It defines no scripts, tasks or hooks; entering it runs no checks, formatting, secret loading or deployment.
+The shell provides the locked toolbox — Nix, SOPS/age, a locally hardened pinned nixos-anywhere, deploy-rs's inputs and the formatters — plus two explicitly invoked tasks backed by `scripts/devenv/`. Entering it runs no fleet checks, formatting, secret loading, installation or deployment. The shell supports x86_64-linux only.
+
+After completing the [installation](.agents/skills/storage/SKILL.md) or [deployment](.agents/skills/deploy/SKILL.md) prerequisites:
+
+```sh
+devenv tasks run fleet:install --input host=thinkpad
+devenv tasks run fleet:deploy --input target=racknerd
+devenv tasks run fleet:deploy --input target=servers
+devenv tasks run fleet:deploy --input target=servers --input boot=true
+```
+
+Installation accepts any fleet host and requires private installer setup. Deployment accepts `racknerd`, `bastion`, or `servers` (Racknerd then Bastion); ThinkPad is install-only. Normal deployment switches without rebooting. `boot=true` stages and then requests a reboot for each successful target; it requires the reboot sudo permission to have been commissioned first. These commands change real machines and need separate explicit authorization.
 
 Inspect and build with the flake directly:
 

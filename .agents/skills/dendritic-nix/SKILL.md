@@ -25,7 +25,7 @@ The pattern is [dendritic](https://github.com/mightyiam/dendritic): one feature 
 3. Importing a capability should enable it. Add an option only for a real choice or a safety gate.
 4. A lower module reachable by two import routes needs a stable `key` so list contributions deduplicate. Prefer merging into `base` so there is only one route.
 5. Use the lower evaluation's own `pkgs` and `lib`. Developer tools belong in `devenv.nix`, never in a host package set, and never import both tracks. A real stable/unstable API difference gets one localized branch (`modules/logging.nix`).
-6. `modules/` is Nix only: static data lives in `assets/<concern>/`. There is no `scripts/` tree — an executable a host needs is built in Nix (`pkgs.writeShellApplication` and friends) inside the module that owns it.
+6. `modules/` is Nix only: static data lives in `assets/<concern>/`. An executable a host needs is built in Nix (`pkgs.writeShellApplication` and friends) inside the module that owns it. The only standalone exceptions are the development task implementations `scripts/devenv/install.sh` and `scripts/devenv/deploy.sh`, referenced by `devenv.nix` and never imported into production.
 
 ## Adding a feature
 
@@ -39,4 +39,4 @@ Name the single responsibility and its consumers first, then extend the cohesive
 4. Follow [storage](../storage/SKILL.md) for the layout and persistence, then add deployment facts to `modules/deploy.nix`.
 5. Run `nix fmt`, `nix flake check --no-update-lock-file -L` and read `nix eval --json .#fleet.<name>`.
 
-Unknown facts stay typed nulls, never invented values. Nothing in evaluation guards installation — the storage skill's review procedure and explicit authorization are the only guards on that path.
+Unknown facts stay typed nulls, never invented values. Evaluation proves no installation readiness. The install task checks local inputs and the reviewed script digest; the storage skill's live-machine review and explicit authorization remain mandatory.

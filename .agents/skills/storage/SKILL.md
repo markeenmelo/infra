@@ -1,6 +1,6 @@
 ---
 name: storage
-description: Disk layouts, persistence and installation — disko OS-disk design, impermanence state decisions, and the manual nixos-anywhere install. Use before any partitioning, formatting, mount, persistent-state or fresh-install change. Bastion NAS data is out of scope and protected.
+description: Disk layouts, persistence and installation — disko OS-disk design, impermanence state decisions, and the operator-reviewed nixos-anywhere task. Use before any partitioning, formatting, mount, persistent-state or fresh-install change. Bastion NAS data is out of scope and protected.
 ---
 
 # Storage, persistence and installation
@@ -31,6 +31,33 @@ Root is a tmpfs; only declared paths survive. Add state next to the feature that
 - Audit with `nix eval --json .#fleet.HOST.persistence | jq .`. The report lists declarations only — direct `/persist` contents also survive, and removing a declaration deletes nothing.
 - Plan migration *before* the reboot that needs it: back up, seed the backing paths with correct ownership, then boot.
 
+## Private installer setup
+
+The explicit `fleet:install` task in `devenv.nix` references `scripts/devenv/install.sh`. It accepts one fleet hostname, not a group. Use the locked x86_64-linux shell (`nix run --no-update-lock-file .#devenv -- shell`); never invoke an unmodified nixos-anywhere instead of the hardened package provided there.
+
+For each host, configure a private OpenSSH alias `HOST-installer` with the console-verified live installer's `HostName` and port. The task uses root on the live installer, never root login to an installed fleet system. Keep this configuration and all credentials outside Git. No installer endpoint is inferred from the production deploy endpoint.
+
+Prepare this runtime directory outside both the checkout and `/nix/store`:
+
+```text
+${XDG_DATA_HOME:-$HOME/.local/share}/infra/install/HOST/
+├── identity                         (client key authorized on the live installer)
+├── known_hosts                      (key verified against the provider console)
+├── disko.sha256                     (only the reviewed script's 64-character digest)
+└── extra-files/
+    └── persist/
+        ├── etc/
+        │   ├── machine-id
+        │   └── ssh/
+        │       ├── ssh_host_ed25519_key
+        │       └── ssh_host_ed25519_key.pub
+        └── var/lib/sops-nix/key.txt  (required only for hosts selecting secrets)
+```
+
+Use an operator-owned `0700` directory and owner-only regular files/directories throughout (normally `0600` files, `0700` directories), with no symlinks. The resolved setup path may contain only letters, digits and `/._+-`, because upstream flattens SSH options into `NIX_SSHOPTS`. The client identity must be usable noninteractively; there is no agent or password fallback. Staging is not a backup: preserve independent recovery copies and correct remote ownership/modes. Nixos-anywhere copies these files as root while preserving modes. ThinkPad selects secrets and needs its reviewed age identity; neither server does. The wrapper never generates identities or decrypts anything, and file presence does not prove a key matches or decrypts.
+
+The pinned nixos-anywhere 1.13.0 hardcodes disabled host-key checking before user flags; OpenSSH takes the first value. `devenv.nix` locally removes those defaults and changes ssh-copy-id's conflicting identity override, without changing pins. The task then enforces a private known-hosts file, strict/publickey-only/batch SSH, no agent or forwarding, and no host-key updates. Review these substitutions again whenever the upstream package changes.
+
 ## Installation
 
 1. Finish the review above, confirm independent backups and console recovery, and verify the live installer's identity from the provider console.
@@ -41,13 +68,17 @@ Root is a tmpfs; only declared paths survive. Add state next to the feature that
      .#nixosConfigurations.HOST.config.system.build.diskoScript
    sha256sum result-disko-HOST
    ```
-3. With explicit authorization, run `nixos-anywhere` by hand. The guarded installer that used to enforce all of this is gone; every item is now yours to verify before and during the run:
+3. After reading the generated script, record only its digest in the private `disko.sha256` file. Confirm the tree is clean, committed and the revision is the one reviewed. With explicit installation authorization, invoke the task. Its local input, staging and digest checks do **not** replace the live-machine review; every item below remains yours to verify before and during the run:
    - the target is an idle live installer (`VARIANT_ID=installer`, overlay/tmpfs root) with exactly one unmounted disk matching `fleet.installation.osDevice`, held by no pool, swap, dm or kernel consumer;
    - the scanned SSH host key matches the fingerprint read from the provider console, pinned via a private `UserKnownHostsFile` with `StrictHostKeyChecking=yes`, publickey-only, no agent or forwarding;
    - staging files (`/persist/etc/machine-id`, the ed25519 host key pair, optionally the age identity) live outside the checkout and the store, owner-only;
    - the built disko script's SHA-256 still equals the one you reviewed.
 
-   Then invoke it with `--phases disko,install --build-on local` and nothing else: **destructive install, no kexec, no reboot, no host-key copying**.
+   ```sh
+   devenv tasks run fleet:install --input host=HOST
+   ```
+
+   The task validates the hostname against `fleet`, refuses a dirty tree or missing/unsafe staging, and builds the disko script and system from the same immutable local Git revision. It compares the script to the private review digest and passes those exact store outputs to the hardened installer with `--store-paths`, `--extra-files` and `--phases disko,install --build-on local`: **destructive install, no kexec, no reboot, no host-key copying**. It does not inspect live disk consumers, backups or installer state for you. Never use a successful evaluation/build as authorization.
 4. Afterwards inspect mounts, identities and boot setup. First boot and reboot acceptance are separate authorizations.
 
 Never run disko, a generated script, `mkfs`, `wipefs` or a partition tool directly. Rollback cannot recover repartitioned data.

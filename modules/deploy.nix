@@ -7,7 +7,6 @@
 let
   nodes = {
     racknerd.hostname = "72.11.150.242";
-    # Boot-only (`--boot`) until its access/home transition is accepted.
     bastion.hostname = "192.168.2.2";
   };
 in
@@ -40,6 +39,7 @@ in
                 })
                 [
                   "/nix/store/*-activatable-nixos-system-*/activate-rs"
+                  "/run/current-system/sw/bin/systemctl reboot"
                   "${pkgs.coreutils}/bin/rm ^/run/deploy-rs/deploy-rs-canary-[0-9abcdfghijklmnpqrsvwxyz]{32}$"
                 ];
           }
