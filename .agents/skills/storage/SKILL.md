@@ -42,6 +42,7 @@ Prepare this runtime directory outside both the checkout and `/nix/store`:
 ```text
 ${XDG_DATA_HOME:-$HOME/.local/share}/infra/install/HOST/  (0700)
 ├── identity                         (0600; client key authorized on the live installer)
+├── identity.pub                     (0600; preparation derives this from identity)
 ├── known_hosts                      (0600; key verified against the provider console)
 ├── disko.sha256                     (0600; only the reviewed script's 64-character digest)
 └── extra-files/                     (0755)
@@ -57,9 +58,35 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/infra/install/HOST/  (0700)
                     └── key.txt     (0600)
 ```
 
-Keep the entire tree operator-owned inside the `0700` setup directory, with no symlinks or group/other write access. All files except payload machine-id remain owner-only. The private outer directory protects the payload locally; the payload itself needs the target modes shown above. Nixos-anywhere copies it as root while preserving modes, and impermanence mirrors persistent directory modes into the running system. Recursive `chmod 700`/`600` on the payload can make `/etc` inaccessible and break D-Bus/networking. Machine-id must be readable by unprivileged system services; private keys must not be.
+### Local preparation mode
 
-The resolved setup path may contain only letters, digits and `/._+-`, because upstream flattens SSH options into `NIX_SSHOPTS`. The client identity must be usable noninteractively; there is no agent or password fallback. Staging is not a backup: preserve independent recovery copies and correct remote ownership/modes. ThinkPad selects secrets and needs its reviewed age identity; neither server does. The wrapper rejects incorrect system-directory/machine-id modes; it never changes permissions, generates identities or decrypts anything. File presence does not prove a key matches or decrypts.
+On reinstalls, restore the intended machine-id and host keys from independent backups into this tree **before** using preparation. Missing files are treated as a request for new identities, not proof that the old machine had none. Preparation never rotates an existing identity or recovers one from the target.
+
+```sh
+devenv tasks run fleet:install --input host=racknerd --input prepare=true
+```
+
+`prepare=true` is a JSON boolean, not a string. This branch validates the host against the working-tree flake, creates missing directories with the modes above, and generates only missing client/installed-host ED25519 keys (without passphrases) and a random machine-id. It derives missing `.pub` files from existing private keys and checks existing key pairs without printing private material. It refuses invalid existing identities, orphaned public keys, unsafe permissions, symlinks and hard-linked files rather than overwriting identities or recursively changing modes. All creation is runtime-only, outside the checkout and store. It can run with a dirty tree; destructive installation still requires a clean committed revision.
+
+The mode creates **empty** `0600` placeholders for missing `known_hosts` and `disko.sha256`. It reports these as pending; they intentionally cannot pass installation checks. It creates the age directory only for a host selecting secrets, but never generates an age identity: import the reviewed identity manually with the modes above. A zero exit means local preparation completed, not that installation is ready.
+
+To update trust/review files explicitly, supply either or both optional inputs, always with `prepare=true`:
+
+```sh
+devenv tasks run fleet:install --input host=racknerd --input prepare=true \
+  --input knownHostsFile=/ABSOLUTE/PRIVATE/PATH/console-verified-known_hosts \
+  --input reviewedDiskoSha256=REVIEWED_64_CHARACTER_SHA256
+```
+
+`knownHostsFile` must be an operator-owned local regular file outside the checkout/store, without symlinks or group/other write access. It must contain exactly one ED25519 **known_hosts entry**, including the installer hostname/IP (or `[host]:port` for a nondefault port), not just a bare public key. Read the live installer's public host key and fingerprint through the independently verified provider console and form that entry yourself. The mode checks file/key syntax and copies it atomically; it cannot verify your console comparison or infer the endpoint. It never scans the network, uses trust-on-first-use, edits SSH configuration or relaxes strict SSH checking. Repeating the command without this input preserves the current pin.
+
+Only supply `reviewedDiskoSha256` after building and reading every command in the disko script as described below. Preparation records your supplied digest atomically; it does not build a script and silently mark it reviewed. Installation still builds from the committed revision and checks equality. Without this input, the existing digest is preserved. Neither optional input is accepted in installation mode.
+
+Authorize the generated `identity.pub` on the live installer through the verified console; preparation performs no key upload. Configure `HOST-installer` yourself. Existing credentials, backup custody, installer identity, disk state and eventual installed-system logins still need independent review. Preparation always exits before the installation branch: no SSH (including config resolution), disko execution, installation or reboot.
+
+Keep the entire tree operator-owned inside the `0700` setup directory, with no symlinks, hard-linked files or group/other write access. All files except payload machine-id remain owner-only. The private outer directory protects the payload locally; the payload itself needs the target modes shown above. Nixos-anywhere copies it as root while preserving modes, and impermanence mirrors persistent directory modes into the running system. Recursive `chmod 700`/`600` on the payload can make `/etc` inaccessible and break D-Bus/networking. Machine-id must be readable by unprivileged system services; private keys must not be.
+
+The resolved setup path may contain only letters, digits and `/._+-`, because upstream flattens SSH options into `NIX_SSHOPTS`. The client identity must be usable noninteractively; there is no agent or password fallback. Staging is not a backup: preserve independent recovery copies and correct remote ownership/modes. ThinkPad selects secrets and needs its reviewed age identity; neither server does. The installation branch rejects incorrect system-directory/machine-id modes; it never changes permissions, generates identities or decrypts anything. Only the explicit preparation branch creates missing identities and sets modes on its newly created files/directories. File presence does not prove a key decrypts selected secrets or provides usable access.
 
 The pinned nixos-anywhere 1.13.0 hardcodes disabled host-key checking before user flags; OpenSSH takes the first value. `devenv.nix` locally removes those defaults and changes ssh-copy-id's conflicting identity override, without changing pins. The task then enforces a private known-hosts file, strict/publickey-only/batch SSH, no agent or forwarding, and no host-key updates. Review these substitutions again whenever the upstream package changes.
 
