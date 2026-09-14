@@ -40,7 +40,7 @@ in
                 [
                   "/nix/store/*-activatable-nixos-system-*/activate-rs"
                   "/run/current-system/sw/bin/systemctl reboot"
-                  "${pkgs.coreutils}/bin/rm ^/run/deploy-rs/deploy-rs-canary-[0-9abcdfghijklmnpqrsvwxyz]{32}$"
+                  "${pkgs.coreutils-full}/bin/rm ^/run/deploy-rs/deploy-rs-canary-[0-9abcdfghijklmnpqrsvwxyz]{32}$"
                 ];
           }
         ];
