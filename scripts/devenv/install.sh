@@ -109,13 +109,41 @@ if [[ $prepare == true ]]; then
   known_hosts_source=$(jq -r '.knownHostsFile // empty' <<<"$input")
   if [[ -n $known_hosts_source ]]; then
     source_path=$(realpath -e -- "$known_hosts_source")
-    [[ $source_path == "$(realpath -ms -- "$known_hosts_source")" && -f $source_path && -O $source_path && -r $source_path ]] \
-      || die 'knownHostsFile must be an operator-owned readable regular file without symlinks.'
+    [[ $source_path == "$(realpath -ms -- "$known_hosts_source")" ]] \
+      || die 'knownHostsFile must not contain symlinks.'
     case "$source_path" in
       "$root"|"$root"/*|/nix/store|/nix/store/*) die 'knownHostsFile must be outside the checkout and Nix store.' ;;
     esac
-    [[ -z $(find "$source_path" -perm /022 -print) ]] || die 'knownHostsFile must not be group/other writable.'
-    cp -- "$source_path" "$scratch/known_hosts"
+    python3 - "$source_path" "$scratch/known_hosts" <<'PY'
+import os
+import shutil
+import stat
+import sys
+
+source_path, destination = sys.argv[1:]
+directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+directory = os.open("/", directory_flags)
+try:
+    for component in source_path.split("/")[1:-1]:
+        child = os.open(component, directory_flags, dir_fd=directory)
+        os.close(directory)
+        directory = child
+    descriptor = os.open(
+        os.path.basename(source_path), os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+        dir_fd=directory,
+    )
+    with os.fdopen(descriptor, "rb") as source:
+        metadata = os.fstat(source.fileno())
+        if (not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.geteuid()
+                or metadata.st_mode & 0o022 or metadata.st_nlink != 1):
+            sys.exit("knownHostsFile must be an operator-owned, single-link regular file without group/other write access.")
+        with open(destination, "xb") as target:
+            shutil.copyfileobj(source, target)
+except OSError as error:
+    sys.exit(f"Cannot safely import knownHostsFile: {error.strerror}.")
+finally:
+    os.close(directory)
+PY
     chmod 600 "$scratch/known_hosts"
     valid_known_hosts "$scratch/known_hosts" \
       || die 'knownHostsFile must contain exactly one valid ED25519 known_hosts entry, not a bare public key.'
@@ -154,7 +182,7 @@ if [[ $prepare == true ]]; then
   ensure_key extra-files/persist/etc/ssh/ssh_host_ed25519_key
 
   step='machine-id checks'
-  hint='Restore the intended machine-id from backup on reinstalls: 32 lowercase hexadecimal characters, not all zero, in a regular file with mode 0444. Never replace an existing identity merely to make validation pass.'
+  hint='Restore the intended machine-id from backup on reinstalls: 32 lowercase hexadecimal characters, not all zero, with at most one trailing newline, in a regular file with mode 0444. Never replace an existing identity merely to make validation pass.'
   machine_id="$private/extra-files/persist/etc/machine-id"
   if [[ ! -e $machine_id ]]; then
     python3 -c 'import secrets; print(secrets.token_hex(16))' > "$scratch/machine-id"
@@ -165,9 +193,17 @@ if [[ $prepare == true ]]; then
   fi
   [[ -f $machine_id && $(stat -c %a "$machine_id") == 444 ]] \
     || die 'Existing machine-id must be a regular file with mode 0444.'
-  value=$(<"$machine_id")
-  [[ $value =~ ^[0-9a-f]{32}$ && $value != 00000000000000000000000000000000 ]] \
-    || die 'Existing machine-id is invalid; restore it rather than replacing it automatically.'
+  if ! python3 - "$machine_id" <<'PY'
+import re
+import sys
+
+with open(sys.argv[1], "rb") as source:
+    value = source.read(34)
+sys.exit(0 if re.fullmatch(rb"[0-9a-f]{32}\n?", value) and value[:32] != b"0" * 32 else 1)
+PY
+  then
+    die 'Existing machine-id is invalid; restore it rather than replacing it automatically.'
+  fi
 
   step='known_hosts update'
   hint=$known_hosts_hint
