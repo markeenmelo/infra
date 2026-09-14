@@ -22,10 +22,6 @@
         programs = {
           pi-coding-agent = {
             enable = true;
-            extraPackages = with pkgs; [
-              gh
-              git
-            ];
             settings = {
               lastChangelogVersion = pkgs.pi-coding-agent.version;
               defaultProvider = "openai-codex";
