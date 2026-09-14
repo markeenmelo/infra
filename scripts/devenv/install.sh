@@ -348,7 +348,7 @@ PY
 
   if [[ $(jq -r '.authorizeKey // false' <<<"$input") == true ]]; then
     step='bootstrap identity checks'
-    hint='Use a private, operator-owned, single-link key outside Git/store without symlinks, mode 0600 or 0400, usable without a passphrase. It must already authorize root on the console-verified live installer. No password or agent fallback is allowed.'
+    hint='Use a private, operator-owned, single-link key outside Git/store without symlinks, mode 0600 or 0400, usable without a passphrase. Every parent directory must be root/operator-owned without group/other write access; shared temporary directories are refused. It must already authorize root on the console-verified live installer. No password or agent fallback is allowed.'
     [[ -e $private/ssh_config ]] || die 'Key authorization requires managed ssh_config; supply installerHost and installerHostKey first.'
     bootstrap=$(jq -r '.bootstrapIdentityFile' <<<"$input")
     resolved=$(realpath -e -- "$bootstrap")
@@ -356,8 +356,30 @@ PY
     case "$resolved" in
       "$root"|"$root"/*|/nix/store|/nix/store/*) die 'bootstrapIdentityFile must be outside Git and the Nix store.' ;;
     esac
-    [[ $resolved =~ ^/[a-zA-Z0-9/._+-]+$ && -f $resolved && -O $resolved && $(stat -c %h "$resolved") == 1 ]] \
-      || die 'Unsafe bootstrapIdentityFile type, owner, link count or path.'
+    [[ $resolved =~ ^/[a-zA-Z0-9/._+-]+$ ]] || die 'Unsafe bootstrapIdentityFile path.'
+    python3 - "$resolved" <<'PY'
+import os
+import sys
+
+flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+directory = None
+try:
+    for component in ["/", *sys.argv[1].split("/")[1:-1]]:
+        child = os.open(component, flags, dir_fd=directory)
+        if directory is not None:
+            os.close(directory)
+        directory = child
+        metadata = os.fstat(directory)
+        if metadata.st_uid not in (0, os.geteuid()) or metadata.st_mode & 0o022:
+            sys.exit("bootstrapIdentityFile ancestors must be root/operator-owned without group/other write access.")
+except OSError as error:
+    sys.exit(f"Cannot safely inspect bootstrapIdentityFile ancestors: {error.strerror}.")
+finally:
+    if directory is not None:
+        os.close(directory)
+PY
+    [[ -f $resolved && ! -L $resolved && -O $resolved && $(stat -c %h "$resolved") == 1 ]] \
+      || die 'Unsafe bootstrapIdentityFile type, owner or link count.'
     mode=$(stat -c %a "$resolved")
     [[ $mode == 600 || $mode == 400 ]] || die 'bootstrapIdentityFile must have mode 0600 or 0400.'
     ssh-keygen -y -P '' -f "$resolved" >/dev/null 2>&1 || die 'Bootstrap key must be valid and usable noninteractively.'
