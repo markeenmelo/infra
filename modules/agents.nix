@@ -12,8 +12,8 @@
         ponytail = pkgs.fetchFromGitHub {
           owner = "DietrichGebert";
           repo = "ponytail";
-          rev = "0a4dd63ad4541f4f655c4108a295916f3c1d8fda";
-          hash = "sha256-8cYggVltBAlZ/Zj4pl1bOu7mQdZFXCmDGW4RSpvRA+w=";
+          rev = "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156";
+          hash = "sha256-PES5XrSYx0VBXWVHEDRykGy0SAmJfV/luzy8Gfg0aAQ=";
         };
       in
       {
@@ -33,8 +33,8 @@
               defaultThinkingLevel = "high";
               defaultProjectTrust = "ask";
               packages = [
-                "npm:@dietrichgebert/ponytail@4.9.0"
-                "npm:@janvitos/pi-plan-build@0.1.98"
+                "npm:@dietrichgebert/ponytail@4.10.0"
+                "npm:@janvitos/pi-plan-build@0.1.101"
                 "npm:@juicesharp/rpiv-ask-user-question@2.10.1"
                 "npm:pi-claude-bridge@0.7.0"
                 "npm:pi-mcp-adapter@2.33.0"
