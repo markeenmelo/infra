@@ -43,8 +43,5 @@ in
       };
     };
 
-  fleet.hosts.thinkpad.module = {
-    fleet.desktop.reviewed = true;
-    home-manager.users.marcos.home.stateVersion = "26.05";
-  };
+  fleet.hosts.thinkpad.module.fleet.desktop.reviewed = true;
 }

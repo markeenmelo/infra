@@ -4,7 +4,6 @@
     track = "stable";
     capabilities = [
       "racknerd-disko"
-      "headless"
       "persistence"
       "access"
       "server"

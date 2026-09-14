@@ -13,6 +13,7 @@
       "administration"
       "editors"
     ];
+    module.home-manager.users.marcos.home.stateVersion = "26.05";
     deployment.enable = false;
   };
 }

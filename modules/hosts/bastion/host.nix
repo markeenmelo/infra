@@ -4,7 +4,6 @@
     track = "stable";
     capabilities = [
       "bastion-disko"
-      "headless"
       "persistence"
       "access"
       "server"
