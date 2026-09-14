@@ -35,7 +35,7 @@ Root is a tmpfs; only declared paths survive. Add state next to the feature that
 
 The explicit `fleet:install` task in `devenv.nix` references `scripts/devenv/install.sh`. It accepts one fleet hostname, not a group. Use the locked x86_64-linux shell (`nix run --no-update-lock-file .#devenv -- shell`); never invoke an unmodified nixos-anywhere instead of the hardened package provided there.
 
-For each host, configure a private OpenSSH alias `HOST-installer` with the console-verified live installer's `HostName` and port. The task uses root on the live installer, never root login to an installed fleet system. Keep this configuration and all credentials outside Git. No installer endpoint is inferred from the production deploy endpoint.
+For each host, preparation can create a private OpenSSH alias `HOST-installer` from the console-verified live installer's address, port and public host key. It writes `ssh_config` in the runtime directory below, not `~/.ssh/config`; installation uses it in preference to user/system SSH configuration. An existing manually configured alias remains supported when no managed `ssh_config` exists. The task uses root on the live installer, never root login to an installed fleet system. Keep configuration and credentials outside Git. No installer endpoint is inferred from the production deploy endpoint.
 
 Prepare this runtime directory outside both the checkout and `/nix/store`:
 
@@ -44,6 +44,7 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/infra/install/HOST/  (0700)
 ├── identity                         (0600; client key authorized on the live installer)
 ├── identity.pub                     (0600; preparation derives this from identity)
 ├── known_hosts                      (0600; key verified against the provider console)
+├── ssh_config                       (0600; optional task-managed installer endpoint)
 ├── disko.sha256                     (0600; only the reviewed script's 64-character digest)
 └── extra-files/                     (0755)
     └── persist/                    (0755)
@@ -58,7 +59,7 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/infra/install/HOST/  (0700)
                     └── key.txt     (0600)
 ```
 
-### Local preparation mode
+### Preparation mode
 
 On reinstalls, restore the intended machine-id and host keys from independent backups into this tree **before** using preparation. Missing files are treated as a request for new identities, not proof that the old machine had none. Preparation never rotates an existing identity or recovers one from the target.
 
@@ -72,7 +73,22 @@ The mode creates **empty** `0600` placeholders for missing `known_hosts` and `di
 
 After preparation it validates required files, including pre-existing ones: ownership/type/modes, SSH key pairs (including the installed host key's ED25519 type), machine-id, one ED25519 `known_hosts` entry, the digest's 64-character lowercase hexadecimal format, and any required native age identity's syntax. Age validation uses `age-keygen -y` with output suppressed, not SOPS decryption. Missing or malformed trust/digest/age files are reported together where possible; unsafe paths, permissions and invalid SSH/machine identities stop immediately. The first run normally fails until operator-supplied files are complete. Repeat the same `prepare=true` command after correcting the reported issues; existing identities are preserved.
 
-A zero exit means **local installer-file checks passed**, not installation readiness. This is not a configuration checker: only the existing fleet-host and selected-secrets lookups use Nix; preparation does not add flake checks or builds, compare the digest to a generated script, inspect SSH configuration, test logins, decrypt secrets or contact the host. It cannot establish whether a correctly formatted pin belongs to the console-verified installer, whether an age recipient matches, or whether the disk and backups are safe.
+A zero exit means **local installer-file checks passed**, not installation readiness. This is not a Nix configuration checker: only the existing fleet-host and selected-secrets lookups use Nix; preparation adds no flake checks or builds, compares no digest to a generated script and decrypts no secrets. It validates a managed `ssh_config` and its pin's endpoint/port when present, without evaluating arbitrary SSH configuration. Ordinary `prepare=true` does not contact the host. Only the explicit `authorizeKey=true` branch below uploads a client public key and tests login. Neither branch establishes that supplied trust came from the console, that an age recipient matches, or that disks and backups are safe.
+
+#### Managed endpoint and host-key pin
+
+Read the live installer's **public** ED25519 host key and fingerprint through the independently verified console. Supply only its key type and base64 value (no comment), alongside the verified hostname or unbracketed IP address:
+
+```sh
+devenv tasks run fleet:install --input host=HOST --input prepare=true \
+  --input installerHost=VERIFIED_INSTALLER_ADDRESS \
+  --input installerPort=22 \
+  --input installerHostKey="ssh-ed25519 CONSOLE_VERIFIED_PUBLIC_KEY"
+```
+
+`installerHost` and `installerHostKey` must be supplied together. `installerPort` is an optional JSON integer, 1–65535, defaulting to 22; it cannot be supplied alone. The task validates both staged files before replacing them, writes the private alias and a full `known_hosts` entry (including `[host]:port` for a nondefault port), and prints the public fingerprint for console comparison. It never scans the network or accepts a key on first use. Repeat without these inputs to preserve the endpoint and pin. An endpoint change requires supplying its verified key again. The generated config contains only the alias, `HostName` and `Port`; task invocation supplies identity and strict SSH policy. Do not add directives to it: the task rejects edited/noncanonical configs. Your personal SSH configuration is untouched.
+
+Alternatively, import a complete known-hosts entry as below; this cannot be combined with `installerHostKey` in the same invocation.
 
 To update trust/review files explicitly, supply either or both optional inputs, always with `prepare=true`:
 
@@ -82,13 +98,27 @@ devenv tasks run fleet:install --input host=racknerd --input prepare=true \
   --input reviewedDiskoSha256=REVIEWED_64_CHARACTER_SHA256
 ```
 
-`knownHostsFile` must be an operator-owned local regular file outside the checkout/store, without symlinks, hard links or group/other write access. It must contain exactly one ED25519 **known_hosts entry**, including the installer hostname/IP (or `[host]:port` for a nondefault port), not just a bare public key. Read the live installer's public host key and fingerprint through the independently verified provider console and form that entry yourself. The mode opens each source path component without following symlinks, checks ownership/type/mode/link count on the open file, and copies from that same descriptor into private staging. It checks the staged key syntax before atomically replacing the pin; it cannot verify your console comparison or infer the endpoint. It never scans the network, uses trust-on-first-use, edits SSH configuration or relaxes strict SSH checking. Repeating the command without this input preserves the current pin.
+`knownHostsFile` must be an operator-owned local regular file outside the checkout/store, without symlinks, hard links or group/other write access. It must contain exactly one ED25519 **known_hosts entry**, including the installer hostname/IP (or `[host]:port` for a nondefault port), not just a bare public key. Read the live installer's public host key and fingerprint through the independently verified provider console and form that entry yourself. The mode opens each source path component without following symlinks, checks ownership/type/mode/link count on the open file, and copies from that same descriptor into private staging. It checks the staged key syntax before atomically replacing the pin; it cannot verify your console comparison or infer an endpoint from this file. This import does not generate SSH configuration. It never scans the network, uses trust-on-first-use or relaxes strict SSH checking. Repeating the command without trust inputs preserves the current pin.
 
 Only supply `reviewedDiskoSha256` after building and reading every command in the disko script as described below. Preparation validates the supplied or existing digest's format and records supplied updates atomically; it does not build a script or silently mark one reviewed. Installation still builds from the committed revision and checks equality. Without this input, the existing digest is preserved. Neither optional input is accepted in installation mode.
 
-Authorize the generated `identity.pub` on the live installer through the verified console; preparation performs no key upload. Configure `HOST-installer` yourself. Existing credentials, backup custody, installer identity, disk state and eventual installed-system logins still need independent review. Preparation always exits before the installation branch: no SSH (including config resolution), disko execution, installation or reboot.
+#### Explicit installer client-key authorization
 
-### Troubleshooting local preparation
+Authorize `identity.pub` through the verified console, or ask the task to upload it using an **existing** key already authorized for root on that live installer:
+
+```sh
+devenv tasks run fleet:install --input host=HOST --input prepare=true \
+  --input authorizeKey=true \
+  --input bootstrapIdentityFile=/ABSOLUTE/PRIVATE/PATH/existing-installer-key
+```
+
+This is an explicit remote write and needs authorization in the current task; merely preparing local files grants none. Both inputs are required together and accepted only with `prepare=true`. The endpoint/key inputs above may be included in the same invocation. All local file checks, including the reviewed digest, must pass first, and managed `ssh_config` is required. The existing bootstrap key stays outside Git/store, must be operator-owned, single-link, without symlinks, mode `0600` or `0400`, with a path using only letters, digits and `/._+-`. It must work without a passphrase; there is no password, agent, certificate or alternate-identity fallback. The task neither copies nor records this private key.
+
+The branch connects using the managed endpoint and pinned ED25519 host key, ignoring personal/system SSH configuration. Before writing, it requires UID 0, NixOS `VARIANT_ID=installer` and overlay/tmpfs root, and refuses separately mounted `/root`, `.ssh` or `authorized_keys`. It creates missing `/root/.ssh` and `authorized_keys` with `0700`/`0600`, refuses unsafe existing paths/modes/ownership or hard-linked files, and appends only the generated client public key while preserving existing entries. An identical entry is left alone; an existing differently restricted entry for that key blocks rather than being bypassed. It then makes a separate connection using only the generated key and repeats the installer guard. Failure stops without retry; a failed verification can mean the key was uploaded but usable access is unproven. Inspect the console before retrying. This guard is not a live-disk, backup or installed-system-access check.
+
+All preparation exits before the installation branch: no disko execution, mounting, installation or reboot. Existing credentials, backup custody, installer identity, disk state and eventual installed-system logins still need independent review.
+
+### Troubleshooting preparation
 
 The task prints a failing step plus `Troubleshoot:` guidance. For incomplete trust/digest/age files, resolve every `BLOCKED:` item and rerun preparation. Do not switch to installation to bypass a failure.
 
@@ -98,7 +128,9 @@ The task prints a failing step plus `Troubleshoot:` guidance. For incomplete tru
 | Unsafe/missing path or incorrect modes | Inspect the exact path with `stat`. Keep the setup outside Git/store, owned by the operator, with the modes in the tree above. Correct individual reviewed paths only; no recursive chmod, automatic chown or symlink following. Check local free space/write access if file creation fails. |
 | Invalid SSH key, mismatch or orphaned `.pub` | Restore the intended matching pair from independent backup. Do not remove a private key to force generation. Private keys must be usable noninteractively; installed host keys must be ED25519. Missing public files are derived automatically when the private key is valid. |
 | Invalid machine-id | Restore the intended 32-character, nonzero lowercase hexadecimal ID and mode `0444`. Raw bytes must be exactly those 32 characters, optionally followed by one newline; extra newlines, NULs and other suffixes are rejected. Never replace a reinstall's identity just to pass validation. |
-| Empty/invalid `known_hosts` | Read the live installer's public host key and fingerprint through the verified provider console. Form a full `hostname/IP ssh-ed25519 KEY` entry (or `[host]:port`), compare with `ssh-keygen -lf`, then edit the private file or import it using `knownHostsFile`. Strict SSH checking stays on; a network scan alone is not verification. |
+| Empty/invalid `known_hosts` | Supply the verified address and console public key using `installerHost` and `installerHostKey`, or import a full entry with `knownHostsFile`. Compare the printed fingerprint with the console. Strict SSH checking stays on; a network scan alone is not verification. |
+| Missing/invalid managed `ssh_config` or endpoint/pin mismatch | Rerun preparation with both `installerHost` and its console-verified `installerHostKey`, plus `installerPort` if needed. Do not add SSH directives or change an endpoint without verifying its key. |
+| Key upload or generated-key login failure | Inspect console access and existing authorized-key restrictions. Confirm an idle live installer, root access via the supplied bootstrap key, and safe existing directory/file modes. Do not broaden permissions, enable installed root SSH or bypass strict host checking. The key may already have been uploaded; do not retry blindly. |
 | Empty/malformed `disko.sha256` | Follow the disko build-and-review steps below. Record only the reviewed 64-character lowercase digest, not the filename printed by `sha256sum`. A syntactically valid but stale digest is detected during installation, not preparation. |
 | Missing/invalid age identity | Restore the reviewed identity from backup at the documented path/modes. Never print it, generate a replacement, or decrypt secrets just for validation. Correct recipient selection and real decryption remain separate checks. |
 
@@ -106,7 +138,7 @@ Keep the entire tree operator-owned inside the `0700` setup directory, with no s
 
 The resolved setup path may contain only letters, digits and `/._+-`, because upstream flattens SSH options into `NIX_SSHOPTS`. The client identity must be usable noninteractively; there is no agent or password fallback. Staging is not a backup: preserve independent recovery copies and correct remote ownership/modes. ThinkPad selects secrets and needs its reviewed age identity; neither server does. The installation branch rejects incorrect system-directory/machine-id modes; it never changes permissions, generates identities or decrypts anything. Only the explicit preparation branch creates missing identities and sets modes on its newly created files/directories. File presence does not prove a key decrypts selected secrets or provides usable access.
 
-The pinned nixos-anywhere 1.13.0 hardcodes disabled host-key checking before user flags; OpenSSH takes the first value. `devenv.nix` locally removes those defaults and changes ssh-copy-id's conflicting identity override, without changing pins. The task then enforces a private known-hosts file, strict/publickey-only/batch SSH, no agent or forwarding, and no host-key updates. Review these substitutions again whenever the upstream package changes.
+The pinned nixos-anywhere 1.13.0 hardcodes disabled host-key checking before user flags; OpenSSH takes the first value. `devenv.nix` locally removes those defaults, changes ssh-copy-id's conflicting identity override, and adds `--ssh-config FILE` to pass OpenSSH `-F` through every SSH invocation, including `NIX_SSHOPTS`, without changing pins. With a managed config, `-F` excludes personal/system config; otherwise the legacy manually configured alias is used. The task enforces a private known-hosts file, strict ED25519/publickey-only/batch SSH, no agent or forwarding, and no host-key updates. Review these substitutions against upstream whenever the package changes.
 
 ## Installation
 
@@ -120,7 +152,7 @@ The pinned nixos-anywhere 1.13.0 hardcodes disabled host-key checking before use
    ```
 3. After reading the generated script, record only its digest in the private `disko.sha256` file. Confirm the tree is clean, committed and the revision is the one reviewed. With explicit installation authorization, invoke the task. Its local input, staging and digest checks do **not** replace the live-machine review; every item below remains yours to verify before and during the run:
    - the target is an idle live installer (`VARIANT_ID=installer`, overlay/tmpfs root) with exactly one unmounted disk matching `fleet.installation.osDevice`, held by no pool, swap, dm or kernel consumer;
-   - the scanned SSH host key matches the fingerprint read from the provider console, pinned via a private `UserKnownHostsFile` with `StrictHostKeyChecking=yes`, publickey-only, no agent or forwarding;
+   - the live installer's SSH host key matches the key and fingerprint read from the console, pinned via a private `UserKnownHostsFile` with `StrictHostKeyChecking=yes`, publickey-only, no agent or forwarding;
    - staging lives outside the checkout and the store in a private `0700` container; payload system directories are `0755`, machine-id is `0444`, and key files remain owner-only;
    - the built disko script's SHA-256 still equals the one you reviewed.
 

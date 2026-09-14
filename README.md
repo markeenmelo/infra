@@ -22,7 +22,11 @@ Prepare and validate local installer files explicitly (generates missing identit
 devenv tasks run fleet:install --input host=racknerd --input prepare=true
 ```
 
-Missing or invalid required files return nonzero with troubleshooting steps; generated files are kept for the next run. These are local file checks, not Nix configuration validation or installation readiness: installer identity, disko review/digest equality, client-key authorization and decryption remain operator responsibilities. See the [storage skill](.agents/skills/storage/SKILL.md) for preparation inputs, troubleshooting and identity preservation on reinstalls.
+Missing or invalid required files return nonzero with troubleshooting steps; generated files are kept for the next run. Supply `installerHost` and a console-verified `installerHostKey` to also generate private SSH configuration and `known_hosts` (optional integer `installerPort`, default 22). Your personal SSH configuration is untouched; no network scanning or trust-on-first-use is performed.
+
+After local checks pass, preparation can explicitly upload the generated client public key using existing verified live-installer root access: add `--input authorizeKey=true --input bootstrapIdentityFile=/ABSOLUTE/PRIVATE/KEY`. This contacts the host and modifies only live-installer SSH authorization; it requires separate authorization and never starts installation. Without `authorizeKey=true`, preparation stays local.
+
+These checks are not Nix configuration validation or installation readiness: console trust, disk/backup safety, disko review/digest equality and decryption remain operator responsibilities. See the [storage skill](.agents/skills/storage/SKILL.md) for all inputs, troubleshooting and identity preservation on reinstalls.
 
 After completing the [installation](.agents/skills/storage/SKILL.md) or [deployment](.agents/skills/deploy/SKILL.md) prerequisites:
 

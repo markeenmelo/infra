@@ -8,7 +8,9 @@ let
     postPatch = (old.postPatch or "") + ''
       substituteInPlace src/nixos-anywhere.sh \
         --replace-fail ' "-o" "UserKnownHostsFile=/dev/null" "-o" "StrictHostKeyChecking=no"' "" \
-        --replace-fail '-o IdentitiesOnly=no' '-o IdentitiesOnly=yes'
+        --replace-fail '-o IdentitiesOnly=no' '-o IdentitiesOnly=yes' \
+        --replace-fail '    --ssh-option)' $'    --ssh-config)\n      sshArgs+=("-F" "$2")\n      shift\n      ;;\n    --ssh-option)' \
+        --replace-fail '* --ssh-option <ssh_option>' $'* --ssh-config <config_file>\n  use a private SSH configuration instead of user/system SSH configuration.\n* --ssh-option <ssh_option>'
     '';
   });
 in
@@ -40,7 +42,7 @@ in
 
   tasks = {
     "fleet:install" = {
-      description = "Install one reviewed host (destructive); prepare=true prepares and validates local installer files only.";
+      description = "Install one reviewed host (destructive); prepare=true prepares private files, with optional explicit authorizeKey=true live-installer key upload.";
       cwd = config.devenv.root;
       showOutput = true;
       exec = "exec ${pkgs.bash}/bin/bash scripts/devenv/install.sh";
