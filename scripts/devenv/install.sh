@@ -81,10 +81,12 @@ if [[ $prepare == true ]]; then
   hint='Check the Nix error above using the locked CLI. This lookup only determines whether an age identity is required; no private file is passed to Nix.'
   has_secrets=$(nix eval --no-update-lock-file --json \
     "$flake#nixosConfigurations.$host.config.sops.secrets" --apply 'secrets: secrets != {}')
-  if [[ $has_secrets == true ]]; then
-    for dir in extra-files/persist/var extra-files/persist/var/lib; do
+  for dir in extra-files/persist/var extra-files/persist/var/lib; do
+    if [[ $has_secrets == true || -e $private/$dir ]]; then
       ensure_directory "$dir" 755
-    done
+    fi
+  done
+  if [[ $has_secrets == true ]]; then
     ensure_directory extra-files/persist/var/lib/sops-nix 700
   fi
 
