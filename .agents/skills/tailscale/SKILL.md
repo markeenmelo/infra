@@ -76,7 +76,7 @@ After an authorized successful tailnet apply, extract only the selected host's k
 )
 ```
 
-Use an operator-owned `0700` runtime directory; the file remains `0600`. With existing privileged host access, transfer only this host's file through separately authorized trusted access to root-only runtime storage on that host. Bastion instead uses the stdin procedure below, with no host-side key file. The OAuth secret, passphrase and other hosts' keys stay with the operator. Do not put key values in command arguments, shell history or chat.
+Use an operator-owned `0700` runtime directory; the file remains `0600`. With existing privileged host access, transfer only this host's file through separately authorized trusted access to root-only runtime storage on that host. Both servers instead use the stdin procedure below, with no host-side key file. The OAuth secret, passphrase and other hosts' keys stay with the operator. Do not put key values in command arguments, shell history or chat.
 
 After separately authorizing **that host's** enrollment, and only if it needs enrollment rather than preserving an existing identity:
 
@@ -87,35 +87,36 @@ sudo systemctl start tailscaled-set.service
 
 Reapply the native settings unit **after enrollment**: the pre-login settings pass did not preserve ThinkPad's explicit `AutoUpdate.Apply=false` in the enrolled profile. Starting the one-shot set unit applies the configured preferences without restarting tailscaled or enrolling again. The pinned clients support `file:`; `extraUpFlags` without `authKeyFile` do not apply. Never use `tailscale set` to manage tags. Verify the set unit succeeded and effective preferences match `modules/tailscale.nix`, including explicit auto-update disablement; stop on mismatch. Verify automatic device approval, intended operational tag, non-ephemeral identity, no unexpected routes or Tailscale SSH, then remove the one-use files on operator and host. A consumed/expired key is not permission to generate another. Never log out an existing identity just to make enrollment work.
 
-### Bastion's scoped deploy access
+### Scoped server deploy access
 
-`modules/tailscale.nix` grants only Bastion's `deploy` account two additional root `NOPASSWD` commands, with exact paths and arguments:
+`modules/tailscale.nix` grants the `deploy` account on the explicitly named Bastion and Racknerd hosts two additional root `NOPASSWD` commands, with exact paths and arguments:
 
 - `/run/current-system/sw/bin/tailscale up --auth-key=file:/dev/stdin --timeout=60s`
 - `/run/current-system/sw/bin/systemctl start tailscaled-set.service`
 
-There is no arbitrary auth-key path, flag, `tailscale set`, service control or root shell permission. Sudo does not validate the key's contents or tag: the operator must select Bastion's existing, unexpired, single-use `tag:server` key. The quoted `file:`/`=` escapes in Nix are sudoers syntax, not characters to add to the SSH command. No credential is delivered declaratively. Never use `activate-rs` or Nix trust as a way around missing sudo access.
+There is no arbitrary auth-key path, flag, `tailscale set`, service control or root shell permission. Sudo does not validate the key's contents or tag: the operator must select that server's own existing, unexpired, single-use `tag:server` key. The quoted `file:`/`=` escapes in Nix are sudoers syntax, not characters to add to the SSH command. No credential is delivered declaratively. Never use `activate-rs` or Nix trust as a way around missing sudo access.
 
-This permission change needs its own review, commit and authorized normal deployment after the [deploy preflight](../deploy/SKILL.md). Having a physical console without usable recovery access is not sufficient. The task remains `devenv tasks run fleet:deploy --input target=bastion`; do not rerun the tailnet apply or disable rollback to commission access.
+This permission change needs its own review, commit and authorized normal deployment after the [deploy preflight](../deploy/SKILL.md). Having a physical console without usable recovery access is not sufficient. Use `devenv tasks run fleet:deploy --input target=racknerd` or `--input target=bastion` for the separately authorized host only; do not rerun the tailnet apply or disable rollback to commission access.
 
 After that deployment, verify each exact command with `sudo -n -ll -u root COMMAND` over the existing trusted deploy connection (listing only; no key input). Require the matching `NOPASSWD`/`!authenticate` entry, not merely the password-requiring wheel `ALL` rule. Ensure sudo input logging is not enabled for enrollment; stdin will contain the key. Recheck the daemon, persistence and `NeedsLogin` state before using a key. If an identity is already enrolled, preserve it and stop rather than re-enrolling.
 
-After separately authorizing Bastion enrollment, extract **only Bastion's** key as above (`host=bastion`). Use that actual private operator path below. Run from the operator shell; stdin travels over SSH without allocating a PTY, creating a file on Bastion or putting the credential in arguments:
+After separately authorizing one server's enrollment, extract **only its own** key as above: `host=racknerd` for `deploy@72.11.150.242`, or `host=bastion` for `deploy@192.168.2.2`. Use the matching target and actual private operator path below. Run from the operator shell; stdin travels over SSH without allocating a PTY, creating a file on the server or putting the credential in arguments:
 
 ```sh
-key=/ABSOLUTE/PRIVATE/BASTION_KEY_FILE
+target=deploy@72.11.150.242 # Racknerd; use deploy@192.168.2.2 for Bastion
+key=/ABSOLUTE/PRIVATE/SELECTED_SERVER_KEY_FILE
 ssh_options=(-T -o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no
   -o IdentityAgent=none -o IdentitiesOnly=yes -o ForwardAgent=no
   -o ClearAllForwardings=yes -o ConnectTimeout=15
   -o ServerAliveInterval=10 -o ServerAliveCountMax=3)
-ssh "${ssh_options[@]}" deploy@192.168.2.2 \
+ssh "${ssh_options[@]}" "$target" \
   'sudo -n /run/current-system/sw/bin/tailscale up --auth-key=file:/dev/stdin --timeout=60s' < "$key" &&
-ssh "${ssh_options[@]}" deploy@192.168.2.2 \
+ssh "${ssh_options[@]}" "$target" \
   'sudo -n /run/current-system/sw/bin/systemctl start tailscaled-set.service' &&
 rm -f -- "$key"
 ```
 
-Use the existing reviewed SSH identity; do not introduce a new key or weaken host-key checking if access fails. If enrollment, settings or SSH fails, stop and inspect state before retrying: the one-use key may already be consumed. Do not renew it automatically. After success, verify `Running`, the new node ID, automatic approval, `tag:server`, non-ephemeral identity and expiry through read-only status/API access. Verify effective preferences, the settings unit result and existing LAN SSH separately. Racknerd has no new sudo permissions from this Bastion-only change.
+Use the existing reviewed SSH identity; do not introduce a new key or weaken host-key checking if access fails. If enrollment, settings or SSH fails, stop and inspect state before retrying: the one-use key may already be consumed. Do not renew it automatically. After success, verify `Running`, the new node ID, automatic approval, `tag:server`, non-ephemeral identity and expiry through read-only status/API access. Verify effective preferences, the settings unit result and existing public/LAN SSH separately. Already-enrolled hosts keep their identities: extending this permission to another host is not authorization to rerun enrollment on the first.
 
 From ThinkPad **and** Grafite, test real SSH to both servers using trusted OpenSSH keys. From Nara PC, test TCP 22 to their recorded tailnet IPs and confirm denial (not merely DNS failure). Test existing LAN/public SSH independently. Finally, with separate restart/reboot authorization, verify the same identity survives without another key and record tagged-node expiry behavior. Stop on lost access or unexpected changes.
 

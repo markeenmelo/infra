@@ -1,20 +1,23 @@
+{ lib, ... }:
 {
-  fleet.hosts.bastion.module.security.sudo.extraRules = [
-    {
-      users = [ "deploy" ];
-      runAs = "root";
-      commands = [
-        {
-          command = "/run/current-system/sw/bin/tailscale up --auth-key\\=file\\:/dev/stdin --timeout\\=60s";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl start tailscaled-set.service";
-          options = [ "NOPASSWD" ];
-        }
-      ];
-    }
-  ];
+  fleet.hosts = lib.genAttrs [ "bastion" "racknerd" ] (_: {
+    module.security.sudo.extraRules = [
+      {
+        users = [ "deploy" ];
+        runAs = "root";
+        commands = [
+          {
+            command = "/run/current-system/sw/bin/tailscale up --auth-key\\=file\\:/dev/stdin --timeout\\=60s";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/run/current-system/sw/bin/systemctl start tailscaled-set.service";
+            options = [ "NOPASSWD" ];
+          }
+        ];
+      }
+    ];
+  });
 
   flake.modules.nixos.base = {
     services.tailscale = {
