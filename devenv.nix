@@ -40,7 +40,7 @@ in
 
   tasks = {
     "fleet:install" = {
-      description = "Install one reviewed host (destructive); prepare=true only prepares local installer files.";
+      description = "Install one reviewed host (destructive); prepare=true prepares and validates local installer files only.";
       cwd = config.devenv.root;
       showOutput = true;
       exec = "exec ${pkgs.bash}/bin/bash scripts/devenv/install.sh";
