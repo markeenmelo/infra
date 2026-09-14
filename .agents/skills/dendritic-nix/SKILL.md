@@ -16,7 +16,7 @@ The pattern is [dendritic](https://github.com/mightyiam/dendritic): one feature 
 - `flake.modules.nixos.<name>` and `flake.modules.homeManager.<name>` hold deferred, class-checked configuration. They do nothing until a matching-class consumer imports them.
 - `fleet.hosts.<name>.module` carries host facts; it is deferred and NixOS-class-checked, and independent features merge into it.
 - `modules/fleet.nix` evaluates each host: it picks nixpkgs by `track`, then composes `base` with the host module. Hosts pick features with `module.imports = with config.flake.modules.nixos; [ … ]`. Keep names few — `base` (every host), `desktop`, `laptop`, `server`, `vps` — and merge a new feature into one of them before inventing another; host-only configuration merges straight into `fleet.hosts.<name>.module`.
-- Home Manager reaches a host only through `modules/desktop.nix`, which imports the HM NixOS module and feeds `flake.modules.homeManager.desktop` into `home-manager.sharedModules` with `useGlobalPkgs` and `useUserPackages`. Headless hosts never import HM.
+- Home Manager reaches a host only through `modules/desktop.nix`, which imports the HM NixOS module and feeds `flake.modules.homeManager.desktop` into `home-manager.sharedModules` with `useGlobalPkgs` and `useUserPackages`. `sharedModules` does not create users: `modules/hosts/thinkpad/host.nix` explicitly enrolls Marcos, independently of feature-specific Home Manager settings. Headless hosts never import HM.
 
 ## Rules that bite
 

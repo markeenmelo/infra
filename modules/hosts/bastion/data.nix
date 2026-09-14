@@ -1,4 +1,3 @@
-{ lib, ... }:
 let
   datasets = {
     "/srv" = "tank/srv";
@@ -12,7 +11,7 @@ let
   };
 in
 {
-  fleet.hosts.bastion.module = {
+  fleet.hosts.bastion.module = { lib, ... }: {
     networking.hostId = "ebbb349e";
     boot.supportedFilesystems = [ "zfs" ];
     boot.zfs.forceImportRoot = false;

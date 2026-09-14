@@ -55,15 +55,6 @@
         icons = "auto";
         git = true;
       };
-
-      git = {
-        enable = true;
-        settings.user = {
-          name = "Marcos Melo";
-          email = "marcosmelo@proton.me";
-          useConfigOnly = true;
-        };
-      };
     };
   };
 }

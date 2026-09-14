@@ -7,5 +7,6 @@
       desktop
       laptop
     ];
+    module.home-manager.users.marcos = { };
   };
 }

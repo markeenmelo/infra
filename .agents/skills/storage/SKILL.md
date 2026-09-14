@@ -7,7 +7,7 @@ description: Disk layouts, persistence and installation — disko OS-disk design
 
 **Disko destroys data irreversibly.** Designing a layout is never permission to run one. Default to evaluation-only unless the current task explicitly authorizes the operation.
 
-Read the host's `modules/hosts/<host>/disko.nix`, `modules/storage/persistence.nix` and `modules/storage/limine.nix`. `persistence.nix` puts disko, the tmpfs root, the empty-pool guards and the `/nix`/`/persist` `neededForBoot` flags into `base`; a host file declares only its disk.
+Read the host's `modules/hosts/<host>/disko.nix`, `modules/storage/persistence.nix` and `modules/storage/limine.nix`. `persistence.nix` owns the `fleet.installation.osDevice` option and its whole-disk validation, and puts disko, the tmpfs root, the empty-pool guards and the `/nix`/`/persist` `neededForBoot` flags into `base`; a host file declares only its disk.
 
 ## Layout
 
