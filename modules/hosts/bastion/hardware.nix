@@ -55,6 +55,14 @@
           ];
         }))
       ];
+      boot.kernel.sysfs.devices.system.cpu.cpufreq = {
+        policy0.energy_performance_preference = "balance_power";
+        policy1.energy_performance_preference = "balance_power";
+        policy2.energy_performance_preference = "balance_power";
+        policy3.energy_performance_preference = "balance_power";
+        policy4.energy_performance_preference = "balance_power";
+        policy5.energy_performance_preference = "balance_power";
+      };
       boot.kernelModules = [
         "i2c-i801"
         "i2c-dev"
