@@ -95,7 +95,10 @@
         in
         lib.nameValuePair "ugreen-${led}" {
           description = "UGREEN ${led} presence and activity";
-          wantedBy = [ deviceUnit ];
+          wantedBy = [
+            deviceUnit
+            "ugreen-leds.service"
+          ];
           bindsTo = [ deviceUnit ];
           requires = [ "ugreen-leds.service" ];
           after = [
