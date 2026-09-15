@@ -124,7 +124,7 @@
           '';
           script = ''
             device=$(readlink -e ${lib.escapeShellArg device})
-            exec ${diskMonitor}/bin/ugreen-blink-disk 0.1 "''${device##*/}" ${led}
+            exec ${diskMonitor}/bin/ugreen-blink-disk 1.0 "''${device##*/}" ${led}
           '';
           postStop = ''
             echo 0 > ${ledPath}/brightness
