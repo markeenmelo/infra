@@ -17,20 +17,12 @@
 
   flake.modules.homeManager.desktop = { pkgs, ... }: {
     home.packages = [ pkgs.networkmanagerapplet ];
-    xdg.autostart = {
-      enable = true;
-      entries = [
-        "${
-          pkgs.makeDesktopItem {
-            name = "nm-applet";
-            desktopName = "Disabled duplicate nm-applet autostart";
-            exec = "${pkgs.coreutils}/bin/false";
-            noDisplay = true;
-            extraConfig.Hidden = "true";
-          }
-        }/share/applications/nm-applet.desktop"
-      ];
-    };
+    xdg.configFile."autostart/nm-applet.desktop".text = ''
+      [Desktop Entry]
+      Type=Application
+      Name=nm-applet
+      Hidden=true
+    '';
   };
 
   fleet.hosts.thinkpad.module.networking.networkmanager.wifi.powersave = true;
