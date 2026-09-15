@@ -34,7 +34,7 @@
                 "npm:@janvitos/pi-plan-build@0.1.101"
                 "npm:@juicesharp/rpiv-ask-user-question@2.10.1"
                 "npm:pi-claude-bridge@0.7.0"
-                "npm:pi-mcp-adapter@2.33.0"
+                "npm:pi-mcp-adapter@2.34.0"
                 "npm:pi-powerline-footer@0.17.1"
                 "npm:pi-simplify@0.2.3"
                 "npm:pi-web-access@0.29.0"
