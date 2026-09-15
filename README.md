@@ -49,6 +49,8 @@ devenv tasks run tailnet:deploy --input action=apply --input plan=/ABSOLUTE/PRIV
 
 Native HCL in `opentofu/tailscale/` pins the provider; the task keeps encrypted state/plans under `${XDG_STATE_HOME:-$HOME/.local/state}/infra/tailscale`. Only the explicit operator process decrypts `secrets/tailscale/operator.yaml`. It never deploys hosts or enrolls devices. The NixOS base contribution enables Tailscale and root-only identity persistence without an auth key; activation and enrollment need their own authorization. Existing SSH/deploy endpoints are unchanged.
 
+The [dual-site reverse-proxy foundation](.agents/skills/reverse-proxy/SKILL.md) adds separately gated Traefik, central Racknerd Authelia and per-server CrowdSec, with no application routes. All gates default off; missing network/domain/secret facts block commissioning. Porkbun DNS management is isolated native HCL under `opentofu/porkbun/`, initially managing no records, with separate operator custody and explicit native commands—not another task. Existing SSH and tailnet policy remain unchanged until separately verified and authorized cutovers.
+
 Inspect and build with the flake directly:
 
 ```sh

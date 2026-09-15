@@ -1,0 +1,15 @@
+name: fleet/declared-bots
+description: Block declared AI, search and commercial scraping agents in-band
+rules:
+  - zones: [HEADERS]
+    variables: [user-agent]
+    transform: [lowercase]
+    match:
+      type: regex
+      value: '(gptbot|chatgpt-user|oai-searchbot|googlebot|ahrefsbot|semrushbot)'
+labels:
+  service: http
+  type: policy
+  confidence: 1
+  spoofable: 3
+  label: Declared automated agent
