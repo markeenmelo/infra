@@ -71,9 +71,11 @@
             for led in power netdev disk1 disk2 disk3 disk4; do
               echo none > /sys/class/leds/$led/trigger
               echo 0 > /sys/class/leds/$led/brightness
-              echo '0 0 255' > /sys/class/leds/$led/color
+              echo '0 255 0' > /sys/class/leds/$led/color
             done
+            echo '0 0 255' > /sys/class/leds/power/color
             echo 128 > /sys/class/leds/power/brightness
+            echo '255 165 0' > /sys/class/leds/netdev/color
             echo 128 > /sys/class/leds/netdev/brightness
             echo netdev > /sys/class/leds/netdev/trigger
             echo enp3s0 > /sys/class/leds/netdev/device_name
