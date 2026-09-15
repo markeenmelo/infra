@@ -34,10 +34,6 @@ def fail(message):
     raise SystemExit(message)
 
 
-def run(*args, **kwargs):
-    return subprocess.run(args, check=True, **kwargs)
-
-
 def reject_auto_vars():
     for path in (repo / 'opentofu/tailscale').iterdir():
         if (path.name in ('terraform.tfvars', 'terraform.tfvars.json')
@@ -54,6 +50,11 @@ def private(path, directory=False):
             or stat.S_IMODE(info.st_mode) != mode
             or (not directory and info.st_nlink != 1)):
         fail(f'Unsafe runtime path: {path}')
+
+
+def source_unchanged():
+    return not subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=all']) \
+        and revision == subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
 
 
 os.umask(0o077)
@@ -93,7 +94,6 @@ if inputs['action'] == 'apply':
     if (plan.parent / 'attempted').exists():
         fail('This plan was already attempted. Inspect state and re-plan; never blindly retry.')
 
-# Ignore ambient CLI flags, encryption overrides, credentials and debug logging.
 env = {k: v for k, v in os.environ.items() if not k.startswith(('TF_', 'TOFU_', 'TAILSCALE_'))}
 env.update(TF_DATA_DIR=str(root / 'data'), TF_WORKSPACE='default',
            TF_CLI_CONFIG_FILE='/dev/null', TF_INPUT='0', TF_IN_AUTOMATION='1')
@@ -148,20 +148,20 @@ env['TAILSCALE_API_KEY'] = read_token
 
 def tofu(*args):
     reject_auto_vars()
-    run('tofu', '-chdir=opentofu/tailscale', *args, env=env)
+    subprocess.run(('tofu', '-chdir=opentofu/tailscale', *args), check=True, env=env)
 
 
 tofu('init', '-input=false', '-lockfile=readonly',
      '-backend-config=path=' + str(root / 'terraform.tfstate'),
      '-backend-config=workspace_dir=' + str(root / 'workspaces'))
 tofu('validate')
-if subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=all']) or revision != subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip():
+if not source_unchanged():
     fail('Source changed during validation; stop and review.')
 if inputs['action'] == 'plan':
     folder = Path(tempfile.mkdtemp(prefix='review-', dir=root / 'plans'))
     plan = folder / 'plan.tfplan'
     tofu('plan', '-input=false', '-out=' + str(plan))
-    if subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=all']) or revision != subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip():
+    if not source_unchanged():
         fail('Source changed during planning; this plan is not approved for use.')
     (folder / 'revision.json').write_text(json.dumps({
         'revision': revision, 'sha256': hashlib.sha256(plan.read_bytes()).hexdigest(),

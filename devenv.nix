@@ -72,8 +72,8 @@ in
       message = "This fleet's development environment supports x86_64-linux only.";
     }
     {
-      assertion = !config.secretspec.enable && !config.dotenv.enable;
-      message = "Never load operator secrets into Nix or the development shell; decrypt them only in an explicit operator process.";
+      assertion = !config.secretspec.enable;
+      message = "Never load operator secrets through secretspec; decrypt them only in an explicit operator process.";
     }
   ];
 }

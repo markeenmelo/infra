@@ -3,10 +3,14 @@ let
     persistent:
     { lib, options, ... }:
     let
-      journal = {
-        Storage = if persistent then "persistent" else "volatile";
-        SystemMaxUse = "256M";
-      };
+      journal =
+        if persistent then
+          {
+            Storage = "persistent";
+            SystemMaxUse = "256M";
+          }
+        else
+          { Storage = "volatile"; };
     in
     {
       environment.persistence."/persist".directories = lib.optional persistent "/var/log/journal";

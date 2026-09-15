@@ -7,7 +7,6 @@
           PasswordAuthentication = false;
           KbdInteractiveAuthentication = false;
           PermitRootLogin = "no";
-          PermitEmptyPasswords = false;
           AuthenticationMethods = "publickey";
           AllowAgentForwarding = false;
           AllowTcpForwarding = lib.mkDefault "no";

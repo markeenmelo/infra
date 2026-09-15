@@ -58,6 +58,7 @@ if [[ $prepare == true ]]; then
   [[ $private == "$(realpath -ms -- "$setup")" ]] || die 'Preparation refuses symlinks in the setup path.'
 else
   private=$(realpath -e -- "$setup")
+  [[ $private == "$(realpath -es -- "$setup")" ]] || die 'Installation refuses symlinks in the setup path.'
 fi
 [[ $private =~ ^/[a-zA-Z0-9/._+-]+$ ]] \
   || die 'Installer setup path may contain only letters, digits, /._+-.'

@@ -19,6 +19,7 @@ in
       lib.mapAttrs (_: device: {
         inherit device;
         fsType = "zfs";
+        options = [ "nofail" ];
       }) datasets
       // {
         "/mnt/backup" = {
@@ -32,13 +33,21 @@ in
           ];
         };
       };
-    services.zfs = {
-      autoScrub = {
-        enable = true;
-        pools = [ "tank" ];
-        interval = "monthly";
-      };
-      autoSnapshot.enable = true;
+    services.zfs.autoScrub = {
+      enable = true;
+      pools = [ "tank" ];
+      interval = "monthly";
+    };
+    services.sanoid = {
+      enable = true;
+      datasets =
+        lib.genAttrs [ "tank/srv" "tank/srv/immich" "tank/srv/nextcloud" "tank/srv/yuvomi" ]
+          (_: {
+            hourly = 24;
+            daily = 14;
+            monthly = 3;
+            yearly = 0;
+          });
     };
   };
 }

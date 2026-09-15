@@ -40,11 +40,7 @@
           };
         };
         services.lvm.enable = false;
-        fileSystems = {
-          "/".neededForBoot = true;
-          "/nix".neededForBoot = true;
-          "/persist".neededForBoot = true;
-        };
+        fileSystems."/persist".neededForBoot = true;
         environment.persistence."/persist" = {
           hideMounts = true;
           directories = [

@@ -1,6 +1,6 @@
 { inputs, ... }: {
   flake.modules.homeManager.desktop =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     let
       bitwardenXpi = pkgs.fetchurl {
         name = "bitwarden-2026.8.0.xpi";
@@ -110,44 +110,23 @@
         "3rdparty".Extensions = {
           "{446900e4-71c2-419f-a6a7-df9c091e268b}".environment.base = "https://vault.marcosmelo.dev";
 
-          "uBlock0@raymondhill.net".userSettings = [
-            [
-              "advancedUserEnabled"
-              "false"
-            ]
-            [
-              "autoUpdate"
-              "true"
-            ]
-            [
-              "cloudStorageEnabled"
-              "false"
-            ]
-            [
-              "cnameUncloakEnabled"
-              "true"
-            ]
-            [
-              "collapseBlocked"
-              "true"
-            ]
-            [
-              "contextMenuEnabled"
-              "true"
-            ]
-            [
-              "prefetchingDisabled"
-              "true"
-            ]
-            [
-              "showIconBadge"
-              "true"
-            ]
-            [
-              "userFiltersTrusted"
-              "false"
-            ]
-          ];
+          "uBlock0@raymondhill.net".userSettings =
+            lib.mapAttrsToList
+              (name: value: [
+                name
+                value
+              ])
+              {
+                advancedUserEnabled = "false";
+                autoUpdate = "true";
+                cloudStorageEnabled = "false";
+                cnameUncloakEnabled = "true";
+                collapseBlocked = "true";
+                contextMenuEnabled = "true";
+                prefetchingDisabled = "true";
+                showIconBadge = "true";
+                userFiltersTrusted = "false";
+              };
         };
 
         FirefoxHome = {
@@ -253,19 +232,12 @@
     {
       home.packages = [ zenBrowser ];
       home.sessionVariables.BROWSER = "zen";
-      xdg.mimeApps.defaultApplications = builtins.listToAttrs (
-        map
-          (name: {
-            inherit name;
-            value = [ "zen.desktop" ];
-          })
-          [
-            "text/html"
-            "application/xhtml+xml"
-            "x-scheme-handler/http"
-            "x-scheme-handler/https"
-          ]
-      );
+      xdg.mimeApps.defaultApplications = lib.genAttrs [
+        "text/html"
+        "application/xhtml+xml"
+        "x-scheme-handler/http"
+        "x-scheme-handler/https"
+      ] (_: [ "zen.desktop" ]);
 
       xdg.configFile = {
         "sponsorblock/settings-v6.1.7.json".source =
