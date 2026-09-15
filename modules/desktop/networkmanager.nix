@@ -25,5 +25,5 @@
     '';
   };
 
-  fleet.hosts.thinkpad.module.networking.networkmanager.wifi.powersave = true;
+  fleet.hosts.thinkpad.module.networking.networkmanager.connectionConfig."wifi.powersave" = 1;
 }
