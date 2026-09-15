@@ -140,6 +140,7 @@ python3 - <<'PY'
 import ast
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
 source = Path('scripts/devenv/tailnet.sh').read_text().split("<<'PY'\n", 1)[1].rsplit('\nPY', 1)[0]
 compile(source, 'tailnet.sh', 'exec')
@@ -148,7 +149,8 @@ functions = [node for node in ast.parse(source).body
              if isinstance(node, ast.FunctionDef) and node.name in names]
 assert {node.name for node in functions} == names
 calls = []
-namespace = {'env': {}, 'run': lambda *args, **kwargs: calls.append((args, kwargs))}
+namespace = {'env': {}, 'subprocess': SimpleNamespace(
+    run=lambda args, **kwargs: calls.append((args, kwargs)))}
 exec(compile(ast.Module(body=functions, type_ignores=[]), 'tailnet.sh', 'exec'), namespace)
 with TemporaryDirectory(prefix='tailnet-guard-', dir='/tmp') as temporary:
     namespace['repo'] = Path(temporary)
@@ -160,7 +162,7 @@ with TemporaryDirectory(prefix='tailnet-guard-', dir='/tmp') as temporary:
     commands = ('init', 'validate', 'plan', 'apply')
     for command in commands:
         namespace['tofu'](command, 'dummy-argument')
-        assert calls[-1] == (('tofu', '-chdir=opentofu/tailscale', command, 'dummy-argument'), {'env': {}})
+        assert calls[-1] == (('tofu', '-chdir=opentofu/tailscale', command, 'dummy-argument'), {'check': True, 'env': {}})
     assert len(calls) == len(commands)
     forbidden = ('terraform.tfvars', 'terraform.tfvars.json',
                  'local.auto.tfvars', 'local.auto.tfvars.json',

@@ -34,10 +34,6 @@ def fail(message):
     raise SystemExit(message)
 
 
-def run(*args, **kwargs):
-    return subprocess.run(args, check=True, **kwargs)
-
-
 def reject_auto_vars():
     for path in (repo / 'opentofu/tailscale').iterdir():
         if (path.name in ('terraform.tfvars', 'terraform.tfvars.json')
@@ -148,7 +144,7 @@ env['TAILSCALE_API_KEY'] = read_token
 
 def tofu(*args):
     reject_auto_vars()
-    run('tofu', '-chdir=opentofu/tailscale', *args, env=env)
+    subprocess.run(('tofu', '-chdir=opentofu/tailscale', *args), check=True, env=env)
 
 
 tofu('init', '-input=false', '-lockfile=readonly',

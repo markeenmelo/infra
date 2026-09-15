@@ -1,6 +1,6 @@
 { inputs, ... }: {
   flake.modules.homeManager.desktop =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     let
       bitwardenXpi = pkgs.fetchurl {
         name = "bitwarden-2026.8.0.xpi";
@@ -253,19 +253,12 @@
     {
       home.packages = [ zenBrowser ];
       home.sessionVariables.BROWSER = "zen";
-      xdg.mimeApps.defaultApplications = builtins.listToAttrs (
-        map
-          (name: {
-            inherit name;
-            value = [ "zen.desktop" ];
-          })
-          [
-            "text/html"
-            "application/xhtml+xml"
-            "x-scheme-handler/http"
-            "x-scheme-handler/https"
-          ]
-      );
+      xdg.mimeApps.defaultApplications = lib.genAttrs [
+        "text/html"
+        "application/xhtml+xml"
+        "x-scheme-handler/http"
+        "x-scheme-handler/https"
+      ] (_: [ "zen.desktop" ]);
 
       xdg.configFile = {
         "sponsorblock/settings-v6.1.7.json".source =
