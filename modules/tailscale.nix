@@ -1,6 +1,6 @@
-{ lib, ... }:
+{ config, lib, ... }:
 {
-  fleet.hosts = lib.genAttrs [ "bastion" "racknerd" ] (_: {
+  fleet.hosts = lib.genAttrs (builtins.attrNames config.flake.deploy.nodes) (_: {
     module.security.sudo.extraRules = [
       {
         users = [ "deploy" ];

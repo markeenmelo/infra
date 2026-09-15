@@ -22,17 +22,18 @@ esac
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
 status=$(git status --porcelain --untracked-files=all)
 [[ -z $status ]] || die 'Deployment requires a clean, reviewed, committed tree.'
-nodes=$(nix eval --no-update-lock-file --json .#deploy.nodes \
+flake="git+file://$(pwd -P)?rev=$(git rev-parse HEAD)"
+nodes=$(nix eval --no-update-lock-file --json "$flake#deploy.nodes" \
   --apply 'nodes: builtins.mapAttrs (_: n: removeAttrs n ["profiles"]) nodes')
 targets=()
 for host in "${hosts[@]}"; do
   jq -e --arg host "$host" 'has($host)' <<<"$nodes" >/dev/null \
     || die "Not a deploy node: $host"
-  targets+=(".#$host")
+  targets+=("$flake#$host")
 done
 
 if [[ $boot == false ]]; then
-  exec nix run --no-update-lock-file .#deploy-rs -- \
+  exec nix run --no-update-lock-file "$flake#deploy-rs" -- \
     --checksigs --targets "${targets[@]}" -- --no-update-lock-file
 fi
 
@@ -41,8 +42,8 @@ for host in "${hosts[@]}"; do
   user=$(jq -er --arg host "$host" '.[$host].sshUser' <<<"$nodes")
   options=$(jq -er --arg host "$host" '.[$host].sshOpts[]' <<<"$nodes")
   readarray -t ssh_options <<<"$options"
-  nix run --no-update-lock-file .#deploy-rs -- \
-    --checksigs --boot --targets ".#$host" -- --no-update-lock-file
+  nix run --no-update-lock-file "$flake#deploy-rs" -- \
+    --checksigs --boot --targets "$flake#$host" -- --no-update-lock-file
   printf 'Requesting reboot of %s; completed boot must be verified separately.\n' "$host"
   ssh "${ssh_options[@]}" -l "$user" -- "$hostname" \
     'sudo -n /run/current-system/sw/bin/systemctl reboot' \

@@ -3,7 +3,6 @@
     {
       config,
       lib,
-      pkgs,
       ...
     }:
     {
@@ -17,15 +16,7 @@
       config = {
         services.fprintd.enable = true;
         security.pam.services = {
-          greetd.rules = {
-            auth.login.modulePath = lib.mkForce "noctalia-greetd";
-            session.gnome_keyring = {
-              order = config.security.pam.services.greetd.rules.session.login.order + 10;
-              control = "optional";
-              modulePath = "${pkgs.gnome-keyring}/lib/security/pam_gnome_keyring.so";
-              settings.auto_start = true;
-            };
-          };
+          greetd.rules.auth.login.modulePath = lib.mkForce "noctalia-greetd";
           noctalia-greetd = {
             fprintAuth = true;
             enableGnomeKeyring = true;

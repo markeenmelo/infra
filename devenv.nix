@@ -73,7 +73,7 @@ in
     }
     {
       assertion = !config.secretspec.enable;
-      message = "Never load operator secrets into Nix or the development shell; decrypt them only in an explicit operator process.";
+      message = "Never load operator secrets through secretspec; decrypt them only in an explicit operator process.";
     }
   ];
 }

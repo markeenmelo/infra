@@ -11,7 +11,7 @@
       assertions = [
         {
           assertion = lib.versions.major config.boot.kernelPackages.kernel.version == "7";
-          message = "Fleet kernel policy requires the latest stock 7.x kernel from the host track; review policy before crossing major versions.";
+          message = "Fleet kernel policy requires a 7.x kernel; review policy before crossing major versions.";
         }
       ];
     };
