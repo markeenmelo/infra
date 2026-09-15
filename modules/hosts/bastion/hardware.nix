@@ -43,7 +43,18 @@
         "ahci"
         "sd_mod"
       ];
-      boot.extraModulePackages = [ ledDriver ];
+      boot.extraModulePackages = [
+        ledDriver
+        (config.boot.kernelPackages.it87.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [
+            (pkgs.fetchpatch {
+              name = "it87-tachometer-mask.patch";
+              url = "https://github.com/frankcrawford/it87/commit/7dee1a363e3c70430c2cf8eb3a556bdc2a45afc2.patch";
+              hash = "sha256-kZt25rEo7p73qRBv0aedhO0Om27Qw8gUc+KVBR2jngE=";
+            })
+          ];
+        }))
+      ];
       boot.kernelModules = [
         "i2c-i801"
         "i2c-dev"

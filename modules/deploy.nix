@@ -7,7 +7,7 @@
 let
   nodes = {
     racknerd.hostname = "72.11.150.242";
-    bastion.hostname = "192.168.2.2";
+    bastion.hostname = "bastion.stegosaurus-tiaki.ts.net";
   };
 in
 {
@@ -91,6 +91,10 @@ in
         "ServerAliveInterval=10"
         "-o"
         "ServerAliveCountMax=3"
+      ]
+      ++ lib.optionals (name == "bastion") [
+        "-o"
+        "HostKeyAlias=bastion"
       ];
       profiles.system = {
         user = "root";
