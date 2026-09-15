@@ -5,6 +5,8 @@
       inherit (lib) mkOption types;
       cfg = config.fleet.authentication;
       web = config.fleet.web;
+      smtp = cfg.notifier == "smtp";
+      requiredSecrets = if smtp then cfg.secrets else builtins.removeAttrs cfg.secrets [ "smtpPassword" ];
       nullable =
         type: description:
         mkOption {
@@ -29,6 +31,14 @@
     in
     {
       options.fleet.authentication = {
+        notifier = mkOption {
+          type = types.enum [
+            "filesystem"
+            "smtp"
+          ];
+          default = "filesystem";
+          description = "Explicit notification transport; filesystem is temporary operator-mediated enrollment, never an automatic SMTP fallback.";
+        };
         bastionAddress = mkOption {
           type = types.nullOr (
             types.strMatching "(100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.[0-9]{1,3}\\.[0-9]{1,3}|fd7a:115c:a1e0:[0-9a-f:]+)"
@@ -50,14 +60,15 @@
             message = "Central Authelia requires verified Racknerd and Bastion Tailscale IPs and the separately commissioned exact ACL.";
           }
           {
-            assertion = cfg.smtpAddress != null && cfg.smtpUsername != null && cfg.smtpSender != null;
-            message = "Authelia requires a real verified SMTP notifier; no filesystem or startup-check bypass.";
+            assertion =
+              !smtp || (cfg.smtpAddress != null && cfg.smtpUsername != null && cfg.smtpSender != null);
+            message = "Authelia SMTP mode requires a verified endpoint, username and sender; no startup-check bypass or automatic fallback.";
           }
           {
             assertion = lib.all (
               name: secretPath name != "" && lib.hasPrefix "/run/secrets/" (secretPath name)
-            ) (builtins.attrValues cfg.secrets);
-            message = "Authelia requires declared root-owned 0400 SOPS users, JWT, storage and SMTP password secrets.";
+            ) (builtins.attrValues requiredSecrets);
+            message = "Authelia requires declared root-owned 0400 SOPS users, JWT and storage secrets, plus the SMTP password in SMTP mode.";
           }
         ];
         services.authelia.instances.main = {
@@ -66,7 +77,9 @@
             jwtSecretFile = "/run/credentials/authelia-main.service/jwt";
             storageEncryptionKeyFile = "/run/credentials/authelia-main.service/storage";
           };
-          environmentVariables.AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = "/run/credentials/authelia-main.service/smtpPassword";
+          environmentVariables = lib.optionalAttrs smtp {
+            AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = "/run/credentials/authelia-main.service/smtpPassword";
+          };
           settings = {
             server.address = "tcp://${if lib.hasInfix ":" address then "[${address}]" else address}:9091/";
             log.level = "warn";
@@ -102,25 +115,39 @@
             storage.local.path = "/var/lib/authelia-main/db.sqlite3";
             notifier = {
               disable_startup_check = false;
-              smtp = {
-                address = toString cfg.smtpAddress;
-                username = toString cfg.smtpUsername;
-                sender = toString cfg.smtpSender;
-                disable_require_tls = false;
-                tls = {
-                  skip_verify = false;
-                  minimum_version = "TLS1.2";
-                };
-              };
-            };
+            }
+            // (
+              if smtp then
+                {
+                  smtp = {
+                    address = toString cfg.smtpAddress;
+                    username = toString cfg.smtpUsername;
+                    sender = toString cfg.smtpSender;
+                    disable_require_tls = false;
+                    tls = {
+                      skip_verify = false;
+                      minimum_version = "TLS1.2";
+                    };
+                  };
+                }
+              else
+                {
+                  filesystem.filename = "/run/authelia-main/notifications.txt";
+                }
+            );
           };
         };
         systemd.services.authelia-main = {
           requires = [ "tailscaled.service" ];
           after = [ "tailscaled.service" ];
-          serviceConfig.LoadCredential = lib.mapAttrsToList (
-            key: name: "${key}:${secretPath name}"
-          ) cfg.secrets;
+          serviceConfig = {
+            LoadCredential = lib.mapAttrsToList (key: name: "${key}:${secretPath name}") requiredSecrets;
+          }
+          // lib.optionalAttrs (!smtp) {
+            RuntimeDirectory = "authelia-main";
+            RuntimeDirectoryMode = "0700";
+            UMask = "0077";
+          };
         };
         environment.persistence."/persist".directories = [
           {
