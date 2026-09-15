@@ -3,6 +3,7 @@ let
     domain = "marcosmelo.dev";
     authHostname = "auth.marcosmelo.dev";
     authAddress = "100.96.133.3";
+    certificateEmail = "marcosmelo@proton.me";
   };
 in
 {
@@ -11,6 +12,8 @@ in
   };
   fleet.hosts.bastion.module.fleet.web = web // {
     exposure = "lan";
+    lanIPv4 = "192.168.2.2";
+    lanInterface = "enp3s0";
     lanIPv4Ranges = [
       "192.168.2.0/24"
       "192.168.10.0/24"
