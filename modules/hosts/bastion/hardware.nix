@@ -55,6 +55,7 @@
         ugreen-leds = {
           description = "Initialize UGREEN front-panel LEDs";
           wantedBy = [ "multi-user.target" ];
+          wants = map (led: "ugreen-${led}.service") (lib.attrNames diskLeds);
           requires = [ "systemd-modules-load.service" ];
           after = [ "systemd-modules-load.service" ];
           path = [
@@ -95,10 +96,7 @@
         in
         lib.nameValuePair "ugreen-${led}" {
           description = "UGREEN ${led} presence and activity";
-          wantedBy = [
-            deviceUnit
-            "ugreen-leds.service"
-          ];
+          wantedBy = [ deviceUnit ];
           bindsTo = [ deviceUnit ];
           requires = [ "ugreen-leds.service" ];
           after = [
