@@ -110,44 +110,23 @@
         "3rdparty".Extensions = {
           "{446900e4-71c2-419f-a6a7-df9c091e268b}".environment.base = "https://vault.marcosmelo.dev";
 
-          "uBlock0@raymondhill.net".userSettings = [
-            [
-              "advancedUserEnabled"
-              "false"
-            ]
-            [
-              "autoUpdate"
-              "true"
-            ]
-            [
-              "cloudStorageEnabled"
-              "false"
-            ]
-            [
-              "cnameUncloakEnabled"
-              "true"
-            ]
-            [
-              "collapseBlocked"
-              "true"
-            ]
-            [
-              "contextMenuEnabled"
-              "true"
-            ]
-            [
-              "prefetchingDisabled"
-              "true"
-            ]
-            [
-              "showIconBadge"
-              "true"
-            ]
-            [
-              "userFiltersTrusted"
-              "false"
-            ]
-          ];
+          "uBlock0@raymondhill.net".userSettings =
+            lib.mapAttrsToList
+              (name: value: [
+                name
+                value
+              ])
+              {
+                advancedUserEnabled = "false";
+                autoUpdate = "true";
+                cloudStorageEnabled = "false";
+                cnameUncloakEnabled = "true";
+                collapseBlocked = "true";
+                contextMenuEnabled = "true";
+                prefetchingDisabled = "true";
+                showIconBadge = "true";
+                userFiltersTrusted = "false";
+              };
         };
 
         FirefoxHome = {

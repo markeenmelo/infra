@@ -34,41 +34,38 @@
       config,
       ...
     }:
-    let
-      settings = {
-        shell = {
-          polkit_agent = true;
-          launch_apps_as_systemd_services = true;
-          telemetry_enabled = false;
-          offline_mode = true;
-          clipboard_enabled = false;
-        };
-        notification.enable_daemon = true;
-        lockscreen = {
-          enabled = true;
-          allow_empty_password = false;
-          fingerprint = true;
-          lock_before_suspend = true;
-        };
-        idle.behavior = {
-          lock = {
-            enabled = true;
-            timeout = 300;
-            action = "lock";
-          };
-          screen-off = {
-            enabled = true;
-            timeout = 360;
-            action = "screen_off";
-          };
-        };
-      };
-    in
     {
       programs.noctalia = {
         enable = true;
         systemd.enable = true;
-        inherit settings;
+        settings = {
+          shell = {
+            polkit_agent = true;
+            launch_apps_as_systemd_services = true;
+            telemetry_enabled = false;
+            offline_mode = true;
+            clipboard_enabled = false;
+          };
+          notification.enable_daemon = true;
+          lockscreen = {
+            enabled = true;
+            allow_empty_password = false;
+            fingerprint = true;
+            lock_before_suspend = true;
+          };
+          idle.behavior = {
+            lock = {
+              enabled = true;
+              timeout = 300;
+              action = "lock";
+            };
+            screen-off = {
+              enabled = true;
+              timeout = 360;
+              action = "screen_off";
+            };
+          };
+        };
       };
       xdg.configFile."noctalia/config.toml".target = "fleet-desktop/noctalia/config.toml";
       systemd.user.services.noctalia.Service.Environment = [
