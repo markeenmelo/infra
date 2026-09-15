@@ -11,10 +11,7 @@
       };
       dhcpV4Config = {
         ClientIdentifier = "mac";
-        UseDNS = true;
-        UseRoutes = true;
         UseHostname = false;
-        UseDomains = false;
       };
       linkConfig.RequiredForOnline = "routable";
     };

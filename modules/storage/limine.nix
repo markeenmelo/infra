@@ -1,14 +1,10 @@
 {
   flake.modules.nixos.base = {
-    boot.loader = {
-      grub.enable = false;
-      systemd-boot.enable = false;
-      limine = {
-        enable = true;
-        panicOnChecksumMismatch = true;
-        enrollConfig = false;
-        maxGenerations = 10;
-      };
+    boot.loader.limine = {
+      enable = true;
+      panicOnChecksumMismatch = true;
+      enrollConfig = false;
+      maxGenerations = 10;
     };
   };
 }

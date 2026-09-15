@@ -24,7 +24,6 @@
         enable = true;
         initialization = {
           bash = exportSocket;
-          zsh = exportSocket;
           fish = "set -x SSH_AUTH_SOCK ${lib.escapeShellArg agentSocket}";
           nushell = "$env.SSH_AUTH_SOCK = '${agentSocket}'";
         };

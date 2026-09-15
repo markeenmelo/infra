@@ -42,7 +42,6 @@
           };
         };
       };
-      boot.resumeDevice = "";
       boot.loader = {
         efi.canTouchEfiVariables = true;
         limine = {

@@ -23,7 +23,6 @@
     services.tailscale = {
       enable = true;
       openFirewall = true;
-      useRoutingFeatures = "none";
       extraSetFlags = [
         "--accept-dns=true"
         "--accept-routes=false"
@@ -39,8 +38,6 @@
     environment.persistence."/persist".directories = [
       {
         directory = "/var/lib/tailscale";
-        user = "root";
-        group = "root";
         mode = "0700";
       }
     ];
