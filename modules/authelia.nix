@@ -29,7 +29,13 @@
     in
     {
       options.fleet.authentication = {
-        bastionAddress = nullable (types.strMatching "(100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.[0-9]{1,3}\\.[0-9]{1,3}|fd7a:115c:a1e0:[0-9a-f:]+)") "Verified Bastion Tailscale source IP; also commission the exact private tailnet ACL.";
+        bastionAddress = mkOption {
+          type = types.nullOr (
+            types.strMatching "(100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.[0-9]{1,3}\\.[0-9]{1,3}|fd7a:115c:a1e0:[0-9a-f:]+)"
+          );
+          default = "100.105.158.109";
+          description = "Verified Bastion Tailscale source IP; also commission the exact private tailnet ACL.";
+        };
         smtpAddress = nullable (types.strMatching "(smtp|submissions)://[a-zA-Z0-9.-]+:[0-9]+") "Verified TLS-validating SMTP endpoint; smtp requires STARTTLS, submissions uses implicit TLS.";
         smtpUsername = nullable types.nonEmptyStr "Verified SMTP login name.";
         smtpSender = nullable types.nonEmptyStr "Verified notification sender.";

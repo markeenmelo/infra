@@ -36,7 +36,7 @@ variable "state_passphrase" {
 
 variable "domain" {
   type    = string
-  default = null
+  default = "marcosmelo.dev"
   validation {
     condition     = var.domain == null ? true : can(regex("^[a-z0-9][a-z0-9.-]*\\.[a-z]{2,}$", var.domain))
     error_message = "Supply the verified domain, not a URL or wildcard."

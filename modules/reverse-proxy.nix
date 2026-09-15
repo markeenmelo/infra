@@ -1,6 +1,23 @@
+let
+  web = {
+    domain = "marcosmelo.dev";
+    authHostname = "auth.marcosmelo.dev";
+    authAddress = "100.96.133.3";
+  };
+in
 {
-  fleet.hosts.racknerd.module.fleet.web.exposure = "public";
-  fleet.hosts.bastion.module.fleet.web.exposure = "lan";
+  fleet.hosts.racknerd.module.fleet.web = web // {
+    exposure = "public";
+  };
+  fleet.hosts.bastion.module.fleet.web = web // {
+    exposure = "lan";
+    lanIPv4Ranges = [
+      "192.168.2.0/24"
+      "192.168.10.0/24"
+    ];
+    lanIPv6 = null;
+    lanIPv6Ranges = [ ];
+  };
 
   flake.modules.nixos.server =
     {
