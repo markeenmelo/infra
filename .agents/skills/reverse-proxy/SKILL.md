@@ -18,7 +18,13 @@ Read [AGENTS.md](../../../AGENTS.md), [secrets](../../../secrets/README.md), [st
 
 Fill actual facts in the owning concern, not host import roots. `fleet.web` needs the same verified `domain`, `authHostname` and Racknerd `authAddress` at both sites, plus `certificateEmail` and public `dnsResolvers` (host:port). Tailscale address types exclude public/LAN ranges but do not establish node identity. Bastion also needs `lanInterface`, `lanIPv4`, `lanIPv4Ranges` and an explicit IPv6 choice: null `lanIPv6` with empty `lanIPv6Ranges` blocks IPv6 HTTPS, otherwise supply both verified values. Never infer these from the old deploy address. Review both families and console access before any activation.
 
-Racknerd's `fleet.authentication` additionally needs `bastionAddress`, `smtpAddress`, `smtpUsername`, `smtpSender` and the secret selections below. Verify the SMTP endpoint, sender authorization and TLS certificate; `smtp://` requires STARTTLS, `submissions://` uses implicit TLS. Startup checks stay enabled. No filesystem notifier, fake users, password-only fallback or default app permission is provided.
+The operator confirmed Bastion's DHCP reservation for `192.168.2.2` and Racknerd's public IPv4 `72.11.150.242` (already the deploy endpoint). No user-created DNS records have been reported; still inspect the Porkbun inventory for registrar defaults before defining records. Public DNS-01 resolvers remain unselected.
+
+Racknerd's `fleet.authentication` additionally needs `bastionAddress` and the secret selections below. `notifier` defaults explicitly to `"filesystem"` for temporary operator-mediated enrollment; SMTP is not required in this mode. Authelia writes only the latest notification to `/run/authelia-main/notifications.txt` (`0600`, under a service-owned systemd runtime directory with mode `0700`). The pinned notifier overwrites the file on each message and clears it during its startup check; stopping/restarting the service or rebooting loses it. No email is sent, and this file is not persisted or backed up.
+
+After separately authorized activation, use a private operator terminal with verified Racknerd access to read the file as root. Check the intended recipient and handle one enrollment at a time; each link is a secret. Do not expose the file through HTTP, broaden permissions, paste its contents into chat/logs/Git or treat filesystem access as proof of email ownership. For another user, verify identity independently and deliver only their link privately. This is a temporary manual workflow, not unattended notification delivery.
+
+To migrate later, select `notifier = "smtp"` and supply verified `smtpAddress`, `smtpUsername`, `smtpSender` and `secrets.smtpPassword`. Verify the endpoint, sender authorization and TLS certificate; `smtp://` requires STARTTLS, `submissions://` uses implicit TLS. SMTP mode has no filesystem fallback. Startup checks stay enabled in both modes. No fake users, password-only fallback or default app permission is provided.
 
 Only the exact authentication portal has a router. Future private apps must add explicit hostname/TLS routers using `private-app`, actual backends with verified upstream certificates and explicit Authelia `two_factor` ACL rules. The ACL defaults to deny. Review direct backend reachability separately; middleware does not protect a bypass port. No wildcard app route, discovery, dashboard, public HTTP or HTTP/3 is enabled.
 
@@ -38,12 +44,12 @@ For SSH, first prove all authorized administrators and deploy-rs over verified T
 
 ## Runtime secrets and persistence
 
-Neither server has commissioned host recipients or selected secrets today. First verify dedicated host age identities, independent recovery and early-mounted `/persist/var/lib/sops-nix/` key paths. Then add exact host creation rules containing only the existing operator and that verified host recipient. No placeholder ciphertext or private identities belong in the checkout.
+Neither server has commissioned host recipients or selected secrets today. At the operator's explicit request, `secrets/web/operator.yaml` holds encrypted placeholders for private preparation under the existing operator recipient only; it is never a host input. Follow the [preparation instructions](../../../secrets/README.md#populate-the-preparation-files). First verify dedicated host age identities, independent recovery and early-mounted `/persist/var/lib/sops-nix/` key paths. Then add exact host creation rules containing only the existing operator and that verified host recipient, and privately split the required real values into those host files. Never add hosts to the combined preparation bundle, select placeholders for runtime use or put private age identities in the checkout.
 
 Declare real SOPS files in the owning concern and select their names:
 
 - Each proxy: `fleet.web.secrets.porkbunApiKey`, `porkbunSecretKey`, `httpBouncerKey`.
-- Racknerd: `fleet.authentication.secrets.jwt`, `storage`, `users`, `smtpPassword`. `users` is the complete Authelia user-directory YAML, including privately generated password hashes, real groups and email addresses.
+- Racknerd: `fleet.authentication.secrets.jwt`, `storage`, `users`, plus `smtpPassword` only in SMTP mode. Filesystem mode neither requires nor loads the SMTP password. `users` is the complete Authelia user-directory YAML, including privately generated password hashes, real groups and email addresses.
 
 All selected source files must be root-owned `0400` under `/run/secrets`; systemd `LoadCredential` delivers private per-service files without environment substitution or CLI values. Add the corresponding service `restartUnits` on secret declarations; credential snapshots require a restart after rotation. Read every encrypted scalar, encrypted MAC and exact recipients before staging. Paths/declarations prove neither decryption nor LAPI registration.
 
@@ -79,7 +85,7 @@ GeoIP enrichment downloads local City/ASN databases from the URLs declared in th
 
 `opentofu/porkbun/main.tf` pins OpenTofu 1.12.6 and `jianyuan/porkbun` 0.3.2 with its own reviewed dependency lock. The registry supplied no GPG key, so native initialization reported skipped signature validation; the Linux amd64 archive SHA-256 was separately compared with the upstream v0.3.2 release checksum (`17a0d3e98cbe17a97e41b1f7090f4eb340ae1dc5756001395a61651505c8c224`). This is checksum agreement, not verified publisher-signature evidence. No fourth task, tailnet credentials, host input or automatic secret loader is involved. The nullable domain and empty typed record map currently instantiate **zero records**. Record definitions and verified existing IDs should be reviewed in the HCL defaults, not supplied through automatic variable overrides. Existing selected records use declarative imports with `<record_id>_<domain>_<type>` IDs; only genuinely new records omit `record_id`. No zone recreation, speculative AAAA/wildcards, Bastion LAN publication or ACME `_acme-challenge` ownership. `prevent_destroy` requires explicit configuration/review changes before any deliberate deletion/replacement. Preserve unrelated MX/TXT/CAA and split DNS. Public auth/apps eventually target the verified Racknerd address.
 
-The exact operator-only creation rule for `secrets/porkbun/operator.yaml` exists; ciphertext does not. Privately supply exactly `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY`, `TF_VAR_state_passphrase`, encrypted only to the existing operator. Keep this passphrase independently recoverable and separate from tailnet custody. Proxy Lego credentials instead use `PORKBUN_API_KEY_FILE` and `PORKBUN_SECRET_API_KEY_FILE`. Prefer separately revocable credentials per consumer if supported, but treat every proxy key as broad authority over API-enabled domains until actual restrictions are verified; do not claim record-level isolation.
+`secrets/porkbun/operator.yaml` now contains explicitly requested encrypted `REPLACE_ME` placeholders under its exact operator-only creation rule. Before any OpenTofu use, privately replace all three with real values: exactly `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY`, `TF_VAR_state_passphrase`, encrypted only to the existing operator. Keep this passphrase independently recoverable and separate from tailnet custody. Proxy Lego credentials instead use `PORKBUN_API_KEY_FILE` and `PORKBUN_SECRET_API_KEY_FILE`. Prefer separately revocable credentials per consumer if supported, but treat every proxy key as broad authority over API-enabled domains until actual restrictions are verified; do not claim record-level isolation.
 
 Use only the default workspace and native local backend locking. Runtime root is `${XDG_STATE_HOME:-$HOME/.local/state}/infra/porkbun`, outside Git/store, with operator-owned 0700 directories, 0600 files, no symlinks/hard-linked files or group/other-writable ancestry. Inspect existing paths before creating missing directories with umask 077; never recursively repair permissions or replace state. Set `data/` as TF_DATA_DIR, `terraform.tfstate` as backend path, and keep unique encrypted plans under `plans/`. Preserve native encrypted backups too. Demonstrate independent recovery of the age key, passphrase and encrypted backend in separate private storage before apply. Do not rotate encryption IDs/passphrase or migrate the backend casually.
 
@@ -142,6 +148,40 @@ After explicit operational authorization, verify:
 ## Local verification and current limitations
 
 Run the approved local commands: `nix fmt`, `git diff --check`, `nix flake check --no-update-lock-file -L`, each server's `nix eval --no-update-lock-file --json .#fleet.HOST` and `nix build --no-update-lock-file --no-link .#nixosConfigurations.HOST.config.system.build.toplevel`, and `tofu -chdir=opentofu/porkbun fmt -check`. Use a private disposable TF_DATA_DIR outside the checkout for credential-free `init -backend=false -lockfile=readonly -input=false` then `validate`, with no operational backend/decryption. Inspect generated gate-off settings and missing-fact assertions, middleware order, secret paths/listeners, parser fields, nftables priorities and unchanged tailnet/deploy/ThinkPad/NAS/disk declarations.
+
+### Filesystem notifier verification
+
+Authelia 4.39.20's `internal/notification/file_notifier.go` and `const.go` establish overwrite/startup-clearing behavior and `0600` file creation. The native NixOS unit uses the static `authelia-main` account and `ProtectSystem=strict`; systemd's private RuntimeDirectory supplies the writable location. This credential-free check evaluates both notifier branches without starting services or satisfying commissioning assertions:
+
+```sh
+nix eval --no-update-lock-file --impure --expr '
+let
+  host = (builtins.getFlake (toString ./.)).nixosConfigurations.racknerd;
+  lib = host.pkgs.lib;
+  configFor = extra: (host.extendModules {
+    modules = [ { fleet.web.enable = true; } extra ];
+  }).config;
+  fs = configFor {};
+  smtp = configFor { fleet.authentication.notifier = "smtp"; };
+  notifier = c: c.services.authelia.instances.main.settings.notifier;
+  unit = fs.systemd.services.authelia-main;
+  blocked = prefix: c: builtins.any (a: !a.assertion && lib.hasPrefix prefix a.message) c.assertions;
+in
+assert !host.config.fleet.web.enable;
+assert notifier fs == { disable_startup_check = false; filesystem.filename = "/run/authelia-main/notifications.txt"; };
+assert unit.serviceConfig.RuntimeDirectory == "authelia-main" && unit.serviceConfig.RuntimeDirectoryMode == "0700" && unit.serviceConfig.UMask == "0077";
+assert !(unit.environment ? AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE);
+assert !(builtins.any (lib.hasPrefix "smtpPassword:") unit.serviceConfig.LoadCredential);
+assert (notifier smtp) ? smtp && !((notifier smtp) ? filesystem) && !(notifier smtp).disable_startup_check;
+assert smtp.systemd.services.authelia-main.environment ? AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE;
+assert builtins.any (lib.hasPrefix "smtpPassword:") smtp.systemd.services.authelia-main.serviceConfig.LoadCredential;
+assert !(blocked "Authelia SMTP mode" fs) && blocked "Authelia SMTP mode" smtp;
+assert blocked "Authelia requires declared" fs && blocked "Authelia requires declared" smtp;
+true
+'
+```
+
+The missing-secret assertions must still fail in both branches: no fabricated secret declarations are used. After real secret commissioning, replace that negative expectation with checks against the reviewed selections. Actual file ownership, writes and manual MFA enrollment remain unperformed until separately authorized activation.
 
 ### Native replay result — 2026-09-15
 

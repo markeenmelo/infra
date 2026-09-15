@@ -3,6 +3,10 @@ keys:
   - &thinkpad age1uyv2jhru0fyy63ae3rwvzx4gzd42k8v0hl2rvjpaz6fqr5qhs5fshqat7p
 
 creation_rules:
+  - path_regex: ^secrets/web/operator\.yaml$
+    key_groups:
+      - age:
+          - *operator
   - path_regex: ^secrets/porkbun/operator\.yaml$
     key_groups:
       - age:

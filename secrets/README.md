@@ -6,7 +6,7 @@ There is no automated ciphertext guard. Before staging an encrypted file or eval
 
 ## What is selected
 
-`.sops.yaml` has exact rules and no catch-all for `hosts/thinkpad.yaml`, `hosts/thinkpad-senecanet.yaml`, `tailscale/operator.yaml` and the not-yet-supplied `porkbun/operator.yaml`. The host files have exactly the existing operator and ThinkPad public recipients. The tailnet source has only the existing operator recipient and is never selected by sops-nix. Removed ciphertext may still remain decryptable by its historical recipients in old Git objects, backups and generations.
+`.sops.yaml` has exact rules and no catch-all for `hosts/thinkpad.yaml`, `hosts/thinkpad-senecanet.yaml`, `tailscale/operator.yaml`, `porkbun/operator.yaml` and `web/operator.yaml`. The host files have exactly the existing operator and ThinkPad public recipients. The three operator files have only the existing operator recipient and are never selected by sops-nix. Removed ciphertext may still remain decryptable by its historical recipients in old Git objects, backups and generations.
 
 Only ThinkPad selects secrets: `marcos-password-hash` and `wifi-psk` from `hosts/thinkpad.yaml`, plus `seneca-identity` and `seneca-password` from `hosts/thinkpad-senecanet.yaml`. Both servers select none, so they need no age identity — they use the locked-password `deploy` account with reviewed public SSH keys.
 
@@ -29,7 +29,20 @@ Only explicitly invoked operator processes decrypt it. OpenTofu state and saved 
 
 The [reverse-proxy procedure](../.agents/skills/reverse-proxy/SKILL.md) keeps all web/SSH-cutover gates off until separately commissioned. No server ciphertext or host recipient has been fabricated. Before selecting server secrets, verify dedicated host age custody/recovery and add an exact rule with only the operator and that verified host. Select root-owned `0400` SOPS files through the owning concern's typed secret-name options; systemd credentials deliver them privately at runtime. Never put Authelia password hashes, bouncer keys or DNS credentials into Nix or logs.
 
-`porkbun/operator.yaml` has an operator-only creation rule but no ciphertext yet. Its only fields will be encrypted `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` and an independently recoverable `TF_VAR_state_passphrase`, separate from tailnet custody. It is never selected in sops-nix. Proxy Lego uses separate runtime credentials and the distinct names `PORKBUN_API_KEY_FILE` / `PORKBUN_SECRET_API_KEY_FILE`. Treat proxy DNS credentials as broad domain authority unless actual restrictions are verified. A bouncer key must match registration in that host's persisted local CrowdSec database; a SOPS value alone proves nothing.
+`porkbun/operator.yaml` contains operator-only encrypted `REPLACE_ME` placeholders, explicitly requested for private preparation. Replace all three fields before any OpenTofu use: `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` and an independently recoverable, high-entropy `TF_VAR_state_passphrase` of at least 16 characters, separate from tailnet custody. It is never selected in sops-nix. Proxy Lego uses separate runtime credentials and the distinct names `PORKBUN_API_KEY_FILE` / `PORKBUN_SECRET_API_KEY_FILE`. Treat proxy DNS credentials as broad domain authority unless actual restrictions are verified. A bouncer key must match registration in that host's persisted local CrowdSec database; a SOPS value alone proves nothing.
+
+### Populate the preparation files
+
+Use your private editor through SOPS, never agent tools or a plaintext file in the checkout:
+
+```sh
+sops edit secrets/porkbun/operator.yaml
+sops edit secrets/web/operator.yaml
+```
+
+`web/operator.yaml` is an operator-only preparation bundle, not a host secret source. Every value starts as encrypted `REPLACE_ME`. The `racknerd` and `bastion` sections hold their respective proxy `porkbunApiKey`, `porkbunSecretKey` and `httpBouncerKey`; Racknerd also has `authelia.jwt`, `storage` and `users`. No SMTP fields are needed. Use independently generated cryptographically random values of at least 32 characters for JWT and storage keys. Supply `users` as the complete real Authelia user-directory YAML in one quoted string (use escaped `\n` for line breaks), including privately generated password hashes, groups and email addresses. Leave bouncer placeholders until separately authorized registration supplies the matching local HTTP bouncer keys; arbitrary random strings are not registered keys.
+
+Never select the preparation bundle in sops-nix or add a server recipient to it: that would expose both servers' material. After host age custody/recovery is verified, privately split only each host's required values into its own SOPS file with exactly the operator and that host recipient, then review declarations and selections. Private age identities stay outside Git. Encrypted placeholders are not usable credentials or commissioning evidence; verify every required replacement privately before use. No automated placeholder detection exists.
 
 ## Editing
 
