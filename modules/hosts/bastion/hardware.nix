@@ -37,7 +37,6 @@
     in
     {
       system.stateVersion = "26.05";
-      powerManagement.scsiLinkPolicy = "med_power_with_dipm";
       boot.initrd.availableKernelModules = [
         "xhci_pci"
         "nvme"
