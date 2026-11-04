@@ -1,0 +1,5 @@
+rules:
+  dangerous-triggers:
+    ignore:
+      - review.yml:4
+      - review.yml:6
