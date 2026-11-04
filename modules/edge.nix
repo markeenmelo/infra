@@ -113,6 +113,12 @@
           group = config.services.caddy.group;
           mode = "0700";
         }
+        {
+          directory = config.services.caddy.logDir;
+          user = config.services.caddy.user;
+          group = config.services.caddy.group;
+          mode = "0750";
+        }
       ];
     };
 }

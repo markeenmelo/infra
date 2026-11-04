@@ -17,7 +17,8 @@ Assistant's onboarding are denied at the edge; a native login still works there,
 and bans come from CrowdSec.
 
 Publishing an app adds its subdomain and bastion port to `apps`; the DNS record and the tailnet
-grant are separate changes. Certificates and the ACME account live in Caddy's data directory
-under `/persist`; access logs are JSON under Caddy's log directory for CrowdSec.
+grant are separate changes. Certificates, the ACME account and the JSON access logs CrowdSec reads live
+in Caddy's data and log directories under `/persist`. Servers keep their own resolver
+([server.nix](../../../modules/server.nix)), so the DNS-01 check never depends on the tailnet.
 
 The Caddy package pins the plugin version and its hash; a plugin update changes both.

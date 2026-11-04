@@ -11,6 +11,9 @@
         loader.limine.extraConfig = "graphics: no";
       };
       networking.useNetworkd = true;
-      services.logrotate.enable = true;
+      services = {
+        logrotate.enable = true;
+        tailscale.extraSetFlags = [ "--accept-dns=false" ];
+      };
     };
 }
