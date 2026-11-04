@@ -87,6 +87,7 @@ jobs:
             secret: KIMI_API_KEY
           - name: minimax
             model: MiniMax-M3.1-Flash
+            args: --effort low
             base_url: https://api.minimax.io/anthropic
             secret: MINIMAX_API_KEY
     concurrency:
@@ -128,7 +129,8 @@ jobs:
 
             Review this pull request following the "Review guidelines" section of CLAUDE.md.
             The working directory holds the trusted base branch, not the PR; read the PR only
-            through `gh pr diff` and `gh pr view`.
+            through `gh pr diff` and `gh pr view`. Those two commands and the inline comment tool
+            are the only tools available; any other tool call is denied and wastes a turn.
             Return the top-level summary as the `summary` field of your structured output and
             post line-specific findings with
             `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`),
