@@ -1,5 +1,9 @@
 {
-  flake.modules.nixos.base = {
+  flake.modules.nixos.base =
+    { config, ... }:
+    {
+    networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts =
+      config.services.openssh.ports;
     services.openssh = {
       enable = true;
       openFirewall = false;
@@ -34,5 +38,5 @@
         configureParent = true;
       }
     ];
-  };
+    };
 }
