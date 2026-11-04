@@ -45,9 +45,9 @@ jobs:
         env:
           PR_REVIEWER__EXTRA_INSTRUCTIONS: ${{ steps.guidelines.outputs.text }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANTHROPIC__KEY: ${{ secrets.KIMI_API_KEY }}
-          ANTHROPIC_BASE_URL: https://api.kimi.ai/coding
-          CONFIG__MODEL: anthropic/k3.1-pro
+          ANTHROPIC__KEY: ${{ secrets.ZAI_API_KEY }}
+          ANTHROPIC_BASE_URL: https://api.z.ai/api/anthropic
+          CONFIG__MODEL: anthropic/glm-5.3
           CONFIG__FALLBACK_MODELS: "[]"
           CONFIG__TEMPERATURE: "1"
           CONFIG__MAX_MODEL_TOKENS: "262144"
@@ -56,7 +56,7 @@ jobs:
           CONFIG__REASONING_EFFORT: low
           LITELLM__CUSTOM_LLM_PROVIDER: anthropic
           LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: anthropic
-          LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.kimi.ai"]'
+          LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.z.ai"]'
           CONFIG__AI_TIMEOUT: "600"
           CONFIG__RETRY_SAME_MODEL_ON_TIMEOUT: "false"
           GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: "false"
@@ -71,8 +71,24 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository) ||
       (github.event.issue.pull_request && startsWith(github.event.comment.body, '@claude review') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: claude
+            model: claude-opus-5-5
+            args: --effort medium
+            secret: CLAUDE_CODE_OAUTH_TOKEN
+          - name: kimi
+            model: k3.1-pro
+            base_url: https://api.kimi.ai/coding
+            secret: KIMI_API_KEY
+          - name: minimax
+            model: MiniMax-M3.1-Flash
+            base_url: https://api.minimax.io/anthropic
+            secret: MINIMAX_API_KEY
     concurrency:
-      group: review-claude-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '@claude review')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
+      group: review-${{ matrix.name }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '@claude review')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -93,9 +109,13 @@ jobs:
         run: echo "at=$(date -u +%FT%TZ)" >> "$GITHUB_OUTPUT"
       - id: claude
         uses: anthropics/claude-code-action@4845bacbb38b3c4b15d948f035349786f678e068 # v1.0.267
+        env:
+          ANTHROPIC_BASE_URL: ${{ matrix.base_url }}
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_code_oauth_token: ${{ matrix.name == 'claude' && secrets[matrix.secret] || '' }}
+          anthropic_api_key: ${{ matrix.name != 'claude' && secrets[matrix.secret] || '' }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          classify_inline_comments: "false"
           settings: '{"permissions":{"deny":["Read(//proc/**)","Read(~/.claude/**)"],"blockReadsOutsideWorkingDirectories":true}}'
           prompt: |
             REPO: ${{ github.repository }}
@@ -107,11 +127,11 @@ jobs:
             Return the top-level summary as the `summary` field of your structured output and
             post line-specific findings with
             `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`),
-            starting every inline comment body with `<!-- claude-review -->`.
+            starting every inline comment body with `<!-- ${{ matrix.name }}-review -->`.
             Post nothing else. Return the summary even if you run short of turns.
           claude_args: >-
-            --model claude-opus-5-5
-            --effort medium
+            --model ${{ matrix.model }}
+            ${{ matrix.args }}
             --max-turns 60
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*)"
             --disallowedTools "Agent,Task"
@@ -119,15 +139,15 @@ jobs:
       - if: steps.claude.outputs.structured_output != ''
         run: |
           body=${SUMMARY:?}
-          for name in CLAUDE_CODE_OAUTH_TOKEN GH_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN; do
+          for name in REVIEW_KEY GH_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN; do
             [ -z "${!name-}" ] || [[ $body != *"${!name}"* ]] || {
               echo "the summary contains the value of $name" >&2
               exit 1
             }
           done
-          body="<!-- claude-review -->"$'\n'"$body"
+          body="$MARKER"$'\n'"$body"
           id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- claude-review -->"))) | .id' | tail -n 1)
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id' | tail -n 1)
           if [ -n "$id" ]; then
             gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$body" > /dev/null
           else
@@ -135,13 +155,14 @@ jobs:
           fi
           gh api graphql --paginate -F owner="${GITHUB_REPOSITORY%/*}" -F name="${GITHUB_REPOSITORY#*/}" -F pr="$PR_NUMBER" \
             -f query='query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) { repository(owner: $owner, name: $name) { pullRequest(number: $pr) { reviewThreads(first: 100, after: $endCursor) { nodes { id isResolved comments(first: 1) { totalCount nodes { author { login } body createdAt } } } pageInfo { hasNextPage endCursor } } } } }' \
-            --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select((.isResolved | not) and .comments.totalCount == 1 and .comments.nodes[0].author.login == "github-actions" and (.comments.nodes[0].body | startswith("<!-- claude-review -->")) and .comments.nodes[0].createdAt < env.SINCE) | .id' |
+            --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select((.isResolved | not) and .comments.totalCount == 1 and .comments.nodes[0].author.login == "github-actions" and (.comments.nodes[0].body | startswith(env.MARKER)) and .comments.nodes[0].createdAt < env.SINCE) | .id' |
             while read -r thread; do
               gh api graphql -F thread="$thread" -f query='mutation($thread: ID!) { resolveReviewThread(input: { threadId: $thread }) { thread { id } } }' > /dev/null
             done
         env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          REVIEW_KEY: ${{ secrets[matrix.secret] }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          MARKER: <!-- ${{ matrix.name }}-review -->
           SUMMARY: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').summary }}
           SINCE: ${{ steps.start.outputs.at }}
