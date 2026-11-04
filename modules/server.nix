@@ -13,7 +13,10 @@
       networking.useNetworkd = true;
       services = {
         logrotate.enable = true;
-        tailscale.extraSetFlags = [ "--accept-dns=false" ];
+        tailscale = {
+          extraUpFlags = [ "--accept-dns=false" ];
+          extraSetFlags = [ "--accept-dns=false" ];
+        };
       };
     };
 }

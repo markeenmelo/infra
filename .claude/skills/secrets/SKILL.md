@@ -39,7 +39,8 @@ Declare `sops.secrets.NAME` beside its consumer with `sopsFile`, `key` when the 
 0400 (asserted in [secrets.nix](../../../modules/secrets.nix)); a unit reads through
 `LoadCredential` or the upstream module's `*File` option. A unit that needs a file in its own
 format gets a `sops.templates` entry rendered from `sops.placeholder`, so the secrets it
-references stay declared; the template is delivered the same way.
+references stay declared; the template is delivered the same way. Secrets and templates are
+written by the activation script before any unit starts, so units need no ordering on them.
 
 ## Editing
 

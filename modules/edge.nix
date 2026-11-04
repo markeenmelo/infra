@@ -1,4 +1,22 @@
+{ config, lib, ... }:
 {
+  flake.checks = lib.foldlAttrs (
+    acc: name: host:
+    let
+      nixos = config.flake.nixosConfigurations.${name};
+      inherit (nixos.config.services) caddy;
+    in
+    if !caddy.enable then
+      acc
+    else
+      lib.recursiveUpdate acc {
+        ${host.system}."caddyfile-${name}" = nixos.pkgs.runCommand "caddyfile-${name}" { } ''
+          HOME=$TMPDIR ${caddy.package}/bin/caddy adapt --config ${caddy.configFile} --adapter caddyfile > /dev/null
+          touch $out
+        '';
+      }
+  ) { } config.fleet.hosts;
+
   flake.modules.nixos.edge =
     {
       config,
@@ -28,6 +46,11 @@
       };
       logFilter = ''
         fields {
+          request>headers>Authorization delete
+          request>headers>Proxy-Authorization delete
+          request>headers>Cookie delete
+          resp_headers>Set-Cookie delete
+          resp_headers>Location regexp "[?].*" ""
           request>headers>X-Emby-Token delete
           request>headers>X-Mediabrowser-Token delete
           request>headers>X-Emby-Authorization delete
@@ -44,6 +67,7 @@
             regexp "^/share/[^/]+" "/share/REDACTED"
             regexp "^/public.php/dav/files/[^/]+" "/public.php/dav/files/REDACTED"
             regexp "^/index.php/apps/files_sharing/publicpreview/[^/]+" "/index.php/apps/files_sharing/publicpreview/REDACTED"
+            regexp "^/apps/files_sharing/publicpreview/[^/]+" "/apps/files_sharing/publicpreview/REDACTED"
           }
         }
       '';
