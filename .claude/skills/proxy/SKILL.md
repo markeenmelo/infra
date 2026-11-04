@@ -27,9 +27,11 @@ Publishing an app adds its subdomain and bastion port to `apps`; the DNS record 
 grant are separate changes. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
 credential headers and no share tokens in paths, since the published apps carry credentials in
-all three, and Caddy rolls the file itself. The `caddyfile-HOST` check validates the generated
-Caddyfile with the pinned Caddy, which also compiles every regex, so a bad matcher or filter fails
-CI instead of the edge. racknerd resolves over
+all three (the URI filters apply in sequence, so the query strip and every path redaction all
+run), and Caddy rolls the file itself. The `caddyfile-HOST` check validates the generated
+Caddyfile with the pinned Caddy, which also compiles every regex, and asserts on the adapted
+config that identity headers are stripped before any proxying route, so a bad matcher, filter
+or directive order fails CI instead of the edge. racknerd resolves over
 DNS-over-TLS on its own ([networking.nix](../../../modules/hosts/racknerd/networking.nix)) and
 servers ignore tailnet DNS ([server.nix](../../../modules/server.nix)), so the DNS-01 check never
 depends on the tailnet or bastion.

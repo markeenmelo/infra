@@ -14,6 +14,11 @@
           sed "s|${caddy.logDir}|$TMPDIR|g" ${caddy.configFile} > Caddyfile
           HOME=$TMPDIR XDG_DATA_HOME=$TMPDIR XDG_CONFIG_HOME=$TMPDIR \
             ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
+          ${caddy.package}/bin/caddy adapt --config Caddyfile --adapter caddyfile > config.json
+          ${lib.getExe nixos.pkgs.jq} -e '
+            [ .. | objects | select(has("handler"))
+              | if .handler == "headers" and ((.request.delete // []) | index("Remote-User")) != null then "strip" else .handler end ]
+            | (index("strip") != null) and index("strip") < index("reverse_proxy")' config.json > /dev/null
           touch $out
         '';
       }
@@ -36,7 +41,9 @@
         auth.port = 9091;
         cloud = {
           port = 8081;
-          denied = [ "path /settings/admin* /index.php/settings/admin*" ];
+          denied = [
+            "path /settings/admin* /settings/users* /settings/apps* /index.php/settings/admin* /index.php/settings/users* /index.php/settings/apps* /ocs/v1.php/cloud/users* /ocs/v1.php/cloud/groups* /ocs/v1.php/cloud/apps* /ocs/v2.php/cloud/users* /ocs/v2.php/cloud/groups* /ocs/v2.php/cloud/apps*"
+          ];
         };
         home = {
           port = 8123;
@@ -44,7 +51,9 @@
         };
         photos = {
           port = 2283;
-          denied = [ "path /api/admin/* /api/system-config*" ];
+          denied = [
+            "path /api/admin/* /api/auth/admin-sign-up /api/system-config* /api/system-metadata* /api/jobs* /api/queues* /api/libraries*"
+          ];
         };
         jellyfin.port = 8096;
         jellyfin.denied = [
@@ -59,7 +68,7 @@
           request>headers>Proxy-Authorization delete
           request>headers>Cookie delete
           resp_headers>Set-Cookie delete
-          resp_headers>Location regexp "[?].*" ""
+          resp_headers>Location delete
           request>headers>X-Emby-Token delete
           request>headers>X-Mediabrowser-Token delete
           request>headers>X-Emby-Authorization delete
@@ -174,6 +183,7 @@
             request_header -X-Forwarded-Email
             request_header -X-Forwarded-Preferred-Username
             request_header -X-Forwarded-Access-Token
+            request_header -X-Real-IP
             ${lib.concatStrings (lib.mapAttrsToList site apps)}
             handle {
               abort
