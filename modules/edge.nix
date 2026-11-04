@@ -21,7 +21,7 @@ in
       nixos = config.flake.nixosConfigurations.${name};
       inherit (nixos.config.services) caddy;
     in
-    if !caddy.enable then
+    if host.darwin != null || !caddy.enable then
       acc
     else
       lib.recursiveUpdate acc {
