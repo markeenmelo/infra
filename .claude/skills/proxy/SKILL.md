@@ -21,6 +21,8 @@ admin paths (Jellyfin's, including password changes, Home Assistant's onboarding
 Nextcloud's admin areas) are denied at the edge: administering those apps and onboarding a fresh
 Home Assistant happen over the LAN or the tailnet, never through the public hostname. A native login still works there, so rate limiting and bans come from CrowdSec.
 
+Requests from outside `countries` get a 403 before any app sees them; the lookup uses the DB-IP
+country database packaged in nixpkgs, so it updates with the flake lock and needs no account.
 Publishing an app adds its subdomain and bastion port to `apps`; the DNS record and the tailnet
 grant are separate changes. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no

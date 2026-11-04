@@ -30,6 +30,7 @@
       domain = "marcosmelo.dev";
       # shortcut: bastion's tailnet address and the app ports are literals, read them from fleet facts when bastion lands
       bastion = "100.105.158.109";
+      countries = [ "CA" ];
       jellyfin = "(?i)^/(emby/|mediabrowser/)?";
       apps = {
         auth.port = 9091;
@@ -88,6 +89,7 @@
         ''
           @${name} host ${name}.${domain}
           handle @${name} {
+            respond @abroad 403
         ''
         + lib.concatImapStrings (i: matcher: ''
           @${name}-denied-${toString i} {
@@ -116,8 +118,11 @@
       services.caddy = {
         enable = true;
         package = pkgs.caddy.withPlugins {
-          plugins = [ "github.com/caddy-dns/porkbun@v0.3.1" ];
-          hash = "sha256-3XnnBdOW8A+LmmcqR94v1ZkyMoMB3EfBWFv0uBzz4cA=";
+          plugins = [
+            "github.com/caddy-dns/porkbun@v0.3.1"
+            "github.com/porech/caddy-maxmind-geolocation@v1.0.3"
+          ];
+          hash = "sha256-urSgwaKHIncei86b1G8SM3iViwTei98aX+XysbZ/2UE=";
         };
         environmentFile = config.sops.templates.caddy-env.path;
         globalConfig = "grace_period 10s";
@@ -151,6 +156,14 @@
               Referrer-Policy no-referrer
               X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
               -Server
+            }
+            @abroad {
+              not {
+                maxmind_geolocation {
+                  db_path ${pkgs.dbip-country-lite.mmdb}
+                  allow_countries ${lib.concatStringsSep " " countries}
+                }
+              }
             }
             request_header -Remote-User
             request_header -Remote-Groups
