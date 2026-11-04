@@ -6,8 +6,10 @@ description: "deploy-rs: how a host's committed configuration is activated over 
 # Deploy
 
 [deploy.nix](../../../modules/deploy.nix) turns every `fleet.hosts` entry into a deploy-rs node
-reached by its MagicDNS name as the `deploy` account, which may only run the activation script
-and remove the rollback canary through sudo. Magic rollback and auto rollback stay on: a profile
+reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
+Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
+`activate-rs` and remove the rollback canary. Its key is therefore the operator's root key on
+every host, and CI gets its own. Magic rollback and auto rollback stay on: a profile
 that breaks the SSH path reverts after the confirm timeout. `nix flake check` carries the
 deploy-rs schema and activation checks per system.
 

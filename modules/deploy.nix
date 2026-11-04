@@ -65,11 +65,11 @@ in
   };
 
   perSystem =
-    { lib, pkgs, ... }:
+    { lib, inputs', ... }:
     {
       apps.deploy = {
         meta.description = "deploy .#HOST: activate the host's committed configuration over the tailnet with magic rollback";
-        program = lib.getExe pkgs.deploy-rs;
+        program = lib.getExe inputs'.deploy-rs.packages.deploy-rs;
       };
     };
 }
