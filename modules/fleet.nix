@@ -5,8 +5,9 @@
   ...
 }:
 let
-  nixosHosts = lib.filterAttrs (_: host: host.darwin == null) config.fleet.hosts;
-  darwinHosts = lib.filterAttrs (_: host: host.darwin != null) config.fleet.hosts;
+  isDarwin = host: lib.hasSuffix "-darwin" host.system;
+  nixosHosts = lib.filterAttrs (_: host: !isDarwin host) config.fleet.hosts;
+  darwinHosts = lib.filterAttrs (_: host: isDarwin host) config.fleet.hosts;
 in
 {
   options.fleet.hosts = lib.mkOption {
@@ -30,11 +31,9 @@ in
             description = "Host facts, the named `flake.modules.nixos` values it imports, and host-only contributions from concerns.";
           };
           darwin = lib.mkOption {
-            type = lib.types.nullOr (
-              lib.types.deferredModuleWith { staticModules = [ { _class = "darwin"; } ]; }
-            );
-            default = null;
-            description = "nix-darwin counterpart of `module`; setting it makes the host a darwinConfiguration instead of a nixosConfiguration.";
+            type = lib.types.deferredModuleWith { staticModules = [ { _class = "darwin"; } ]; };
+            default = { };
+            description = "nix-darwin counterpart of `module`, used when `system` is a darwin one.";
           };
         };
       }

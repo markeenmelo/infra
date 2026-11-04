@@ -5,7 +5,7 @@
   ...
 }:
 let
-  hosts = lib.filterAttrs (_: host: host.darwin == null) config.fleet.hosts;
+  hosts = lib.filterAttrs (_: host: !lib.hasSuffix "-darwin" host.system) config.fleet.hosts;
   systems = lib.unique (lib.mapAttrsToList (_: host: host.system) hosts);
 in
 {
