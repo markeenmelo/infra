@@ -73,7 +73,7 @@ in
       acc: name: host:
       lib.recursiveUpdate acc {
         ${host.system} =
-          if host.darwin == null then
+          if !isDarwin host then
             let
               build = config.flake.nixosConfigurations.${name}.config.system.build;
             in
