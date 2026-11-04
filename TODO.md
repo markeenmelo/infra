@@ -23,8 +23,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 
 - [ ] Install with nixos-anywhere, `--extra-files` carrying `/persist/etc/ssh` and
       `/persist/var/lib/tailscale`; rotate the auth key first. Manual approval (access change).
-- [ ] Edge proxy: Caddy with Porkbun DNS-01 forwarding to bastion over the tailnet; Porkbun
-      OpenTofu project and `pk1_`/`sk1_` pattern in the secrets scan land here.
+- [x] Edge proxy: Caddy with Porkbun DNS-01 forwarding to bastion over the tailnet.
+- [ ] Porkbun OpenTofu project (records already live from the old project).
 - [ ] CrowdSec with the firewall bouncer.
 
 ## bastion
