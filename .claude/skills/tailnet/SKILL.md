@@ -12,12 +12,18 @@ and deploys. SSH is admitted only on the tailnet interface ([ssh.nix](../../../m
 
 ## Auth key
 
-Admin console → Settings → Keys → Generate auth key: single use, not ephemeral, pre-authorized,
-tag `tag:server`, longest expiry. The key is consumed on the host's first boot and ignored once
-the node is logged in, so it only matters at install time: an expired key in Git blocks nothing
-until a reinstall, when the operator rotates it. The tailnet policy must own `tag:server` in
-`tagOwners` and grant `tag:admin-client` to `tag:server:22`; the OpenTofu project owns that
-policy once it lands here.
+The [OpenTofu project](../opentofu/SKILL.md) mints one pre-authorized, tagged, single-use key per
+host and recreates it on apply once expired. The operator moves it into the host file, never
+through a terminal that echoes it:
+
+```sh
+nix run .#tofu -- tailscale output -json enrollment_keys | jq .racknerd |
+  sops set --value-stdin secrets/hosts/racknerd.yaml '["tailscale-auth-key"]'
+```
+
+The key is consumed on the host's first boot and ignored once the node is logged in, so it only
+matters at install time: an expired key in Git blocks nothing until a reinstall, when the operator
+applies and copies again.
 
 ## Reinstall
 

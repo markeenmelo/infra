@@ -5,10 +5,12 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 
 ## Fleet plumbing
 
-- [ ] `opentofu`: tailnet policy as HCL (tags, SSH grant, service grants), OAuth client and
-      state passphrase carried over from `infra-old/secrets/tailscale/operator.yaml`, `tofu`
+- [x] `opentofu`: tailnet policy as HCL, OAuth client and state passphrase carried over, `tofu`
       flake app, encrypted state, `opentofu` skill. Porkbun and UniFi projects follow in their
       own PRs when their consumers land.
+- [ ] Tailnet policy: move the literal addresses, services and hosts to fleet facts when bastion
+      lands; drop the old fleet's grants, services and proton exit nodes as each host migrates.
+      Revisit `group:members` reaching `bastion:443` when the LAN proxy and Authelia land.
 - [ ] `deploy`: deploy-rs with magic rollback over the tailnet, `deploy` flake app, `deploy` skill.
 - [ ] `ci-deploy`: deploy on merge from GitHub-hosted runners (Tailscale GitHub Action + deploy-rs),
       protected environment with manual approval gated by a path filter on access-changing files.
@@ -39,7 +41,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 
 ## Laptops
 
-- [ ] `thinkpad`: host, desktop profile, Stylix, Home Manager, power, backups.
+- [ ] `thinkpad`: host, desktop profile, Stylix, Home Manager, power, backups; persist and back up
+      `~/.local/state/infra` (OpenTofu state).
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] `mac`: nix-darwin + Home Manager, Tailscale, shared operator config.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
