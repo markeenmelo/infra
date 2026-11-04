@@ -64,10 +64,7 @@
           hash = "sha256-3XnnBdOW8A+LmmcqR94v1ZkyMoMB3EfBWFv0uBzz4cA=";
         };
         environmentFile = config.sops.templates.caddy-env.path;
-        globalConfig = ''
-          admin off
-          grace_period 10s
-        '';
+        globalConfig = "grace_period 10s";
         virtualHosts."*.${domain}" = {
           logFormat = ''
             output file ${config.services.caddy.logDir}/access.log
@@ -103,7 +100,10 @@
         after = [ "tailscaled.service" ];
       };
       networking.firewall = {
-        allowedTCPPorts = [ 443 ];
+        allowedTCPPorts = [
+          80
+          443
+        ];
         allowedUDPPorts = [ 443 ];
       };
       preservation.preserveAt."/persist".directories = [
