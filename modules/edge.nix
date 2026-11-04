@@ -26,6 +26,23 @@
           "method DELETE POST\n  path_regexp ${jellyfin}Items(/[^/]+(/Images(/.*)?)?)?/?$"
         ];
       };
+      logFilter = ''
+        fields {
+          request>headers>X-Emby-Token delete
+          request>headers>X-Mediabrowser-Token delete
+          request>headers>X-Emby-Authorization delete
+          request>headers>X-Api-Key delete
+          request>headers>X-Immich-User-Token delete
+          request>headers>X-Immich-Session-Token delete
+          request>headers>X-Immich-Share-Key delete
+          request>headers>Referer delete
+          request>uri multi_regexp {
+            regexp "[?].*" ""
+            regexp "^/s/[^/]+" "/s/REDACTED"
+            regexp "^/share/[^/]+" "/share/REDACTED"
+          }
+        }
+      '';
       site =
         name: port:
         ''
@@ -65,6 +82,13 @@
         };
         environmentFile = config.sops.templates.caddy-env.path;
         globalConfig = "grace_period 10s";
+        logFormat = ''
+          level ERROR
+          format filter {
+            wrap console
+            ${logFilter}
+          }
+        '';
         virtualHosts."*.${domain}" = {
           logFormat = ''
             output file ${config.services.caddy.logDir}/access.log {
@@ -72,17 +96,7 @@
             }
             format filter {
               wrap json
-              fields {
-                request>headers>X-Emby-Token delete
-                request>headers>X-Mediabrowser-Token delete
-                request>headers>X-Emby-Authorization delete
-                request>headers>X-Api-Key delete
-                request>headers>X-Immich-User-Token delete
-                request>headers>X-Immich-Session-Token delete
-                request>headers>X-Immich-Share-Key delete
-                request>headers>Referer delete
-                request>uri regexp "[?].*" ""
-              }
+              ${logFilter}
             }
           '';
           extraConfig = ''
@@ -93,7 +107,7 @@
               }
             }
             header {
-              Strict-Transport-Security "max-age=31536000; includeSubDomains"
+              Strict-Transport-Security "max-age=31536000"
               X-Content-Type-Options nosniff
               Referrer-Policy no-referrer
               X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
@@ -113,6 +127,10 @@
       systemd.services.caddy = {
         wants = [ "tailscaled.service" ];
         after = [ "tailscaled.service" ];
+        serviceConfig = {
+          StateDirectoryMode = "0700";
+          LogsDirectoryMode = "0750";
+        };
       };
       networking.firewall = {
         allowedTCPPorts = [

@@ -12,9 +12,10 @@ hostname forwarding to a bastion port over the tailnet. Anything else on the wil
 The tailnet policy must let racknerd reach each backend port ([opentofu skill](../opentofu/SKILL.md)).
 
 Every forwarded request loses the `Remote-*` identity headers, so only Authelia on bastion can set
-them, and gets the security headers the old edge sent. Admin-only paths of Jellyfin and Home
-Assistant's onboarding are denied at the edge; a native login still works there, so rate limiting
-and bans come from CrowdSec.
+them, and gets the security headers the old edge sent. Jellyfin's admin paths, including password
+changes, and Home Assistant's onboarding are denied at the edge: administering those apps and
+onboarding a fresh Home Assistant happen over the LAN or the tailnet, never through the public
+hostname. A native login still works there, so rate limiting and bans come from CrowdSec.
 
 Publishing an app adds its subdomain and bastion port to `apps`; the DNS record and the tailnet
 grant are separate changes. Certificates, the ACME account and the JSON access logs CrowdSec reads live

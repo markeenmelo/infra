@@ -17,9 +17,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
       its own key on the `deploy` account, which is root-equivalent.
 - [ ] One NixOS VM test in `nix flake check` (boot, root rollback, `/persist` survives).
 - [ ] Build cache for CI and clients: bastion remote builder + Harmonia; decide what CI uses.
-      GitHub-hosted `ubuntu-24.04-arm` (4 vCPU, 16 GB) and `macos-latest` (M1, 3 vCPU, 7 GB)
-      are free on this public repo and can build aarch64-linux and aarch64-darwin closures for
-      the cache; the macOS runner's memory is the limit.
+      GitHub-hosted arm64 Linux and Apple Silicon macOS runners can build the aarch64 closures
+      for it; check the macOS runner's memory against the closures first.
 - [ ] Decide the shared password hash on racknerd (per-host `login.yaml` or no password on the edge).
 
 ## racknerd
@@ -28,7 +27,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
       `/persist/var/lib/tailscale`; rotate the auth key first. Manual approval (access change).
 - [x] Edge proxy: Caddy with Porkbun DNS-01 forwarding to bastion over the tailnet.
 - [ ] Porkbun OpenTofu project (records already live from the old project).
-- [ ] CrowdSec with the firewall bouncer.
+- [ ] CrowdSec with the firewall bouncer; its user joins the `caddy` group to read the access log.
 
 ## bastion
 
