@@ -65,6 +65,7 @@ jobs:
           GITHUB_ACTION_CONFIG__PUSH_COMMANDS: '["/review"]'
 
   claude:
+    name: claude (${{ matrix.name }})
     if: >-
       github.event.sender.type != 'Bot' &&
       ((github.event_name == 'pull_request_target' && !github.event.pull_request.draft &&
@@ -135,7 +136,7 @@ jobs:
           claude_args: >-
             --model ${{ matrix.model }}
             ${{ matrix.args }}
-            --max-turns 60
+            --max-turns 100
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*)"
             --disallowedTools "Agent,Task"
             --json-schema '{"type":"object","properties":{"summary":{"type":"string"}},"required":["summary"]}'
