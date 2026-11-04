@@ -18,7 +18,10 @@ and bans come from CrowdSec.
 
 Publishing an app adds its subdomain and bastion port to `apps`; the DNS record and the tailnet
 grant are separate changes. Certificates, the ACME account and the JSON access logs CrowdSec reads live
-in Caddy's data and log directories under `/persist`. Servers keep their own resolver
-([server.nix](../../../modules/server.nix)), so the DNS-01 check never depends on the tailnet.
+in Caddy's data and log directories under `/persist`; the log keeps no query strings and no app
+token headers, since the published apps carry credentials in both. racknerd resolves over
+DNS-over-TLS on its own ([networking.nix](../../../modules/hosts/racknerd/networking.nix)) and
+servers ignore tailnet DNS ([server.nix](../../../modules/server.nix)), so the DNS-01 check never
+depends on the tailnet or bastion.
 
 The Caddy package pins the plugin version and its hash; a plugin update changes both.
