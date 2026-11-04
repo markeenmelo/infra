@@ -5,10 +5,20 @@
     {
       imports = [ inputs.sops-nix.nixosModules.sops ];
       sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
-      assertions = lib.mapAttrsToList (name: secret: {
-        assertion = secret.mode == "0400" && secret.owner == null && secret.group == null;
-        message = "sops.secrets.${name} must keep the root-owned 0400 default; a unit reads it through LoadCredential or a *File option.";
-      }) config.sops.secrets;
+      assertions = lib.concatLists (
+        lib.mapAttrsToList (
+          kind: entries:
+          lib.mapAttrsToList (name: entry: {
+            assertion =
+              entry.mode == "0400"
+              && entry.owner == null
+              && entry.group == null
+              && entry.uid == 0
+              && entry.gid == 0;
+            message = "sops.${kind}.${name} must keep the root-owned 0400 default; a unit reads it through LoadCredential or a *File option.";
+          }) entries
+        ) { inherit (config.sops) secrets templates; }
+      );
     };
 
   perSystem =
@@ -16,10 +26,10 @@
     {
       checks.secrets = pkgs.runCommand "secrets" { } ''
         cd ${inputs.self}
-        for f in $(find secrets -type f ! -name README.md); do
+        while IFS= read -r -d "" f; do
           case $f in *.yaml) ;; *) echo "secrets/ holds only sops yaml: $f" >&2; exit 1 ;; esac
           grep -q '^sops:' "$f" && grep -q '^    mac: ENC\[' "$f" || { echo "not sops ciphertext: $f" >&2; exit 1; }
-        done
+        done < <(find secrets -type f ! -path secrets/README.md -print0)
         status=0
         ${lib.getExe pkgs.gnugrep} -rIlE \
           -e 'AGE-SECRET-KEY-1[0-9A-Z]{58}' \
