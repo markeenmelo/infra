@@ -31,10 +31,12 @@ in
             ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
           ${caddy.package}/bin/caddy adapt --config Caddyfile --adapter caddyfile > config.json
           ${lib.getExe nixos.pkgs.jq} -e --argjson expected '${builtins.toJSON identityHeaders}' '
-            [ .. | objects | select(has("handler"))
-              | if .handler == "headers" and (($expected - (.request.delete // [])) | length == 0) then "strip" else .handler end ] as $h
-            | ($h | index("strip")) as $strip
-            | $strip != null and ([ $h | indices("reverse_proxy")[] ] | length > 0 and all(. > $strip))' config.json > /dev/null
+            [ .apps.http.servers[].routes[] | .handle[]? | select(.handler == "subroute") | .routes[] ] as $site
+            | ($site | to_entries | map(select(.value | tojson | test("reverse_proxy"))) | map(.key) | min) as $proxy
+            | $proxy != null
+              and ($expected - [ $site[:$proxy][] | select(has("match") | not) | .handle[]
+                                 | select(.handler == "headers") | .request.delete // [] | .[] ]
+                   | length == 0)' config.json > /dev/null
           touch $out
         '';
       }
