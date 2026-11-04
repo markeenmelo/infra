@@ -10,7 +10,8 @@ description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, serv
 credentials from `secrets/PROJECT/operator.yaml` ([secrets skill](../secrets/SKILL.md)) and the
 state at `$XDG_STATE_HOME/infra/PROJECT/terraform.tfstate`, encrypted with
 `TF_VAR_state_passphrase` from the same file. State is never in Git; a lost state is recovery,
-not a routine apply. The `opentofu` check only runs `tofu fmt`; validation needs the providers.
+not a routine apply, and a moved `XDG_STATE_HOME` is a changed backend that needs an approved
+`init -migrate-state`. The `opentofu` check only runs `tofu fmt`; validation needs the providers.
 
 ```sh
 nix run .#tofu -- tailscale providers lock -platform=linux_amd64 -platform=darwin_arm64  # provider change
