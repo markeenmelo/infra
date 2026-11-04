@@ -28,7 +28,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
       Lands before the install, so the portal is never public without bans.
 - [ ] Install with nixos-anywhere, `--extra-files` carrying `/persist/etc/ssh` and
       `/persist/var/lib/tailscale`; rotate the auth key first. Manual approval (access change).
-- [ ] Porkbun OpenTofu project (records already live from the old project).
+- [ ] Porkbun OpenTofu project.
 
 ## bastion
 

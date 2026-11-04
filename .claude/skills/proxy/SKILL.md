@@ -15,18 +15,19 @@ bastion's LAN proxy serves. Its portal is still published, because the apps' sin
 redirects there from wherever the user is.
 The tailnet policy must let racknerd reach each backend port ([opentofu skill](../opentofu/SKILL.md)).
 
-Every forwarded request loses the `Remote-*` identity headers, so only Authelia on bastion can set
-them, and gets the security headers the old edge sent. Jellyfin's admin paths, including password
-changes, and Home Assistant's onboarding are denied at the edge: administering those apps and
-onboarding a fresh Home Assistant happen over the LAN or the tailnet, never through the public
-hostname. A native login still works there, so rate limiting and bans come from CrowdSec.
+Every forwarded request loses the `Remote-*` and `X-Forwarded-*` identity headers, so only
+Authelia on bastion can set them, and gets the security headers the old edge sent. Each app's
+admin paths (Jellyfin's, including password changes, Home Assistant's onboarding, Immich's and
+Nextcloud's admin areas) are denied at the edge: administering those apps and onboarding a fresh
+Home Assistant happen over the LAN or the tailnet, never through the public hostname. A native login still works there, so rate limiting and bans come from CrowdSec.
 
 Publishing an app adds its subdomain and bastion port to `apps`; the DNS record and the tailnet
 grant are separate changes. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
 credential headers and no share tokens in paths, since the published apps carry credentials in
-all three, and Caddy rolls the file itself. The `caddyfile-HOST` check adapts the generated
-Caddyfile with the pinned Caddy, so a bad matcher or filter fails CI instead of the edge. racknerd resolves over
+all three, and Caddy rolls the file itself. The `caddyfile-HOST` check validates the generated
+Caddyfile with the pinned Caddy, which also compiles every regex, so a bad matcher or filter fails
+CI instead of the edge. racknerd resolves over
 DNS-over-TLS on its own ([networking.nix](../../../modules/hosts/racknerd/networking.nix)) and
 servers ignore tailnet DNS ([server.nix](../../../modules/server.nix)), so the DNS-01 check never
 depends on the tailnet or bastion.

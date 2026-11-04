@@ -11,7 +11,9 @@
     else
       lib.recursiveUpdate acc {
         ${host.system}."caddyfile-${name}" = nixos.pkgs.runCommand "caddyfile-${name}" { } ''
-          HOME=$TMPDIR ${caddy.package}/bin/caddy adapt --config ${caddy.configFile} --adapter caddyfile > /dev/null
+          sed "s|${caddy.logDir}|$TMPDIR|g" ${caddy.configFile} > Caddyfile
+          HOME=$TMPDIR XDG_DATA_HOME=$TMPDIR XDG_CONFIG_HOME=$TMPDIR \
+            ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
           touch $out
         '';
       }
@@ -28,17 +30,23 @@
       domain = "marcosmelo.dev";
       # shortcut: bastion's tailnet address and the app ports are literals, read them from fleet facts when bastion lands
       bastion = "100.105.158.109";
-      apps = {
-        auth = 9091;
-        cloud = 8081;
-        home = 8123;
-        jellyfin = 8096;
-        photos = 2283;
-      };
       jellyfin = "(?i)^/(emby/|mediabrowser/)?";
-      denied = {
-        home = [ "path /api/onboarding* /onboarding.html*" ];
-        jellyfin = [
+      apps = {
+        auth.port = 9091;
+        cloud = {
+          port = 8081;
+          denied = [ "path /settings/admin* /index.php/settings/admin*" ];
+        };
+        home = {
+          port = 8123;
+          denied = [ "path /api/onboarding* /onboarding.html*" ];
+        };
+        photos = {
+          port = 2283;
+          denied = [ "path /api/admin/* /api/system-config*" ];
+        };
+        jellyfin.port = 8096;
+        jellyfin.denied = [
           "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|Policy|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
           "method DELETE\n  path_regexp ${jellyfin}Users/[^/]+/?$"
           "method DELETE POST\n  path_regexp ${jellyfin}Items(/[^/]+(/Images(/.*)?)?)?/?$"
@@ -72,7 +80,11 @@
         }
       '';
       site =
-        name: port:
+        name:
+        {
+          port,
+          denied ? [ ],
+        }:
         ''
           @${name} host ${name}.${domain}
           handle @${name} {
@@ -82,23 +94,16 @@
             ${matcher}
           }
           respond @${name}-denied-${toString i} 403
-        '') (denied.${name} or [ ])
+        '') denied
         + ''
             reverse_proxy ${bastion}:${toString port}
           }
         '';
     in
     {
-      assertions = [
-        {
-          assertion = lib.all (name: apps ? ${name}) (lib.attrNames denied);
-          message = "edge: every key of `denied` must name an app, or its paths go unblocked";
-        }
-      ];
       sops = {
         secrets = lib.genAttrs [ "PORKBUN_API_KEY" "PORKBUN_SECRET_KEY" ] (key: {
           sopsFile = ../secrets/porkbun/api.yaml;
-          restartUnits = [ "caddy.service" ];
         });
         templates.caddy-env = {
           content = ''
@@ -151,6 +156,11 @@
             request_header -Remote-Groups
             request_header -Remote-Email
             request_header -Remote-Name
+            request_header -X-Forwarded-User
+            request_header -X-Forwarded-Groups
+            request_header -X-Forwarded-Email
+            request_header -X-Forwarded-Preferred-Username
+            request_header -X-Forwarded-Access-Token
             ${lib.concatStrings (lib.mapAttrsToList site apps)}
             handle {
               abort
@@ -159,8 +169,6 @@
         };
       };
       systemd.services.caddy = {
-        wants = [ "tailscaled-autoconnect.service" ];
-        after = [ "tailscaled-autoconnect.service" ];
         serviceConfig = {
           StateDirectoryMode = "0700";
           LogsDirectoryMode = "0750";
