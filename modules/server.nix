@@ -14,6 +14,10 @@
       services = {
         logrotate.enable = true;
         tailscale.extraSetFlags = [ "--accept-dns=false" ];
+        resolved.settings.Resolve = {
+          DNS = [ "194.242.2.2#dns.mullvad.net" ];
+          DNSOverTLS = "yes";
+        };
       };
     };
 }
