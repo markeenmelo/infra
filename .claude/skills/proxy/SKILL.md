@@ -24,6 +24,8 @@ over the LAN or the tailnet, never through the public hostname. A native login s
 
 Requests from outside `countries` get a 403 before any app sees them; the lookup uses the DB-IP
 country database packaged in nixpkgs, so it updates with the flake lock and needs no account.
+Tailnet clients never need the edge, even behind a foreign exit node: the split DNS sends the
+domain to bastion directly.
 Publishing an app adds its subdomain and bastion port to `apps`; the DNS record and the tailnet
 grant are separate changes. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
