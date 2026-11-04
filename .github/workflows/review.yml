@@ -81,7 +81,8 @@ jobs:
             args: --effort medium
             secret: CLAUDE_CODE_OAUTH_TOKEN
           - name: kimi
-            model: k3.1-pro
+            model: k3
+            args: --effort low
             base_url: https://api.kimi.ai/coding
             secret: KIMI_API_KEY
           - name: minimax
