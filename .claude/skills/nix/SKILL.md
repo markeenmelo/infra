@@ -37,6 +37,21 @@ Rules:
 - Ports, mounts, persisted paths and backup paths are declared beside the owning service.
 - No helper library until a third copy of the code exists.
 
+## New service checklist
+
+Answer each before the module is done; a reviewer will ask otherwise.
+
+- State and logs: which paths it writes, which of them go under `/persist` and with what
+  owner and mode, which are deliberately lost on reboot.
+- Dependencies: what it needs at boot and at runtime (network, DNS, tailnet, another host, a
+  secret), ordered with `after`/`wants`, and what happens when each is down. No single upstream
+  for anything a certificate or a deploy needs.
+- Secrets: how each reaches the unit (`LoadCredential`, `*File`, environment file), that it
+  restarts the reader, and where it could leak (logs, query strings, argv, store).
+- Reloads: how the upstream NixOS module applies a config change (reload or restart) and that
+  nothing in the config disables it.
+- Exposure: ports opened, on which interface, and what admits or denies traffic.
+
 ## Nix rules
 
 **Arguments** — request only what you use; inner modules take their own `lib`/`pkgs`. Every host

@@ -52,7 +52,12 @@ Permissions apply within the requested task. Continue independent safe work whil
 ## Method
 
 - Verify upstream claims (nixpkgs options at the pinned revision, flake-parts, import-tree, a CLI)
-  against the nixos MCP tool, `/nix/store` sources or upstream docs, not memory.
+  against the nixos MCP tool, `/nix/store` sources or upstream docs, not memory. Before setting
+  an option, read the module that owns it: its defaults and what else it wires (reloads, users,
+  directories, firewall).
+- Before writing a module, list what `infra-old/` did for the same concern and why; keep each
+  behaviour or name the reason it goes. Then walk the `nix` skill's new-service checklist.
+- Run every shell snippet handed to the operator, or its closest local equivalent, first.
 - Edit, run the narrowest check that can fail on the change, fix, repeat; then `nix flake check`
   naming every affected x86_64 host so its toplevel builds. `asahi` and `mac` only evaluate in CI
   and build on themselves.

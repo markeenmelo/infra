@@ -40,6 +40,7 @@
           -e 'github_pat_[A-Za-z0-9_]{22,}' \
           -e 'tskey-[a-z]+-[A-Za-z0-9]+-[A-Za-z0-9]+' \
           -e 'sk-(ant|proj)-[A-Za-z0-9_-]{20,}' \
+          -e '[ps]k1_[A-Za-z0-9]{32,}' \
           -e 'eyJ[A-Za-z0-9_-]{8,}\.eyJ' \
           -e '\$(y|7|6|5|2[abxy]|argon2(id|i|d))\$[./A-Za-z0-9+=,$-]{20,}' \
           . || status=$?

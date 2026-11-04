@@ -17,21 +17,26 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
       its own key on the `deploy` account, which is root-equivalent.
 - [ ] One NixOS VM test in `nix flake check` (boot, root rollback, `/persist` survives).
 - [ ] Build cache for CI and clients: bastion remote builder + Harmonia; decide what CI uses.
+      GitHub-hosted arm64 Linux and Apple Silicon macOS runners can build the aarch64 closures
+      for it; check the macOS runner's memory against the closures first.
 - [ ] Decide the shared password hash on racknerd (per-host `login.yaml` or no password on the edge).
 
 ## racknerd
 
+- [x] Edge proxy: Caddy with Porkbun DNS-01 forwarding to bastion over the tailnet.
+- [ ] CrowdSec with the firewall bouncer; its user joins the `caddy` group to read the access log.
+      Lands before the install, so the portal is never public without bans.
 - [ ] Install with nixos-anywhere, `--extra-files` carrying `/persist/etc/ssh` and
       `/persist/var/lib/tailscale`; rotate the auth key first. Manual approval (access change).
-- [ ] Edge proxy: Caddy with Porkbun DNS-01 forwarding to bastion over the tailnet; Porkbun
-      OpenTofu project and `pk1_`/`sk1_` pattern in the secrets scan land here.
-- [ ] CrowdSec with the firewall bouncer.
+- [ ] Porkbun OpenTofu project.
 
 ## bastion
 
 - [ ] Host: hardware, disko (OS disk only), data pools as declared mounts, networking, UPS,
       power, LEDs (port only what the hardware needs).
-- [ ] LAN proxy (Caddy origin) and Authelia; LLDAP only if Authelia needs it.
+- [ ] LAN proxy (Caddy origin) and Authelia; LLDAP only if Authelia needs it. Each service
+      module declares its public route in a `fleet.web.apps` NixOS option; the edge, the LAN
+      proxy and the Porkbun records read it from the hub's configuration and the edge literals go.
 - [ ] Apps: decide which of the old set stay (Nextcloud stays): Immich, Home Assistant +
       Mosquitto, Frigate, ntfy, SparkyFitness, OpenGym, nixflix (Jellyfin + *arr + downloaders +
       VPN confinement), PostgreSQL shared instance.
