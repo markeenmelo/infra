@@ -6,7 +6,7 @@ to port, never copy code or docs from it. Load the skill whose description owns 
 
 | Host | System | Role | Builds on |
 |---|---|---|---|
-| `bastion` | x86_64-linux | Home server: LAN proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, CI runner | itself |
+| `bastion` | x86_64-linux | Home server: LAN proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache | itself |
 | `racknerd` | x86_64-linux | Public HTTPS edge (VPS), forwards to bastion over the tailnet | bastion |
 | `thinkpad` | x86_64-linux | Operator laptop | bastion |
 | `asahi` | aarch64-linux | Apple Silicon laptop (dual boot with `mac`) | itself |
