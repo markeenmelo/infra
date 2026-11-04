@@ -33,7 +33,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 
 - [ ] Host: hardware, disko (OS disk only), data pools as declared mounts, networking, UPS,
       power, LEDs (port only what the hardware needs).
-- [ ] LAN proxy (Caddy origin) and Authelia; LLDAP only if Authelia needs it.
+- [ ] LAN proxy (Caddy origin) and Authelia; LLDAP only if Authelia needs it. Each service
+      module declares its public route in a `fleet.web.apps` NixOS option; the edge, the LAN
+      proxy and the Porkbun records read it from the hub's configuration and the edge literals go.
 - [ ] Apps: decide which of the old set stay (Nextcloud stays): Immich, Home Assistant +
       Mosquitto, Frigate, ntfy, SparkyFitness, OpenGym, nixflix (Jellyfin + *arr + downloaders +
       VPN confinement), PostgreSQL shared instance.
