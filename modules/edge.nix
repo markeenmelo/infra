@@ -21,7 +21,7 @@
       denied = {
         home = [ "path /api/onboarding* /onboarding.html*" ];
         jellyfin = [
-          "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
+          "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|Policy|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
           "method DELETE\n  path_regexp ${jellyfin}Users/[^/]+/?$"
           "method DELETE POST\n  path_regexp ${jellyfin}Items(/[^/]+(/Images(/.*)?)?)?/?$"
         ];
@@ -38,6 +38,7 @@
           request>headers>Referer delete
           request>uri multi_regexp {
             regexp "[?].*" ""
+            regexp "^/index.php/s/[^/]+" "/index.php/s/REDACTED"
             regexp "^/s/[^/]+" "/s/REDACTED"
             regexp "^/share/[^/]+" "/share/REDACTED"
           }
@@ -125,8 +126,8 @@
         };
       };
       systemd.services.caddy = {
-        wants = [ "tailscaled.service" ];
-        after = [ "tailscaled.service" ];
+        wants = [ "tailscaled-autoconnect.service" ];
+        after = [ "tailscaled-autoconnect.service" ];
         serviceConfig = {
           StateDirectoryMode = "0700";
           LogsDirectoryMode = "0750";

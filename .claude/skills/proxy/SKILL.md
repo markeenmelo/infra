@@ -8,7 +8,10 @@ description: "The public edge on racknerd: Caddy with a wildcard certificate by 
 [edge.nix](../../../modules/edge.nix) is racknerd's whole public surface: Caddy on 443, with 80
 only redirecting there, one wildcard certificate for the domain obtained through Porkbun DNS-01 with the keys in
 `secrets/porkbun/api.yaml` ([secrets skill](../secrets/SKILL.md)), and one `handle` per published
-hostname forwarding to a bastion port over the tailnet. Anything else on the wildcard is aborted.
+hostname forwarding to a bastion port over the tailnet. Anything else on the wildcard is aborted
+without a response, so scanners learn nothing. The published apps authenticate natively, since
+their mobile clients cannot pass a forward-auth portal; Authelia guards the admin apps that only
+bastion's LAN proxy serves.
 The tailnet policy must let racknerd reach each backend port ([opentofu skill](../opentofu/SKILL.md)).
 
 Every forwarded request loses the `Remote-*` identity headers, so only Authelia on bastion can set
@@ -25,4 +28,5 @@ DNS-over-TLS on its own ([networking.nix](../../../modules/hosts/racknerd/networ
 servers ignore tailnet DNS ([server.nix](../../../modules/server.nix)), so the DNS-01 check never
 depends on the tailnet or bastion.
 
-The Caddy package pins the plugin version and its hash; a plugin update changes both.
+The Caddy package pins the plugin version and a hash that covers the Go module tree of both
+Caddy and the plugin, so a nixpkgs bump that moves Caddy changes it as much as a plugin update.
