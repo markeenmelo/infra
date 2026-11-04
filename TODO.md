@@ -17,6 +17,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
       its own key on the `deploy` account, which is root-equivalent.
 - [ ] One NixOS VM test in `nix flake check` (boot, root rollback, `/persist` survives).
 - [ ] Build cache for CI and clients: bastion remote builder + Harmonia; decide what CI uses.
+      GitHub-hosted `ubuntu-24.04-arm` (4 vCPU, 16 GB) and `macos-latest` (M1, 3 vCPU, 7 GB)
+      are free on this public repo and can build aarch64-linux and aarch64-darwin closures for
+      the cache; the macOS runner's memory is the limit.
 - [ ] Decide the shared password hash on racknerd (per-host `login.yaml` or no password on the edge).
 
 ## racknerd

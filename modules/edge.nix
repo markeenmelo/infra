@@ -19,7 +19,7 @@
       };
       jellyfin = "(?i)^/(emby/|mediabrowser/)?";
       denied = {
-        home = [ "path /api/onboarding*" ];
+        home = [ "path /api/onboarding* /onboarding.html*" ];
         jellyfin = [
           "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
           "method DELETE\n  path_regexp ${jellyfin}Users/[^/]+/?$"
@@ -80,6 +80,7 @@
                 request>headers>X-Immich-User-Token delete
                 request>headers>X-Immich-Session-Token delete
                 request>headers>X-Immich-Share-Key delete
+                request>headers>Referer delete
                 request>uri regexp "[?].*" ""
               }
             }
