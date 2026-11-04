@@ -21,7 +21,7 @@
       denied = {
         home = [ "path /api/onboarding*" ];
         jellyfin = [
-          "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/Updated|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
+          "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
           "method DELETE\n  path_regexp ${jellyfin}Users/[^/]+/?$"
           "method DELETE POST\n  path_regexp ${jellyfin}Items(/[^/]+(/Images(/.*)?)?)?/?$"
         ];
@@ -67,7 +67,9 @@
         globalConfig = "grace_period 10s";
         virtualHosts."*.${domain}" = {
           logFormat = ''
-            output file ${config.services.caddy.logDir}/access.log
+            output file ${config.services.caddy.logDir}/access.log {
+              mode 0640
+            }
             format filter {
               wrap json
               fields {
