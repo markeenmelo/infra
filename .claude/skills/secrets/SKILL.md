@@ -28,6 +28,7 @@ rotating every value its files held.
 | File | Recipients | Keys |
 |---|---|---|
 | `shared/login.yaml` | operator, every host | `marcos-password-hash` ([access.nix](../../../modules/access.nix)) |
+| `hosts/HOST.yaml` | operator, HOST | `tailscale-auth-key` ([tailnet skill](../tailnet/SKILL.md)) |
 
 ## Delivery
 
