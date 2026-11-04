@@ -8,6 +8,11 @@
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     import-tree.url = "github:denful/import-tree";
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    preservation.url = "github:nix-community/preservation";
   };
 
   outputs =
