@@ -23,7 +23,9 @@ in
     checks = lib.genAttrs systems (
       system:
       inputs.deploy-rs.lib.${system}.deployChecks {
-        nodes = lib.filterAttrs (name: _: config.fleet.hosts.${name}.system == system) config.flake.deploy.nodes;
+        nodes = lib.filterAttrs (
+          name: _: config.fleet.hosts.${name}.system == system
+        ) config.flake.deploy.nodes;
       }
     );
 
@@ -35,7 +37,9 @@ in
             isSystemUser = true;
             group = "deploy";
             useDefaultShell = true;
-            openssh.authorizedKeys.keys = map (key: "restrict ${key}") config.users.users.marcos.openssh.authorizedKeys.keys;
+            openssh.authorizedKeys.keys = map (
+              key: "restrict ${key}"
+            ) config.users.users.marcos.openssh.authorizedKeys.keys;
           };
           groups.deploy = { };
         };
