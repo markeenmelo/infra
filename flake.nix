@@ -32,6 +32,19 @@
         flake-compat.follows = "";
       };
     };
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    homebrew-core = {
+      url = "github:homebrew/homebrew-core";
+      flake = false;
+    };
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
+    cache-tax = {
+      url = "github:karanb192/cache-tax/v2.3.1";
+      flake = false;
+    };
   };
 
   outputs =

@@ -51,11 +51,13 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
       `~/.local/state/infra` (OpenTofu state).
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [x] `mac`: nix-darwin + Home Manager, Tailscale, shared operator config.
+- [x] `mac` apps: Homebrew casks, CLI packages, git, Claude Code.
+- [ ] `mac` shell: zsh, starship, tmux, neovim, ghostty and zed settings.
+- [ ] `mac` desktop: aerospace, sketchybar, vicinae, `system.defaults`, Stylix, minimal.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
 ## Closing out
 
-- [ ] Review ruleset: keep or drop "threads must be resolved".
 - [ ] Remaining skills as their code lands (`opentofu`, `deploy`, `proxy`, `monitoring`,
       `backups`, `desktop`, `darwin`); update `nix` skill placement table.
 - [ ] Delete `~/projects/infra-old/` (duplicate) and, when every host runs the new config,
