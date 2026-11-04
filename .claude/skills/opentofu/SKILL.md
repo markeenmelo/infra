@@ -13,15 +13,16 @@ state at `$XDG_STATE_HOME/infra/PROJECT/terraform.tfstate`, encrypted with
 not a routine apply. The `opentofu` check only runs `tofu fmt`; validation needs the providers.
 
 ```sh
-nix run .#tofu -- tailscale init                 # once per checkout, and after a provider change
+nix run .#tofu -- tailscale providers lock -platform=linux_amd64 -platform=darwin_arm64  # provider change
+nix run .#tofu -- tailscale init                 # once per checkout, and after providers lock
 nix run .#tofu -- tailscale plan                 # Claude reviews the pasted plan
 nix run .#tofu -- tailscale apply                # operator only, after approval
-nix run .#tofu -- tailscale providers lock -platform=linux_amd64 -platform=darwin_arm64
 ```
 
 Claude never runs `apply`, `import`, `state` commands or prints sensitive outputs; it prepares
 the exact command and reviews the plan ([CLAUDE.md](../../../CLAUDE.md#autonomy)). Keep resource
-addresses: rename with a `moved` block and drop it after one apply. A resource with
+addresses: rename with a `moved` block, adopt something that already exists with an `import`
+block, and drop either after one apply. A resource with
 `prevent_destroy` is removed by dropping the block, applying, then restoring it. Rotate the state
 passphrase with a `fallback` key provider carrying the old one, apply, remove it.
 

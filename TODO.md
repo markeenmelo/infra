@@ -10,6 +10,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
       own PRs when their consumers land.
 - [ ] Tailnet policy: move the literal addresses, services and hosts to fleet facts when bastion
       lands; drop the old fleet's grants, services and proton exit nodes as each host migrates.
+      Revisit `group:members` reaching `bastion:443` when the LAN proxy and Authelia land.
 - [ ] `deploy`: deploy-rs with magic rollback over the tailnet, `deploy` flake app, `deploy` skill.
 - [ ] `ci-deploy`: deploy on merge from GitHub-hosted runners (Tailscale GitHub Action + deploy-rs),
       protected environment with manual approval gated by a path filter on access-changing files.

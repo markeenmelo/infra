@@ -17,8 +17,8 @@ host and recreates it on apply once expired. The operator moves it into the host
 through a terminal that echoes it:
 
 ```sh
-sops set secrets/hosts/racknerd.yaml '["tailscale-auth-key"]' \
-  "$(nix run .#tofu -- tailscale output -json enrollment_keys | jq .racknerd)"
+nix run .#tofu -- tailscale output -json enrollment_keys | jq .racknerd |
+  sops set --value-stdin secrets/hosts/racknerd.yaml '["tailscale-auth-key"]'
 ```
 
 The key is consumed on the host's first boot and ignored once the node is logged in, so it only
