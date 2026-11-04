@@ -44,7 +44,7 @@ sops updatekeys -y secrets/shared/login.yaml  # after a .sops.yaml rule change
 ```
 
 Ciphertext edit and consumer declaration land in the same commit. The `secrets` check fails on a
-non-sops file under `secrets/` and on secret material anywhere in the tree.
+non-sops file under `secrets/`, a plaintext value inside one, and secret material anywhere in the tree.
 
 ## New host
 

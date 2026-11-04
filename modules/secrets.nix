@@ -28,7 +28,9 @@
         cd ${inputs.self}
         while IFS= read -r -d "" f; do
           case $f in *.yaml) ;; *) echo "secrets/ holds only sops yaml: $f" >&2; exit 1 ;; esac
-          grep -q '^sops:' "$f" && grep -q '^    mac: ENC\[' "$f" || { echo "not sops ciphertext: $f" >&2; exit 1; }
+          grep -q '^    mac: ENC\[' "$f" || { echo "not sops ciphertext: $f" >&2; exit 1; }
+          leaves=$(${lib.getExe pkgs.yq-go} 'del(.sops) | .. | select(tag != "!!map" and tag != "!!seq")' "$f")
+          printf '%s' "$leaves" | grep -qvE '^ENC\[' && { echo "plaintext value in $f" >&2; exit 1; }
         done < <(find secrets ! -type d ! -path secrets/README.md -print0)
         status=0
         ${lib.getExe pkgs.gnugrep} -rIlE \
