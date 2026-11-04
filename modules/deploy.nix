@@ -5,7 +5,8 @@
   ...
 }:
 let
-  systems = lib.unique (lib.mapAttrsToList (_: host: host.system) config.fleet.hosts);
+  hosts = lib.filterAttrs (_: host: !lib.hasSuffix "-darwin" host.system) config.fleet.hosts;
+  systems = lib.unique (lib.mapAttrsToList (_: host: host.system) hosts);
 in
 {
   flake = {
@@ -18,7 +19,7 @@ in
         user = "root";
         path = inputs.deploy-rs.lib.${host.system}.activate.nixos config.flake.nixosConfigurations.${name};
       };
-    }) config.fleet.hosts;
+    }) hosts;
 
     checks = lib.genAttrs systems (
       system:

@@ -50,7 +50,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 - [ ] `thinkpad`: host, desktop profile, Stylix, Home Manager, power, backups; persist and back up
       `~/.local/state/infra` (OpenTofu state).
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
-- [ ] `mac`: nix-darwin + Home Manager, Tailscale, shared operator config.
+- [x] `mac`: nix-darwin + Home Manager, Tailscale, shared operator config.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
 ## Closing out

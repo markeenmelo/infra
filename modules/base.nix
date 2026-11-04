@@ -1,28 +1,43 @@
+let
+  common = {
+    nix.settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      connect-timeout = 5;
+      fallback = true;
+    };
+    programs.nh = {
+      enable = true;
+      clean = {
+        enable = true;
+        extraArgs = "--keep 10 --keep-since 14d";
+      };
+    };
+  };
+in
 {
+  flake.modules.darwin.base = {
+    imports = [ common ];
+    nix = {
+      settings.allowed-users = [ "@admin" ];
+      optimise.automatic = true;
+    };
+  };
+
   flake.modules.nixos.base =
     { lib, ... }:
     {
+      imports = [ common ];
       nix = {
         channel.enable = false;
         settings = {
-          experimental-features = [
-            "nix-command"
-            "flakes"
-          ];
           allowed-users = [ "@wheel" ];
           auto-optimise-store = true;
-          connect-timeout = 5;
-          fallback = true;
         };
       };
       documentation.enable = false;
-      programs.nh = {
-        enable = true;
-        clean = {
-          enable = true;
-          extraArgs = "--keep 10 --keep-since 14d";
-        };
-      };
       time.timeZone = "America/Toronto";
       boot = {
         loader = {

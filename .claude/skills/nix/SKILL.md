@@ -15,7 +15,7 @@ Background: [dendritic pattern](https://github.com/mightyiam/dendritic),
 | Contribution | Owner |
 |---|---|
 | Every host / role / service | `flake.modules.nixos.base` / `server`, `desktop` / `flake.modules.nixos.SERVICE` |
-| Desktop user settings | `flake.modules.homeManager.cli` or `apps` when portable to darwin, else `homeManager.desktop` |
+| Operator user settings | `flake.modules.homeManager.base` when portable to darwin, else `homeManager.desktop` |
 | nix-darwin base / role | `flake.modules.darwin.base` / `desktop`, in the same file as the NixOS counterpart |
 | Host facts (system, addresses, keys, role flags) and imports | `modules/hosts/HOST/host.nix`, the only writer of `fleet.hosts.HOST` |
 | Hardware, disko, networking, host-only data | `modules/hosts/HOST/` |
@@ -58,8 +58,9 @@ Answer each before the module is done; a reviewer will ask otherwise.
 follows the one `nixpkgs`. No overlays unless nixpkgs forces one, no `inputs.self` pass-through,
 no mixed package sets. `with` only for capability imports.
 
-**Merging** — let the module system merge; `//` is shallow. `mkDefault` for policy a host may
-override; a non-obvious `mkForce` gets one sentence in the owning skill naming the attribute.
+**Merging** — let the module system merge; `//` is shallow and skips priorities, so config shared
+between classes or hosts is a module both import, never a `let` value spliced with `//`.
+`mkDefault` for policy a host may override; a non-obvious `mkForce` gets one sentence in the owning skill naming the attribute.
 Extend an upstream default list at its priority: `mkDefault (mkAfter …)`.
 
 **Inputs** — a new input empties transitive inputs it never uses (`inputs.X.follows = ""`).
@@ -73,6 +74,16 @@ stay outside Nix.
 one that needs only tools stays in `perSystem`. Prefer `runCommand` assertions on generated config
 over `nixosTest`; one VM test covers the root rollback and Preservation. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
+
+**Language** — `let`, never `rec`; `inherit` over repetition; conditional config through
+`mkIf`, `lib.optional`, `lib.optionals` and `lib.optionalString`, not `if` around whole attrsets.
+A value computed from another option reads `config`, never a copy. Store paths come from
+interpolating a derivation, never a literal `/nix/store` path or `builtins.currentSystem`; no
+`--impure`, `getEnv` or import-from-derivation in anything a check or app evaluates.
+
+**Options** — every declared option has a type and a description, camelCase except when it names
+a package attribute; `enum` and `submodule` over `attrs`, `anything` or `raw`, so values are
+checked and the type extends across files. No `mkEnableOption` (import = enable).
 
 **Style** — `lib.getExe`, relative paths, `enableStrictShellChecks` on units whose scripts are this
 repository's. Comments follow [CLAUDE.md](../../../CLAUDE.md).
