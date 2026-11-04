@@ -111,6 +111,9 @@ jobs:
         uses: anthropics/claude-code-action@4845bacbb38b3c4b15d948f035349786f678e068 # v1.0.267
         env:
           ANTHROPIC_BASE_URL: ${{ matrix.base_url }}
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ matrix.base_url && matrix.model || '' }}
+          ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ matrix.base_url && matrix.model || '' }}
+          ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ matrix.base_url && matrix.model || '' }}
         with:
           claude_code_oauth_token: ${{ matrix.name == 'claude' && secrets[matrix.secret] || '' }}
           anthropic_api_key: ${{ matrix.name != 'claude' && secrets[matrix.secret] || '' }}
