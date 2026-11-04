@@ -1,4 +1,19 @@
 { config, lib, ... }:
+let
+  identityHeaders = [
+    "Remote-User"
+    "Remote-Groups"
+    "Remote-Email"
+    "Remote-Name"
+    "X-Forwarded-User"
+    "X-Forwarded-Groups"
+    "X-Forwarded-Email"
+    "X-Forwarded-Preferred-Username"
+    "X-Forwarded-Access-Token"
+    "X-Real-IP"
+    "Forwarded"
+  ];
+in
 {
   flake.checks = lib.foldlAttrs (
     acc: name: host:
@@ -15,10 +30,11 @@
           HOME=$TMPDIR XDG_DATA_HOME=$TMPDIR XDG_CONFIG_HOME=$TMPDIR \
             ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
           ${caddy.package}/bin/caddy adapt --config Caddyfile --adapter caddyfile > config.json
-          ${lib.getExe nixos.pkgs.jq} -e '
+          ${lib.getExe nixos.pkgs.jq} -e --argjson expected '${builtins.toJSON identityHeaders}' '
             [ .. | objects | select(has("handler"))
-              | if .handler == "headers" and ((.request.delete // []) | index("Remote-User")) != null then "strip" else .handler end ]
-            | (index("strip") != null) and index("strip") < index("reverse_proxy")' config.json > /dev/null
+              | if .handler == "headers" and (($expected - (.request.delete // [])) | length == 0) then "strip" else .handler end ] as $h
+            | ($h | index("strip")) as $strip
+            | $strip != null and ([ $h | indices("reverse_proxy")[] ] | length > 0 and all(. > $strip))' config.json > /dev/null
           touch $out
         '';
       }
@@ -42,7 +58,7 @@
         cloud = {
           port = 8081;
           denied = [
-            "path /settings/admin* /settings/users* /settings/apps* /index.php/settings/admin* /index.php/settings/users* /index.php/settings/apps* /ocs/v1.php/cloud/users* /ocs/v1.php/cloud/groups* /ocs/v1.php/cloud/apps* /ocs/v2.php/cloud/users* /ocs/v2.php/cloud/groups* /ocs/v2.php/cloud/apps*"
+            "path /settings/admin* /settings/users* /settings/apps* /index.php/settings/admin* /index.php/settings/users* /index.php/settings/apps* /ocs/v1.php/cloud/users* /ocs/v1.php/cloud/groups* /ocs/v1.php/cloud/apps* /ocs/v2.php/cloud/users* /ocs/v2.php/cloud/groups* /ocs/v2.php/cloud/apps* /ocs/v1.php/apps/provisioning_api/api/v1/config/apps* /ocs/v2.php/apps/provisioning_api/api/v1/config/apps*"
           ];
         };
         home = {
@@ -174,16 +190,7 @@
                 }
               }
             }
-            request_header -Remote-User
-            request_header -Remote-Groups
-            request_header -Remote-Email
-            request_header -Remote-Name
-            request_header -X-Forwarded-User
-            request_header -X-Forwarded-Groups
-            request_header -X-Forwarded-Email
-            request_header -X-Forwarded-Preferred-Username
-            request_header -X-Forwarded-Access-Token
-            request_header -X-Real-IP
+            ${lib.concatMapStrings (header: "request_header -${header}\n") identityHeaders}
             ${lib.concatStrings (lib.mapAttrsToList site apps)}
             handle {
               abort
