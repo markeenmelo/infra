@@ -29,7 +29,7 @@
         while IFS= read -r -d "" f; do
           case $f in *.yaml) ;; *) echo "secrets/ holds only sops yaml: $f" >&2; exit 1 ;; esac
           grep -q '^sops:' "$f" && grep -q '^    mac: ENC\[' "$f" || { echo "not sops ciphertext: $f" >&2; exit 1; }
-        done < <(find secrets -type f ! -path secrets/README.md -print0)
+        done < <(find secrets ! -type d ! -path secrets/README.md -print0)
         status=0
         ${lib.getExe pkgs.gnugrep} -rIlE \
           -e 'AGE-SECRET-KEY-1[0-9A-Z]{58}' \
