@@ -15,9 +15,9 @@ and deploys. SSH is admitted only on the tailnet interface ([ssh.nix](../../../m
 Admin console → Settings → Keys → Generate auth key: single use, not ephemeral, pre-authorized,
 tag `tag:server`, longest expiry. The key is consumed on the host's first boot and ignored once
 the node is logged in, so it only matters at install time: an expired key in Git blocks nothing
-until a reinstall, when the operator rotates it. The tailnet policy owns `tagOwners` and the
-SSH grant (`tag:admin-client` to `tag:server:22`); until the OpenTofu project lands here, the live
-policy is the one `infra-old/opentofu/tailscale/policy.hujson` applied, which already has both.
+until a reinstall, when the operator rotates it. The tailnet policy must own `tag:server` in
+`tagOwners` and grant `tag:admin-client` to `tag:server:22`; the OpenTofu project owns that
+policy once it lands here.
 
 ## Reinstall
 
