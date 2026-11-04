@@ -1,0 +1,15 @@
+keys:
+  - &operator age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht
+  - &racknerd age1qd9jj98f3wt0x6g6j5xme6xajhk24kpnl0hasd2pe7uenxhfcypqsyhp2k
+
+creation_rules:
+  - path_regex: ^secrets/hosts/racknerd\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *racknerd
+  - path_regex: ^secrets/shared/login\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *racknerd
