@@ -68,7 +68,16 @@
         virtualHosts."*.${domain}" = {
           logFormat = ''
             output file ${config.services.caddy.logDir}/access.log
-            format json
+            format filter {
+              wrap json
+              fields {
+                request>uri query {
+                  replace api_key REDACTED
+                  replace ApiKey REDACTED
+                  replace key REDACTED
+                }
+              }
+            }
           '';
           extraConfig = ''
             tls {
