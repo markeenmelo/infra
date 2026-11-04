@@ -18,8 +18,8 @@ The mac switches itself; deploy-rs manages NixOS hosts only:
 sudo darwin-rebuild switch --flake .#mac
 ```
 
-Tailscale is nix-darwin's `tailscaled`, which needs no app or system extension; the mac keeps
-the tagged node identity it already holds. A re-enrolment uses the host's key from the
+Tailscale is nix-darwin's `tailscaled`, which needs no app or system extension; the node
+identity lives in its state directory and survives a switch. A re-enrolment uses the host's key from the
 [OpenTofu project](../opentofu/SKILL.md), `tailscale up --auth-key file:PATH` with the key
 written to a private file, since sops-nix is not wired on darwin. Touch ID answers sudo. The old
 generation's window manager, bar, launcher, theme and editor modules are reference only: the
