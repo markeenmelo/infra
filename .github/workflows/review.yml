@@ -143,5 +143,5 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
-          SUMMARY: ${{ fromJSON(steps.claude.outputs.structured_output).summary }}
+          SUMMARY: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').summary }}
           SINCE: ${{ steps.start.outputs.at }}
