@@ -5,7 +5,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 
 ## Fleet plumbing
 
-- [ ] Merge #4 (`tailscale`): resolve the one thread, merge.
 - [ ] `opentofu`: tailnet policy as HCL (tags, SSH grant, service grants), OAuth client and
       state passphrase carried over from `infra-old/secrets/tailscale/operator.yaml`, `tofu`
       flake app, encrypted state, `opentofu` skill. Porkbun and UniFi projects follow in their
