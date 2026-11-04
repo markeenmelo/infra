@@ -71,9 +71,16 @@
             format filter {
               wrap json
               fields {
+                request>headers>X-Emby-Token delete
+                request>headers>X-Mediabrowser-Token delete
+                request>headers>X-Emby-Authorization delete
+                request>headers>X-Api-Key delete
+                request>headers>X-Immich-User-Token delete
+                request>headers>X-Immich-Session-Token delete
                 request>uri query {
                   replace api_key REDACTED
                   replace ApiKey REDACTED
+                  replace authSig REDACTED
                   replace key REDACTED
                 }
               }
