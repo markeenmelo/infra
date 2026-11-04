@@ -51,14 +51,14 @@ locals {
   member_services = ["sparkyfitness", "opengym"]
   svc             = { for s in local.services : s => "svc:${s}" }
   enrollment = {
-    thinkpad  = "tag:admin-client"
-    asahi     = "tag:admin-client"
-    mac       = "tag:admin-client"
-    racknerd  = "tag:server"
-    bastion   = "tag:server"
-    proton-ca = "tag:proton-exit"
-    proton-us = "tag:proton-exit"
-    proton-br = "tag:proton-exit"
+    thinkpad  = ["tag:admin-client"]
+    asahi     = ["tag:admin-client"]
+    mac       = ["tag:admin-client"]
+    racknerd  = ["tag:server"]
+    bastion   = ["tag:server", "tag:bastion"]
+    proton-ca = ["tag:proton-exit"]
+    proton-us = ["tag:proton-exit"]
+    proton-br = ["tag:proton-exit"]
   }
   tagged = {
     bastion = { id = "nRazrRf2yE11CNTRL", tags = ["tag:server", "tag:bastion"] }
@@ -160,7 +160,7 @@ resource "tailscale_device_tags" "fleet" {
 resource "tailscale_tailnet_key" "enrollment" {
   for_each            = local.enrollment
   description         = each.key
-  tags                = [each.value]
+  tags                = each.value
   preauthorized       = true
   expiry              = 7776000
   recreate_if_invalid = "always"
