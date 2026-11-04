@@ -38,9 +38,12 @@
           request>headers>Referer delete
           request>uri multi_regexp {
             regexp "[?].*" ""
+            regexp "^/api/webhook/[^/]+" "/api/webhook/REDACTED"
             regexp "^/index.php/s/[^/]+" "/index.php/s/REDACTED"
             regexp "^/s/[^/]+" "/s/REDACTED"
             regexp "^/share/[^/]+" "/share/REDACTED"
+            regexp "^/public.php/dav/files/[^/]+" "/public.php/dav/files/REDACTED"
+            regexp "^/index.php/apps/files_sharing/publicpreview/[^/]+" "/index.php/apps/files_sharing/publicpreview/REDACTED"
           }
         }
       '';
@@ -62,6 +65,12 @@
         '';
     in
     {
+      assertions = [
+        {
+          assertion = lib.all (name: apps ? ${name}) (lib.attrNames denied);
+          message = "edge: every key of `denied` must name an app, or its paths go unblocked";
+        }
+      ];
       sops = {
         secrets = lib.genAttrs [ "PORKBUN_API_KEY" "PORKBUN_SECRET_KEY" ] (key: {
           sopsFile = ../secrets/porkbun/api.yaml;

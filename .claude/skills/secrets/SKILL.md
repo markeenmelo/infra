@@ -37,7 +37,9 @@ rotating every value its files held.
 Declare `sops.secrets.NAME` beside its consumer with `sopsFile`, `key` when the SOPS path differs,
 `neededForUsers` for a password hash and `restartUnits` for every reader. Delivery is root-owned
 0400 (asserted in [secrets.nix](../../../modules/secrets.nix)); a unit reads through
-`LoadCredential` or the upstream module's `*File` option.
+`LoadCredential` or the upstream module's `*File` option. A unit that needs a file in its own
+format gets a `sops.templates` entry rendered from `sops.placeholder`, so the secrets it
+references stay declared; the template is delivered the same way.
 
 ## Editing
 

@@ -11,7 +11,8 @@ only redirecting there, one wildcard certificate for the domain obtained through
 hostname forwarding to a bastion port over the tailnet. Anything else on the wildcard is aborted
 without a response, so scanners learn nothing. The published apps authenticate natively, since
 their mobile clients cannot pass a forward-auth portal; Authelia guards the admin apps that only
-bastion's LAN proxy serves.
+bastion's LAN proxy serves. Its portal is still published, because the apps' single sign-on
+redirects there from wherever the user is.
 The tailnet policy must let racknerd reach each backend port ([opentofu skill](../opentofu/SKILL.md)).
 
 Every forwarded request loses the `Remote-*` identity headers, so only Authelia on bastion can set
