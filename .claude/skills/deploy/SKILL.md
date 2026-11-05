@@ -26,20 +26,22 @@ console.
 
 ## Install
 
-[install.nix](../../../modules/install.nix) wraps nixos-anywhere: it copies the running
-machine's SSH host key and `/var/lib/tailscale` into an `--extra-files` tree under `persist/`,
-then partitions the target with the host's disko layout and installs its configuration, so the
-host keeps its SSH identity and its tailnet node, and sops-nix can decrypt on first boot. The
-disk is wiped; it is an access change and needs the operator's approval.
+[install.nix](../../../modules/install.nix) wraps nixos-anywhere for a host booted into an
+installer image with its old disk mounted read-only: it copies the SSH host key and
+`/var/lib/tailscale` out of the old persist tree into an `--extra-files` tree, unmounts the old
+disk, then partitions with the host's disko layout and installs its configuration, so the host
+keeps its SSH identity and its tailnet node, and sops-nix can decrypt on first boot. Fleet hosts
+admit no root login and no SSH off the tailnet ([ssh.nix](../../../modules/ssh.nix)), so a
+reinstall always goes through the installer image, where root is the login. The disk is wiped;
+it is an access change and needs the operator's approval.
 
 ```sh
-nix run .#install -- HOST root@ADDRESS                    # from the running system
-nix run .#install -- HOST root@ADDRESS /mnt/old/persist   # from an installer, old disk mounted
+ssh root@ADDRESS 'mkdir -p /mnt/old && mount -o ro /dev/DISK-PART /mnt/old'
+nix run .#install -- HOST root@ADDRESS /mnt/old/persist
 ```
 
-The target must be reachable as root over SSH by its current address, not its MagicDNS name,
-since the tailnet node is replaced during the install. Booted from an installer image, mount
-the old root read-only first and pass its persist tree; the identity is never read from the
-image's own `/etc/ssh`. Rotate the host's auth key first
-([tailnet skill](../tailnet/SKILL.md)) in case the carried state is rejected; the key in the
-host file is only read when `/var/lib/tailscale` holds no login.
+ADDRESS is the host's public address, not its MagicDNS name, since the tailnet node is replaced
+during the install. From the mac the closure builds on the target, inside the installer's
+memory-backed store. Rotate the host's auth key first ([tailnet skill](../tailnet/SKILL.md)) in
+case the carried state is rejected; the key in the host file is only read when
+`/var/lib/tailscale` holds no login.
