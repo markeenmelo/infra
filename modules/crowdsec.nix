@@ -10,7 +10,13 @@
         enable = true;
         extraGroups = [ config.services.caddy.group ];
         readOnlyPaths = [ config.services.caddy.logDir ];
-        hub.collections = [ "crowdsecurity/caddy" ];
+        hub = {
+          collections = [ "crowdsecurity/caddy" ];
+          parsers = [
+            "crowdsecurity/non-syslog"
+            "crowdsecurity/dateparse-enrich"
+          ];
+        };
         settings = {
           config = {
             db_config.use_wal = true;
