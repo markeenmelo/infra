@@ -6,6 +6,7 @@
         { pkgs, ... }:
         {
           home.packages = [ pkgs.vicinae ];
+          xdg.dataFile."vicinae/extensions/coffee".source = pkgs.callPackage ./vicinae-coffee.pkg.nix { };
           launchd.agents.vicinae = {
             enable = true;
             config = {
