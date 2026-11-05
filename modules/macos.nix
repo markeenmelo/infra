@@ -62,6 +62,11 @@
           TrackpadThreeFingerDrag = true;
         };
         controlcenter.BatteryShowPercentage = true;
+        WindowManager = {
+          StandardHideWidgets = true;
+          EnableStandardClickToShowDesktop = false;
+        };
+        CustomUserPreferences."com.apple.finder".ShowRecentTags = false;
         screencapture = {
           location = "${config.users.users.${config.system.primaryUser}.home}/Pictures/Screenshots";
           disable-shadow = true;
@@ -73,6 +78,24 @@
         };
         loginwindow.GuestEnabled = false;
       };
-      home-manager.users.${config.system.primaryUser}.home.file."Pictures/Screenshots/.keep".text = "";
+      homebrew.brews = [ "mysides" ];
+      home-manager.users.${config.system.primaryUser} =
+        { lib, ... }:
+        {
+          home.file."Pictures/Screenshots/.keep".text = "";
+          home.activation.finderSidebar = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            sidebar=${config.homebrew.prefix}/bin/mysides
+            [ -x "$sidebar" ] || exit 0
+            for name in Recents AirDrop Applications Desktop Documents Movies Music Pictures; do
+              "$sidebar" remove "$name" > /dev/null 2>&1 || true
+            done
+            have=$("$sidebar" list 2> /dev/null || true)
+            mkdir -p "$HOME/projects" "$HOME/notes"
+            for entry in "marcos file://$HOME/" "projects file://$HOME/projects/" "notes file://$HOME/notes/" "Downloads file://$HOME/Downloads/"; do
+              set -- $entry
+              case $have in *"$2"*) ;; *) run "$sidebar" add "$1" "$2" ;; esac
+            done
+          '';
+        };
     };
 }
