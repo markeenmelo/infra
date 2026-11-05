@@ -12,11 +12,12 @@ let
 in
 {
   flake.modules = {
-    darwin.desktop =
+    darwin.desktop.homebrew.casks = [ "claude" ];
+
+    darwin.base =
       { pkgs, ... }:
       {
         nixpkgs.config.allowUnfreePackages = [ "claude-code" ];
-        homebrew.casks = [ "claude" ];
         system.activationScripts.postActivation.text = ''
           install -d -m 0755 "/Library/Application Support/ClaudeCode"
           install -m 0644 ${pkgs.writeText "claude-managed-settings.json" managedSettings} "/Library/Application Support/ClaudeCode/managed-settings.json"
