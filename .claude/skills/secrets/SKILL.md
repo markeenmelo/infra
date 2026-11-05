@@ -30,7 +30,7 @@ rotating every value its files held.
 | `shared/login.yaml` | operator, every host | `marcos-password-hash` ([access.nix](../../../modules/access.nix)) |
 | `hosts/HOST.yaml` | operator, HOST | `tailscale-auth-key` ([tailnet skill](../tailnet/SKILL.md)) |
 | `tailscale/operator.yaml` | operator | Tailscale OAuth client, tailnet name, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
-| `porkbun/api.yaml` | operator, racknerd | `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` for DNS-01 ([proxy skill](../proxy/SKILL.md)) |
+| `porkbun/api.yaml` | operator, racknerd, bastion | `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` for DNS-01 ([proxy skill](../proxy/SKILL.md)) |
 | `porkbun/operator.yaml` | operator | state passphrase for the DNS records; the app adds `api.yaml` ([opentofu skill](../opentofu/SKILL.md)) |
 
 ## Delivery

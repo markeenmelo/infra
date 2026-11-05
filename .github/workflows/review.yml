@@ -22,8 +22,9 @@ jobs:
       cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
-        command: [describe, review, improve]
+        command: [describe, review]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -60,6 +61,7 @@ jobs:
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "262144"
           CONFIG__MAX_OUTPUT_TOKENS: "32768"
           CONFIG__REASONING_EFFORT: low
+          CONFIG__ADDITIONAL_REASONING_EFFORT_MODELS: '["glm-5.3-flash"]'
           LITELLM__CUSTOM_LLM_PROVIDER: anthropic
           LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: anthropic
           LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.z.ai"]'
@@ -67,7 +69,7 @@ jobs:
           CONFIG__RETRY_SAME_MODEL_ON_TIMEOUT: "false"
           GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: ${{ matrix.command == 'describe' }}
           GITHUB_ACTION_CONFIG__AUTO_REVIEW: ${{ matrix.command == 'review' }}
-          GITHUB_ACTION_CONFIG__AUTO_IMPROVE: ${{ matrix.command == 'improve' }}
+          GITHUB_ACTION_CONFIG__AUTO_IMPROVE: "false"
           GITHUB_ACTION_CONFIG__HANDLE_PUSH_TRIGGER: "true"
           GITHUB_ACTION_CONFIG__PUSH_COMMANDS: '["/review"]'
 
@@ -92,11 +94,6 @@ jobs:
             args: --effort low
             base_url: https://api.kimi.ai/coding
             secret: KIMI_API_KEY
-          - name: minimax
-            model: MiniMax-M3.1-Flash
-            args: --effort low
-            base_url: https://api.minimax.io/anthropic
-            secret: MINIMAX_API_KEY
     concurrency:
       group: review-${{ matrix.name }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '@claude review')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: true
