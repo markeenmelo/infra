@@ -53,7 +53,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 - [x] `mac`: nix-darwin + Home Manager, Tailscale, shared operator config.
 - [x] `mac` apps: Homebrew casks, CLI packages, git, Claude Code.
 - [x] `mac` shell: zsh, starship, tmux, neovim, ghostty and zed settings.
-- [ ] `mac` desktop: aerospace, sketchybar, vicinae, `system.defaults`, Stylix, minimal.
+- [x] `mac` desktop: aerospace, sketchybar, vicinae, `system.defaults`, Stylix, minimal.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
 ## Closing out

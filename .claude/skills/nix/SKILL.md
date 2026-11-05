@@ -58,8 +58,9 @@ Answer each before the module is done; a reviewer will ask otherwise.
 follows the one `nixpkgs`. No overlays unless nixpkgs forces one, no `inputs.self` pass-through,
 no mixed package sets. `with` only for capability imports.
 
-**Merging** — let the module system merge; `//` is shallow and skips priorities, so config shared
-between classes or hosts is a module both import, never a `let` value spliced with `//`.
+**Merging** — let the module system merge; `//` is shallow and skips priorities, so it appears
+nowhere in Nix here: config shared between classes or hosts is a module both import, and a value
+built from several parts is `lib.mkMerge [ … ]` (inside module config) or `lib.listToAttrs`.
 `mkDefault` for policy a host may override; a non-obvious `mkForce` gets one sentence in the owning skill naming the attribute.
 Extend an upstream default list at its priority: `mkDefault (mkAfter …)`.
 
