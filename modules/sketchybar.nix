@@ -15,7 +15,7 @@
         )
       );
       space = pkgs.writeShellScript "sketchybar-space" ''
-        if [ "$1" = "''${FOCUSED_WORKSPACE:-$(aerospace list-workspaces --focused)}" ]; then
+        if [ "''${NAME#space.}" = "''${FOCUSED_WORKSPACE:-$(aerospace list-workspaces --focused)}" ]; then
           sketchybar --set "$NAME" label.color=0xff${colors.base00} background.drawing=on
         else
           sketchybar --set "$NAME" label.color=0xff${colors.base05} background.drawing=off
@@ -39,7 +39,7 @@
             sketchybar --add item "space.$n" left \
               --subscribe "space.$n" aerospace_workspace_change \
               --set "space.$n" label="$n" label.padding_left=8 label.padding_right=8 \
-                click_script="aerospace workspace $n" script="${space} $n"
+                click_script="aerospace workspace $n" script="${space}"
           done
           sketchybar --add item front_app left --subscribe front_app front_app_switched \
             --set front_app script='sketchybar --set "$NAME" label="$INFO"'
