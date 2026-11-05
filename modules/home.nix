@@ -10,6 +10,17 @@
         users.marcos = config.flake.modules.homeManager.base;
       };
     };
-    homeManager.base.programs.zsh.enable = true;
+    homeManager.base =
+      { pkgs, ... }:
+      {
+        programs.zsh.enable = true;
+        home.packages = [
+          pkgs.jq
+          pkgs.rsync
+          pkgs.unzip
+          pkgs.dnsutils
+          pkgs.glow
+        ];
+      };
   };
 }
