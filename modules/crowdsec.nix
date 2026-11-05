@@ -13,7 +13,7 @@
         hub = {
           collections = [ "crowdsecurity/caddy" ];
           parsers = [
-            "crowdsecurity/non-syslog"
+            "crowdsecurity/syslog-logs"
             "crowdsecurity/dateparse-enrich"
           ];
         };
