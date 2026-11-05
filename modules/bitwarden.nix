@@ -15,23 +15,20 @@ in
         "3rdparty".Extensions.${extension}.environment.base = "${server}/";
       };
       home-manager.users.${config.system.primaryUser} =
+        { pkgs, ... }:
         {
-          config,
-          lib,
-          pkgs,
-          ...
-        }:
-        let
-          bw = lib.getExe pkgs.bitwarden-cli;
-        in
-        {
-          home = {
-            packages = [ pkgs.bitwarden-cli ];
-            sessionVariables.SSH_AUTH_SOCK = "${config.home.homeDirectory}/.bitwarden-ssh-agent.sock";
-            activation.bitwardenServer = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-              [ "$(${bw} config server)" = ${server} ] || run ${bw} config server ${server}
-            '';
+          programs.rbw = {
+            enable = true;
+            settings = {
+              email = "marcosmelo@proton.me";
+              base_url = server;
+              lock_timeout = 300;
+              pinentry = pkgs.pinentry_mac;
+            };
           };
+          programs.zsh.initContent = ''
+            [ -S ~/.bitwarden-ssh-agent.sock ] && export SSH_AUTH_SOCK=~/.bitwarden-ssh-agent.sock
+          '';
         };
     };
 }
