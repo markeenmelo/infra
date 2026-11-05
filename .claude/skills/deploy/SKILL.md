@@ -33,10 +33,13 @@ host keeps its SSH identity and its tailnet node, and sops-nix can decrypt on fi
 disk is wiped; it is an access change and needs the operator's approval.
 
 ```sh
-nix run .#install -- HOST root@ADDRESS
+nix run .#install -- HOST root@ADDRESS                    # from the running system
+nix run .#install -- HOST root@ADDRESS /mnt/old/persist   # from an installer, old disk mounted
 ```
 
 The target must be reachable as root over SSH by its current address, not its MagicDNS name,
-since the tailnet node is replaced during the install. Rotate the host's auth key first
+since the tailnet node is replaced during the install. Booted from an installer image, mount
+the old root read-only first and pass its persist tree; the identity is never read from the
+image's own `/etc/ssh`. Rotate the host's auth key first
 ([tailnet skill](../tailnet/SKILL.md)) in case the carried state is rejected; the key in the
 host file is only read when `/var/lib/tailscale` holds no login.
