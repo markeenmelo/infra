@@ -18,7 +18,7 @@ jobs:
       (github.event.issue.pull_request && startsWith(github.event.comment.body, '/') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
     concurrency:
-      group: review-pr-agent-${{ matrix.command }}-${{ github.event_name }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '/')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
+      group: review-pr-agent-${{ matrix.command }}-${{ github.event_name }}-${{ github.event.action }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '/')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
     strategy:
       fail-fast: false
