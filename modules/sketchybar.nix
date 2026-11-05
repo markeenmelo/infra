@@ -1,11 +1,21 @@
 {
   flake.modules.darwin.desktop =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       inherit (config.lib.stylix) colors;
       font = config.stylix.fonts.monospace.name;
+      workspaces = map (lib.removePrefix "workspace ") (
+        lib.filter (lib.hasPrefix "workspace ") (
+          lib.attrValues config.services.aerospace.settings.mode.main.binding
+        )
+      );
       space = pkgs.writeShellScript "sketchybar-space" ''
-        if [ "$1" = "$FOCUSED_WORKSPACE" ]; then
+        if [ "$1" = "''${FOCUSED_WORKSPACE:-$(aerospace list-workspaces --focused)}" ]; then
           sketchybar --set "$NAME" label.color=0xff${colors.base00} background.drawing=on
         else
           sketchybar --set "$NAME" label.color=0xff${colors.base05} background.drawing=off
@@ -25,7 +35,7 @@
           sketchybar --default label.font="${font}:Bold:13.0" label.color=0xff${colors.base05} padding_left=4 padding_right=4 \
             background.color=0xff${colors.base0D} background.corner_radius=4 background.height=22 background.drawing=off
           sketchybar --add event aerospace_workspace_change
-          for n in $(aerospace list-workspaces --all); do
+          for n in ${lib.concatStringsSep " " workspaces}; do
             sketchybar --add item "space.$n" left \
               --subscribe "space.$n" aerospace_workspace_change \
               --set "space.$n" label="$n" label.padding_left=8 label.padding_right=8 \
