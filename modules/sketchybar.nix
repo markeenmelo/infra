@@ -27,7 +27,7 @@
       timer = pkgs.writeShellScript "sketchybar-timer" ''
         file=$HOME/.cache/sketchybar-timer
         if [ "$SENDER" = "mouse.clicked" ]; then
-          if [ -f "$file" ]; then rm "$file"; else mkdir -p "$(dirname "$file")"; date -v+25M +%s > "$file"; fi
+          if [ -f "$file" ]; then rm "$file"; else mkdir -p "$(dirname "$file")"; /bin/date -v+25M +%s > "$file"; fi
         fi
         if [ -f "$file" ]; then
           left=$(( ($(cat "$file") - $(date +%s) + 59) / 60 ))
