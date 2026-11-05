@@ -30,6 +30,30 @@
               bottom = 6;
             };
           };
+          on-window-detected =
+            lib.mapAttrsToList
+              (app-id: workspace: {
+                "if" = { inherit app-id; };
+                run = "move-node-to-workspace ${workspace}";
+              })
+              {
+                "com.mitchellh.ghostty" = "1";
+                "app.zen-browser.zen" = "2";
+                "dev.zed.Zed" = "3";
+                "ru.keepcoder.Telegram" = "4";
+                "net.whatsapp.WhatsApp" = "4";
+                "com.spotify.client" = "5";
+              }
+            ++
+              map
+                (app-id: {
+                  "if" = { inherit app-id; };
+                  run = "layout floating";
+                })
+                [
+                  "com.bitwarden.desktop"
+                  "com.apple.systempreferences"
+                ];
           exec-on-workspace-change = [
             "/bin/bash"
             "-c"
@@ -48,6 +72,7 @@
               alt-slash = "layout tiles horizontal vertical";
               alt-q = "close";
               alt-enter = "exec-and-forget /usr/bin/open -na /Applications/Ghostty.app";
+              alt-tab = "workspace-back-and-forth";
             }
           ];
         };

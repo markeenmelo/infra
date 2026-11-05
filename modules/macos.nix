@@ -5,8 +5,14 @@
       system.defaults = {
         dock = {
           autohide = true;
+          autohide-time-modifier = 0.0;
+          expose-animation-duration = 0.1;
           show-recents = false;
           mru-spaces = false;
+          wvous-tl-corner = 1;
+          wvous-tr-corner = 1;
+          wvous-bl-corner = 1;
+          wvous-br-corner = 1;
         };
         finder = {
           AppleShowAllExtensions = true;
@@ -18,6 +24,9 @@
         };
         NSGlobalDomain = {
           AppleInterfaceStyle = "Dark";
+          AppleSpacesSwitchOnActivate = false;
+          NSAutomaticWindowAnimationsEnabled = false;
+          NSWindowResizeTime = 0.001;
           AppleICUForce24HourTime = true;
           AppleKeyboardUIMode = 3;
           KeyRepeat = 2;
@@ -37,6 +46,7 @@
           TrackpadThreeFingerDrag = true;
         };
         controlcenter.BatteryShowPercentage = true;
+        universalaccess.reduceMotion = true;
         screencapture = {
           location = "${config.users.users.${config.system.primaryUser}.home}/Pictures/Screenshots";
           disable-shadow = true;

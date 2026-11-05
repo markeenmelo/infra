@@ -11,6 +11,12 @@
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
       defaultKeymap = "emacs";
+      initContent = ''
+        note() {
+          mkdir -p ~/notes
+          printf -- '- %s %s\n' "$(date '+%F %H:%M')" "$*" >> ~/notes/inbox.md
+        }
+      '';
     };
     starship = {
       enable = true;
