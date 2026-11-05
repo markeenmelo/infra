@@ -19,7 +19,9 @@
             mkdir -p "$extra/persist"
             ssh "$target" tar -C "$root" -chf - etc/ssh/ssh_host_ed25519_key etc/ssh/ssh_host_ed25519_key.pub var/lib/tailscale |
               tar -C "$extra/persist" -xf -
-            ssh "$target" umount -R "$(ssh "$target" findmnt -n -o TARGET -T "$root")"
+            mount=$(ssh "$target" findmnt -n -o TARGET -T "$root")
+            [ "$mount" != / ] || { echo "install: $root is on the installer's root, not a mounted old disk" >&2; exit 1; }
+            ssh "$target" umount -R "$mount"
             nixos-anywhere --flake ".#$host" --extra-files "$extra" --target-host "$target"
           '';
         };

@@ -41,7 +41,8 @@ nix run .#install -- HOST root@ADDRESS /mnt/old/persist
 ```
 
 ADDRESS is the host's public address, not its MagicDNS name, since the tailnet node is replaced
-during the install. From the mac the closure builds on the target, inside the installer's
-memory-backed store. Rotate the host's auth key first ([tailnet skill](../tailnet/SKILL.md)) in
+during the install. The installer presents its own host key, so `ssh-keygen -R ADDRESS` first
+and accept the new one; the carried key returns with the installed system. From the mac the
+closure builds on the target, inside the installer's memory-backed store. Rotate the host's auth key first ([tailnet skill](../tailnet/SKILL.md)) in
 case the carried state is rejected; the key in the host file is only read when
 `/var/lib/tailscale` holds no login.
