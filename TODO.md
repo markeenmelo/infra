@@ -37,7 +37,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 - [ ] Front-panel LEDs (out-of-tree `led-ugreen` driver, disk presence and link).
 - [ ] Install bastion once the LAN proxy, split DNS and the household apps are ported: the
       install replaces every running service. Carries the identity, sbctl and ZFS keys.
-- [ ] LAN proxy (Caddy origin) and Authelia; LLDAP only if Authelia needs it. Each service
+- [x] LAN proxy (Caddy origin) and split DNS for the tailnet.
+- [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands.
+- [ ] Authelia; LLDAP only if Authelia needs it. Each service
       module declares its public route in a `fleet.web.apps` NixOS option; the edge and the LAN
       proxy read it from the hub's configuration and the edge literals go.
 - [ ] Apps: decide which of the old set stay (Nextcloud stays): Immich, Home Assistant +

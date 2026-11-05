@@ -1,6 +1,6 @@
 ---
 name: proxy
-description: "The public edge on racknerd: Caddy with a wildcard certificate by Porkbun DNS-01, the hostnames it forwards to bastion over the tailnet, the headers it strips and the admin paths it denies, CrowdSec bans at the firewall, where certificates, logs and ban state live. Use before touching modules/edge.nix or modules/crowdsec.nix, publishing or removing a public hostname, or debugging public HTTPS or bans."
+description: "The public edge on racknerd: Caddy with a wildcard certificate by Porkbun DNS-01, the hostnames it forwards to bastion over the tailnet, the headers it strips and the admin paths it denies, CrowdSec bans at the firewall, where certificates, logs and ban state live; bastion's LAN proxy and the tailnet split DNS that keep home traffic off the WAN. Use before touching modules/edge.nix, modules/lan-proxy.nix, modules/caddy.nix or modules/crowdsec.nix, publishing or removing a hostname, or debugging HTTPS, name resolution of the domain, or bans."
 ---
 
 # Edge proxy
@@ -50,6 +50,18 @@ with each repeat. The hub is pinned to a commit so `cscli hub update` cannot cha
 engine runs; moving it is a lock-style bump of that literal. State under `/var/lib/crowdsec`
 (database, hub, API credentials) persists, and the engine runs as a static user so the
 persisted files keep their owner across reboots.
+
+## LAN proxy
+
+[lan-proxy.nix](../../../modules/lan-proxy.nix) is bastion's Caddy for the same wildcard name,
+so LAN and tailnet clients reach the apps without crossing the WAN or racknerd. Tailnet clients
+get there through dnsmasq on bastion's tailnet interface, which the tailnet's split DNS queries
+for the domain and which answers every name under it with bastion's tailnet address and refuses
+everything else; LAN clients through the gateway's wildcard record to bastion's LAN address.
+Its DNS-01 check asks public resolvers, since the LAN's resolver may answer the domain locally.
+It serves 443 on the LAN and the tailnet, and the tailnet policy keeps racknerd off it. Both
+proxies share [caddy.nix](../../../modules/caddy.nix): the package, the Porkbun keys and the
+persisted certificates.
 
 The Caddy package pins the plugin version and a hash that covers the Go module tree of both
 Caddy and the plugin, so a nixpkgs bump that moves Caddy changes it as much as a plugin update.
