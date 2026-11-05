@@ -41,10 +41,11 @@ depends on the tailnet or bastion.
 
 [crowdsec.nix](../../../modules/crowdsec.nix) bans at the firewall, not in Caddy: the engine
 tails the access log as a member of the `caddy` group, the hub `caddy` collection parses it and
-supplies the generic HTTP scenarios, and one local scenario bans an address after repeated 403s
-from the edge; the community blocklist comes from the central API the setup unit registers with
+supplies the generic HTTP scenarios, and one local scenario bans an address after repeated
+denials by the edge itself, which marks them with a response header so backend 403s never
+count; the community blocklist comes from the central API the setup unit registers with
 on first boot. The firewall bouncer registers itself with the local API and drops banned
-addresses in nftables, which is why the server uses the nftables backend. Ban length doubles
+addresses in nftables, which is why the server uses the nftables backend. Ban length grows
 with each repeat. The hub is pinned to a commit so `cscli hub update` cannot change what the
 engine runs; moving it is a lock-style bump of that literal. State under `/var/lib/crowdsec`
 (database, hub, API credentials) persists, and the engine runs as a static user so the

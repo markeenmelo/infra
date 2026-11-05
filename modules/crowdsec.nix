@@ -1,11 +1,6 @@
 {
   flake.modules.nixos.crowdsec =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+    { config, lib, ... }:
     let
       cfg = config.services.crowdsec;
     in
@@ -35,8 +30,8 @@
           scenarios = [
             {
               name = "fleet/edge-denied";
-              description = "Repeated 403s from the edge: abroad, denied admin paths or unknown hosts";
-              filter = "evt.Meta.log_type == 'http_access-log' && evt.Meta.http_status == '403'";
+              description = "Repeated denials by the edge itself: abroad or an admin path";
+              filter = "evt.Meta.log_type == 'http_access-log' && evt.Meta.http_status == '403' && evt.Line.Raw contains 'Edge-Denied'";
               type = "leaky";
               groupby = "evt.Meta.source_ip";
               capacity = 5;
@@ -71,8 +66,7 @@
       services.crowdsec-firewall-bouncer.enable = true;
       systemd.services = {
         crowdsec = {
-          restartTriggers = [ (lib.toJSON cfg.settings.scenarios) ];
-          path = lib.mkForce [ pkgs.systemd ];
+          restartTriggers = [ (lib.toJSON cfg.settings) ];
           serviceConfig = {
             DynamicUser = lib.mkForce false;
             StateDirectory = "crowdsec";
