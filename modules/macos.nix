@@ -5,10 +5,26 @@
       system.defaults = {
         dock = {
           autohide = true;
+          autohide-delay = 0.0;
           autohide-time-modifier = 0.0;
           expose-animation-duration = 0.1;
+          launchanim = false;
+          magnification = false;
+          minimize-to-application = true;
+          show-process-indicators = true;
+          showhidden = true;
           show-recents = false;
           mru-spaces = false;
+          tilesize = 28;
+          persistent-apps = map (app: { inherit app; }) [
+            "/Applications/Ghostty.app"
+            "/Applications/Zen.app"
+            "/Applications/Zed.app"
+            "/Applications/Telegram.app"
+            "/Applications/WhatsApp.app"
+            "/Applications/Spotify.app"
+          ];
+          persistent-others = [ ];
           wvous-tl-corner = 1;
           wvous-tr-corner = 1;
           wvous-bl-corner = 1;
