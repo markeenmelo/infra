@@ -46,7 +46,6 @@
           TrackpadThreeFingerDrag = true;
         };
         controlcenter.BatteryShowPercentage = true;
-        universalaccess.reduceMotion = true;
         screencapture = {
           location = "${config.users.users.${config.system.primaryUser}.home}/Pictures/Screenshots";
           disable-shadow = true;
