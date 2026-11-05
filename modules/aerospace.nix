@@ -23,7 +23,10 @@
             outer = {
               left = 6;
               right = 6;
-              top = 38;
+              top = [
+                { monitor.built-in = 6; }
+                38
+              ];
               bottom = 6;
             };
           };

@@ -102,6 +102,23 @@
         "type": "github"
       }
     },
+    "caveman": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791914888,
+        "narHash": "sha256-2xZHdWkWJrPAJ8++qW0Xmb3eORZ41e+GsZjIphqTtlI=",
+        "owner": "JuliusBrussee",
+        "repo": "caveman",
+        "rev": "d262ab3882952a59312ff3537cd86d894523c5ab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "JuliusBrussee",
+        "ref": "v4.0.1",
+        "repo": "caveman",
+        "type": "github"
+      }
+    },
     "deploy-rs": {
       "inputs": {
         "flake-compat": [],
@@ -238,11 +255,11 @@
     "homebrew-cask": {
       "flake": false,
       "locked": {
-        "lastModified": 1793828907,
-        "narHash": "sha256-TYKV6M8sjm5zauh9EteAWsr2mGmNx6g2hpDmgC0F+PQ=",
+        "lastModified": 1793882292,
+        "narHash": "sha256-G11Cq0VUfdPK+3DvToWT/5bwHXeVfHl0C7oLz6Op8yw=",
         "owner": "homebrew",
         "repo": "homebrew-cask",
-        "rev": "1016b48163328999023f3a488ef282e2495e392e",
+        "rev": "6844a02d2719404cb8d6186c59b8ac852337c915",
         "type": "github"
       },
       "original": {
@@ -254,11 +271,11 @@
     "homebrew-core": {
       "flake": false,
       "locked": {
-        "lastModified": 1793829029,
-        "narHash": "sha256-aFBS0rzDMvFGnxOEHqtn0S01xh7WXB4X60N5Nx9NXHY=",
+        "lastModified": 1793882835,
+        "narHash": "sha256-f1nXwObfZy4dSS/1yUvLZttWVb9rHKeF0bkMUN1UT6E=",
         "owner": "homebrew",
         "repo": "homebrew-core",
-        "rev": "459ac5383bec30169f8ef25ebd77acfd83f73cbf",
+        "rev": "131d57998080b6d3d9270bab8b7bd1a459d83d67",
         "type": "github"
       },
       "original": {
@@ -361,6 +378,23 @@
         "type": "github"
       }
     },
+    "ponytail": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793243094,
+        "narHash": "sha256-CY0EifTY0UVc6/FPGVJjEfYEf/8QLsINQmoYYKZYh98=",
+        "owner": "DietrichGebert",
+        "repo": "ponytail",
+        "rev": "7801d061243d7b753bad0e0b3c057cd250b11755",
+        "type": "github"
+      },
+      "original": {
+        "owner": "DietrichGebert",
+        "ref": "v5.3.3",
+        "repo": "ponytail",
+        "type": "github"
+      }
+    },
     "preservation": {
       "locked": {
         "lastModified": 1792953443,
@@ -379,6 +413,7 @@
     "root": {
       "inputs": {
         "cache-tax": "cache-tax",
+        "caveman": "caveman",
         "deploy-rs": "deploy-rs",
         "disko": "disko",
         "flake-parts": "flake-parts",
@@ -389,6 +424,7 @@
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
         "nixpkgs": "nixpkgs",
+        "ponytail": "ponytail",
         "preservation": "preservation",
         "sops-nix": "sops-nix",
         "stylix": "stylix"
