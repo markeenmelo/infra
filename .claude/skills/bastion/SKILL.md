@@ -30,8 +30,9 @@ kernel series the ZFS module still supports; a nixpkgs bump moves it when ZFS ca
 The state partition is LUKS ([storage.nix](../../../modules/storage.nix), `fleet.encryptState`),
 opened by a TPM2 token sealed to PCR 7 with the passphrase as fallback, and Limine is signed
 with the sbctl keys in `/var/lib/sbctl`, enrolled with Microsoft's CA kept (`-m`) because
-add-in option ROMs need it; PCR 7 is then the same under any Microsoft-signed loader, accepted
-over a TPM PIN. The NixOS installer is unsigned, so a reinstall turns Secure Boot off in the
+add-in option ROMs need it; PCR 7 then also matches under a Microsoft-signed loader that does
+not measure what it boots, so a stolen box can unseal the key and, with it, the pool keys under
+`/persist/zfs`; accepted over a TPM PIN. The NixOS installer is unsigned, so a reinstall turns Secure Boot off in the
 firmware, installs with the carried keys, turns it back on, then re-seals a new LUKS header:
 
 ```sh
