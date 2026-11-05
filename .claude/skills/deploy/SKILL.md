@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: "deploy-rs: how a host's committed configuration is activated over the tailnet with magic rollback, the deploy account and what it may run, the deploy checks, when to deploy versus install. Use before touching modules/deploy.nix, the deploy account or sudo rules, and before preparing any deploy command."
+description: "deploy-rs: how a host's committed configuration is activated over the tailnet with magic rollback, the deploy account and what it may run, the deploy checks, and the nixos-anywhere install app that carries a host's SSH and tailnet identity over. Use before touching modules/deploy.nix or modules/install.nix, the deploy account or sudo rules, and before preparing any deploy or install command."
 ---
 
 # Deploy
@@ -23,3 +23,26 @@ that changes SSH, firewall, Tailscale, users, sudo or this module is an access c
 activation of a host is a nixos-anywhere install, not a deploy. A host without a tailnet
 connection is unreachable to deploy-rs by design: recover through the provider or physical
 console.
+
+## Install
+
+[install.nix](../../../modules/install.nix) wraps nixos-anywhere for a host booted into an
+installer image with its old disk mounted read-only: it copies the SSH host key and
+`/var/lib/tailscale` out of the old persist tree into an `--extra-files` tree, unmounts the old
+disk, then partitions with the host's disko layout and installs its configuration, so the host
+keeps its SSH identity and its tailnet node, and sops-nix can decrypt on first boot. Fleet hosts
+admit no root login and no SSH off the tailnet ([ssh.nix](../../../modules/ssh.nix)), so a
+reinstall always goes through the installer image, where root is the login. The disk is wiped;
+it is an access change and needs the operator's approval.
+
+```sh
+ssh root@ADDRESS 'mkdir -p /mnt/old && mount -o ro /dev/DISK-PART /mnt/old'
+nix run .#install -- HOST root@ADDRESS /mnt/old/persist
+```
+
+ADDRESS is the host's public address, not its MagicDNS name, since the tailnet node is replaced
+during the install. The installer presents its own host key, so `ssh-keygen -R ADDRESS` first
+and accept the new one; the carried key returns with the installed system. From the mac the
+closure builds on the target, inside the installer's memory-backed store. Rotate the host's auth key first ([tailnet skill](../tailnet/SKILL.md)) in
+case the carried state is rejected; the key in the host file is only read when
+`/var/lib/tailscale` holds no login.

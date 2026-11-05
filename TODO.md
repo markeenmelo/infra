@@ -26,8 +26,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 - [x] Edge proxy: Caddy with Porkbun DNS-01 forwarding to bastion over the tailnet.
 - [x] CrowdSec with the firewall bouncer; its user joins the `caddy` group to read the access log.
       Lands before the install, so the portal is never public without bans.
-- [ ] Install with nixos-anywhere, `--extra-files` carrying `/persist/etc/ssh` and
-      `/persist/var/lib/tailscale`; rotate the auth key first. Manual approval (access change).
+- [x] Install with nixos-anywhere (`nix run .#install`, carries `/persist/etc/ssh` and
+      `/persist/var/lib/tailscale`); rotate the auth key first. Manual approval (access change).
 - [ ] Porkbun OpenTofu project.
 
 ## bastion

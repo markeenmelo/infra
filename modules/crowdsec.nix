@@ -10,7 +10,13 @@
         enable = true;
         extraGroups = [ config.services.caddy.group ];
         readOnlyPaths = [ config.services.caddy.logDir ];
-        hub.collections = [ "crowdsecurity/caddy" ];
+        hub = {
+          collections = [ "crowdsecurity/caddy" ];
+          parsers = [
+            "crowdsecurity/syslog-logs"
+            "crowdsecurity/dateparse-enrich"
+          ];
+        };
         settings = {
           config = {
             db_config.use_wal = true;
@@ -51,7 +57,7 @@
             {
               name = "escalating_ip_ban";
               filters = [ "Alert.Remediation == true && Alert.GetScope() == 'Ip'" ];
-              duration_expr = "Sprintf('%dh', (GetDecisionsCount(Alert.GetValue()) + 1) * 4)";
+              duration_expr = "Sprintf('%%dh', (GetDecisionsCount(Alert.GetValue()) + 1) * 4)";
               decisions = [
                 {
                   type = "ban";
@@ -67,7 +73,10 @@
       systemd.services = {
         crowdsec = {
           after = [ "caddy.service" ];
-          restartTriggers = [ (lib.toJSON cfg.settings) ];
+          restartTriggers = [
+            (lib.toJSON cfg.settings)
+            (lib.toJSON cfg.hub)
+          ];
           serviceConfig = {
             DynamicUser = lib.mkForce false;
             StateDirectory = "crowdsec";
