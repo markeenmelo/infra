@@ -21,6 +21,7 @@ in
           }
           resolvers 1.1.1.1 9.9.9.9
         }
+        import identity
         handle {
           abort
         }
@@ -37,7 +38,11 @@ in
         };
       };
       networking.firewall = {
-        allowedTCPPorts = [ 443 ];
+        allowedTCPPorts = [
+          80
+          443
+        ];
+        allowedUDPPorts = [ 443 ];
         interfaces.${tailscale} = {
           allowedTCPPorts = [ 53 ];
           allowedUDPPorts = [ 53 ];

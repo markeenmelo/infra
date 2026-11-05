@@ -29,6 +29,7 @@ creation_rules:
       - age:
           - *operator
           - *racknerd
+          - *bastion
   - path_regex: ^secrets/porkbun/operator\.yaml$
     key_groups:
       - age:
