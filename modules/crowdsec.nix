@@ -66,6 +66,7 @@
       services.crowdsec-firewall-bouncer.enable = true;
       systemd.services = {
         crowdsec = {
+          after = [ "caddy.service" ];
           restartTriggers = [ (lib.toJSON cfg.settings) ];
           serviceConfig = {
             DynamicUser = lib.mkForce false;
@@ -80,6 +81,11 @@
           directory = "/var/lib/crowdsec";
           inherit (cfg) user group;
           mode = "0700";
+        }
+        {
+          directory = "/var/lib/crowdsec-firewall-bouncer-register";
+          inherit (cfg) user group;
+          mode = "0750";
         }
       ];
     };
