@@ -20,7 +20,7 @@ in
         nixpkgs.config.allowUnfreePackages = [ "claude-code" ];
         system.activationScripts.postActivation.text = ''
           install -d -m 0755 "/Library/Application Support/ClaudeCode"
-          install -m 0644 ${pkgs.writeText "claude-managed-settings.json" managedSettings} "/Library/Application Support/ClaudeCode/managed-settings.json"
+          ln -sfn ${pkgs.writeText "claude-managed-settings.json" managedSettings} "/Library/Application Support/ClaudeCode/managed-settings.json"
         '';
       };
 

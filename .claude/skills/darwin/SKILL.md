@@ -28,7 +28,8 @@ rewrite keeps macOS defaults and adds a tool when the operator names it.
 `flake.modules.darwin.desktop` is the laptop role: GUI apps are Homebrew casks from taps pinned
 as flake inputs ([homebrew.nix](../../../modules/homebrew.nix)), so `brew tap` is refused and a
 cask moves with `nix flake update homebrew-cask`; whatever the Brewfile stops naming is zapped at
-activation. Claude Code ([claude.nix](../../../modules/claude.nix)) is the HM package with the
+activation, app data included, so preview a switch that drops a cask with
+`brew bundle cleanup --file=<(nix eval --raw .#darwinConfigurations.mac.config.homebrew.brewfile)`. Claude Code ([claude.nix](../../../modules/claude.nix)) is the HM package with the
 operator's settings; the sandbox and bypass lock live in the managed settings file that
 activation installs under `/Library/Application Support/ClaudeCode`, which no user setting
 overrides. The cache-tax mod is a flake input pinned to its release tag.
