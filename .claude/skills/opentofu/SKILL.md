@@ -49,8 +49,8 @@ read-only for all of these; `acls_externally_managed_on` says so.
 to the edge, since the edge aborts any hostname it does not publish and the wildcard
 certificate names none ([proxy skill](../proxy/SKILL.md)), so publishing an app needs no DNS
 change; the `CAA` set that confines issuance to Let's Encrypt, wildcard included, and forbids
-S/MIME; and the null-mail set (null `MX`, `-all` SPF, reject DMARC covering subdomains, empty
-DKIM) that lets no one send as the domain. The API keys in `secrets/porkbun/api.yaml` are the
+S/MIME; and the null-mail set (null `MX` on the apex and on the wildcard, `-all` SPF, reject
+DMARC covering subdomains, empty DKIM) that lets no one send as the domain or any name under it. The API keys in `secrets/porkbun/api.yaml` are the
 edge's DNS-01 keys and are full-authority, so a plan already carries risk. A record that exists before its block is
 adopted with an `import` block (`<record_id>_<domain>_<type>`, ids from the operator's
 private listing), never duplicated.

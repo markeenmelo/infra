@@ -40,6 +40,7 @@ locals {
     caa-issuewild = { subdomain = null, type = "CAA", content = "0 issuewild \"letsencrypt.org\"" }
     caa-issuemail = { subdomain = null, type = "CAA", content = "0 issuemail \";\"" }
     null-mx       = { subdomain = null, type = "MX", content = "." }
+    null-mx-wild  = { subdomain = "*", type = "MX", content = "." }
     spf           = { subdomain = null, type = "TXT", content = "v=spf1 -all" }
     dmarc         = { subdomain = "_dmarc", type = "TXT", content = "v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s" }
     dkim          = { subdomain = "*._domainkey", type = "TXT", content = "v=DKIM1; p=" }
