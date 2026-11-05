@@ -27,16 +27,15 @@
         extraConfig = ''
           set -g renumber-windows on
           set -g set-clipboard on
-          set -g status off
+          set -g status-left ""
+          set -g status-right ""
+          set -g status-style "bg=#${colors.base00},fg=#${colors.base03}"
+          set -g window-status-current-style "fg=#${colors.base05},bold"
           set -g pane-border-style "fg=#${colors.base03}"
           set -g pane-active-border-style "fg=#${colors.base0D}"
           bind v split-window -h -c "#{pane_current_path}"
           bind - split-window -v -c "#{pane_current_path}"
           bind c new-window -c "#{pane_current_path}"
-          bind Left select-pane -L
-          bind Down select-pane -D
-          bind Up select-pane -U
-          bind Right select-pane -R
         '';
       };
     };

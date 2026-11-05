@@ -1,8 +1,22 @@
 {
   flake.modules.darwin.desktop =
-    { config, ... }:
+    { config, lib, ... }:
     {
       system.defaults = {
+        CustomUserPreferences."com.apple.symbolichotkeys".AppleSymbolicHotKeys =
+          lib.mapAttrs' (_: id: lib.nameValuePair (toString id) { enabled = false; })
+            {
+              nextWindow = 27; # cmd+`
+              showDesktop = 36; # F11
+              previousInputSource = 60; # ctrl+space
+              nextInputSource = 61; # ctrl+alt+space
+              spotlight = 64; # cmd+space
+              finderSearchWindow = 65; # cmd+alt+space
+              desktop1 = 118; # ctrl+1
+              desktop2 = 119; # ctrl+2
+              desktop3 = 120; # ctrl+3
+              desktop4 = 121; # ctrl+4
+            };
         dock = {
           autohide = true;
           autohide-delay = 0.0;
@@ -17,12 +31,12 @@
           mru-spaces = false;
           tilesize = 28;
           persistent-apps = map (app: { inherit app; }) [
-            "/Applications/Ghostty.app"
             "/Applications/Zen.app"
+            "/Applications/Ghostty.app"
             "/Applications/Zed.app"
+            "/Applications/Spotify.app"
             "/Applications/Telegram.app"
             "/Applications/WhatsApp.app"
-            "/Applications/Spotify.app"
           ];
           persistent-others = [ ];
           wvous-tl-corner = 1;
@@ -91,7 +105,7 @@
             mkdir -p "$HOME/projects" "$HOME/notes"
             for entry in "marcos file://$HOME/" "projects file://$HOME/projects/" "notes file://$HOME/notes/" "Downloads file://$HOME/Downloads/"; do
               set -- $entry
-              case $have in *"$2"*) ;; *) run "$sidebar" add "$1" "$2" ;; esac
+              printf '%s\n' "$have" | grep -Fqx "$1 -> $2" || run "$sidebar" add "$1" "$2"
             done
           '';
         };

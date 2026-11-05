@@ -24,24 +24,6 @@
       battery = pkgs.writeShellScript "sketchybar-battery" ''
         sketchybar --set "$NAME" label="$(pmset -g batt | grep -Eo '[0-9]+%')"
       '';
-      timer = pkgs.writeShellScript "sketchybar-timer" ''
-        file=$HOME/.cache/sketchybar-timer
-        if [ "$SENDER" = "mouse.clicked" ]; then
-          if [ -f "$file" ]; then rm "$file"; else mkdir -p "$(dirname "$file")"; /bin/date -v+25M +%s > "$file"; fi
-        fi
-        if [ -f "$file" ]; then
-          left=$(( ($(cat "$file") - $(date +%s) + 59) / 60 ))
-          if [ "$left" -le 0 ]; then
-            rm "$file"
-            afplay /System/Library/Sounds/Glass.aiff &
-            sketchybar --set "$NAME" label="done"
-          else
-            sketchybar --set "$NAME" label="''${left}m"
-          fi
-        else
-          sketchybar --set "$NAME" label="25m"
-        fi
-      '';
       agenda = pkgs.writeShellScript "sketchybar-agenda" ''
         sketchybar --set "$NAME" label="$(${config.homebrew.prefix}/bin/icalBuddy -n -li 1 -nc -b "" -ps "| |" -iep datetime,title -po datetime,title -tf %H:%M -df "" eventsToday | head -1)"
       '';
@@ -69,10 +51,7 @@
             script='sketchybar --set "$NAME" label="$(date "+%a %d %b %H:%M")"'
           sketchybar --add item battery right --subscribe battery system_woke power_source_change \
             --set battery update_freq=120 script="${battery}"
-          sketchybar --add item timer right --subscribe timer mouse.clicked \
-            --set timer update_freq=30 script="${timer}"
-          sketchybar --add item agenda center \
-            --set agenda update_freq=300 script="${agenda}"
+          sketchybar --add item agenda right --set agenda update_freq=300 script="${agenda}"
           sketchybar --update
         '';
       };

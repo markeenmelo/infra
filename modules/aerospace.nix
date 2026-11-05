@@ -3,13 +3,13 @@
     { config, lib, ... }:
     let
       sketchybar = lib.getExe config.services.sketchybar.package;
-      directions = [
-        "left"
-        "down"
-        "up"
-        "right"
-      ];
-      workspaces = map toString (lib.range 1 9);
+      directions = {
+        h = "left";
+        j = "down";
+        k = "up";
+        l = "right";
+      };
+      workspaces = map toString (lib.range 1 4);
     in
     {
       services.aerospace = {
@@ -37,12 +37,12 @@
                 run = "move-node-to-workspace ${workspace}";
               })
               {
-                "com.mitchellh.ghostty" = "1";
-                "app.zen-browser.zen" = "2";
-                "dev.zed.Zed" = "3";
+                "app.zen-browser.zen" = "1";
+                "com.mitchellh.ghostty" = "2";
+                "dev.zed.Zed" = "2";
+                "com.spotify.client" = "3";
                 "ru.keepcoder.Telegram" = "4";
                 "net.whatsapp.WhatsApp" = "4";
-                "com.spotify.client" = "5";
               }
             ++
               map
@@ -60,8 +60,8 @@
             "${sketchybar} --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE"
           ];
           mode.main.binding = lib.mkMerge [
-            (lib.genAttrs' directions (dir: lib.nameValuePair "alt-${dir}" "focus ${dir}"))
-            (lib.genAttrs' directions (dir: lib.nameValuePair "alt-shift-${dir}" "move ${dir}"))
+            (lib.mapAttrs' (key: dir: lib.nameValuePair "alt-${key}" "focus ${dir}") directions)
+            (lib.mapAttrs' (key: dir: lib.nameValuePair "alt-shift-${key}" "move ${dir}") directions)
             (lib.genAttrs' workspaces (n: lib.nameValuePair "alt-${n}" "workspace ${n}"))
             (lib.genAttrs' workspaces (n: lib.nameValuePair "alt-shift-${n}" "move-node-to-workspace ${n}"))
             {
