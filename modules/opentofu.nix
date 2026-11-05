@@ -3,7 +3,7 @@
     { lib, pkgs, ... }:
     {
       apps.tofu = {
-        meta.description = "tofu PROJECT ARGS: run OpenTofu in opentofu/PROJECT with the operator credentials, state under XDG_STATE_HOME";
+        meta.description = "tofu PROJECT ARGS: run OpenTofu in opentofu/PROJECT with the operator credentials and the project's host-shared api.yaml when it has one, state under XDG_STATE_HOME";
         program = pkgs.writeShellApplication {
           name = "tofu";
           runtimeInputs = [
@@ -18,7 +18,11 @@
             state="''${XDG_STATE_HOME:-$HOME/.local/state}/infra/$project"
             mkdir -p "$state"
             export TF_CLI_ARGS_init="-input=false -lockfile=readonly -backend-config=path=$state/terraform.tfstate"
-            exec sops exec-env "secrets/$project/operator.yaml" "$(printf '%q ' tofu -chdir="opentofu/$project" "$@")"
+            command=$(printf '%q ' tofu -chdir="opentofu/$project" "$@")
+            if [ -e "secrets/$project/api.yaml" ]; then
+              command="sops exec-env $(printf '%q %q' "secrets/$project/api.yaml" "$command")"
+            fi
+            exec sops exec-env "secrets/$project/operator.yaml" "$command"
           '';
         };
       };

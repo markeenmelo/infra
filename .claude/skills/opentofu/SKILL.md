@@ -1,13 +1,14 @@
 ---
 name: opentofu
-description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, services, device tags, auth keys), the tofu flake app, encrypted state, provider pins, plan and apply rules. Use before changing opentofu/ or modules/opentofu.nix, reviewing a plan the operator pasted, or answering who can reach what on the tailnet."
+description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, services, device tags, auth keys; Porkbun: the public DNS records), the tofu flake app, encrypted state, provider pins, plan and apply rules. Use before changing opentofu/ or modules/opentofu.nix, reviewing a plan the operator pasted, changing a public DNS record, or answering who can reach what on the tailnet."
 ---
 
 # OpenTofu
 
 [opentofu/PROJECT/](../../../opentofu/) is operator-only; no host reads it. The `tofu` app
 ([opentofu.nix](../../../modules/opentofu.nix)) runs any OpenTofu command inside a project with the
-credentials from `secrets/PROJECT/operator.yaml` ([secrets skill](../secrets/SKILL.md)) and the
+credentials from `secrets/PROJECT/operator.yaml`, plus `secrets/PROJECT/api.yaml` when the
+project shares a credential with a host ([secrets skill](../secrets/SKILL.md)), and the
 state at `$XDG_STATE_HOME/infra/PROJECT/terraform.tfstate`, encrypted with
 `TF_VAR_state_passphrase` from the same file. State is never in Git; a lost state is recovery,
 not a routine apply, and a moved `XDG_STATE_HOME` is a changed backend that needs an approved
@@ -41,3 +42,15 @@ read-only for all of these; `acls_externally_managed_on` says so.
 - Approval (`autoApprovers`) is not retroactive: apply a new route or service approver before
   deploying the host that advertises it.
 - `tag:infra-provisioner` belongs to the OAuth client only.
+
+## Porkbun
+
+[main.tf](../../../opentofu/porkbun/main.tf) owns every record of the domain: one wildcard `A`
+to the edge, since the edge aborts any hostname it does not publish and the wildcard
+certificate names none ([proxy skill](../proxy/SKILL.md)), so publishing an app needs no DNS
+change; the `CAA` set that confines issuance to Let's Encrypt, wildcard included, and forbids
+S/MIME; and the null-mail set (null `MX` on the apex and on the wildcard, `-all` SPF, reject
+DMARC covering subdomains, empty DKIM) that lets no one send as the domain or any name under it. The API keys in `secrets/porkbun/api.yaml` are the
+edge's DNS-01 keys and are full-authority, so a plan already carries risk. A record that exists before its block is
+adopted with an `import` block (`<record_id>_<domain>_<type>`, ids from the operator's
+private listing), never duplicated.

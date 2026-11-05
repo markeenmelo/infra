@@ -26,8 +26,8 @@ Requests from outside `countries` get a 403 before any app sees them; the lookup
 country database packaged in nixpkgs, so it updates with the flake lock and needs no account.
 Tailnet clients never need the edge, even behind a foreign exit node: the split DNS sends the
 domain to bastion directly.
-Publishing an app adds its subdomain and bastion port to `apps`; the DNS record and the tailnet
-grant are separate changes. Certificates, the ACME account and the JSON access logs CrowdSec reads live
+Publishing an app adds its subdomain and bastion port to `apps`; the wildcard record already
+resolves it ([opentofu skill](../opentofu/SKILL.md#porkbun)) and the tailnet grant is a separate change. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
 credential headers and no share tokens in paths, since the published apps carry credentials in
 all three (the URI filters apply in sequence, so the query strip and every path redaction all
