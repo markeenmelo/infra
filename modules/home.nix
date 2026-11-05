@@ -13,7 +13,6 @@
     homeManager.base =
       { pkgs, ... }:
       {
-        programs.zsh.enable = true;
         home.packages = [
           pkgs.jq
           pkgs.rsync
