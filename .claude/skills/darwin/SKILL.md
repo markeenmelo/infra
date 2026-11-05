@@ -25,9 +25,10 @@ written to a private file, since sops-nix is not wired on darwin. Touch ID answe
 generation's modules are reference only; a tool is added when the operator names it.
 
 `flake.modules.darwin.desktop` is the laptop role: AeroSpace tiles with alt bindings, SketchyBar
-replaces the menu bar and reads the Stylix palette, Vicinae is the launcher on control-space,
+replaces the menu bar and reads the Stylix palette, Vicinae is the launcher (its toggle shortcut
+is set once in the app, `ctrl+comma`, since it owns `~/.config/vicinae/settings.json`),
 `system.defaults` holds the macOS preferences. Vicinae is the one GUI app from nixpkgs, so its
-launchd agent can point at the bundle and carry the shortcut override. The other GUI apps are Homebrew casks from taps pinned
+launchd agent can point at the bundle. The other GUI apps are Homebrew casks from taps pinned
 as flake inputs ([homebrew.nix](../../../modules/homebrew.nix)), so `brew tap` is refused and a
 cask moves with `nix flake update homebrew-cask`; whatever the Brewfile stops naming is zapped at
 activation, app data included, so preview a switch that drops a cask with

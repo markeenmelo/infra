@@ -3,13 +3,13 @@
     { config, lib, ... }:
     let
       sketchybar = lib.getExe config.services.sketchybar.package;
-      directions = [
-        "left"
-        "down"
-        "up"
-        "right"
-      ];
-      workspaces = map toString (lib.range 1 9);
+      directions = {
+        h = "left";
+        j = "down";
+        k = "up";
+        l = "right";
+      };
+      workspaces = map toString (lib.range 1 4);
     in
     {
       services.aerospace = {
@@ -23,18 +23,45 @@
             outer = {
               left = 6;
               right = 6;
-              top = 38;
+              top = [
+                { monitor.built-in = 6; }
+                38
+              ];
               bottom = 6;
             };
           };
+          on-window-detected =
+            lib.mapAttrsToList
+              (app-id: workspace: {
+                "if" = { inherit app-id; };
+                run = "move-node-to-workspace ${workspace}";
+              })
+              {
+                "app.zen-browser.zen" = "1";
+                "com.mitchellh.ghostty" = "2";
+                "dev.zed.Zed" = "2";
+                "com.spotify.client" = "3";
+                "ru.keepcoder.Telegram" = "4";
+                "net.whatsapp.WhatsApp" = "4";
+              }
+            ++
+              map
+                (app-id: {
+                  "if" = { inherit app-id; };
+                  run = "layout floating";
+                })
+                [
+                  "com.bitwarden.desktop"
+                  "com.apple.systempreferences"
+                ];
           exec-on-workspace-change = [
             "/bin/bash"
             "-c"
             "${sketchybar} --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE"
           ];
           mode.main.binding = lib.mkMerge [
-            (lib.genAttrs' directions (dir: lib.nameValuePair "alt-${dir}" "focus ${dir}"))
-            (lib.genAttrs' directions (dir: lib.nameValuePair "alt-shift-${dir}" "move ${dir}"))
+            (lib.mapAttrs' (key: dir: lib.nameValuePair "alt-${key}" "focus ${dir}") directions)
+            (lib.mapAttrs' (key: dir: lib.nameValuePair "alt-shift-${key}" "move ${dir}") directions)
             (lib.genAttrs' workspaces (n: lib.nameValuePair "alt-${n}" "workspace ${n}"))
             (lib.genAttrs' workspaces (n: lib.nameValuePair "alt-shift-${n}" "move-node-to-workspace ${n}"))
             {
@@ -45,6 +72,7 @@
               alt-slash = "layout tiles horizontal vertical";
               alt-q = "close";
               alt-enter = "exec-and-forget /usr/bin/open -na /Applications/Ghostty.app";
+              alt-tab = "workspace-back-and-forth";
             }
           ];
         };

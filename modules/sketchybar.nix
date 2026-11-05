@@ -24,9 +24,13 @@
       battery = pkgs.writeShellScript "sketchybar-battery" ''
         sketchybar --set "$NAME" label="$(pmset -g batt | grep -Eo '[0-9]+%')"
       '';
+      agenda = pkgs.writeShellScript "sketchybar-agenda" ''
+        sketchybar --set "$NAME" label="$(${config.homebrew.prefix}/bin/icalBuddy -n -li 1 -nc -b "" -ps "| |" -iep datetime,title -po datetime,title -tf %H:%M -df "" eventsToday | head -1)"
+      '';
     in
     {
       system.defaults.NSGlobalDomain._HIHideMenuBar = true;
+      homebrew.brews = [ "ical-buddy" ];
       services.sketchybar = {
         enable = true;
         extraPackages = [ config.services.aerospace.package ];
@@ -47,6 +51,7 @@
             script='sketchybar --set "$NAME" label="$(date "+%a %d %b %H:%M")"'
           sketchybar --add item battery right --subscribe battery system_woke power_source_change \
             --set battery update_freq=120 script="${battery}"
+          sketchybar --add item agenda right --set agenda update_freq=300 script="${agenda}"
           sketchybar --update
         '';
       };

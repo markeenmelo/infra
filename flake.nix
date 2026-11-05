@@ -45,6 +45,14 @@
       url = "github:karanb192/cache-tax/v2.3.1";
       flake = false;
     };
+    ponytail = {
+      url = "github:DietrichGebert/ponytail/v5.3.3";
+      flake = false;
+    };
+    caveman = {
+      url = "github:JuliusBrussee/caveman/v4.0.1";
+      flake = false;
+    };
     stylix = {
       url = "github:nix-community/stylix";
       inputs = {

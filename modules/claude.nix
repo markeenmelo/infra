@@ -17,7 +17,10 @@ in
     darwin.base =
       { pkgs, ... }:
       {
-        nixpkgs.config.allowUnfreePackages = [ "claude-code" ];
+        nixpkgs.config.allowUnfreePackages = [
+          "claude-code"
+          "rtk"
+        ];
         system.activationScripts.postActivation.text = ''
           install -d -m 0755 "/Library/Application Support/ClaudeCode"
           ln -sfn ${pkgs.writeText "claude-managed-settings.json" managedSettings} "/Library/Application Support/ClaudeCode/managed-settings.json"
@@ -25,32 +28,58 @@ in
       };
 
     homeManager.base =
-      { lib, pkgs, ... }:
       {
+        config,
+        lib,
+        pkgs,
+        ...
+      }:
+      {
+        home = {
+          packages = [
+            pkgs.nodejs
+            pkgs.rtk
+          ];
+          file."${config.programs.claude-code.configDir}/.ponytail-band".text = "off";
+        };
+        xdg.configFile = {
+          "ponytail/config.json".text = builtins.toJSON {
+            defaultMode = "ultra";
+            hideStatus = true;
+          };
+          "caveman/config.json".text = builtins.toJSON { defaultMode = "ultracave"; };
+        };
         programs.claude-code = {
           enable = true;
-          plugins.cache-tax = inputs.cache-tax;
           lspServers.nix = {
             command = lib.getExe pkgs.nixd;
             extensionToLanguage.".nix" = "nix";
           };
-          outputStyles.concise = ''
-            ---
-            name: Concise
-            description: Short answers without preamble or recap
-            keep-coding-instructions: true
-            ---
-
-            Use the fewest words that keep the answer correct and complete. Skip preamble,
-            restated questions and closing summaries. Prefer code, commands and paths over prose.
-          '';
           settings = {
             theme = "dark-ansi";
-            outputStyle = "Concise";
             attribution = {
               commit = "";
               pr = "";
             };
+            env = {
+              RTK_SUPPRESS_HOOK_WARNING = "1";
+              CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" [
+                "${inputs.cache-tax}"
+                "${inputs.ponytail}"
+                "${inputs.caveman}"
+              ];
+            };
+            hooks.PreToolUse = [
+              {
+                matcher = "Bash";
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${lib.getExe pkgs.rtk} hook claude";
+                  }
+                ];
+              }
+            ];
             permissions = {
               defaultMode = "auto";
               blockReadsOutsideWorkingDirectories = true;

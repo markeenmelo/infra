@@ -20,7 +20,8 @@ module exists, or dashboards beyond Grafana. Do not reopen these.
 
 **A rule lives in one place:** the code that enforces it, the check that fails on it, or one skill.
 Docs point to the module or check instead of restating it, and never record live state, dates or
-hashes; those go in commit messages. Code has no comments except `shortcut: <limit>, <when to upgrade>`.
+hashes; those go in commit messages. Code has no comments except `shortcut: <limit>, <when to upgrade>` and the meaning of an opaque
+id the code cannot name.
 
 ## Autonomy
 
