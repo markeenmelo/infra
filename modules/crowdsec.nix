@@ -73,7 +73,10 @@
       systemd.services = {
         crowdsec = {
           after = [ "caddy.service" ];
-          restartTriggers = [ (lib.toJSON cfg.settings) ];
+          restartTriggers = [
+            (lib.toJSON cfg.settings)
+            (lib.toJSON cfg.hub)
+          ];
           serviceConfig = {
             DynamicUser = lib.mkForce false;
             StateDirectory = "crowdsec";
