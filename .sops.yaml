@@ -1,6 +1,7 @@
 keys:
   - &operator age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht
   - &racknerd age1qd9jj98f3wt0x6g6j5xme6xajhk24kpnl0hasd2pe7uenxhfcypqsyhp2k
+  - &bastion age16fyy8678zedgm6nqgqnvmwzlc9cjzsc2nu9u45jaxvuh0sw5wfjst73np2
 
 creation_rules:
   - path_regex: ^secrets/hosts/racknerd\.yaml$
@@ -8,11 +9,17 @@ creation_rules:
       - age:
           - *operator
           - *racknerd
+  - path_regex: ^secrets/hosts/bastion\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *bastion
   - path_regex: ^secrets/shared/login\.yaml$
     key_groups:
       - age:
           - *operator
           - *racknerd
+          - *bastion
   - path_regex: ^secrets/tailscale/operator\.yaml$
     key_groups:
       - age:

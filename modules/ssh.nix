@@ -26,6 +26,10 @@
           }
         ];
       };
+      fleet.carry = [
+        "etc/ssh/ssh_host_ed25519_key"
+        "etc/ssh/ssh_host_ed25519_key.pub"
+      ];
       preservation.preserveAt."/persist".files = [
         {
           file = "/etc/ssh/ssh_host_ed25519_key";

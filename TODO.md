@@ -32,8 +32,11 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR th
 
 ## bastion
 
-- [ ] Host: hardware, disko (OS disk only), data pools as declared mounts, networking, UPS,
-      power, LEDs (port only what the hardware needs).
+- [x] Host: hardware, disko (OS disk only), data pools as declared mounts, networking, UPS,
+      power.
+- [ ] Front-panel LEDs (out-of-tree `led-ugreen` driver, disk presence and link).
+- [ ] Install bastion once the LAN proxy, split DNS and the household apps are ported: the
+      install replaces every running service. Carries the identity, sbctl and ZFS keys.
 - [ ] LAN proxy (Caddy origin) and Authelia; LLDAP only if Authelia needs it. Each service
       module declares its public route in a `fleet.web.apps` NixOS option; the edge and the LAN
       proxy read it from the hub's configuration and the edge literals go.
