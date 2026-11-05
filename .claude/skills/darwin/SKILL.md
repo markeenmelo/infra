@@ -25,7 +25,9 @@ written to a private file, since sops-nix is not wired on darwin. Touch ID answe
 generation's window manager, bar, launcher, theme and editor modules are reference only: the
 rewrite keeps macOS defaults and adds a tool when the operator names it.
 
-`flake.modules.darwin.desktop` is the laptop role: GUI apps are Homebrew casks from taps pinned
+`flake.modules.darwin.desktop` is the laptop role: AeroSpace tiles with alt bindings, SketchyBar
+replaces the menu bar and reads the Stylix palette, Vicinae is the launcher on control-space,
+`system.defaults` holds the macOS preferences. GUI apps are Homebrew casks from taps pinned
 as flake inputs ([homebrew.nix](../../../modules/homebrew.nix)), so `brew tap` is refused and a
 cask moves with `nix flake update homebrew-cask`; whatever the Brewfile stops naming is zapped at
 activation, app data included, so preview a switch that drops a cask with

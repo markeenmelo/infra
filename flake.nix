@@ -45,6 +45,13 @@
       url = "github:karanb192/cache-tax/v2.3.1";
       flake = false;
     };
+    stylix = {
+      url = "github:nix-community/stylix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+      };
+    };
   };
 
   outputs =
