@@ -25,5 +25,6 @@
         };
       };
       fonts.packages = config.stylix.fonts.packages;
+      home-manager.users.${config.system.primaryUser}.stylix.targets.rofi.enable = false;
     };
 }
