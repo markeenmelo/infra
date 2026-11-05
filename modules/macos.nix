@@ -78,13 +78,13 @@
         };
         loginwindow.GuestEnabled = false;
       };
-      homebrew.brews = [ "mysides" ];
+      homebrew.casks = [ "mysides" ];
       home-manager.users.${config.system.primaryUser} =
         { lib, ... }:
         {
           home.file."Pictures/Screenshots/.keep".text = "";
           home.activation.finderSidebar = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            sidebar=${config.homebrew.prefix}/bin/mysides
+            sidebar=/usr/local/bin/mysides
             [ -x "$sidebar" ] || exit 0
             for name in Recents AirDrop Applications Desktop Documents Movies Music Pictures; do
               "$sidebar" remove "$name" > /dev/null 2>&1 || true
