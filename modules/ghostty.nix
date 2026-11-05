@@ -6,7 +6,7 @@
         enable = true;
         package = null;
         settings = {
-          keybind = "global:cmd+grave=toggle_quick_terminal";
+          keybind = "global:cmd+grave_accent=toggle_quick_terminal";
           command = "${lib.getExe config.programs.tmux.package} new-session -A -s main";
           confirm-close-surface = false;
           window-padding-x = 10;
