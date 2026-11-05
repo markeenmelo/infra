@@ -17,6 +17,7 @@
         };
         resolved.enable = true;
       };
+      fleet.carry = [ "var/lib/tailscale" ];
       preservation.preserveAt."/persist".directories = [
         {
           directory = "/var/lib/tailscale";

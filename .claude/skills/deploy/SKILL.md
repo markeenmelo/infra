@@ -27,10 +27,15 @@ console.
 ## Install
 
 [install.nix](../../../modules/install.nix) wraps nixos-anywhere for a host booted into an
-installer image with its old disk mounted read-only: it copies the SSH host key and
-`/var/lib/tailscale` out of the old persist tree into an `--extra-files` tree, unmounts the old
-disk, then partitions with the host's disko layout and installs its configuration, so the host
-keeps its SSH identity and its tailnet node, and sops-nix can decrypt on first boot. Fleet hosts
+installer image with its old disk mounted read-only: it copies the host's `fleet.carry` paths
+(the SSH host key, `/var/lib/tailscale`, and what the host adds, such as bastion's Secure Boot
+keys and ZFS key files) out of the old persist tree into an `--extra-files` tree, both under
+`/persist` and at their live paths, since the installer reads some of them (Limine signs with
+`/var/lib/sbctl`) before Preservation exists; the root copy is gone on first boot. It then
+unmounts the old disk, partitions with the host's disko layout and installs its configuration,
+so the host keeps its SSH identity and its tailnet node, and sops-nix can decrypt on first boot.
+A path that holds the only copy of a key goes in `fleet.carry` beside its owner, so no install
+can forget it. Fleet hosts
 admit no root login and no SSH off the tailnet ([ssh.nix](../../../modules/ssh.nix)), so a
 reinstall always goes through the installer image, where root is the login. The disk is wiped;
 it is an access change and needs the operator's approval.
@@ -40,7 +45,11 @@ ssh root@ADDRESS 'mkdir -p /mnt/old && mount -o ro /dev/DISK-PART /mnt/old'
 nix run .#install -- HOST root@ADDRESS /mnt/old/persist
 ```
 
-ADDRESS is the host's public address, not its MagicDNS name, since the tailnet node is replaced
+An encrypted old disk is opened first, with `cryptsetup open /dev/DISK-PART old` and
+`/dev/mapper/old` as the mounted device; disko closes the mapping before it wipes the disk, and
+asks for the new passphrase on the terminal.
+
+ADDRESS is the host's public or LAN address, not its MagicDNS name, since the tailnet node is replaced
 during the install. The installer presents its own host key, so `ssh-keygen -R ADDRESS` first
 and accept the new one; the carried key returns with the installed system. From the mac the
 closure builds on the target, inside the installer's memory-backed store. Rotate the host's auth key first ([tailnet skill](../tailnet/SKILL.md)) in

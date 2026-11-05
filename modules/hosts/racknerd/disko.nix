@@ -2,6 +2,7 @@
   fleet.hosts.racknerd.module =
     { config, ... }:
     {
+      fleet.encryptState = false;
       disko.devices.disk.os = {
         device = "/dev/disk/by-path/pci-0000:00:05.0";
         content.partitions = {
