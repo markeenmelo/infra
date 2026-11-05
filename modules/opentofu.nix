@@ -20,7 +20,7 @@
             export TF_CLI_ARGS_init="-input=false -lockfile=readonly -backend-config=path=$state/terraform.tfstate"
             command=$(printf '%q ' tofu -chdir="opentofu/$project" "$@")
             if [ -e "secrets/$project/api.yaml" ]; then
-              command="sops exec-env secrets/$project/api.yaml $(printf '%q' "$command")"
+              command="sops exec-env $(printf '%q %q' "secrets/$project/api.yaml" "$command")"
             fi
             exec sops exec-env "secrets/$project/operator.yaml" "$command"
           '';
