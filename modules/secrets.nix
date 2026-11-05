@@ -1,5 +1,11 @@
 { inputs, ... }:
 {
+  flake.modules.homeManager.base =
+    { config, ... }:
+    {
+      home.sessionVariables.SOPS_AGE_KEY_FILE = "${config.xdg.configHome}/sops/age/keys.txt";
+    };
+
   flake.modules.nixos.base =
     { config, lib, ... }:
     {
