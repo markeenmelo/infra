@@ -119,12 +119,14 @@ in
         ''
           @${name} host ${name}.${domain}
           handle @${name} {
+            header @abroad Edge-Denied 1
             respond @abroad 403
         ''
         + lib.concatImapStrings (i: matcher: ''
           @${name}-denied-${toString i} {
             ${matcher}
           }
+          header @${name}-denied-${toString i} Edge-Denied 1
           respond @${name}-denied-${toString i} 403
         '') denied
         + ''

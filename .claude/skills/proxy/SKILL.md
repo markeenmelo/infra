@@ -1,6 +1,6 @@
 ---
 name: proxy
-description: "The public edge on racknerd: Caddy with a wildcard certificate by Porkbun DNS-01, the hostnames it forwards to bastion over the tailnet, the headers it strips and the admin paths it denies, where certificates and logs live. Use before touching modules/edge.nix, publishing or removing a public hostname, or debugging public HTTPS."
+description: "The public edge on racknerd: Caddy with a wildcard certificate by Porkbun DNS-01, the hostnames it forwards to bastion over the tailnet, the headers it strips and the admin paths it denies, CrowdSec bans at the firewall, where certificates, logs and ban state live. Use before touching modules/edge.nix or modules/crowdsec.nix, publishing or removing a public hostname, or debugging public HTTPS or bans."
 ---
 
 # Edge proxy
@@ -38,6 +38,18 @@ or directive order fails CI instead of the edge. racknerd resolves over
 DNS-over-TLS on its own ([networking.nix](../../../modules/hosts/racknerd/networking.nix)) and
 servers ignore tailnet DNS ([server.nix](../../../modules/server.nix)), so the DNS-01 check never
 depends on the tailnet or bastion.
+
+[crowdsec.nix](../../../modules/crowdsec.nix) bans at the firewall, not in Caddy: the engine
+tails the access log as a member of the `caddy` group, the hub `caddy` collection parses it and
+supplies the generic HTTP scenarios, and one local scenario bans an address after repeated
+denials by the edge itself, which marks them with a response header so backend 403s never
+count; the community blocklist comes from the central API the setup unit registers with
+on first boot. The firewall bouncer registers itself with the local API and drops banned
+addresses in nftables, which is why the server uses the nftables backend. Ban length grows
+with each repeat. The hub is pinned to a commit so `cscli hub update` cannot change what the
+engine runs; moving it is a lock-style bump of that literal. State under `/var/lib/crowdsec`
+(database, hub, API credentials) persists, and the engine runs as a static user so the
+persisted files keep their owner across reboots.
 
 The Caddy package pins the plugin version and a hash that covers the Go module tree of both
 Caddy and the plugin, so a nixpkgs bump that moves Caddy changes it as much as a plugin update.
