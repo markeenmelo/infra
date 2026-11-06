@@ -77,7 +77,7 @@ in
           inherit port;
           public = true;
           denied = [
-            "method POST PATCH DELETE\n  path /graph/v1.0/users /graph/v1.0/users/* /graph/v1.0/groups /graph/v1.0/groups/*"
+            "method POST PATCH DELETE\n  path /graph/v1.0/users /graph/v1.0/users/* /graph/v1.0/groups /graph/v1.0/groups/* /graph/v1.0/education /graph/v1.0/education/*"
             "path /api/v0/settings/assignments-add /api/v0/settings/assignments-remove /admin-settings /admin-settings/*"
           ];
         };
