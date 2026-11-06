@@ -15,8 +15,12 @@ in
     darwin.desktop.homebrew.casks = [ "claude" ];
 
     darwin.base =
-      { pkgs, ... }:
+      { config, pkgs, ... }:
       {
+        sops.secrets.github-mcp-token = {
+          sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+          owner = config.system.primaryUser;
+        };
         nixpkgs.config.allowUnfreePackages = [
           "claude-code"
           "rtk"
@@ -31,6 +35,7 @@ in
       {
         config,
         lib,
+        osConfig,
         pkgs,
         ...
       }:
@@ -49,8 +54,24 @@ in
           };
           "caveman/config.json".text = builtins.toJSON { defaultMode = "ultracave"; };
         };
+        programs.mcp = {
+          enable = true;
+          servers = {
+            nixos.command = lib.getExe pkgs.mcp-nixos;
+            github = {
+              command = lib.getExe pkgs.github-mcp-server;
+              args = [
+                "stdio"
+                "--read-only"
+                "--toolsets=repos,pull_requests,actions"
+              ];
+              env.GITHUB_PERSONAL_ACCESS_TOKEN.file = osConfig.sops.secrets.github-mcp-token.path;
+            };
+          };
+        };
         programs.claude-code = {
           enable = true;
+          enableMcpIntegration = true;
           lspServers.nix = {
             command = lib.getExe pkgs.nixd;
             extensionToLanguage.".nix" = "nix";
@@ -83,12 +104,26 @@ in
             permissions = {
               defaultMode = "auto";
               blockReadsOutsideWorkingDirectories = true;
+              allow = [
+                "mcp__plugin_hm_nixos__nix"
+                "mcp__plugin_hm_nixos__nix_versions"
+              ]
+              ++ map (tool: "mcp__plugin_hm_github__${tool}") [
+                "get_*"
+                "list_*"
+                "search_*"
+                "pull_request_read"
+              ];
               deny = map (file: "Read(${file})") [
                 "~/.claude/.credentials.json"
                 "~/.claude.json"
                 "~/.ssh/**"
                 "~/.config/sops/**"
                 "~/.config/gh/**"
+                "//run/secrets/**"
+                "//run/secrets.d/**"
+                "//private/var/run/secrets/**"
+                "//private/var/run/secrets.d/**"
                 "~/Library/Keychains/**"
                 "~/Library/Application Support/sops/**"
                 "~/Library/Application Support/Bitwarden/**"
