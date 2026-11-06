@@ -1,5 +1,11 @@
 { inputs, ... }:
 let
+  secretDirs = [
+    "/run/secrets"
+    "/run/secrets.d"
+    "/private/var/run/secrets"
+    "/private/var/run/secrets.d"
+  ];
   managedSettings = builtins.toJSON {
     permissions.disableBypassPermissionsMode = "disable";
     sandbox = {
@@ -7,12 +13,7 @@ let
       failIfUnavailable = true;
       allowUnsandboxedCommands = false;
       network.strictAllowlist = true;
-      filesystem.denyRead = [
-        "/run/secrets"
-        "/run/secrets.d"
-        "/private/var/run/secrets"
-        "/private/var/run/secrets.d"
-      ];
+      filesystem.denyRead = secretDirs;
     };
   };
 in
@@ -120,22 +121,21 @@ in
                 "search_*"
                 "pull_request_read"
               ];
-              deny = map (file: "Read(${file})") [
-                "~/.claude/.credentials.json"
-                "~/.claude.json"
-                "~/.ssh/**"
-                "~/.config/sops/**"
-                "~/.config/gh/**"
-                "//run/secrets/**"
-                "//run/secrets.d/**"
-                "//private/var/run/secrets/**"
-                "//private/var/run/secrets.d/**"
-                "~/Library/Keychains/**"
-                "~/Library/Application Support/sops/**"
-                "~/Library/Application Support/Bitwarden/**"
-                "~/Library/Application Support/Zen/**"
-                "~/Library/Application Support/Claude/**"
-              ];
+              deny = map (file: "Read(${file})") (
+                [
+                  "~/.claude/.credentials.json"
+                  "~/.claude.json"
+                  "~/.ssh/**"
+                  "~/.config/sops/**"
+                  "~/.config/gh/**"
+                  "~/Library/Keychains/**"
+                  "~/Library/Application Support/sops/**"
+                  "~/Library/Application Support/Bitwarden/**"
+                  "~/Library/Application Support/Zen/**"
+                  "~/Library/Application Support/Claude/**"
+                ]
+                ++ map (dir: "/${dir}/**") secretDirs
+              );
             };
           };
         };
