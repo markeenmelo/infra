@@ -1,6 +1,7 @@
 { config, ... }:
 let
   inherit (config.flake.modules.nixos) caddy;
+  inherit (config.fleet) domain;
 in
 {
   flake.modules.nixos.edge =
@@ -11,7 +12,6 @@ in
       ...
     }:
     let
-      domain = "marcosmelo.dev";
       # shortcut: bastion's tailnet address and the app ports are literals, read them from fleet facts when bastion lands
       bastion = "100.105.158.109";
       countries = [ "CA" ];
