@@ -5,10 +5,15 @@
   "minimumReleaseAge": "3 days",
   "nix": { "enabled": true },
   "lockFileMaintenance": { "enabled": true },
+  "vulnerabilityAlerts": { "enabled": true },
   "packageRules": [
     {
       "matchDatasources": ["terraform-provider", "terraform-module"],
       "registryUrls": ["https://registry.opentofu.org"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "matchManagers": ["nix"],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     }
   ]
