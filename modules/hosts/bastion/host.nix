@@ -6,6 +6,7 @@
       lan-proxy
       authelia
       immich
+      frigate
     ];
     system.stateVersion = "26.05";
   };

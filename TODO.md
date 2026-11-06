@@ -20,13 +20,11 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Apps, one PR each, each moving its edge entry from `unported` in `edge.nix` to its own
       `fleet.web.apps` (Nextcloud's goes when OpenCloud lands); the first forward-auth route widens
       Authelia's session cookie from `auth.` to the parent domain; an app whose data stays on a
-      pool pins its uid and gid to the ones that own it (`stat` on the old bastion): Frigate, ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
+      pool pins its uid and gid to the ones that own it (`stat` on the old bastion): ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
       *arr + downloaders + VPN confinement). Dropped: Home Assistant, Mosquitto, SparkyFitness,
       OpenGym; their databases in the old PostgreSQL cluster are dropped by hand after the install.
-      - Frigate: OpenVINO on the iGPU, with person object filters (`min_area`, ratios,
-        `threshold`) and zone `inertia` against false positives; the operator tunes the values.
-        MQTT off, since nothing consumes it. The Tapo C120 is `192.168.3.2` on the Cameras VLAN
-        (RTSP 554, ONVIF 2020), which bastion's firewall does not block.
+      - Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`
+        against false positives, tuned by the operator.
       - OpenCloud on `opencloud-production`, files only (not oCIS: nixpkgs has only an old unfree
         binary). State on a new `tank/opencloud` dataset; `/etc/opencloud/opencloud.yaml` holds
         generated secrets, so persist it or render it from sops. Authelia becomes its OIDC
