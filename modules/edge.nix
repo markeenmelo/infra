@@ -41,6 +41,7 @@ in
           request>headers>X-Immich-User-Token delete
           request>headers>X-Immich-Session-Token delete
           request>headers>X-Immich-Share-Key delete
+          request>headers>Public-Token delete
           request>headers>Referer delete
           request>uri multi_regexp {
             regexp "[?].*" ""
