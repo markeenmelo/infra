@@ -5,6 +5,7 @@
       server
       lan-proxy
       authelia
+      immich
     ];
     system.stateVersion = "26.05";
   };
