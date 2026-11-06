@@ -1,70 +1,63 @@
 # Rewrite TODO
 
 Remaining work to retire `infra-old/`. One PR per line unless noted; order is the intended
-sequence. Decisions are in [CLAUDE.md](CLAUDE.md); check a line off in the PR that lands it.
+sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that lands it.
 
 ## Fleet plumbing
 
-- [x] `opentofu`: tailnet policy as HCL, OAuth client and state passphrase carried over, `tofu`
-      flake app, encrypted state, `opentofu` skill. Porkbun and UniFi projects follow in their
-      own PRs when their consumers land.
 - [ ] Tailnet policy: move the literal addresses, services and hosts to fleet facts when bastion
-      lands; drop the old fleet's grants, services and proton exit nodes as each host migrates.
-      Revisit `group:members` reaching `bastion:443` when the LAN proxy and Authelia land.
-- [x] `deploy`: deploy-rs with magic rollback over the tailnet, `deploy` flake app, `deploy` skill.
-- [ ] `ci-deploy`: deploy on merge from GitHub-hosted runners (Tailscale GitHub Action + deploy-rs),
-      protected environment with manual approval gated by a path filter on access-changing files;
-      its own key on the `deploy` account, which is root-equivalent.
+      lands; drop the old fleet's grants, services and proton exit nodes as each host migrates,
+      and the `sparkyfitness` and `opengym` services and `member_services`.
+      Revisit `group:members` reaching `bastion:443` now that the LAN proxy and Authelia landed.
 - [ ] One NixOS VM test in `nix flake check` (boot, root rollback, `/persist` survives).
 - [ ] Build cache for CI and clients: bastion remote builder + Harmonia; decide what CI uses.
       GitHub-hosted arm64 Linux and Apple Silicon macOS runners can build the aarch64 closures
       for it; check the macOS runner's memory against the closures first.
 - [ ] Decide the shared password hash on racknerd (per-host `login.yaml` or no password on the edge).
 
-## racknerd
-
-- [x] Edge proxy: Caddy with Porkbun DNS-01 forwarding to bastion over the tailnet.
-- [x] CrowdSec with the firewall bouncer; its user joins the `caddy` group to read the access log.
-      Lands before the install, so the portal is never public without bans.
-- [x] Install with nixos-anywhere (`nix run .#install`, carries `/persist/etc/ssh` and
-      `/persist/var/lib/tailscale`); rotate the auth key first. Manual approval (access change).
-- [x] Porkbun OpenTofu project.
-
 ## bastion
 
-- [x] Host: hardware, disko (OS disk only), data pools as declared mounts, networking, UPS,
-      power.
 - [ ] Front-panel LEDs (out-of-tree `led-ugreen` driver, disk presence and link).
-- [ ] Install bastion once the LAN proxy, split DNS and the household apps are ported: the
-      install replaces every running service. Carries the identity, sbctl and ZFS keys.
-- [x] LAN proxy (Caddy origin) and split DNS for the tailnet.
-- [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands.
-- [x] Authelia, with its users file rendered from secrets instead of LLDAP.
-- [ ] Each service
-      module declares its public route in a `fleet.web.apps` NixOS option; the edge and the LAN
-      proxy read it from the hub's configuration and the edge literals go.
-- [ ] Apps: decide which of the old set stay (Nextcloud stays): Immich, Home Assistant +
-      Mosquitto, Frigate, ntfy, SparkyFitness, OpenGym, nixflix (Jellyfin + *arr + downloaders +
-      VPN confinement), PostgreSQL shared instance.
+- [ ] Each service module declares its public route in a `fleet.web.apps` NixOS option; the edge
+      and the LAN proxy read it from the hub's configuration and the edge literals go, including
+      the Home Assistant route and the Nextcloud denials. The first forward-auth route widens
+      Authelia's session cookie from `auth.` to the parent domain.
+- [ ] Apps, one PR each: Immich, Frigate, ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
+      *arr + downloaders + VPN confinement). Dropped: Home Assistant, Mosquitto, SparkyFitness,
+      OpenGym; their databases in the old PostgreSQL cluster are dropped by hand after the install.
+      - Frigate: OpenVINO on the iGPU, with person object filters (`min_area`, ratios,
+        `threshold`) and zone `inertia` against false positives; the operator tunes the values.
+        MQTT off, since nothing consumes it. The Tapo C120 is `192.168.3.2` on the Cameras VLAN
+        (RTSP 554, ONVIF 2020), which bastion's firewall does not block.
+      - OpenCloud on `opencloud-production`, files only (not oCIS: nixpkgs has only an old unfree
+        binary). State on a new `tank/opencloud` dataset; `/etc/opencloud/opencloud.yaml` holds
+        generated secrets, so persist it or render it from sops. Authelia becomes its OIDC
+        provider with public PKCE clients and a role claim, so the users file gains groups.
+        Files move with `rclone copy` from `/srv/nextcloud/instance/data/USER/files` over WebDAV
+        (shares, links, versions and trash do not carry over); check `tank` free space first,
+        then destroy `tank/nextcloud` and drop its mount and snapshots.
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts.
-- [ ] Backups: restic to pCloud, restore check.
+- [ ] Backups: restic to pCloud, restore check, PostgreSQL dumps.
 - [ ] Remote builder + Harmonia cache for the fleet.
-- [ ] UniFi OpenTofu project.
+- [ ] Install bastion once the household apps are ported: the install replaces every running
+      service. Carries the identity, sbctl and ZFS keys.
+- [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands.
+- [ ] UniFi OpenTofu project: keep bastion to the camera on 554 and 2020, and no internet for the
+      Cameras VLAN; drop the Home Assistant to IoT media rule.
 
 ## Laptops
 
 - [ ] `thinkpad`: host, desktop profile, Stylix, Home Manager, power, backups; persist and back up
       `~/.local/state/infra` (OpenTofu state).
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
-- [x] `mac`: nix-darwin + Home Manager, Tailscale, shared operator config.
-- [x] `mac` apps: Homebrew casks, CLI packages, git, Claude Code.
-- [x] `mac` shell: zsh, starship, tmux, neovim, ghostty and zed settings.
-- [x] `mac` desktop: aerospace, sketchybar, vicinae, `system.defaults`, Stylix, minimal.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
 ## Closing out
 
-- [ ] Remaining skills as their code lands (`opentofu`, `deploy`, `proxy`, `monitoring`,
-      `backups`, `desktop`, `darwin`); update `nix` skill placement table.
+- [ ] `ci-deploy`: deploy on merge from GitHub-hosted runners (Tailscale GitHub Action + deploy-rs),
+      protected environment with manual approval gated by a path filter on access-changing files;
+      its own key on the `deploy` account, which is root-equivalent.
+- [ ] Remaining skills as their code lands (`monitoring`, `backups`, `desktop`); update `nix`
+      skill placement table.
 - [ ] Delete `~/projects/infra-old/` (duplicate) and, when every host runs the new config,
       `infra/infra-old/` and its mention in CLAUDE.md.

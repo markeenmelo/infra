@@ -15,7 +15,7 @@ to port, never copy code or docs from it. Load the skill whose description owns 
 Stack, decided: flake-parts + import-tree, disko, btrfs root rolled back every boot with state under
 `/persist` (Preservation), sops-nix, deploy-rs with magic rollback over Tailscale, nixos-anywhere for
 installs, Caddy (Porkbun DNS-01) with CrowdSec's firewall bouncer, Authelia, OpenTofu HCL for
-Tailscale, Porkbun and UniFi, Stylix, Nextcloud. No Hydra, Attic, Cachix, containers where a NixOS
+Tailscale, Porkbun and UniFi, Stylix, OpenCloud. No Hydra, Attic, Cachix, containers where a NixOS
 module exists, or dashboards beyond Grafana. Do not reopen these.
 
 **A rule lives in one place:** the code that enforces it, the check that fails on it, or one skill.
