@@ -56,6 +56,15 @@ in
             PROXY_ROLE_ASSIGNMENT_DRIVER = "oidc";
             PROXY_ROLE_ASSIGNMENT_OIDC_CLAIM = "groups";
             GRAPH_ASSIGN_DEFAULT_USER_ROLE = "false";
+            PROXY_CSP_CONFIG_FILE_LOCATION = toString (
+              pkgs.writeText "opencloud-csp.yaml" (
+                builtins.toJSON {
+                  directives = lib.genAttrs [ "connect-src" "frame-src" "script-src" ] (_: [
+                    "https://auth.${domain}/"
+                  ]);
+                }
+              )
+            );
           }
           (lib.genAttrs' [ "WEB" "DESKTOP" "ANDROID" "IOS" ] (
             client: lib.nameValuePair "WEBFINGER_${client}_OIDC_CLIENT_SCOPES" (toString scopes)
@@ -66,6 +75,10 @@ in
         web.apps.cloud = {
           inherit port;
           public = true;
+          denied = [
+            "method POST PATCH DELETE\n  path /graph/v1.0/users /graph/v1.0/users/* /graph/v1.0/groups /graph/v1.0/groups/*"
+            "path /api/v0/settings/assignments-add /api/v0/settings/assignments-remove /admin-settings /admin-settings/*"
+          ];
         };
         oidc.clients = lib.mapAttrs (_: redirect_uris: {
           public = true;

@@ -82,7 +82,7 @@ locals {
     }
     grants = [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
-      { src = ["racknerd"], dst = ["bastion"], ip = ["tcp:9091", "tcp:8096", "tcp:8081", "tcp:2283", "tcp:8123", "tcp:9095", "tcp:3102", "tcp:9200"] },
+      { src = ["racknerd"], dst = ["bastion"], ip = ["tcp:9091", "tcp:8096", "tcp:2283", "tcp:8123", "tcp:9095", "tcp:3102", "tcp:9200"] },
       { src = ["bastion"], dst = ["racknerd"], ip = ["tcp:8000"] },
       { src = ["tag:admin-client"], dst = values(local.svc), ip = ["tcp:443"] },
       { src = ["group:members"], dst = [for s in local.member_services : local.svc[s]], ip = ["tcp:443"] },
