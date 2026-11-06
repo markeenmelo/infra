@@ -60,6 +60,14 @@
         flake-parts.follows = "flake-parts";
       };
     };
+    nixflix = {
+      url = "github:kiriwalawren/nixflix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        mkdocs-catppuccin.follows = "";
+        treefmt-nix.follows = "";
+      };
+    };
   };
 
   outputs =

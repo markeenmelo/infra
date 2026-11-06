@@ -19,7 +19,7 @@ key. The tokens are signed with `authelia/oidc-signing-key` and `authelia/oidc-h
 either signs every app out. The `authelia-HOST` check fails a client that drops the policy or
 PKCE, or redirects anywhere but https, a native app's loopback (`http://127.0.0.1`,
 `http://localhost`) or an app's own scheme. A person's groups in the module become the `groups`
-claim, which is how apps such as OpenCloud assign roles.
+claim, which is how apps such as OpenCloud and Jellyfin assign roles.
 
 People live in the module with their name and email; their argon2 hashes are
 `authelia/USER-password-hash` in `secrets/hosts/bastion.yaml`, rendered with them into the users
