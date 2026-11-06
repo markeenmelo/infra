@@ -47,6 +47,7 @@ in
             regexp "^/s/[^/]+" "/s/REDACTED"
             regexp "^/share/[^/]+" "/share/REDACTED"
             regexp "^(/remote.php)?/dav/public-files/[^/]+" "/dav/public-files/REDACTED"
+            regexp "^/data/[^/]+" "/data/REDACTED"
           }
         }
       '';

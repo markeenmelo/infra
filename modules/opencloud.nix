@@ -56,6 +56,7 @@ in
             PROXY_ROLE_ASSIGNMENT_DRIVER = "oidc";
             PROXY_ROLE_ASSIGNMENT_OIDC_CLAIM = "groups";
             GRAPH_ASSIGN_DEFAULT_USER_ROLE = "false";
+            WEB_OIDC_SCOPE = toString scopes;
             PROXY_CSP_CONFIG_FILE_LOCATION = toString (
               pkgs.writeText "opencloud-csp.yaml" (
                 builtins.toJSON {

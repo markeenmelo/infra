@@ -25,6 +25,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       dropped by hand after the install.
 - [ ] Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`
       against false positives, tuned by the operator.
+- [ ] Keep service ids across reinstalls: the `opencloud` user (and any later app whose data is
+      new on a pool) owns its dataset by a dynamically allocated id that a reinstall reallocates;
+      pin it after the install (`stat`) or carry `/persist/var/lib/nixos` in `fleet.carry`.
 - [ ] OpenCloud data: create `tank/opencloud` before the install, check `tank` free space, move
       the files with `rclone copy` from `/srv/nextcloud/instance/data/USER/files` over WebDAV
       (shares, links, versions and trash do not carry over), then destroy `tank/nextcloud` and
