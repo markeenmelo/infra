@@ -111,12 +111,19 @@ in
         marcos = {
           displayname = "Marcos Melo";
           email = "marcosmelo@proton.me";
-          groups = [ "opencloudAdmin" ];
+          groups = [
+            "opencloudAdmin"
+            "jellyfin"
+            "jellyfin-admins"
+          ];
         };
         nara = {
           displayname = "Nara";
           email = "naralidy@hotmail.com";
-          groups = [ "opencloudUser" ];
+          groups = [
+            "opencloudUser"
+            "jellyfin"
+          ];
         };
       };
       secret = key: {

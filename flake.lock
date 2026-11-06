@@ -337,6 +337,29 @@
         "type": "github"
       }
     },
+    "nixflix": {
+      "inputs": {
+        "mkdocs-catppuccin": [],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "treefmt-nix": [],
+        "vpn-confinement": "vpn-confinement"
+      },
+      "locked": {
+        "lastModified": 1793928283,
+        "narHash": "sha256-sLTWqTA9y012hHeQvFDK3xX5adtVTNyrLCwP3IYBYcM=",
+        "owner": "kiriwalawren",
+        "repo": "nixflix",
+        "rev": "8f0426505cf6325ed6a997336f4f276a60e521f5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kiriwalawren",
+        "repo": "nixflix",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1793726008,
@@ -423,6 +446,7 @@
         "import-tree": "import-tree",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
+        "nixflix": "nixflix",
         "nixpkgs": "nixpkgs",
         "ponytail": "ponytail",
         "preservation": "preservation",
@@ -595,6 +619,21 @@
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "vpn-confinement": {
+      "locked": {
+        "lastModified": 1791310298,
+        "narHash": "sha256-SpqEEuyrkzTqjIHwHrZE+Rs6ez2tzIeYkSY67zp6fcQ=",
+        "owner": "Maroka-chan",
+        "repo": "VPN-Confinement",
+        "rev": "cc37bcf5000e237709e725a9cda010a5cbce3111",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Maroka-chan",
+        "repo": "VPN-Confinement",
         "type": "github"
       }
     }

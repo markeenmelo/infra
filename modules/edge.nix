@@ -17,16 +17,6 @@ in
       # shortcut: bastion's tailnet address is a literal, read it from fleet facts when a second host needs it
       bastion = "100.105.158.109";
       countries = [ "CA" ];
-      jellyfin = "(?i)^/(emby/|mediabrowser/)?";
-      # shortcut: apps still served by the old bastion, each moves to its module's fleet.web.apps when ported
-      unported = {
-        jellyfin.port = 8096;
-        jellyfin.denied = [
-          "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|Policy|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
-          "method DELETE\n  path_regexp ${jellyfin}Users/[^/]+/?$"
-          "method DELETE POST\n  path_regexp ${jellyfin}Items(/[^/]+(/Images(/.*)?)?)?/?$"
-        ];
-      };
       logFilter = ''
         fields {
           request>headers>Authorization delete
@@ -118,16 +108,7 @@ in
               }
             }
             import identity
-            ${lib.concatStrings (
-              lib.mapAttrsToList site (
-                assert lib.assertMsg (lib.intersectAttrs unported declared == { })
-                  "edge.nix: unported still lists ${toString (lib.attrNames (lib.intersectAttrs unported declared))}, which bastion now declares";
-                lib.mergeAttrsList [
-                  unported
-                  served
-                ]
-              )
-            )}
+            ${lib.concatStrings (lib.mapAttrsToList site served)}
             handle {
               abort
             }
