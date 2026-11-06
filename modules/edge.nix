@@ -47,6 +47,7 @@ in
             regexp "[?].*" ""
             regexp "^/s/[^/]+" "/s/REDACTED"
             regexp "^/share/[^/]+" "/share/REDACTED"
+            regexp "^/files/link/public/[^/]+" "/files/link/public/REDACTED"
             regexp "^(/remote.php)?/dav/public-files/[^/]+" "/dav/public-files/REDACTED"
             regexp "^/data/[^/]+" "/data/REDACTED"
             regexp "^/ocs/v[12][.]php/apps/files_sharing/api/v1/tokeninfo/(un)?protected/[^/]+" "/ocs/apps/files_sharing/api/v1/tokeninfo/REDACTED"
