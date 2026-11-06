@@ -1,5 +1,6 @@
 { config, lib, ... }:
 let
+  inherit (config.flake.modules.nixos) postgresql;
   inherit (config.fleet) domain;
   port = 2283;
   root = "/srv/immich";
@@ -50,6 +51,7 @@ in
       gpu = "${utils.escapeSystemdPath config.fleet.renderDevice}.device";
     in
     {
+      imports = [ postgresql ];
       sops.secrets.immich-oidc-client-secret = {
         sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
         key = "immich/oidc-client-secret";
