@@ -1,11 +1,28 @@
 {
   fleet.hosts.bastion.module =
-    { config, pkgs, ... }:
     {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    {
+      fleet.renderDevice = "/dev/dri/igpu";
       hardware = {
         firmware = [ pkgs.linux-firmware ];
         cpu.intel.updateMicrocode = true;
+        graphics = {
+          enable = true;
+          extraPackages = [
+            pkgs.intel-compute-runtime
+            pkgs.intel-media-driver
+            pkgs.vpl-gpu-rt
+          ];
+        };
       };
+      services.udev.extraRules = ''
+        SUBSYSTEM=="drm", KERNEL=="renderD*", DRIVERS=="i915|xe", TAG+="systemd", SYMLINK+="${lib.removePrefix "/dev/" config.fleet.renderDevice}"
+      '';
       boot = {
         extraModulePackages = [ config.boot.kernelPackages.it87 ];
         kernelModules = [
