@@ -13,7 +13,7 @@ change needs [approval](../../../CLAUDE.md#autonomy); **never** touch `tank`, `a
 
 ## Pools
 
-`tank` (Immich, Nextcloud, media), `apps` (`/srv`, PostgreSQL, nixflix state, the ThinkPad
+`tank` (Immich, Nextcloud, OpenCloud, media), `apps` (`/srv`, PostgreSQL, nixflix state, the ThinkPad
 backup) and `scratch` (Frigate, rebuildable) are encrypted with key files under `/persist/zfs`,
 which the install carries and backups exclude; the password-manager copy beside the LUKS
 passphrase is the only other one. Topology, quotas and key locations are not declared: the

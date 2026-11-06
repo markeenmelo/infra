@@ -7,6 +7,7 @@
       authelia
       immich
       frigate
+      opencloud
     ];
     system.stateVersion = "26.05";
   };

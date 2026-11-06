@@ -9,6 +9,7 @@
         "/srv/backup-thinkpad" = "apps/backup-thinkpad";
         "/srv/immich" = "tank/immich";
         "/srv/nextcloud" = "tank/nextcloud";
+        "/srv/opencloud" = "tank/opencloud";
         "/srv/media" = "tank/media";
         "/var/lib/frigate" = "scratch/frigate";
       };
@@ -56,7 +57,7 @@
           enable = true;
           datasets = lib.mkMerge [
             (lib.genAttrs [ "apps/srv" "apps/postgresql" "apps/nixflix" ] (_: snapshots 24 3))
-            (lib.genAttrs [ "tank/immich" "tank/nextcloud" ] (_: snapshots 0 3))
+            (lib.genAttrs [ "tank/immich" "tank/nextcloud" "tank/opencloud" ] (_: snapshots 0 3))
             { "apps/backup-thinkpad" = snapshots 0 0; }
           ];
         };
