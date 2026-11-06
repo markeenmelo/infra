@@ -45,7 +45,10 @@ It holds `192.168.2.2` on the homelab LAN and advertises the three LANs to the t
 not open connections into the IoT and kids LANs, and forwards into them only from the tailnet.
 The IT8613 watchdog (out-of-tree `it87`) is armed by systemd, so the firmware watchdog stays off;
 the UPS hooks drop to the power-saver profile on battery and cut UPS output after the pools
-unmount.
+unmount. The front-panel LEDs ([leds.nix](../../../modules/hosts/bastion/leds.nix), out-of-tree
+`led-ugreen` on the SMBus) show power, uplink and disk presence only, never activity: each blink
+is SMBus traffic that wakes a core. A disk LED follows its `/dev/disk/by-id` device, so a new
+disk gets an entry there.
 
 ## Firmware
 
