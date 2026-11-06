@@ -1,0 +1,50 @@
+name: vulnix
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: vulnix
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock', '**/*.tf') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          save: false
+      - name: Scan each x86_64 host's runtime closure
+        run: |
+          hosts=$(nix eval --raw .#nixosConfigurations --apply 'cs: builtins.concatStringsSep " " (builtins.filter (n: cs.${n}.pkgs.stdenv.hostPlatform.system == "x86_64-linux") (builtins.attrNames cs))')
+          found=0
+          for host in $hosts; do
+            out=$(nix build --no-link --print-out-paths ".#nixosConfigurations.$host.config.system.build.toplevel")
+            rc=0
+            nix shell --inputs-from . nixpkgs#vulnix -c vulnix --closure --json --whitelist vulnix.toml "$out" > "$host.json" || rc=$?
+            [ "$rc" -le 2 ] || exit "$rc"
+            count=$(jq '[.[] | select(.affected_by | length > 0)] | length' "$host.json")
+            [ "$count" -eq 0 ] || found=1
+            {
+              echo "### $host: $count packages with unwhitelisted CVEs"
+              echo
+              echo "| CVSS | Package | CVEs |"
+              echo "|---|---|---|"
+              jq -r 'map(select(.affected_by | length > 0) | {n: .name, s: ([.cvssv3_basescore[]?] | max // 0), c: (.affected_by | join(" "))}) | sort_by(-.s)[] | "| \(.s) | \(.n) | \(.c) |"' "$host.json"
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+          exit "$found"
