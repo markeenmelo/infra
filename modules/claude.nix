@@ -7,6 +7,12 @@ let
       failIfUnavailable = true;
       allowUnsandboxedCommands = false;
       network.strictAllowlist = true;
+      filesystem.denyRead = [
+        "/run/secrets"
+        "/run/secrets.d"
+        "/private/var/run/secrets"
+        "/private/var/run/secrets.d"
+      ];
     };
   };
 in
