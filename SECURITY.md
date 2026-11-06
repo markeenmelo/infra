@@ -11,11 +11,12 @@ reproduce it and what it exposes.
 
 ## In scope
 
-- What the public edge serves: the Caddy site, the hostnames it forwards and the paths it denies
-  ([edge.nix](modules/edge.nix)), and the CrowdSec bans in front of it
-  ([crowdsec.nix](modules/crowdsec.nix)).
-- Sign-in: the Authelia portal, its access control and OIDC clients
-  ([authelia.nix](modules/authelia.nix)), and each app's use of it.
+- What the public edge and the LAN proxy serve: each app's hostname, port and denied paths,
+  declared in its module's `fleet.web.apps` ([caddy.nix](modules/caddy.nix)), the sites built
+  from them ([edge.nix](modules/edge.nix), [lan-proxy.nix](modules/lan-proxy.nix)), and the
+  CrowdSec bans in front of the edge ([crowdsec.nix](modules/crowdsec.nix)).
+- Sign-in: the Authelia portal and its access control ([authelia.nix](modules/authelia.nix)),
+  and each app's use of it.
 - Remote access: SSH, the deploy account and its sudo rules ([deploy.nix](modules/deploy.nix)),
   Tailscale and the tailnet policy ([opentofu/tailscale](opentofu/tailscale)), and the host
   firewalls.
