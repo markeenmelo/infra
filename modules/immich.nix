@@ -76,7 +76,7 @@ in
             server.externalDomain = "https://${hostname}";
             ffmpeg = {
               accel = "qsv";
-              preferredHwDevice = config.fleet.renderDevice;
+              preferredHwDevice = "auto";
             };
             backup.database.enabled = false;
             passwordLogin.enabled = false;

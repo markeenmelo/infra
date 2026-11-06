@@ -37,9 +37,11 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts.
 - [ ] Backups: restic to pCloud, restore check, PostgreSQL dumps.
 - [ ] Remote builder + Harmonia cache for the fleet.
+- [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands. Before the
+      install: apps on bastion fetch Authelia's OIDC discovery from `https://auth.DOMAIN`, which
+      otherwise resolves to racknerd.
 - [ ] Install bastion once the household apps are ported: the install replaces every running
       service. Carries the identity, sbctl and ZFS keys.
-- [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands.
 - [ ] UniFi OpenTofu project: keep bastion to the camera on 554 and 2020, and no internet for the
       Cameras VLAN; drop the Home Assistant to IoT media rule.
 

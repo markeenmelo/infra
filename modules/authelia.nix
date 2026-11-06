@@ -43,6 +43,9 @@ in
             oidc.authorization_policies.people.default_policy == "deny"
             && lib.all (rule: rule.policy == "two_factor") oidc.authorization_policies.people.rules
           ) "Authelia's OIDC people policy must deny by default and require two factors";
+          assert lib.assertMsg (
+            nixos.config.systemd.services.${name}.environment.X_AUTHELIA_CONFIG_FILTERS or null == "template"
+          ) "authelia-main must run with the template filter, or OIDC client secrets stay literal templates";
           assert lib.assertMsg (unsafe == [ ])
             "OIDC clients must keep the people policy, S256 PKCE and https or app-scheme redirects: ${
               toString (map (client: client.client_id) unsafe)
