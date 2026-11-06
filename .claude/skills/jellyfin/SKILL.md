@@ -28,8 +28,10 @@ rewrites admin status from those groups at every login. The login page's button 
 `/sso/OID/start/authelia`. Pushed authorization is off as a `shortcut:` in the module.
 
 `marcos` is also a native admin with a password from sops, since nixflix needs one admin it can
-manage, and the setup units use the API key. TV and mobile apps cannot run the browser flow: they
-sign in with Quick Connect, approved from a signed-in session.
+manage, and the setup units use the API key. The edge denies password sign-in, so from the
+internet the only ways in are Authelia and Quick Connect; native passwords work only on the LAN
+and the tailnet. TV and mobile apps cannot run the browser flow: they sign in with Quick Connect,
+approved from a signed-in session.
 
 A child account is a native user declared in `nixflix.jellyfin.users` with `mutable = false` and
 parental limits (`maxParentalRating`, `blockUnratedItems`, `accessSchedules`), signed in on the TV

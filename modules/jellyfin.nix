@@ -168,6 +168,7 @@ in
           public = true;
           denied = [
             "path_regexp ${api}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|Policy|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
+            "path_regexp ${api}Users/(AuthenticateByName|[^/]+/Authenticate)/?$"
             "method DELETE\n  path_regexp ${api}Users/[^/]+/?$"
             "method DELETE POST\n  path_regexp ${api}Items(/[^/]+(/Images(/.*)?)?)?/?$"
           ];
