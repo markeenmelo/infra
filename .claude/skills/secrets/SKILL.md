@@ -38,7 +38,8 @@ GitHub MCP server ([claude.nix](../../../modules/claude.nix)), is the one secret
 operator account instead of root, since Claude Code runs as that user. Two layers keep Claude
 from reading it: `Read` denies on `//run/secrets` and its `/private/var/run` targets guard the
 built-in tools, and the managed sandbox's `filesystem.denyRead` on the same paths guards Bash and
-anything it starts. The `Read` denies alone did not reach the sandbox. The running server
+anything it starts. Claude Code copies home-relative `Read(~/…)` denies into the sandbox but not
+the `//` absolute ones: before this deny, a sandboxed Bash could open the token. The running server
 still holds it in its environment, which another process of the same user may read; that is why
 the token is scoped to read only this public repository. It is a fine-grained token limited to this repository with read-only Contents,
 Pull requests, Actions and Metadata, which the server's `--read-only` mode never uses to write.
