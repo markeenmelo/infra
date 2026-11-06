@@ -33,6 +33,12 @@ rotating every value its files held.
 | `porkbun/api.yaml` | operator, racknerd, bastion | `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` for DNS-01 ([proxy skill](../proxy/SKILL.md)) |
 | `porkbun/operator.yaml` | operator | state passphrase for the DNS records; the app adds `api.yaml` ([opentofu skill](../opentofu/SKILL.md)) |
 
+The mac decrypts with its SSH host key like the servers do. Its `github-mcp-token`, read by the
+GitHub MCP server ([claude.nix](../../../modules/claude.nix)), is the one secret owned by the
+operator account instead of root, since Claude Code runs as that user; Claude is denied reading
+`/run/secrets`. It is a fine-grained token limited to this repository with read-only Contents,
+Pull requests, Actions and Metadata, which the server's `--read-only` mode never uses to write.
+
 ## Delivery
 
 Declare `sops.secrets.NAME` beside its consumer with `sopsFile`, `key` when the SOPS path differs,

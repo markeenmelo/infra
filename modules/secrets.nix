@@ -6,6 +6,11 @@
       home.sessionVariables.SOPS_AGE_KEY_FILE = "${config.xdg.configHome}/sops/age/keys.txt";
     };
 
+  flake.modules.darwin.base = {
+    imports = [ inputs.sops-nix.darwinModules.sops ];
+    sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  };
+
   flake.modules.nixos.base =
     { config, lib, ... }:
     {
