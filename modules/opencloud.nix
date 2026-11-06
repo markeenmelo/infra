@@ -41,7 +41,7 @@ in
         stateDir = root;
         environment = lib.mkMerge [
           {
-            OC_INSECURE = "true";
+            OC_INSECURE = "false";
             PROXY_TLS = "false";
             OC_CONFIG_DIR = "${root}/config";
             OC_OIDC_ISSUER = "https://auth.${domain}";

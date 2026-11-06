@@ -30,7 +30,7 @@ in
           uri:
           lib.hasPrefix "https://" uri
           || builtins.match "http://(127[.]0[.]0[.]1|localhost)" uri != null
-          || builtins.match "[a-z][a-z0-9+.-]*:/.*" uri != null && !lib.hasPrefix "http" uri
+          || builtins.match "([a-z]+[.][a-z.]+|oc):/.*" uri != null
         ) client.redirect_uris
       ) oidc.clients;
     in
@@ -194,6 +194,16 @@ in
               ];
             };
             identity_providers.oidc = {
+              cors = {
+                endpoints = [
+                  "authorization"
+                  "token"
+                  "revocation"
+                  "introspection"
+                  "userinfo"
+                ];
+                allowed_origins_from_client_redirect_uris = true;
+              };
               authorization_policies.people = {
                 default_policy = "deny";
                 rules = [
