@@ -162,7 +162,10 @@ in
           ];
         };
       };
-      fleet.web.apps.auth.port = port;
+      fleet.web.apps.auth = {
+        inherit port;
+        public = true;
+      };
       systemd.services.${name} = {
         requires = [ "postgresql.target" ];
         after = [ "postgresql.target" ];

@@ -26,11 +26,16 @@ in
     {
       options.fleet.web.apps = lib.mkOption {
         default = { };
-        description = "Apps this host serves, by subdomain: the LAN proxy routes each to its loopback port, the edge forwards each to it over the tailnet with its denied paths.";
+        description = "Apps this host serves, by subdomain: the LAN proxy routes each to its loopback port, and the edge forwards the public ones to it over the tailnet with their denied paths.";
         type = lib.types.attrsOf (
           lib.types.submodule {
             options = {
               port = lib.mkOption { type = lib.types.port; };
+              public = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Whether the edge publishes the app and the tailnet interface opens its port.";
+              };
               denied = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
                 default = [ ];
@@ -42,7 +47,7 @@ in
       };
       config.networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts =
         lib.mapAttrsToList (_: app: app.port)
-          config.fleet.web.apps;
+          (lib.filterAttrs (_: app: app.public) config.fleet.web.apps);
     };
 
   config.flake.checks = lib.foldlAttrs (

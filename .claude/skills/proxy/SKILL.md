@@ -25,9 +25,9 @@ Requests from outside `countries` get a 403 before any app sees them; the lookup
 country database packaged in nixpkgs, so it updates with the flake lock and needs no account.
 Tailnet clients never need the edge, even behind a foreign exit node: the split DNS sends the
 domain to bastion directly.
-An app module publishes itself with `fleet.web.apps.SUBDOMAIN` (port and denied paths,
-[caddy.nix](../../../modules/caddy.nix)): the edge forwards every app bastion declares, the LAN
-proxy routes each to loopback, and the port opens on the tailnet interface. The wildcard record already
+An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, denied paths,
+[caddy.nix](../../../modules/caddy.nix)): the LAN proxy routes every app to loopback, and only a
+`public` one is forwarded by the edge and gets its port opened on the tailnet interface. The wildcard record already
 resolves it ([opentofu skill](../opentofu/SKILL.md#porkbun)) and the tailnet grant is a separate change. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
 credential headers and no share tokens in paths, since the published apps carry credentials in

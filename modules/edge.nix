@@ -1,8 +1,10 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   inherit (config.flake.modules.nixos) caddy;
   inherit (config.fleet) domain;
-  served = config.flake.nixosConfigurations.bastion.config.fleet.web.apps;
+  served = lib.filterAttrs (
+    _: app: app.public
+  ) config.flake.nixosConfigurations.bastion.config.fleet.web.apps;
 in
 {
   flake.modules.nixos.edge =
@@ -69,7 +71,7 @@ in
       '';
       site =
         name:
-        { port, denied }:
+        { port, denied, ... }:
         ''
           @${name} host ${name}.${domain}
           handle @${name} {
@@ -133,6 +135,8 @@ in
             import identity
             ${lib.concatStrings (
               lib.mapAttrsToList site (
+                assert lib.assertMsg (lib.intersectAttrs unported served == { })
+                  "edge.nix: unported still lists ${toString (lib.attrNames (lib.intersectAttrs unported served))}, which bastion now declares";
                 lib.mergeAttrsList [
                   unported
                   served
