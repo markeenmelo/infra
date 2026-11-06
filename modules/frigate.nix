@@ -19,9 +19,11 @@ in
       config,
       lib,
       pkgs,
+      utils,
       ...
     }:
     let
+      gpu = "${utils.escapeSystemdPath config.fleet.renderDevice}.device";
       model = config.services.frigate.package.models.openvino.ssdlite_mobilenet_v2_coco;
       credentials = lib.mapAttrsToList (
         name: secret: "${name}:${config.sops.secrets.${secret}.path}"
@@ -163,6 +165,8 @@ in
       fleet.web.apps.frigate.port = port;
       systemd.services = {
         frigate = {
+          wants = [ gpu ];
+          after = [ gpu ];
           unitConfig.RequiresMountsFor = "/var/lib/frigate";
           serviceConfig = {
             KillMode = "mixed";
