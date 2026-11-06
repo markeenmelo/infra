@@ -15,7 +15,13 @@ let
   ];
 in
 {
-  flake.checks = lib.foldlAttrs (
+  options.fleet.domain = lib.mkOption {
+    type = lib.types.str;
+    description = "The domain every public and LAN hostname sits under.";
+  };
+  config.fleet.domain = "marcosmelo.dev";
+
+  config.flake.checks = lib.foldlAttrs (
     acc: name: host:
     let
       nixos = config.flake.nixosConfigurations.${name};
@@ -41,7 +47,7 @@ in
       }
   ) { } config.fleet.hosts;
 
-  flake.modules.nixos.caddy =
+  config.flake.modules.nixos.caddy =
     {
       config,
       lib,

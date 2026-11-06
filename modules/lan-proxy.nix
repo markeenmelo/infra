@@ -1,31 +1,35 @@
 { config, ... }:
 let
   inherit (config.flake.modules.nixos) caddy;
+  inherit (config.fleet) domain;
 in
 {
   flake.modules.nixos.lan-proxy =
-    { config, ... }:
+    { config, lib, ... }:
     let
-      domain = "marcosmelo.dev";
       # shortcut: bastion's tailnet address is a literal, read it from fleet facts when a second host needs it
       tailnet = "100.105.158.109";
       tailscale = config.services.tailscale.interfaceName;
     in
     {
       imports = [ caddy ];
-      services.caddy.virtualHosts."*.${domain}".extraConfig = ''
-        tls {
-          dns porkbun {
-            api_key {env.PORKBUN_API_KEY}
-            api_secret_key {env.PORKBUN_SECRET_KEY}
+      services.caddy.virtualHosts."*.${domain}".extraConfig = lib.mkMerge [
+        (lib.mkBefore ''
+          tls {
+            dns porkbun {
+              api_key {env.PORKBUN_API_KEY}
+              api_secret_key {env.PORKBUN_SECRET_KEY}
+            }
+            resolvers 1.1.1.1 9.9.9.9
           }
-          resolvers 1.1.1.1 9.9.9.9
-        }
-        import identity
-        handle {
-          abort
-        }
-      '';
+          import identity
+        '')
+        (lib.mkAfter ''
+          handle {
+            abort
+          }
+        '')
+      ];
       services.dnsmasq = {
         enable = true;
         resolveLocalQueries = false;
