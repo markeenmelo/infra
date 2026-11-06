@@ -11,6 +11,14 @@ proxy to loopback ([proxy skill](../proxy/SKILL.md)); the port is open only on t
 interface, and the tailnet policy lets only racknerd reach it. Access control denies by default
 and the portal needs two factors, WebAuthn first.
 
+Authelia is also the OIDC provider. An app module declares its client in `fleet.oidc.clients.ID`
+(Authelia's client schema); every client gets the `people` policy (two factors, only the people
+in the module), S256 PKCE and `openid profile email`, and a confidential one reads its pbkdf2
+digest from `authelia/ID-client-secret-hash` while the app holds the plaintext under its own
+key. The tokens are signed with `authelia/oidc-signing-key` and `authelia/oidc-hmac`; replacing
+either signs every app out. The `authelia-HOST` check fails a client that drops the policy or
+PKCE, or redirects anywhere but https or an app scheme.
+
 People live in the module with their name and email; their argon2 hashes are
 `authelia/USER-password-hash` in `secrets/hosts/bastion.yaml`, rendered with them into the users
 file Authelia reads read-only. So the portal offers no password reset or change: a person types

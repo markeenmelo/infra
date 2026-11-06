@@ -27,12 +27,6 @@ in
             "method POST DELETE\n  path /ocs/v1.php/cloud/users /ocs/v2.php/cloud/users /ocs/v1.php/cloud/users/* /ocs/v2.php/cloud/users/*"
           ];
         };
-        photos = {
-          port = 2283;
-          denied = [
-            "path /api/admin/* /api/auth/admin-sign-up /api/system-config* /api/system-metadata* /api/jobs* /api/queues* /api/libraries*"
-          ];
-        };
         jellyfin.port = 8096;
         jellyfin.denied = [
           "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|Policy|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"

@@ -6,6 +6,9 @@ let
   port = 9091;
   credentials = "/run/credentials/${name}.service";
   hostname = "auth.${domain}";
+  hashes =
+    clients:
+    map (id: "${id}-client-secret-hash") (lib.attrNames (lib.filterAttrs (_: c: !c.public) clients));
 in
 {
   flake.checks = lib.foldlAttrs (
@@ -17,6 +20,16 @@ in
         lib.removePrefix "${lib.getExe instance.package} --config "
           nixos.config.systemd.services.${name}.serviceConfig.ExecStart
       );
+      oidc = instance.settings.identity_providers.oidc;
+      unsafe = lib.filter (
+        client:
+        client.authorization_policy != "people"
+        || !client.require_pkce
+        || client.pkce_challenge_method != "S256"
+        || !lib.all (
+          uri: lib.hasPrefix "https://" uri || builtins.match "[a-z]+[.][a-z.]+:/.*" uri != null
+        ) client.redirect_uris
+      ) oidc.clients;
     in
     if lib.hasSuffix "-darwin" fleetHost.system || !instance.enable then
       acc
@@ -26,6 +39,17 @@ in
           assert lib.assertMsg (
             instance.settings.access_control.default_policy == "deny"
           ) "Authelia's access_control.default_policy must stay deny";
+          assert lib.assertMsg (
+            oidc.authorization_policies.people.default_policy == "deny"
+            && lib.all (rule: rule.policy == "two_factor") oidc.authorization_policies.people.rules
+          ) "Authelia's OIDC people policy must deny by default and require two factors";
+          assert lib.assertMsg (
+            nixos.config.systemd.services.${name}.environment.X_AUTHELIA_CONFIG_FILTERS or null == "template"
+          ) "authelia-main must run with the template filter, or OIDC client secrets stay literal templates";
+          assert lib.assertMsg (unsafe == [ ])
+            "OIDC clients must keep the people policy, S256 PKCE and https or app-scheme redirects: ${
+              toString (map (client: client.client_id) unsafe)
+            }";
           nixos.pkgs.runCommand "authelia-${host}" { } ''
             mkdir credentials
             printf '%064d' 0 > secret
@@ -33,19 +57,49 @@ in
             printf '{"users":{"check":{"displayname":"Check","email":"check@example.org","groups":[],"password":"%s"}}}' \
               "$(${lib.getExe instance.package} crypto hash generate argon2 --password test-only-not-a-credential | ${lib.getExe nixos.pkgs.gawk} '/Digest:/{print $2}')" \
               > credentials/users
+            ${lib.getExe nixos.pkgs.openssl} genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
+              -out credentials/oidcIssuerPrivateKeyFile 2>/dev/null
+            ${lib.getExe instance.package} crypto hash generate pbkdf2 --password test-only-not-a-credential \
+              | ${lib.getExe nixos.pkgs.gawk} '/Digest:/{print $2}' > hash
+            test -s hash
+            for file in ${lib.escapeShellArgs (hashes nixos.config.fleet.oidc.clients)}; do
+              cp hash "credentials/$file"
+            done
             files=()
             for source in ${lib.escapeShellArgs configs}; do
               ${lib.getExe nixos.pkgs.gnused} "s@${credentials}@$PWD/credentials@g" "$source" > "$(basename "$source")"
               files+=("$PWD/$(basename "$source")")
             done
+            export X_AUTHELIA_CONFIG_FILTERS=template
+            export CREDENTIALS_DIRECTORY=$PWD/credentials
             export AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE=$PWD/secret
             export AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=$PWD/secret
+            export AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE=$PWD/secret
             export AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE=$PWD/credentials/smtp-password
             (IFS=,; ${lib.getExe instance.package} --config "''${files[*]}" validate-config)
             touch $out
           '';
       }
   ) { } config.fleet.hosts;
+
+  flake.modules.nixos.base =
+    { lib, ... }:
+    {
+      options.fleet.oidc.clients = lib.mkOption {
+        default = { };
+        description = "Authelia OIDC clients keyed by client_id, in Authelia's client schema. A client without `public = true` reads its secret digest from the sops key authelia/ID-client-secret-hash.";
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            freeformType = lib.types.attrsOf lib.types.anything;
+            options.public = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Whether the client authenticates without a secret.";
+            };
+          }
+        );
+      };
+    };
 
   flake.modules.nixos.authelia =
     { config, lib, ... }:
@@ -75,8 +129,11 @@ in
               "jwt"
               "storage"
               "smtp-password"
+              "oidc-hmac"
+              "oidc-signing-key"
             ]
             ++ map (user: "${user}-password-hash") (lib.attrNames people)
+            ++ hashes config.fleet.oidc.clients
           )
         );
         templates.authelia-users = {
@@ -96,6 +153,8 @@ in
           secrets = {
             jwtSecretFile = config.sops.secrets.authelia-jwt.path;
             storageEncryptionKeyFile = config.sops.secrets.authelia-storage.path;
+            oidcHmacSecretFile = config.sops.secrets.authelia-oidc-hmac.path;
+            oidcIssuerPrivateKeyFile = config.sops.secrets.authelia-oidc-signing-key.path;
           };
           environmentVariables.AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = "${credentials}/smtp-password";
           settings = {
@@ -129,6 +188,40 @@ in
                   policy = "two_factor";
                 }
               ];
+            };
+            identity_providers.oidc = {
+              authorization_policies.people = {
+                default_policy = "deny";
+                rules = [
+                  {
+                    policy = "two_factor";
+                    subject = map (user: "user:${user}") (lib.attrNames people);
+                  }
+                ];
+              };
+              clients = lib.mapAttrsToList (
+                client_id: client:
+                lib.mergeAttrsList [
+                  {
+                    inherit client_id;
+                    authorization_policy = "people";
+                    require_pkce = true;
+                    pkce_challenge_method = "S256";
+                    scopes = [
+                      "openid"
+                      "profile"
+                      "email"
+                    ];
+                  }
+                  (
+                    if client.public then
+                      { public = true; }
+                    else
+                      { client_secret = ''{{ secret "${credentials}/${client_id}-client-secret-hash" | trim }}''; }
+                  )
+                  (removeAttrs client [ "public" ])
+                ]
+              ) config.fleet.oidc.clients;
             };
             session = {
               name = "__Secure-authelia_session";
@@ -172,7 +265,10 @@ in
         serviceConfig.LoadCredential = [
           "smtp-password:${config.sops.secrets.authelia-smtp-password.path}"
           "users:${config.sops.templates.authelia-users.path}"
-        ];
+        ]
+        ++ map (file: "${file}:${config.sops.secrets."authelia-${file}".path}") (
+          hashes config.fleet.oidc.clients
+        );
       };
     };
 }

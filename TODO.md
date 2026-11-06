@@ -19,7 +19,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 - [ ] Apps, one PR each, each moving its edge entry from `unported` in `edge.nix` to its own
       `fleet.web.apps` (Nextcloud's goes when OpenCloud lands); the first forward-auth route widens
-      Authelia's session cookie from `auth.` to the parent domain: Immich, Frigate, ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
+      Authelia's session cookie from `auth.` to the parent domain; an app whose data stays on a
+      pool pins its uid and gid to the ones that own it (`stat` on the old bastion): Frigate, ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
       *arr + downloaders + VPN confinement). Dropped: Home Assistant, Mosquitto, SparkyFitness,
       OpenGym; their databases in the old PostgreSQL cluster are dropped by hand after the install.
       - Frigate: OpenVINO on the iGPU, with person object filters (`min_area`, ratios,
@@ -36,9 +37,11 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts.
 - [ ] Backups: restic to pCloud, restore check, PostgreSQL dumps.
 - [ ] Remote builder + Harmonia cache for the fleet.
+- [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands. Before the
+      install: apps on bastion fetch Authelia's OIDC discovery from `https://auth.DOMAIN`, which
+      otherwise resolves to racknerd.
 - [ ] Install bastion once the household apps are ported: the install replaces every running
       service. Carries the identity, sbctl and ZFS keys.
-- [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands.
 - [ ] UniFi OpenTofu project: keep bastion to the camera on 554 and 2020, and no internet for the
       Cameras VLAN; drop the Home Assistant to IoT media rule.
 
