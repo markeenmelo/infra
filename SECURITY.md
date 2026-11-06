@@ -15,8 +15,8 @@ reproduce it and what it exposes.
   declared in its module's `fleet.web.apps` ([caddy.nix](modules/caddy.nix)), the sites built
   from them ([edge.nix](modules/edge.nix), [lan-proxy.nix](modules/lan-proxy.nix)), and the
   CrowdSec bans in front of the edge ([crowdsec.nix](modules/crowdsec.nix)).
-- Sign-in: the Authelia portal and its access control ([authelia.nix](modules/authelia.nix)),
-  and each app's use of it.
+- Sign-in: the Authelia portal, its access control and the OIDC clients apps declare in
+  `fleet.oidc.clients` ([authelia.nix](modules/authelia.nix)), and each app's use of it.
 - Remote access: SSH, the deploy account and its sudo rules ([deploy.nix](modules/deploy.nix)),
   Tailscale and the tailnet policy ([opentofu/tailscale](opentofu/tailscale)), and the host
   firewalls.
