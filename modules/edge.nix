@@ -2,6 +2,7 @@
 let
   inherit (config.flake.modules.nixos) caddy;
   inherit (config.fleet) domain;
+  served = config.flake.nixosConfigurations.bastion.config.fleet.web.apps;
 in
 {
   flake.modules.nixos.edge =
@@ -12,22 +13,18 @@ in
       ...
     }:
     let
-      # shortcut: bastion's tailnet address and the app ports are literals, read them from fleet facts when bastion lands
+      # shortcut: bastion's tailnet address is a literal, read it from fleet facts when a second host needs it
       bastion = "100.105.158.109";
       countries = [ "CA" ];
       jellyfin = "(?i)^/(emby/|mediabrowser/)?";
-      apps = {
-        auth.port = 9091;
+      # shortcut: apps still served by the old bastion, each moves to its module's fleet.web.apps when ported
+      unported = {
         cloud = {
           port = 8081;
           denied = [
             "path /settings/admin* /settings/users* /settings/apps* /index.php/settings/admin* /index.php/settings/users* /index.php/settings/apps* /ocs/v1.php/cloud/groups* /ocs/v2.php/cloud/groups* /ocs/v1.php/cloud/apps* /ocs/v2.php/cloud/apps* /ocs/v1.php/cloud/users/*/enable /ocs/v2.php/cloud/users/*/enable /ocs/v1.php/cloud/users/*/disable /ocs/v2.php/cloud/users/*/disable /ocs/v1.php/cloud/users/*/groups* /ocs/v2.php/cloud/users/*/groups* /ocs/v1.php/cloud/users/*/subadmins* /ocs/v2.php/cloud/users/*/subadmins* /ocs/v1.php/apps/provisioning_api/api/v1/config/apps* /ocs/v2.php/apps/provisioning_api/api/v1/config/apps*"
             "method POST DELETE\n  path /ocs/v1.php/cloud/users /ocs/v2.php/cloud/users /ocs/v1.php/cloud/users/* /ocs/v2.php/cloud/users/*"
           ];
-        };
-        home = {
-          port = 8123;
-          denied = [ "path /api/onboarding* /onboarding.html*" ];
         };
         photos = {
           port = 2283;
@@ -59,7 +56,6 @@ in
           request>headers>Referer delete
           request>uri multi_regexp {
             regexp "[?].*" ""
-            regexp "^/api/webhook/[^/]+" "/api/webhook/REDACTED"
             regexp "^/index.php/lostpassword/reset/form/[^/]+" "/index.php/lostpassword/reset/form/REDACTED"
             regexp "^/lostpassword/reset/form/[^/]+" "/lostpassword/reset/form/REDACTED"
             regexp "^/index.php/s/[^/]+" "/index.php/s/REDACTED"
@@ -73,10 +69,7 @@ in
       '';
       site =
         name:
-        {
-          port,
-          denied ? [ ],
-        }:
+        { port, denied }:
         ''
           @${name} host ${name}.${domain}
           handle @${name} {
@@ -138,7 +131,14 @@ in
               }
             }
             import identity
-            ${lib.concatStrings (lib.mapAttrsToList site apps)}
+            ${lib.concatStrings (
+              lib.mapAttrsToList site (
+                lib.mergeAttrsList [
+                  unported
+                  served
+                ]
+              )
+            )}
             handle {
               abort
             }

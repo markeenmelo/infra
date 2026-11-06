@@ -161,13 +161,8 @@ in
             }
           ];
         };
-        caddy.virtualHosts."*.${domain}".extraConfig = ''
-          @auth host ${hostname}
-          handle @auth {
-            reverse_proxy 127.0.0.1:${toString port}
-          }
-        '';
       };
+      fleet.web.apps.auth.port = port;
       systemd.services.${name} = {
         requires = [ "postgresql.target" ];
         after = [ "postgresql.target" ];
@@ -176,8 +171,5 @@ in
           "users:${config.sops.templates.authelia-users.path}"
         ];
       };
-      networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts = [
-        port
-      ];
     };
 }

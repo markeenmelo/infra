@@ -24,6 +24,14 @@ in
           }
           import identity
         '')
+        (lib.concatStrings (
+          lib.mapAttrsToList (name: app: ''
+            @${name} host ${name}.${domain}
+            handle @${name} {
+              reverse_proxy 127.0.0.1:${toString app.port}
+            }
+          '') config.fleet.web.apps
+        ))
         (lib.mkAfter ''
           handle {
             abort
