@@ -17,16 +17,17 @@ The tailnet policy must let racknerd reach each backend port ([opentofu skill](.
 
 Every forwarded request loses the `Remote-*` and `X-Forwarded-*` identity headers, so only
 Authelia on bastion can set them, and gets the security headers the old edge sent. Each app's
-admin paths (Jellyfin's, including password changes, Home Assistant's onboarding, Immich's and
-Nextcloud's admin areas) are denied at the edge as defence in depth, each app's own authorization
-being the primary control: administering those apps and onboarding a fresh Home Assistant happen
-over the LAN or the tailnet, never through the public hostname. A native login still works there, so rate limiting and bans come from CrowdSec.
+admin paths (Jellyfin's, including password changes, Immich's and Nextcloud's admin areas) are
+denied at the edge as defence in depth, each app's own authorization being the primary control:
+administering those apps happens over the LAN or the tailnet, never through the public hostname. A native login still works there, so rate limiting and bans come from CrowdSec.
 
 Requests from outside `countries` get a 403 before any app sees them; the lookup uses the DB-IP
 country database packaged in nixpkgs, so it updates with the flake lock and needs no account.
 Tailnet clients never need the edge, even behind a foreign exit node: the split DNS sends the
 domain to bastion directly.
-Publishing an app adds its subdomain and bastion port to `apps`; the wildcard record already
+An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, denied paths,
+[caddy.nix](../../../modules/caddy.nix)): the LAN proxy routes every app to loopback, and only a
+`public` one is forwarded by the edge and gets its port opened on the tailnet interface. The wildcard record already
 resolves it ([opentofu skill](../opentofu/SKILL.md#porkbun)) and the tailnet grant is a separate change. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
 credential headers and no share tokens in paths, since the published apps carry credentials in

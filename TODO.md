@@ -17,11 +17,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## bastion
 
-- [ ] Each service module declares its public route in a `fleet.web.apps` NixOS option; the edge
-      and the LAN proxy read it from the hub's configuration and the edge literals go, including
-      the Home Assistant route and the Nextcloud denials. The first forward-auth route widens
-      Authelia's session cookie from `auth.` to the parent domain.
-- [ ] Apps, one PR each: Immich, Frigate, ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
+- [ ] Apps, one PR each, each moving its edge entry from `unported` in `edge.nix` to its own
+      `fleet.web.apps` (Nextcloud's goes when OpenCloud lands); the first forward-auth route widens
+      Authelia's session cookie from `auth.` to the parent domain: Immich, Frigate, ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
       *arr + downloaders + VPN confinement). Dropped: Home Assistant, Mosquitto, SparkyFitness,
       OpenGym; their databases in the old PostgreSQL cluster are dropped by hand after the install.
       - Frigate: OpenVINO on the iGPU, with person object filters (`min_area`, ratios,

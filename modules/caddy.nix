@@ -21,6 +21,35 @@ in
   };
   config.fleet.domain = "marcosmelo.dev";
 
+  config.flake.modules.nixos.base =
+    { config, lib, ... }:
+    {
+      options.fleet.web.apps = lib.mkOption {
+        default = { };
+        description = "Apps this host serves, by subdomain: the LAN proxy routes each to its loopback port, and the edge forwards the public ones to it over the tailnet with their denied paths.";
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              port = lib.mkOption { type = lib.types.port; };
+              public = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Whether the edge publishes the app and the tailnet interface opens its port.";
+              };
+              denied = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ ];
+                description = "Caddy matcher bodies the edge answers with 403, for admin paths that only the LAN and the tailnet reach.";
+              };
+            };
+          }
+        );
+      };
+      config.networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts =
+        lib.mapAttrsToList (_: app: app.port)
+          (lib.filterAttrs (_: app: app.public) config.fleet.web.apps);
+    };
+
   config.flake.checks = lib.foldlAttrs (
     acc: name: host:
     let
