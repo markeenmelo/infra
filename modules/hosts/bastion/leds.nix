@@ -46,7 +46,6 @@
             description = "Initialize UGREEN front-panel LEDs";
             enableStrictShellChecks = true;
             wantedBy = [ "multi-user.target" ];
-            wants = map (led: "ugreen-${led}.service") (lib.attrNames disks);
             requires = [ "systemd-modules-load.service" ];
             after = [ "systemd-modules-load.service" ];
             path = [
