@@ -35,7 +35,10 @@ jobs:
             out=$(nix build --no-link --print-out-paths ".#nixosConfigurations.$host.config.system.build.toplevel")
             rc=0
             nix shell --inputs-from . nixpkgs#vulnix -c vulnix --closure --json --whitelist vulnix.toml "$out" > "$host.json" || rc=$?
-            [ "$rc" -le 2 ] || exit "$rc"
+            if [ "$rc" -gt 2 ] || ! jq -e 'type == "array"' "$host.json" > /dev/null; then
+              echo "vulnix failed on $host (exit $rc), no report" >&2
+              exit 1
+            fi
             count=$(jq '[.[] | select(.affected_by | length > 0)] | length' "$host.json")
             [ "$count" -eq 0 ] || found=1
             {
