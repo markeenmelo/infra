@@ -30,7 +30,8 @@ rewrites admin status from those groups at every login. The login page's button 
 `marcos` is also a native admin with a password from sops, since nixflix needs one admin it can
 manage, and the setup units use the API key. The edge denies password sign-in, so from the
 internet the only ways in are Authelia and Quick Connect; native passwords work only on the LAN
-and the tailnet. TV and mobile apps cannot run the browser flow: they sign in with Quick Connect,
+and the tailnet. Each refused attempt carries `Edge-Denied`, so repeated password sign-ins from
+outside earn a CrowdSec ban on every hostname, by design: away from home, use Quick Connect. TV and mobile apps cannot run the browser flow: they sign in with Quick Connect,
 approved from a signed-in session.
 
 A child account is a native user declared in `nixflix.jellyfin.users` with `mutable = false` and
