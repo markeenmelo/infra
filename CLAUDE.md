@@ -70,7 +70,8 @@ Permissions apply within the requested task. Continue independent safe work whil
 ## Review guidelines
 
 Pull request reviewers (PR-Agent and claude-code-action in
-[review.yml](.github/workflows/review.yml)) review the whole diff, including cross-file
+[review.yml](.github/workflows/review.yml), and Codex code review, which reads this file as
+`AGENTS.md`) review the whole diff, including cross-file
 interactions; every diff reaches those vendors, which is accepted for a public repository whose
 secrets are ciphertext. Prioritize correctness, security and trust boundaries, edge cases,
 concurrency, data loss and persistence, error handling, performance regressions and missing tests.
