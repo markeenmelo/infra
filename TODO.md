@@ -19,7 +19,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 - [ ] Apps, one PR each, each moving its edge entry from `unported` in `edge.nix` to its own
       `fleet.web.apps` (Nextcloud's goes when OpenCloud lands); the first forward-auth route widens
-      Authelia's session cookie from `auth.` to the parent domain: Frigate, ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
+      Authelia's session cookie from `auth.` to the parent domain; an app whose data stays on a
+      pool pins its uid and gid to the ones that own it (`stat` on the old bastion): Frigate, ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
       *arr + downloaders + VPN confinement). Dropped: Home Assistant, Mosquitto, SparkyFitness,
       OpenGym; their databases in the old PostgreSQL cluster are dropped by hand after the install.
       - Frigate: OpenVINO on the iGPU, with person object filters (`min_area`, ratios,

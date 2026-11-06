@@ -52,6 +52,9 @@ in
     in
     {
       imports = [ postgresql ];
+      # the ids that own tank/immich, allocated by the old generation
+      users.users.immich.uid = 983;
+      users.groups.immich.gid = 985;
       sops.secrets.immich-oidc-client-secret = {
         sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
         key = "immich/oidc-client-secret";
