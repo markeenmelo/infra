@@ -17,22 +17,20 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## bastion
 
-- [ ] Apps, one PR each, each moving its edge entry from `unported` in `edge.nix` to its own
-      `fleet.web.apps` (Nextcloud's goes when OpenCloud lands); the first forward-auth route widens
-      Authelia's session cookie from `auth.` to the parent domain; an app whose data stays on a
-      pool pins its uid and gid to the ones that own it (`stat` on the old bastion): ntfy, OpenCloud replacing Nextcloud, nixflix (Jellyfin +
-      *arr + downloaders + VPN confinement). Dropped: Home Assistant, Mosquitto, SparkyFitness,
-      OpenGym; their databases in the old PostgreSQL cluster are dropped by hand after the install.
-      - Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`
-        against false positives, tuned by the operator.
-      - OpenCloud on `opencloud-production`, files only (not oCIS: nixpkgs has only an old unfree
-        binary). State on a new `tank/opencloud` dataset; `/etc/opencloud/opencloud.yaml` holds
-        generated secrets, so persist it or render it from sops. Authelia becomes its OIDC
-        provider with public PKCE clients and a role claim, so the users file gains groups.
-        Files move with `rclone copy` from `/srv/nextcloud/instance/data/USER/files` over WebDAV
-        (shares, links, versions and trash do not carry over); check `tank` free space first,
-        then destroy `tank/nextcloud` and drop its mount and snapshots.
-- [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts.
+- [ ] nixflix (Jellyfin + *arr + downloaders + VPN confinement), moving its edge entry from
+      `unported` in `edge.nix` to its own `fleet.web.apps` and pinning uids and gids to the ones
+      that own its data (`stat` on the old bastion); the first forward-auth route widens
+      Authelia's session cookie from `auth.` to the parent domain. Dropped: Home Assistant,
+      Mosquitto, SparkyFitness, OpenGym; their databases in the old PostgreSQL cluster are
+      dropped by hand after the install.
+- [ ] Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`
+      against false positives, tuned by the operator.
+- [ ] OpenCloud data: create `tank/opencloud` before the install, check `tank` free space, move
+      the files with `rclone copy` from `/srv/nextcloud/instance/data/USER/files` over WebDAV
+      (shares, links, versions and trash do not carry over), then destroy `tank/nextcloud` and
+      drop its mount and snapshots.
+- [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts, with ntfy as their
+      first publisher (topics `alerts`, later `media`), and the desktop subscribers.
 - [ ] Backups: restic to pCloud, restore check, PostgreSQL dumps.
 - [ ] Remote builder + Harmonia cache for the fleet.
 - [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands. Before the

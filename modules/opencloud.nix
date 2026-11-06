@@ -1,0 +1,98 @@
+{ config, lib, ... }:
+let
+  inherit (config.fleet) domain;
+  port = 9200;
+  root = "/srv/opencloud";
+  hostname = "cloud.${domain}";
+  scopes = [
+    "openid"
+    "offline_access"
+    "groups"
+    "profile"
+    "email"
+  ];
+  clients = {
+    web = [
+      "https://${hostname}/"
+      "https://${hostname}/oidc-callback.html"
+      "https://${hostname}/oidc-silent-redirect.html"
+    ];
+    OpenCloudDesktop = [
+      "http://127.0.0.1"
+      "http://localhost"
+    ];
+    OpenCloudAndroid = [ "oc://android.opencloud.eu" ];
+    OpenCloudIOS = [
+      "oc://ios.opencloud.eu"
+      "oc.ios://ios.opencloud.eu"
+    ];
+  };
+in
+{
+  flake.modules.nixos.opencloud =
+    { pkgs, ... }:
+    {
+      services.opencloud = {
+        enable = true;
+        package = pkgs.opencloud-production;
+        address = "0.0.0.0";
+        inherit port;
+        url = "https://${hostname}";
+        stateDir = root;
+        environment = lib.mkMerge [
+          {
+            OC_INSECURE = "true";
+            PROXY_TLS = "false";
+            OC_CONFIG_DIR = "${root}/config";
+            OC_OIDC_ISSUER = "https://auth.${domain}";
+            OC_EXCLUDE_RUN_SERVICES = "idp";
+            PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD = "jwt";
+            PROXY_OIDC_REWRITE_WELLKNOWN = "true";
+            PROXY_AUTOPROVISION_ACCOUNTS = "true";
+            PROXY_AUTOPROVISION_CLAIM_USERNAME = "preferred_username";
+            PROXY_AUTOPROVISION_CLAIM_EMAIL = "email";
+            PROXY_AUTOPROVISION_CLAIM_DISPLAYNAME = "name";
+            PROXY_AUTOPROVISION_CLAIM_GROUPS = "groups";
+            PROXY_ROLE_ASSIGNMENT_DRIVER = "oidc";
+            PROXY_ROLE_ASSIGNMENT_OIDC_CLAIM = "groups";
+            GRAPH_ASSIGN_DEFAULT_USER_ROLE = "false";
+          }
+          (lib.genAttrs' [ "WEB" "DESKTOP" "ANDROID" "IOS" ] (
+            client: lib.nameValuePair "WEBFINGER_${client}_OIDC_CLIENT_SCOPES" (toString scopes)
+          ))
+        ];
+      };
+      fleet = {
+        web.apps.cloud = {
+          inherit port;
+          public = true;
+        };
+        oidc.clients = lib.mapAttrs (_: redirect_uris: {
+          public = true;
+          client_name = "OpenCloud";
+          inherit redirect_uris scopes;
+          response_types = [ "code" ];
+          grant_types = [
+            "authorization_code"
+            "refresh_token"
+          ];
+          access_token_signed_response_alg = "RS256";
+          userinfo_signed_response_alg = "none";
+        }) clients;
+      };
+      systemd = {
+        tmpfiles.settings."10-opencloud"."${root}/config".d = {
+          user = "opencloud";
+          group = "opencloud";
+          mode = "0750";
+        };
+        services = {
+          opencloud-init-config = {
+            unitConfig.RequiresMountsFor = root;
+            serviceConfig.ReadWritePaths = [ "${root}/config" ];
+          };
+          opencloud.unitConfig.RequiresMountsFor = root;
+        };
+      };
+    };
+}

@@ -20,13 +20,6 @@ in
       jellyfin = "(?i)^/(emby/|mediabrowser/)?";
       # shortcut: apps still served by the old bastion, each moves to its module's fleet.web.apps when ported
       unported = {
-        cloud = {
-          port = 8081;
-          denied = [
-            "path /settings/admin* /settings/users* /settings/apps* /index.php/settings/admin* /index.php/settings/users* /index.php/settings/apps* /ocs/v1.php/cloud/groups* /ocs/v2.php/cloud/groups* /ocs/v1.php/cloud/apps* /ocs/v2.php/cloud/apps* /ocs/v1.php/cloud/users/*/enable /ocs/v2.php/cloud/users/*/enable /ocs/v1.php/cloud/users/*/disable /ocs/v2.php/cloud/users/*/disable /ocs/v1.php/cloud/users/*/groups* /ocs/v2.php/cloud/users/*/groups* /ocs/v1.php/cloud/users/*/subadmins* /ocs/v2.php/cloud/users/*/subadmins* /ocs/v1.php/apps/provisioning_api/api/v1/config/apps* /ocs/v2.php/apps/provisioning_api/api/v1/config/apps*"
-            "method POST DELETE\n  path /ocs/v1.php/cloud/users /ocs/v2.php/cloud/users /ocs/v1.php/cloud/users/* /ocs/v2.php/cloud/users/*"
-          ];
-        };
         jellyfin.port = 8096;
         jellyfin.denied = [
           "path_regexp ${jellyfin}(Backup|Devices|Plugins|Packages|Repositories|Environment|ScheduledTasks|Startup|Auth/Keys|Library/(VirtualFolders|Refresh)|LiveTv/(TunerHosts|ListingProviders)|Items/(RemoteSearch/Apply|[^/]+/(Refresh|ContentType|RemoteImages/Download))|Videos/(MergeVersions|[^/]+/AlternateSources)|Library/(Media|Movies|Series)/(Added|Updated)|System/(ActivityLog|Configuration|Restart|Shutdown|Logs)|Users/(New|Password|Policy|[^/]+/(Policy|Password))|sso/((OID|SAML)/((Add|Del)/|(Get|States)/?$)|Unregister/))"
@@ -51,14 +44,9 @@ in
           request>headers>Referer delete
           request>uri multi_regexp {
             regexp "[?].*" ""
-            regexp "^/index.php/lostpassword/reset/form/[^/]+" "/index.php/lostpassword/reset/form/REDACTED"
-            regexp "^/lostpassword/reset/form/[^/]+" "/lostpassword/reset/form/REDACTED"
-            regexp "^/index.php/s/[^/]+" "/index.php/s/REDACTED"
             regexp "^/s/[^/]+" "/s/REDACTED"
             regexp "^/share/[^/]+" "/share/REDACTED"
-            regexp "^/public.php/dav/files/[^/]+" "/public.php/dav/files/REDACTED"
-            regexp "^/index.php/apps/files_sharing/publicpreview/[^/]+" "/index.php/apps/files_sharing/publicpreview/REDACTED"
-            regexp "^/apps/files_sharing/publicpreview/[^/]+" "/apps/files_sharing/publicpreview/REDACTED"
+            regexp "^(/remote.php)?/dav/public-files/[^/]+" "/dav/public-files/REDACTED"
           }
         }
       '';

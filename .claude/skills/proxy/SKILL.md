@@ -17,7 +17,7 @@ The tailnet policy must let racknerd reach each backend port ([opentofu skill](.
 
 Every forwarded request loses the `Remote-*` and `X-Forwarded-*` identity headers, so only
 Authelia on bastion can set them, and gets the security headers the old edge sent. Each app's
-admin paths (Jellyfin's, including password changes, Immich's and Nextcloud's admin areas) are
+admin paths (Jellyfin's, including password changes, and Immich's admin areas) are
 denied at the edge as defence in depth, each app's own authorization being the primary control:
 administering those apps happens over the LAN or the tailnet, never through the public hostname. A native login still works there, so rate limiting and bans come from CrowdSec.
 

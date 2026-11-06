@@ -27,7 +27,10 @@ in
         || !client.require_pkce
         || client.pkce_challenge_method != "S256"
         || !lib.all (
-          uri: lib.hasPrefix "https://" uri || builtins.match "[a-z]+[.][a-z.]+:/.*" uri != null
+          uri:
+          lib.hasPrefix "https://" uri
+          || builtins.match "http://(127[.]0[.]0[.]1|localhost)" uri != null
+          || builtins.match "[a-z][a-z0-9+.-]*:/.*" uri != null && !lib.hasPrefix "http" uri
         ) client.redirect_uris
       ) oidc.clients;
     in
@@ -108,10 +111,12 @@ in
         marcos = {
           displayname = "Marcos Melo";
           email = "marcosmelo@proton.me";
+          groups = [ "opencloudAdmin" ];
         };
         nara = {
           displayname = "Nara";
           email = "naralidy@hotmail.com";
+          groups = [ "opencloudUser" ];
         };
       };
       secret = key: {
@@ -139,9 +144,8 @@ in
         templates.authelia-users = {
           content = builtins.toJSON {
             users = lib.mapAttrs (user: person: {
-              inherit (person) displayname email;
+              inherit (person) displayname email groups;
               password = config.sops.placeholder."authelia-${user}-password-hash";
-              groups = [ ];
             }) people;
           };
           restartUnits = [ "${name}.service" ];
@@ -215,7 +219,10 @@ in
                   }
                   (
                     if client.public then
-                      { public = true; }
+                      {
+                        public = true;
+                        token_endpoint_auth_method = "none";
+                      }
                     else
                       { client_secret = ''{{ secret "${credentials}/${client_id}-client-secret-hash" | trim }}''; }
                   )
