@@ -94,18 +94,19 @@ in
           userinfo_signed_response_alg = "none";
         }) clients;
       };
-      systemd = {
-        tmpfiles.settings."10-opencloud"."${root}/config".d = {
-          user = "opencloud";
-          group = "opencloud";
-          mode = "0750";
-        };
-        services = {
-          opencloud-init-config = {
-            unitConfig.RequiresMountsFor = root;
-            serviceConfig.ReadWritePaths = [ "${root}/config" ];
+      systemd.services = {
+        opencloud-init-config = {
+          unitConfig.RequiresMountsFor = root;
+          serviceConfig = {
+            ExecStartPre = [
+              "+${pkgs.coreutils}/bin/install -d -o opencloud -g opencloud -m 0750 ${root} ${root}/config ${root}/idm"
+            ];
+            ReadWritePaths = [ "${root}/config" ];
           };
-          opencloud.unitConfig.RequiresMountsFor = root;
+        };
+        opencloud = {
+          requires = [ "opencloud-init-config.service" ];
+          unitConfig.RequiresMountsFor = root;
         };
       };
     };
