@@ -35,8 +35,9 @@ rotating every value its files held.
 
 The mac decrypts with its SSH host key like the servers do. Its `github-mcp-token`, read by the
 GitHub MCP server ([claude.nix](../../../modules/claude.nix)), is the one secret owned by the
-operator account instead of root, since Claude Code runs as that user; Claude is denied reading
-`/run/secrets`. It is a fine-grained token limited to this repository with read-only Contents,
+operator account instead of root, since Claude Code runs as that user. Claude's `Read` denies
+name `/run/secrets` and its `/private/var/run` targets by absolute `//` path, and Claude Code turns
+them into the Bash sandbox's read denies too, so neither tool reads it. It is a fine-grained token limited to this repository with read-only Contents,
 Pull requests, Actions and Metadata, which the server's `--read-only` mode never uses to write.
 
 ## Delivery

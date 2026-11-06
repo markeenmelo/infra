@@ -21,7 +21,8 @@ sudo darwin-rebuild switch --flake .#mac
 Tailscale is nix-darwin's `tailscaled`, which needs no app or system extension; the node
 identity lives in its state directory and survives a switch. A re-enrolment uses the host's key from the
 [OpenTofu project](../opentofu/SKILL.md), `tailscale up --auth-key file:PATH` with the key
-written to a private file, since sops-nix is not wired on darwin. Touch ID answers sudo. The old
+written to a private file. sops-nix on darwin decrypts with the mac's SSH host key and holds only
+the GitHub MCP token ([secrets skill](../secrets/SKILL.md)). Touch ID answers sudo. The old
 generation's modules are reference only; a tool is added when the operator names it.
 
 `flake.modules.darwin.desktop` is the laptop role: AeroSpace tiles with alt bindings, SketchyBar
