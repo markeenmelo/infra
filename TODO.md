@@ -17,7 +17,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## bastion
 
-- [ ] Front-panel LEDs (out-of-tree `led-ugreen` driver, disk presence and link).
 - [ ] Each service module declares its public route in a `fleet.web.apps` NixOS option; the edge
       and the LAN proxy read it from the hub's configuration and the edge literals go, including
       the Home Assistant route and the Nextcloud denials. The first forward-auth route widens
