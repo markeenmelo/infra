@@ -30,7 +30,7 @@ variable "state_passphrase" {
   sensitive   = true
 }
 
-# shortcut: addresses and hosts are literals, feed them from fleet facts when bastion lands
+# shortcut: addresses and hosts are literals, feed them from fleet facts as hosts migrate
 locals {
   domain  = "marcosmelo.dev"
   bastion = "100.105.158.109"
