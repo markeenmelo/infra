@@ -51,10 +51,10 @@
       restic = lib.getExe pkgs.restic;
     in
     {
-      sops.secrets.backups-restic-password = {
+      sops.secrets = lib.genAttrs [ "backups-restic-password" "backups-thinkpad-password" ] (name: {
         sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-        key = "backups/restic-password";
-      };
+        key = lib.replaceStrings [ "backups-" ] [ "backups/" ] name;
+      });
       assertions =
         map
           (path: {
@@ -143,7 +143,12 @@
                 set -o pipefail
                 ${restic} check --retry-lock 30m --read-data-subset="$(date +%-m)/12"
                 for db in ${lib.escapeShellArgs databases}; do
-                  ${restic} dump latest ${inSnapshot "/srv" "${dumpDir}/$db.sql.gz"} | gzip -t
+                  dump=${inSnapshot "/srv" "${dumpDir}/$db"}
+                  if ! ${restic} ls latest "$dump.sql.gz" > /dev/null 2>&1; then
+                    echo "The latest snapshot has no fresh dump of $db; testing the previous one."
+                    dump=$dump.prev
+                  fi
+                  ${restic} dump latest "$dump.sql.gz" | gzip -t
                 done
               '';
             };
@@ -184,7 +189,7 @@
                 Type = "oneshot";
                 User = "backup-thinkpad";
                 Group = "backup-thinkpad";
-                LoadCredential = [ "password:${config.sops.secrets.backups-restic-password.path}" ];
+                LoadCredential = [ "password:${config.sops.secrets.backups-thinkpad-password.path}" ];
                 CacheDirectory = "backup-thinkpad";
                 Environment = "RESTIC_CACHE_DIR=%C/backup-thinkpad";
                 ExecStopPost = "+${pkgs.systemd}/bin/systemctl start --no-block backup-thinkpad.service";
@@ -204,7 +209,7 @@
                       exit 1
                     fi
                   done
-                ${restic} forget --prune --retry-lock 30m --keep-daily 7 --keep-weekly 5 --keep-monthly 12
+                ${restic} forget --prune --retry-lock 30m --keep-within 14d --keep-daily 7 --keep-weekly 5 --keep-monthly 12
                 ${restic} check --retry-lock 30m --read-data-subset=5%
               '';
             };

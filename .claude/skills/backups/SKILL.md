@@ -9,8 +9,11 @@ description: "bastion's backups: the nightly restic run to the USB disk, the ZFS
 (ext4, automounted, [data.nix](../../../modules/hosts/bastion/data.nix)) every night at 02:30.
 Before each run it dumps every PostgreSQL database except the arr log ones to
 `/srv/backups/postgresql`, snapshots `/srv` and each backup root as `@restic-usb`, and takes a
-read-only btrfs snapshot of `/persist`; restic reads those snapshots, so the backup is consistent
-and no app stops. A failed dump keeps the previous one and is logged. The roots are `/srv`,
+read-only btrfs snapshot of `/persist`; restic reads those snapshots, so each dataset is
+consistent and no app stops. The dumps finish before the snapshots, so an app writing in between
+(an Immich upload) can leave its database and files a moment apart; Immich's own repair jobs
+reconcile that after a restore. A failed dump keeps the previous one as `DB.prev.sql.gz`, which
+the drill then tests. The roots are `/srv`,
 Immich, OpenCloud, the arr state and the ThinkPad's repository; an assertion fails the build when
 Immich's or OpenCloud's data falls outside them. Media, Frigate recordings, PostgreSQL's live files,
 Immich's thumbnails and transcodes, logs, caches and every identity (host and SSH keys,
@@ -24,9 +27,12 @@ grant in the [OpenTofu project](../opentofu/SKILL.md) and an nftables rule); it 
 an nftables output rule also refuses connections to it from bastion's own processes. Append-only means a
 compromised laptop cannot delete its history. On Sundays the retention job stops the server,
 refuses to prune if any snapshot claims a date more than an hour ahead or was uploaded more than
-8 days after its claimed date, then keeps 7 daily, 5 weekly and 12 monthly and checks 5% of the
+8 days after its claimed date, then keeps everything from the last 14 days, so a forged snapshot
+cannot displace a genuine recent one, plus 7 daily, 5 weekly and 12 monthly, and checks 5% of the
 data. The repository is also a backup root, so it reaches the USB disk too.
 
-All repositories share `backups/restic-password` ([secrets skill](../secrets/SKILL.md)). Restore
+The household repository opens with `backups/restic-password`, the ThinkPad's with
+`backups/thinkpad-password` ([secrets skill](../secrets/SKILL.md)), so the household key can
+change without the laptop ever learning it. Restore
 with `restic -r /mnt/backup/restic snapshots` and `restic restore`, run as root on bastion.
 Off-site copies to pCloud through racknerd and the backup metrics are not ported yet.

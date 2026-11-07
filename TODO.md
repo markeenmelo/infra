@@ -35,6 +35,10 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Off-site backups with the racknerd deploy: racknerd's append-only proxy to pCloud, bastion's
       nightly run to it after the USB one, and the ThinkPad's pCloud retention; backup metrics and
       alerts with monitoring.
+- [ ] Separate the household backup key from the laptop's: the old generation gave every repository
+      one password, which the ThinkPad holds. After the install, `restic key add` a new
+      `backups/restic-password` to the USB repository (and pCloud's when it lands) and remove the
+      old key; `backups/thinkpad-password` keeps the old value.
 - [ ] Base hardening the old generation set: coredumps off, LLMNR and mDNS off, sudo for wheel
       only, kernel image protection, IPv6 off, no installer tools.
 - [ ] Remote builder + Harmonia cache for the fleet.
