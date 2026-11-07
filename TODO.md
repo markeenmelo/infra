@@ -39,8 +39,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       one password, which the ThinkPad holds. After the install, `restic key add` a new
       `backups/restic-password` to the USB repository (and pCloud's when it lands) and remove the
       old key; `backups/thinkpad-password` keeps the old value.
-- [ ] Base hardening the old generation set: coredumps off, LLMNR and mDNS off, sudo for wheel
-      only, kernel image protection, IPv6 off, no installer tools.
 - [ ] Remote builder + Harmonia cache for the fleet.
 - [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands. Before the
       install: apps on bastion fetch Authelia's OIDC discovery from `https://auth.DOMAIN`, which

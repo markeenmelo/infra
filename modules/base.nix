@@ -78,6 +78,19 @@ in
           "net.ipv4.tcp_rfc1337" = 1;
         };
       };
+      security.protectKernelImage = true;
+      systemd.coredump.settings.Coredump.Storage = "none";
+      environment = {
+        defaultPackages = [ ];
+        stub-ld.enable = false;
+      };
+      system.disableInstallerTools = true;
+      programs.nano.enable = false;
+      networking.useDHCP = false;
+      services.resolved.settings.Resolve = {
+        LLMNR = false;
+        MulticastDNS = false;
+      };
       services.journald.settings.Journal = {
         Storage = "persistent";
         SystemMaxUse = "256M";

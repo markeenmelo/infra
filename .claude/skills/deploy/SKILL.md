@@ -9,7 +9,11 @@ description: "deploy-rs: how a host's committed configuration is activated over 
 reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
 Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
 `activate-rs` and remove the rollback canary. Its key is therefore the operator's root key on
-every host, and CI gets its own. Magic rollback and auto rollback stay on: a profile
+every host, and CI gets its own. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
+off: it would make sudo unexecutable for it and break every deploy. IPv6 stays on host-wide for the
+same reason: MagicDNS answers with each node's tailnet IPv6 address, and a peer that tries it first
+against a host with IPv6 off waits out a connect timeout that can outlast the rollback confirm;
+the uplinks refuse IPv6 per link instead. Magic rollback and auto rollback stay on: a profile
 that breaks the SSH path reverts after the confirm timeout. `nix flake check` carries the
 deploy-rs schema and activation checks per system.
 
