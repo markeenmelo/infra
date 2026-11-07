@@ -436,7 +436,8 @@ in
             wants = [ "easynews-indexer.service" ];
             after = [ "easynews-indexer.service" ];
             script = withoutResponseBody "indexers" {
-              "exit \"$RC\"" = ''[ "$RC" -eq 0 ] || echo "Some indexers failed; the others were applied."'';
+              "exit \"$RC\"" =
+                ''[ "$RC" -eq 0 ] || echo "<4>Some indexers failed to apply; see the errors above."'';
             };
           };
           prowlarr-applications.script = withoutResponseBody "applications" { };
