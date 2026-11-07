@@ -30,13 +30,11 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       (shares, links, versions and trash do not carry over), then destroy `tank/nextcloud` and
       drop its mount, snapshots and backup root.
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts, with ntfy as their
-      first publisher (topics `alerts`, later `media`), and the desktop subscribers.
-- [ ] Off-site backups with the racknerd deploy: racknerd's append-only proxy to pCloud, bastion's
-      nightly run to it after the USB one, and the ThinkPad's pCloud retention; backup metrics and
-      alerts with monitoring.
+      first publisher (topics `alerts`, later `media`), and the desktop subscribers; backup
+      metrics and alerts.
 - [ ] Separate the household backup key from the laptop's: the old generation gave every repository
-      one password, which the ThinkPad holds. After the install, `restic key add` a new
-      `backups/restic-password` to the USB repository (and pCloud's when it lands) and remove the
+      one password, which the ThinkPad holds. `restic key add` a new
+      `backups/restic-password` to the USB and pCloud repositories and remove the
       old key; `backups/thinkpad-password` keeps the old value.
 - [ ] Remote builder + Harmonia cache for the fleet.
 - [ ] UniFi OpenTofu project: the LAN wildcard record made by hand; keep bastion to the camera on
