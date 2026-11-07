@@ -86,10 +86,7 @@ in
       };
       system.disableInstallerTools = true;
       programs.nano.enable = false;
-      networking = {
-        enableIPv6 = false;
-        useDHCP = false;
-      };
+      networking.useDHCP = false;
       services.resolved.settings.Resolve = {
         LLMNR = false;
         MulticastDNS = false;
