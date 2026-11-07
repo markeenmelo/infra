@@ -30,7 +30,7 @@ variable "state_passphrase" {
   sensitive   = true
 }
 
-# shortcut: the domain and the edge address are literals, feed them from fleet facts when bastion lands
+# shortcut: the domain and the edge address are literals, feed them from fleet facts when racknerd migrates
 locals {
   domain = "marcosmelo.dev"
   edge   = "72.11.150.242"

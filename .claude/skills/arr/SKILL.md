@@ -44,7 +44,8 @@ PBKDF2 hash qBittorrent checks is written into its config at each start from
 ProtonVPN forwards one random port, leased for 60 seconds over NAT-PMP from the gateway inside
 the tunnel. `qbittorrent-port-forward` renews it every 45 seconds, opens it in its own chain of
 the namespace's firewall, which otherwise drops unsolicited inbound traffic, and sets it as
-qBittorrent's listen port. The `qbittorrent` uid is pinned to the one that owns its state.
+qBittorrent's listen port. Each qBittorrent start rewrites its config from the store and drops
+that port, so the unit is bound to qBittorrent and starts again with it. The `qbittorrent` uid is pinned to the one that owns its state.
 
 The usenet indexers take their keys from `arr/INDEXER-api-key` and rank ahead of the torrent
 ones. Easynews has no Newznab API, so `easynews-indexer` serves one on the namespace's loopback

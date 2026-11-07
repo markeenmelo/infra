@@ -517,6 +517,8 @@ in
             '';
           };
           qbittorrent.serviceConfig = {
+            Restart = "on-failure";
+            RestartSec = "5s";
             LoadCredential = [
               "webui-password-hash:${config.sops.secrets.arr-qbittorrent-password-hash.path}"
             ];
@@ -545,11 +547,9 @@ in
               "${vpn}.service"
               "qbittorrent.service"
             ];
-            requires = [
-              "${vpn}.service"
-              "qbittorrent.service"
-            ];
-            wantedBy = [ "multi-user.target" ];
+            requires = [ "${vpn}.service" ];
+            bindsTo = [ "qbittorrent.service" ];
+            wantedBy = [ "qbittorrent.service" ];
             path = [
               pkgs.curl
               pkgs.iproute2

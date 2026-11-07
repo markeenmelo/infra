@@ -75,11 +75,8 @@ locals {
     }
     grants = [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
-      { src = ["racknerd"], dst = ["bastion"], ip = ["tcp:9091", "tcp:8096", "tcp:2283", "tcp:8123", "tcp:9095", "tcp:3102", "tcp:9200"] },
-      { src = ["bastion"], dst = ["racknerd"], ip = ["tcp:8000"] },
-      { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:3103", "tcp:9097", "tcp:8010"] },
-      { src = ["asahi"], dst = ["bastion"], ip = ["tcp:3104", "tcp:9098"] },
-      { src = ["mac"], dst = ["bastion"], ip = ["tcp:3105", "tcp:9099"] },
+      { src = ["racknerd"], dst = ["bastion"], ip = ["tcp:9091", "tcp:8096", "tcp:2283", "tcp:9200"] },
+      { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:8010"] },
       { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = ["192.168.2.1"], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = ["192.168.4.0/24", "192.168.20.0/24"], ip = ["*"] },
