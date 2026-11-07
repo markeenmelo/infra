@@ -417,6 +417,7 @@ in
               "qbittorrent"
               "sabnzbd"
               "seerr"
+              "decluttarr"
             ]
           )
           (_: {
@@ -454,6 +455,7 @@ in
             enableStrictShellChecks = true;
             serviceConfig = {
               DynamicUser = true;
+              SupplementaryGroups = [ config.nixflix.globals.libraryOwner.group ];
               Restart = "on-failure";
               RestartSec = "30s";
               StateDirectory = "decluttarr";
