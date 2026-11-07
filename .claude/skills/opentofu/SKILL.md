@@ -1,6 +1,6 @@
 ---
 name: opentofu
-description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, services, device tags, auth keys; Porkbun: the public DNS records), the tofu flake app, encrypted state, provider pins, plan and apply rules. Use before changing opentofu/ or modules/opentofu.nix, reviewing a plan the operator pasted, changing a public DNS record, or answering who can reach what on the tailnet."
+description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, device tags, auth keys; Porkbun: the public DNS records), the tofu flake app, encrypted state, provider pins, plan and apply rules. Use before changing opentofu/ or modules/opentofu.nix, reviewing a plan the operator pasted, changing a public DNS record, or answering who can reach what on the tailnet."
 ---
 
 # OpenTofu
@@ -32,14 +32,15 @@ passphrase with a `fallback` key provider carrying the old one, apply, remove it
 
 [main.tf](../../../opentofu/tailscale/main.tf) owns the whole tailnet: the policy as `jsonencode`
 of a local (grants only; `tests` guard the SSH boundary and run on every apply), tailnet
-settings, DNS (global resolver plus split DNS for the domain to bastion), the services bastion
-hosts, tags on devices enrolled without a key, and one auth key per host. The admin console is
+settings, DNS (global resolver plus split DNS for the domain to bastion), tags on devices enrolled
+without a key, and one auth key per host. Bastion's apps are reached through that split DNS and
+its LAN proxy, so the tailnet defines no Tailscale services. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
 
 - Auth keys recreate on apply once invalid; the [tailnet skill](../tailnet/SKILL.md) moves one
   into `secrets/hosts/HOST.yaml`.
 - A host enrolled by key carries the key's tag; retagging it is a re-enrollment.
-- Approval (`autoApprovers`) is not retroactive: apply a new route or service approver before
+- Approval (`autoApprovers`) is not retroactive: apply a new route or exit node approver before
   deploying the host that advertises it.
 - `tag:infra-provisioner` belongs to the OAuth client only.
 
