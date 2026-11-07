@@ -28,16 +28,35 @@
         zfs.forceImportRoot = false;
         kernelParams = [ "zfs.zfs_arc_max=${toString (24 * 1024 * 1024 * 1024)}" ];
       };
-      fileSystems = lib.mapAttrs (mount: device: {
-        inherit device;
-        fsType = "zfs";
-        options = [
-          "nofail"
-          "nosuid"
-          "nodev"
-        ]
-        ++ lib.optional (mount == "/srv/media") "noexec";
-      }) datasets;
+      fileSystems = lib.mkMerge [
+        (lib.mapAttrs (mount: device: {
+          inherit device;
+          fsType = "zfs";
+          options = [
+            "nofail"
+            "nosuid"
+            "nodev"
+          ]
+          ++ lib.optional (mount == "/srv/media") "noexec";
+        }) datasets)
+        {
+          "/mnt/backup" = {
+            # the USB backup disk's ext4 filesystem, recorded by the old generation
+            device = "/dev/disk/by-uuid/299d5130-226c-4d2f-b677-d4613da171db";
+            fsType = "ext4";
+            options = [
+              "nofail"
+              "nosuid"
+              "nodev"
+              "noexec"
+              "x-systemd.automount"
+              "x-systemd.idle-timeout=30min"
+              "x-systemd.device-timeout=5s"
+              "x-systemd.mount-timeout=30s"
+            ];
+          };
+        }
+      ];
       systemd = {
         tmpfiles.rules = [
           "d /persist/zfs 0700 root root -"

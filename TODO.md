@@ -29,10 +29,18 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] OpenCloud data: create `tank/opencloud` before the install, check `tank` free space, move
       the files with `rclone copy` from `/srv/nextcloud/instance/data/USER/files` over WebDAV
       (shares, links, versions and trash do not carry over), then destroy `tank/nextcloud` and
-      drop its mount and snapshots.
+      drop its mount, snapshots and backup root.
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts, with ntfy as their
       first publisher (topics `alerts`, later `media`), and the desktop subscribers.
-- [ ] Backups: restic to pCloud, restore check, PostgreSQL dumps.
+- [ ] Off-site backups with the racknerd deploy: racknerd's append-only proxy to pCloud, bastion's
+      nightly run to it after the USB one, and the ThinkPad's pCloud retention; backup metrics and
+      alerts with monitoring.
+- [ ] Separate the household backup key from the laptop's: the old generation gave every repository
+      one password, which the ThinkPad holds. After the install, `restic key add` a new
+      `backups/restic-password` to the USB repository (and pCloud's when it lands) and remove the
+      old key; `backups/thinkpad-password` keeps the old value.
+- [ ] Base hardening the old generation set: coredumps off, LLMNR and mDNS off, sudo for wheel
+      only, kernel image protection, IPv6 off, no installer tools.
 - [ ] Remote builder + Harmonia cache for the fleet.
 - [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands. Before the
       install: apps on bastion fetch Authelia's OIDC discovery from `https://auth.DOMAIN`, which
@@ -55,7 +63,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] `ci-deploy`: deploy on merge from GitHub-hosted runners (Tailscale GitHub Action + deploy-rs),
       protected environment with manual approval gated by a path filter on access-changing files;
       its own key on the `deploy` account, which is root-equivalent.
-- [ ] Remaining skills as their code lands (`monitoring`, `backups`, `desktop`); update `nix`
+- [ ] Remaining skills as their code lands (`monitoring`, `desktop`); update `nix`
       skill placement table.
 - [ ] Delete `~/projects/infra-old/` (duplicate) and, when every host runs the new config,
       `infra/infra-old/` and its mention in CLAUDE.md.

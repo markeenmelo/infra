@@ -10,6 +10,7 @@
       opencloud
       jellyfin
       arr
+      backups
     ];
     system.stateVersion = "26.05";
   };
