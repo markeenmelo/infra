@@ -235,5 +235,14 @@
       networking.firewall.extraInputRules = ''
         iifname "${config.services.tailscale.interfaceName}" ip saddr ${thinkpad.client} tcp dport ${toString thinkpad.port} accept
       '';
+      networking.nftables.tables.backup-thinkpad = {
+        family = "inet";
+        content = ''
+          chain output {
+            type filter hook output priority -150; policy accept;
+            oifname "lo" ip daddr ${thinkpad.listen} tcp dport ${toString thinkpad.port} reject
+          }
+        '';
+      };
     };
 }

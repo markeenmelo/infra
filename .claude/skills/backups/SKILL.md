@@ -20,7 +20,8 @@ each month, and tests that every dump in the latest snapshot decompresses.
 
 The ThinkPad backs its home up to `backup-thinkpad`, an append-only `rclone serve restic` on
 bastion's tailnet address, port 8010, reachable from the ThinkPad's address only (the tailnet
-grant in the [OpenTofu project](../opentofu/SKILL.md) and an nftables rule). Append-only means a
+grant in the [OpenTofu project](../opentofu/SKILL.md) and an nftables rule); it has no login, so
+an nftables output rule also refuses connections to it from bastion's own processes. Append-only means a
 compromised laptop cannot delete its history. On Sundays the retention job stops the server,
 refuses to prune if any snapshot claims a date more than an hour ahead or was uploaded more than
 8 days after its claimed date, then keeps 7 daily, 5 weekly and 12 monthly and checks 5% of the
