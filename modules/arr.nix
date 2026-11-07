@@ -88,7 +88,8 @@ in
           dump = ''cat "$RESPONSE_FILE"'';
           from = [ dump ] ++ lib.attrNames rewrites;
         in
-        assert lib.all (part: lib.hasInfix part script) from;
+        assert lib.hasInfix dump script;
+        assert lib.all (part: lib.length (lib.splitString part script) == 2) (lib.attrNames rewrites);
         lib.mkForce (
           lib.replaceStrings from (
             [ ''echo "Response body omitted: it may echo API keys."'' ] ++ lib.attrValues rewrites
