@@ -211,6 +211,8 @@ in
               Restart = "on-failure";
               RestartSec = "5s";
               RuntimeDirectory = "qbittorrent-port-forward";
+              RuntimeDirectoryMode = "0700";
+              UMask = "0077";
               LoadCredential = [ "password:${config.sops.secrets.arr-qbittorrent-password.path}" ];
             };
             script = ''
