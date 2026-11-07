@@ -17,8 +17,9 @@ tunnel. nixflix confines them together: an app inside cannot reach one outside. 
 `sonarr.`, `radarr.`, `prowlarr.` and `qbittorrent.DOMAIN` through the LAN proxy for tailnet
 clients only ([proxy skill](../proxy/SKILL.md)); the arr apps log in as `marcos` with
 `arr/password`. An nftables table drops forwarding across the namespace's bridge, so nixflix's
-port mappings never expose the apps to the LAN, and lets only root and Caddy open connections
-into the namespace.
+port mappings never expose the apps to the LAN, and lets only root (which nixflix's setup units
+and the port-forward unit run as) and Caddy open new connections into the namespace; replies to
+connections the apps open pass.
 
 Everything reaches qBittorrent from inside the namespace or the bridge, so nothing is exempt from
 its login: Sonarr, Radarr and the port-forward unit use `arr/qbittorrent-password`, and the

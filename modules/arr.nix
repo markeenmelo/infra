@@ -149,7 +149,7 @@ in
           }
           chain output {
             type filter hook output priority -150; policy accept;
-            oifname "${vpn}-br" meta skuid != { ${
+            ct state new oifname "${vpn}-br" meta skuid != { ${
               lib.concatMapStringsSep ", " toString (
                 [ 0 ] ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
               )
