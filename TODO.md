@@ -29,7 +29,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] OpenCloud data: create `tank/opencloud` before the install, check `tank` free space, move
       the files with `rclone copy` from `/srv/nextcloud/instance/data/USER/files` over WebDAV
       (shares, links, versions and trash do not carry over), then destroy `tank/nextcloud` and
-      drop its mount and snapshots.
+      drop its mount, snapshots and backup root.
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts, with ntfy as their
       first publisher (topics `alerts`, later `media`), and the desktop subscribers.
 - [ ] Off-site backups with the racknerd deploy: racknerd's append-only proxy to pCloud, bastion's

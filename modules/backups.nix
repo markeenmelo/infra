@@ -14,6 +14,7 @@
         "/srv"
         "/srv/immich"
         "/srv/opencloud"
+        "/srv/nextcloud"
         "/srv/nixflix-state"
         "/srv/backup-thinkpad"
       ];
@@ -86,6 +87,7 @@
         exclude = [
           (inSnapshot "/srv/immich" "/srv/immich/library/thumbs")
           (inSnapshot "/srv/immich" "/srv/immich/library/encoded-video")
+          (inSnapshot "/srv/nextcloud" "/srv/nextcloud/instance/data/appdata_*/preview")
           "/persist/.${snap}/.restic-*"
         ]
         ++ persisted;
