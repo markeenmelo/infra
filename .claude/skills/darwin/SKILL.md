@@ -23,9 +23,9 @@ identity lives in its state directory and survives a switch. A re-enrolment uses
 [OpenTofu project](../opentofu/SKILL.md), `tailscale up --auth-key file:PATH` with the key
 written to a private file. sops-nix on darwin decrypts with the mac's SSH host key and holds only
 the GitHub MCP token ([secrets skill](../secrets/SKILL.md)). Touch ID answers sudo. Claude Code's
-managed sandbox ([claude.nix](../../../modules/claude.nix)) also covers the operator's `!` commands:
-its strict network allowlist admits `github.com` for git over HTTPS, and it blocks writes to
-`.git/config`, so creating a branch with an upstream happens in a terminal of its own. The old
+managed sandbox ([claude.nix](../../../modules/claude.nix)) admits no network host, so nothing a
+sandboxed command reads can leave, and blocks writes to `.git/config`; git's network commands, `gh`
+and creating a branch with an upstream run outside it. The old
 generation's modules are reference only; a tool is added when the operator names it.
 
 `flake.modules.darwin.desktop` is the laptop role: AeroSpace tiles with alt bindings, SketchyBar

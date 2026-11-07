@@ -17,9 +17,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## bastion
 
-- [ ] Media extras: SABnzbd (Newshosting, Tweaknews) with the NinjaCentral, NZBgeek, altHUB and
-      DrunkenSlug indexers and the Easynews bridge, Seerr with Recyclarr's profile, and
-      Decluttarr. Dropped: Home Assistant, Mosquitto, SparkyFitness, OpenGym, the Proton exit
+- [ ] Media extras: Seerr with Recyclarr's profile, and Decluttarr. Dropped: Home Assistant, Mosquitto, SparkyFitness, OpenGym, the Proton exit
       nodes, live TV and UsenetCrawler; their databases in the old PostgreSQL cluster are
       dropped by hand after the install.
 - [ ] Jellyfin child account: confirm the SSO plugin leaves a user's parental limits alone at

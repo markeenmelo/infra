@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, inputs, ... }:
 let
   inherit (config.flake.modules.nixos) nixflix postgresql;
   inherit (config.fleet) domain;
@@ -13,6 +13,46 @@ let
     "YTS"
     "showRSS"
     "Nyaa.si"
+  ];
+  easynewsPort = 8084;
+  usenetIndexers = [
+    {
+      name = "NinjaCentral";
+      baseUrl = "https://ninjacentral.co.za";
+    }
+    {
+      name = "NZBgeek";
+      baseUrl = "https://api.nzbgeek.info";
+    }
+    {
+      name = "altHUB";
+      baseUrl = "https://api.althub.co.za";
+    }
+    {
+      name = "DrunkenSlug";
+      baseUrl = "https://drunkenslug.com";
+    }
+    {
+      name = "Easynews";
+      schemaName = "Generic Newznab";
+      baseUrl = "http://127.0.0.1:${toString easynewsPort}";
+    }
+  ];
+  usenetServers = [
+    {
+      name = "Newshosting";
+      host = "news.newshosting.com";
+      connections = 100;
+      priority = 0;
+      retention = 6625;
+    }
+    {
+      name = "Tweaknews";
+      host = "newshosting.tweaknews.eu";
+      connections = 40;
+      priority = 1;
+      retention = 4200;
+    }
   ];
   # ProtonVPN's NAT-PMP gateway inside the tunnel
   protonGateway = "10.2.0.1";
@@ -30,8 +70,21 @@ in
       inherit (config.vpnNamespaces.${vpn}) namespaceAddress;
       qbittorrent = config.nixflix.torrentClients.qbittorrent;
       inherit (config.services.qbittorrent) webuiPort;
+      sabnzbd = config.nixflix.usenetClients.sabnzbd;
       secret = name: { _secret = config.sops.secrets."arr-${name}".path; };
       media = dirOf config.nixflix.mediaDir;
+      withoutResponseBody =
+        unit:
+        let
+          script =
+            (import "${inputs.nixflix}/modules/prowlarr/${unit}.nix" { inherit config lib pkgs; })
+            .config.systemd.services."prowlarr-${unit}".content.script;
+          dump = ''cat "$RESPONSE_FILE"'';
+        in
+        assert lib.hasInfix dump script;
+        lib.mkForce (
+          lib.replaceStrings [ dump ] [ ''echo "Response body omitted: it may echo API keys."'' ] script
+        );
     in
     {
       imports = [
@@ -62,7 +115,29 @@ in
               "sonarr-config"
               "radarr-config"
               "prowlarr-config"
+              "sabnzbd"
             ];
+            sabnzbd-api-key = [
+              "sabnzbd"
+              "sonarr-downloadclients"
+              "radarr-downloadclients"
+            ];
+            sabnzbd-nzb-key = [ "sabnzbd" ];
+            newshosting-username = [
+              "sabnzbd"
+              "easynews-indexer"
+            ];
+            newshosting-password = [ "sabnzbd" ];
+            tweaknews-username = [ "sabnzbd" ];
+            easynews-password = [ "easynews-indexer" ];
+            easynews-api-key = [
+              "easynews-indexer"
+              "prowlarr-indexers"
+            ];
+            ninjacentral-api-key = [ "prowlarr-indexers" ];
+            nzbgeek-api-key = [ "prowlarr-indexers" ];
+            althub-api-key = [ "prowlarr-indexers" ];
+            drunkenslug-api-key = [ "prowlarr-indexers" ];
             qbittorrent-password = [
               "sonarr-downloadclients"
               "radarr-downloadclients"
@@ -105,11 +180,51 @@ in
               };
             };
           };
-          prowlarr.config.indexers = map (name: {
-            inherit name;
+          usenetClients.sabnzbd = {
             enable = true;
-            "torrentBaseSettings.appMinimumSeeders" = 5;
-          }) indexers;
+            settings = {
+              misc = {
+                api_key = secret "sabnzbd-api-key";
+                nzb_key = secret "sabnzbd-nzb-key";
+                username = "marcos";
+                password = secret "password";
+                host_whitelist = "sabnzbd.${domain}";
+                admin_dir = "${config.nixflix.stateDir}/sabnzbd/admin";
+                log_dir = "${config.nixflix.stateDir}/sabnzbd/logs";
+                unwanted_extensions = "exe, scr, com, bat, cmd, lnk, msi, vbs, ps1";
+                action_on_unwanted_extensions = 2;
+              };
+              servers = map (server: {
+                inherit (server)
+                  name
+                  host
+                  connections
+                  priority
+                  retention
+                  ;
+                ssl_verify = "strict";
+                username = secret "${lib.toLower server.name}-username";
+                password = secret "newshosting-password";
+              }) usenetServers;
+            };
+          };
+          prowlarr.config.indexers =
+            map (name: {
+              inherit name;
+              enable = true;
+              "torrentBaseSettings.appMinimumSeeders" = 5;
+            }) indexers
+            ++ map (
+              indexer:
+              lib.mkMerge [
+                indexer
+                {
+                  enable = true;
+                  priority = 10;
+                  apiKey = secret "${lib.toLower indexer.name}-api-key";
+                }
+              ]
+            ) usenetIndexers;
         }
         (lib.genAttrs apps (name: {
           enable = true;
@@ -137,8 +252,14 @@ in
             address = namespaceAddress;
             tailnetOnly = true;
           };
+          sabnzbd = {
+            inherit (sabnzbd.settings.misc) port;
+            address = namespaceAddress;
+            tailnetOnly = true;
+          };
         }
       ];
+      nixpkgs.config.allowUnfreePackages = [ "unrar" ];
       networking.nftables.tables.arr-vpn = {
         family = "inet";
         content = ''
@@ -158,13 +279,59 @@ in
         '';
       };
       systemd.services = lib.mkMerge [
-        (lib.genAttrs (apps ++ [ "qbittorrent" ]) (_: {
-          unitConfig.RequiresMountsFor = [
-            config.nixflix.stateDir
-            media
-          ];
-        }))
+        (lib.genAttrs
+          (
+            apps
+            ++ [
+              "qbittorrent"
+              "sabnzbd"
+            ]
+          )
+          (_: {
+            unitConfig.RequiresMountsFor = [
+              config.nixflix.stateDir
+              media
+            ];
+          })
+        )
         {
+          prowlarr-indexers = {
+            wants = [ "easynews-indexer.service" ];
+            after = [ "easynews-indexer.service" ];
+            script = withoutResponseBody "indexers";
+          };
+          prowlarr-applications.script = withoutResponseBody "applications";
+          sabnzbd-categories = {
+            wantedBy = [ "sabnzbd.service" ];
+            partOf = [ "sabnzbd.service" ];
+          };
+          easynews-indexer = {
+            description = "Easynews search as a Newznab indexer for Prowlarr";
+            wantedBy = [ "multi-user.target" ];
+            vpnConfinement = {
+              enable = true;
+              vpnNamespace = vpn;
+            };
+            enableStrictShellChecks = true;
+            serviceConfig = {
+              DynamicUser = true;
+              Restart = "on-failure";
+              RestartSec = "5s";
+              LoadCredential = map (name: "${name}:${config.sops.secrets."arr-${name}".path}") [
+                "newshosting-username"
+                "easynews-password"
+                "easynews-api-key"
+              ];
+            };
+            script = ''
+              EASYNEWS_USER="$(< "$CREDENTIALS_DIRECTORY/newshosting-username")@newshosting.com"
+              EASYNEWS_PASS=$(< "$CREDENTIALS_DIRECTORY/easynews-password")
+              NEWZNAB_APIKEY=$(< "$CREDENTIALS_DIRECTORY/easynews-api-key")
+              export EASYNEWS_USER EASYNEWS_PASS NEWZNAB_APIKEY
+              exec ${lib.getExe (pkgs.callPackage ./easynews-indexer.pkg.nix { })} \
+                --bind 127.0.0.1:${toString easynewsPort} --threads 4
+            '';
+          };
           qbittorrent.serviceConfig = {
             LoadCredential = [
               "webui-password-hash:${config.sops.secrets.arr-qbittorrent-password-hash.path}"
@@ -211,6 +378,8 @@ in
               Restart = "on-failure";
               RestartSec = "5s";
               RuntimeDirectory = "qbittorrent-port-forward";
+              RuntimeDirectoryMode = "0700";
+              UMask = "0077";
               LoadCredential = [ "password:${config.sops.secrets.arr-qbittorrent-password.path}" ];
             };
             script = ''

@@ -1,25 +1,27 @@
 ---
 name: arr
-description: "Sonarr, Radarr, Prowlarr and qBittorrent on bastion through nixflix: their logins and databases, the Proton WireGuard namespace all four run in, ProtonVPN port forwarding, the firewall around the namespace, their tailnet-only web UIs, and the indexer list. Use before touching modules/arr.nix, changing indexers or download limits, rotating the WireGuard config, or debugging downloads, imports or the VPN."
+description: "Sonarr, Radarr, Prowlarr, qBittorrent and SABnzbd on bastion through nixflix: their logins and databases, the Proton WireGuard namespace they run in, ProtonVPN port forwarding, the firewall around the namespace, their tailnet-only web UIs, the torrent and usenet indexers, the Easynews bridge and the usenet servers. Use before touching modules/arr.nix or modules/easynews-indexer.pkg.nix, changing indexers, servers or download limits, rotating the WireGuard config or a provider credential, or debugging downloads, imports or the VPN."
 ---
 
 # Arr apps
 
-[arr.nix](../../../modules/arr.nix) runs Sonarr, Radarr, Prowlarr and qBittorrent from nixflix on
-the media datasets shared with Jellyfin ([jellyfin skill](../jellyfin/SKILL.md)), the arr
-databases in the shared PostgreSQL over its socket ([identity skill](../identity/SKILL.md)).
-nixflix wires Prowlarr to Sonarr and Radarr and both to qBittorrent from the declared API keys;
-its setup units apply settings after every start.
+[arr.nix](../../../modules/arr.nix) runs Sonarr, Radarr, Prowlarr, qBittorrent and SABnzbd from
+nixflix on the media datasets shared with Jellyfin ([jellyfin skill](../jellyfin/SKILL.md)), the
+arr databases in the shared PostgreSQL over its socket ([identity skill](../identity/SKILL.md)).
+nixflix wires Prowlarr to Sonarr and Radarr and both to qBittorrent and SABnzbd from the declared
+API keys; its setup units apply settings after every start. SABnzbd's config is regenerated from
+Nix at each start, so its categories unit reruns with it; its queue and logs live in the state
+dataset.
 
-All four run in nixflix's WireGuard namespace on Proton's config (`arr/proton-wireguard`,
+All of them run in nixflix's WireGuard namespace on Proton's config (`arr/proton-wireguard`,
 generated with NAT-PMP on), so indexer searches, metadata and downloads leave only through the
 tunnel. nixflix confines them together: an app inside cannot reach one outside. Their web UIs are
-`sonarr.`, `radarr.`, `prowlarr.` and `qbittorrent.DOMAIN` through the LAN proxy for tailnet
-clients only ([proxy skill](../proxy/SKILL.md)); the arr apps log in as `marcos` with
-`arr/password`. An nftables table drops forwarding across the namespace's bridge, so nixflix's
-port mappings never expose the apps to the LAN, and lets only root (which nixflix's setup units
-and the port-forward unit run as) and Caddy open new connections into the namespace; replies to
-connections the apps open pass.
+`sonarr.`, `radarr.`, `prowlarr.`, `qbittorrent.` and `sabnzbd.DOMAIN` through the LAN proxy for
+tailnet clients only ([proxy skill](../proxy/SKILL.md)); the arr apps and SABnzbd log in as
+`marcos` with `arr/password`. An nftables table drops forwarding across the namespace's bridge, so
+nixflix's port mappings never expose the apps to the LAN, and lets only root (which nixflix's
+setup units and the port-forward unit run as) and Caddy open new connections into the namespace;
+replies to connections the apps open pass.
 
 Everything reaches qBittorrent from inside the namespace or the bridge, so nothing is exempt from
 its login: Sonarr, Radarr and the port-forward unit use `arr/qbittorrent-password`, and the
@@ -30,3 +32,10 @@ ProtonVPN forwards one random port, leased for 60 seconds over NAT-PMP from the 
 the tunnel. `qbittorrent-port-forward` renews it every 45 seconds, opens it in its own chain of
 the namespace's firewall, which otherwise drops unsolicited inbound traffic, and sets it as
 qBittorrent's listen port. The `qbittorrent` uid is pinned to the one that owns its state.
+
+The usenet indexers take their keys from `arr/INDEXER-api-key` and rank ahead of the torrent
+ones. Easynews has no Newznab API, so `easynews-indexer` serves one on the namespace's loopback
+for Prowlarr, signing in with the Newshosting username and `arr/easynews-password`; Prowlarr
+reaches it with `arr/easynews-api-key`. SABnzbd downloads from Newshosting, then Tweaknews, both
+on the Newshosting password and with strict certificate checks. Prowlarr's indexer and
+application setup units print no response bodies, which can echo the keys they sent.
