@@ -1,6 +1,6 @@
 ---
 name: arr
-description: "Sonarr, Radarr, Prowlarr, qBittorrent and SABnzbd on bastion through nixflix: their logins and databases, the Proton WireGuard namespace they run in, ProtonVPN port forwarding, the firewall around the namespace, their tailnet-only web UIs, the torrent and usenet indexers, the Easynews bridge and the usenet servers. Use before touching modules/arr.nix or modules/easynews-indexer.pkg.nix, changing indexers, servers or download limits, rotating the WireGuard config or a provider credential, or debugging downloads, imports or the VPN."
+description: "Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr and Decluttarr on bastion through nixflix: their logins and databases, the Proton WireGuard namespace they run in, ProtonVPN port forwarding, the firewall around the namespace, their tailnet-only web UIs, the torrent and usenet indexers, the Easynews bridge, the usenet servers, media requests and the quality profile. Use before touching modules/arr.nix, modules/easynews-indexer.pkg.nix or modules/decluttarr.pkg.nix, changing indexers, servers, quality profiles or download limits, rotating the WireGuard config or a provider credential, or debugging downloads, imports or the VPN."
 ---
 
 # Arr apps
@@ -20,8 +20,16 @@ tunnel. nixflix confines them together: an app inside cannot reach one outside. 
 tailnet clients only ([proxy skill](../proxy/SKILL.md)); the arr apps and SABnzbd log in as
 `marcos` with `arr/password`. An nftables table drops forwarding across the namespace's bridge, so
 nixflix's port mappings never expose the apps to the LAN, and lets only root (which nixflix's
-setup units and the port-forward unit run as) and Caddy open new connections into the namespace;
-replies to connections the apps open pass.
+setup units and the port-forward unit run as), Caddy and Seerr open new connections into the
+namespace; replies to connections the apps open pass.
+
+Seerr takes requests at `seerr.DOMAIN`, tailnet-only, and runs outside the namespace because it
+needs Jellyfin; it signs in to Jellyfin as the declared native admin to set itself up, and its
+users sign in with their Jellyfin accounts. Requests go to Sonarr and Radarr on
+`1080p Storage Efficient`, the profile Recyclarr syncs daily next to the TRaSH ones it already
+manages. Recyclarr and Decluttarr talk only to the apps, so they run in the namespace. Decluttarr
+clears stalled, slow, failed and finished downloads from the queues, qBittorrent and SABnzbd, and
+searches for missing media, every minute.
 
 Everything reaches qBittorrent from inside the namespace or the bridge, so nothing is exempt from
 its login: Sonarr, Radarr and the port-forward unit use `arr/qbittorrent-password`, and the
