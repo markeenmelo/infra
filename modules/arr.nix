@@ -106,7 +106,6 @@ in
           (
             builtins.toJSON {
               general = {
-                timer = 1;
                 test_run = false;
               };
               job_defaults.max_strikes = 5;
@@ -394,13 +393,17 @@ in
           }
           chain output {
             type filter hook output priority -150; policy accept;
+            ct state new oifname "${vpn}-br" meta skuid ${
+              toString config.users.users.${config.nixflix.seerr.user}.uid
+            } tcp dport { ${
+              lib.concatMapStringsSep ", " (name: toString config.nixflix.${name}.config.hostConfig.port) [
+                "sonarr"
+                "radarr"
+              ]
+            } } accept
             ct state new oifname "${vpn}-br" meta skuid != { ${
               lib.concatMapStringsSep ", " toString (
-                [
-                  0
-                  config.users.users.${config.nixflix.seerr.user}.uid
-                ]
-                ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
+                [ 0 ] ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
               )
             } } reject
           }
