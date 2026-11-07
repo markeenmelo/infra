@@ -24,7 +24,11 @@ nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
 
 Claude prepares the command and asks first ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
 that changes SSH, firewall, Tailscale, users, sudo or this module is an access change. The first
-activation of a host is a nixos-anywhere install, not a deploy. A host without a tailnet
+activation of a host is a nixos-anywhere install, not a deploy. The installed generation has no
+deploy-rs activation files, so the first deploy after an install cannot roll back to it: a failed
+activation leaves the new configuration running with the profile pointing at the old generation,
+until a deploy succeeds. Any failed unit fails the activation, so setup units stay idempotent and
+do not fail on an outside service being down. A host without a tailnet
 connection is unreachable to deploy-rs by design: recover through the provider or physical
 console.
 

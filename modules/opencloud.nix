@@ -101,7 +101,7 @@ in
             ExecStartPre = [
               "+${pkgs.coreutils}/bin/install -d -o opencloud -g opencloud -m 0750 ${root} ${root}/config ${root}/idm"
             ];
-            ReadWritePaths = [ "${root}/config" ];
+            ReadWritePaths = [ root ];
           };
         };
         opencloud = {
