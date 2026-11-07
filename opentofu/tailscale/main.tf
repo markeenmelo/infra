@@ -30,7 +30,7 @@ variable "state_passphrase" {
   sensitive   = true
 }
 
-# shortcut: addresses, services and hosts are literals, feed them from fleet facts when bastion lands
+# shortcut: addresses and hosts are literals, feed them from fleet facts when bastion lands
 locals {
   domain  = "marcosmelo.dev"
   bastion = "100.105.158.109"
@@ -44,12 +44,6 @@ locals {
   }
   admin_clients = ["thinkpad", "asahi", "mac", "grafite"]
   lans          = ["192.168.2.0/24", "192.168.4.0/24", "192.168.20.0/24"]
-  services = [
-    "frigate", "sabnzbd", "qbittorrent", "sonarr", "radarr", "seerr", "prowlarr",
-    "lldap", "grafana", "ntfy", "sparkyfitness", "opengym",
-  ]
-  member_services = ["sparkyfitness", "opengym"]
-  svc             = { for s in local.services : s => "svc:${s}" }
   enrollment = {
     thinkpad  = ["tag:admin-client"]
     asahi     = ["tag:admin-client"]
@@ -78,14 +72,11 @@ locals {
     autoApprovers = {
       exitNode = ["tag:proton-exit"]
       routes   = { for lan in local.lans : lan => ["tag:bastion"] }
-      services = { for s in local.services : "svc:${s}" => ["tag:bastion"] }
     }
     grants = [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
       { src = ["racknerd"], dst = ["bastion"], ip = ["tcp:9091", "tcp:8096", "tcp:2283", "tcp:8123", "tcp:9095", "tcp:3102", "tcp:9200"] },
       { src = ["bastion"], dst = ["racknerd"], ip = ["tcp:8000"] },
-      { src = ["tag:admin-client"], dst = values(local.svc), ip = ["tcp:443"] },
-      { src = ["group:members"], dst = [for s in local.member_services : local.svc[s]], ip = ["tcp:443"] },
       { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:3103", "tcp:9097", "tcp:8010"] },
       { src = ["asahi"], dst = ["bastion"], ip = ["tcp:3104", "tcp:9098"] },
       { src = ["mac"], dst = ["bastion"], ip = ["tcp:3105", "tcp:9099"] },
@@ -98,24 +89,13 @@ locals {
     tests = [
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
-      { src = "group:members", proto = "tcp", deny = ["tag:server:22", "svc:grafana:443"] },
+      { src = "group:members", proto = "tcp", deny = ["tag:server:22"] },
     ]
   }
 }
 
 resource "tailscale_acl" "fleet" {
-  acl        = jsonencode(local.policy)
-  depends_on = [tailscale_service.admin]
-}
-
-resource "tailscale_service" "admin" {
-  for_each = toset(local.services)
-  name     = "svc:${each.key}"
-  ports    = ["tcp:443"]
-  comment  = "Bastion ${each.key}"
-  lifecycle {
-    prevent_destroy = true
-  }
+  acl = jsonencode(local.policy)
 }
 
 resource "tailscale_tailnet_settings" "fleet" {
