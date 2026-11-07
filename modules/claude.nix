@@ -12,7 +12,10 @@ let
       enabled = true;
       failIfUnavailable = true;
       allowUnsandboxedCommands = false;
-      network.strictAllowlist = true;
+      network = {
+        strictAllowlist = true;
+        allowedDomains = [ "github.com" ];
+      };
       filesystem.denyRead = secretDirs;
     };
   };

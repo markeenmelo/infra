@@ -9,6 +9,7 @@
       frigate
       opencloud
       jellyfin
+      arr
     ];
     system.stateVersion = "26.05";
   };

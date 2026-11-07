@@ -28,7 +28,11 @@ in
           lib.mapAttrsToList (name: app: ''
             @${name} host ${name}.${domain}
             handle @${name} {
-              reverse_proxy 127.0.0.1:${toString app.port}
+              ${lib.optionalString app.tailnetOnly ''
+                @${name}-outside not remote_ip 100.64.0.0/10
+                abort @${name}-outside
+              ''}
+              reverse_proxy ${app.address}:${toString app.port}
             }
           '') config.fleet.web.apps
         ))
