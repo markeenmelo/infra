@@ -40,7 +40,7 @@ read-only for all of these; `acls_externally_managed_on` says so.
 - Auth keys recreate on apply once invalid; the [tailnet skill](../tailnet/SKILL.md) moves one
   into `secrets/hosts/HOST.yaml`.
 - A host enrolled by key carries the key's tag; retagging it is a re-enrollment.
-- Approval (`autoApprovers`) is not retroactive: apply a new route or service approver before
+- Approval (`autoApprovers`) is not retroactive: apply a new route or exit node approver before
   deploying the host that advertises it.
 - `tag:infra-provisioner` belongs to the OAuth client only.
 

@@ -39,13 +39,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       `backups/restic-password` to the USB repository (and pCloud's when it lands) and remove the
       old key; `backups/thinkpad-password` keeps the old value.
 - [ ] Remote builder + Harmonia cache for the fleet.
-- [ ] LAN wildcard record on the UniFi gateway, by hand until the UniFi project lands. Before the
-      install: apps on bastion fetch Authelia's OIDC discovery from `https://auth.DOMAIN`, which
-      otherwise resolves to racknerd.
-- [ ] Install bastion once the household apps are ported: the install replaces every running
-      service. Carries the identity, sbctl and ZFS keys. racknerd is deployed only after it: its
-      edge forwards to the new apps' ports, which the old bastion does not serve.
-- [ ] UniFi OpenTofu project: keep bastion to the camera on 554 and 2020, and no internet for the
+- [ ] Deploy racknerd: its edge forwards to the new apps' ports on bastion.
+- [ ] UniFi OpenTofu project: the LAN wildcard record made by hand; keep bastion to the camera on
+      554 and 2020, and no internet for the
       Cameras VLAN; drop the Home Assistant to IoT media rule.
 
 ## Laptops
