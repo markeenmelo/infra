@@ -348,6 +348,7 @@ in
         (lib.genAttrs apps (name: {
           enable = true;
           vpn.enable = true;
+          settings.server.bindaddress = namespaceAddress;
           config = {
             apiKey = secret "${name}-api-key";
             hostConfig = {

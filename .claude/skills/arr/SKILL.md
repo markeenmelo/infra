@@ -9,7 +9,9 @@ description: "Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr a
 nixflix on the media datasets shared with Jellyfin ([jellyfin skill](../jellyfin/SKILL.md)), the
 arr databases in the shared PostgreSQL over its socket ([identity skill](../identity/SKILL.md)).
 nixflix wires Prowlarr to Sonarr and Radarr and both to qBittorrent and SABnzbd from the declared
-API keys; its setup units apply settings after every start. SABnzbd's config is regenerated from
+API keys; its setup units apply settings after every start. Their bind address also goes in as an
+environment variable, which wins over `config.xml`: the setup units can only reach an app at the
+namespace address, so an address carried in an old `config.xml` would keep it unreachable. SABnzbd's config is regenerated from
 Nix at each start, so its categories unit reruns with it; its queue and logs live in the state
 dataset.
 
