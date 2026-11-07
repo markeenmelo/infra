@@ -66,6 +66,7 @@ in
             qbittorrent-password = [
               "sonarr-downloadclients"
               "radarr-downloadclients"
+              "qbittorrent-port-forward"
             ];
             qbittorrent-password-hash = [ "qbittorrent" ];
             proton-wireguard = [ vpn ];
@@ -104,29 +105,18 @@ in
               };
             };
           };
-          prowlarr.config = {
-            indexers = map (name: {
-              inherit name;
-              enable = true;
-              tags = [ "vpn" ];
-              "torrentBaseSettings.appMinimumSeeders" = 5;
-            }) indexers;
-            indexerProxies = [
-              {
-                name = "Socks5";
-                host = namespaceAddress;
-                inherit (config.services.microsocks) port;
-                tags = [ "vpn" ];
-              }
-            ];
-          };
+          prowlarr.config.indexers = map (name: {
+            inherit name;
+            enable = true;
+            "torrentBaseSettings.appMinimumSeeders" = 5;
+          }) indexers;
         }
         (lib.genAttrs apps (name: {
           enable = true;
+          vpn.enable = true;
           config = {
             apiKey = secret "${name}-api-key";
             hostConfig = {
-              bindAddress = "127.0.0.1";
               username = "marcos";
               password = secret "password";
             };
@@ -135,20 +125,11 @@ in
       ];
       # the uid that owns qbittorrent's state, allocated by the old generation; nixflix pins 70 with mkForce
       users.users.qbittorrent.uid = lib.mkOverride 49 988;
-      services.microsocks = {
-        enable = true;
-        ip = namespaceAddress;
-      };
-      vpnNamespaces.${vpn}.portMappings = [
-        {
-          from = config.services.microsocks.port;
-          to = config.services.microsocks.port;
-          protocol = "tcp";
-        }
-      ];
       fleet.web.apps = lib.mkMerge [
         (lib.genAttrs apps (name: {
           inherit (config.nixflix.${name}.config.hostConfig) port;
+          address = namespaceAddress;
+          tailnetOnly = true;
         }))
         {
           qbittorrent = {
@@ -168,16 +149,11 @@ in
           }
           chain output {
             type filter hook output priority -150; policy accept;
-            ${lib.optionalString config.nixflix.jellyfin.enable ''oifname "${vpn}-br" meta skuid ${toString config.users.users.jellyfin.uid} reject''}
             oifname "${vpn}-br" meta skuid != { ${
               lib.concatMapStringsSep ", " toString (
-                [
-                  0
-                  config.users.users.prowlarr.uid
-                ]
-                ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
+                [ 0 ] ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
               )
-            } } meta skgid != ${toString config.users.groups.media.gid} reject
+            } } reject
           }
         '';
       };
@@ -189,10 +165,6 @@ in
           ];
         }))
         {
-          microsocks.vpnConfinement = {
-            enable = true;
-            vpnNamespace = vpn;
-          };
           qbittorrent.serviceConfig = {
             LoadCredential = [
               "webui-password-hash:${config.sops.secrets.arr-qbittorrent-password-hash.path}"
@@ -203,8 +175,10 @@ in
                   name = "qbittorrent-webui-password";
                   runtimeInputs = [ pkgs.gawk ];
                   text = ''
+                    umask 077
                     conf=${qbittorrent.profileDir}/qBittorrent/config/qBittorrent.conf
                     HASH=$(< "$CREDENTIALS_DIRECTORY/webui-password-hash") awk '
+                      /^WebUI\\Password_PBKDF2=/ { next }
                       { print }
                       /^\[Preferences\]$/ { print "WebUI\\Password_PBKDF2=" ENVIRON["HASH"] }
                     ' "$conf" > "$conf.new"
@@ -243,10 +217,13 @@ in
               api=http://${namespaceAddress}:${toString webuiPort}/api/v2
               cookies=$RUNTIME_DIRECTORY/cookies
               current=""
+              fw() { ip netns exec ${vpn} iptables "$@"; }
+              fw -N qbittorrent-port 2>/dev/null || true
+              fw -C INPUT -j qbittorrent-port 2>/dev/null || fw -I INPUT -j qbittorrent-port
               open_port() {
+                fw -F qbittorrent-port
                 for proto in tcp udp; do
-                  [ -z "$current" ] || ip netns exec ${vpn} iptables -D INPUT -i ${vpn}0 -p "$proto" --dport "$current" -j ACCEPT || true
-                  ip netns exec ${vpn} iptables -I INPUT -i ${vpn}0 -p "$proto" --dport "$1" -j ACCEPT
+                  fw -A qbittorrent-port -i ${vpn}0 -p "$proto" --dport "$1" -j ACCEPT
                 done
               }
               set_port() {

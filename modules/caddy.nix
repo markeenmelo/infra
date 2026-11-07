@@ -26,7 +26,7 @@ in
     {
       options.fleet.web.apps = lib.mkOption {
         default = { };
-        description = "Apps this host serves, by subdomain: the LAN proxy routes each to its loopback port, and the edge forwards the public ones to it over the tailnet with their denied paths.";
+        description = "Apps this host serves, by subdomain: the LAN proxy routes each to its address and port, and the edge forwards the public ones to the port over the tailnet with their denied paths.";
         type = lib.types.attrsOf (
           lib.types.submodule {
             options = {
@@ -55,6 +55,10 @@ in
           }
         );
       };
+      config.assertions = lib.mapAttrsToList (name: app: {
+        assertion = app.public -> !app.tailnetOnly && app.address == "127.0.0.1";
+        message = "fleet.web.apps.${name}: the edge reaches a public app on the host's port, bypassing the LAN proxy, so it cannot be tailnetOnly or live at another address.";
+      }) config.fleet.web.apps;
       config.networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts =
         lib.mapAttrsToList (_: app: app.port)
           (lib.filterAttrs (_: app: app.public) config.fleet.web.apps);
