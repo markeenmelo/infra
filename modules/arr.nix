@@ -11,7 +11,6 @@ let
     "Knaben"
     "The Pirate Bay"
     "YTS"
-    "showRSS"
     "Nyaa.si"
   ];
   easynewsPort = 8084;
@@ -81,16 +80,19 @@ in
       secret = name: { _secret = config.sops.secrets."arr-${name}".path; };
       media = dirOf config.nixflix.mediaDir;
       withoutResponseBody =
-        unit:
+        unit: rewrites:
         let
           script =
             (import "${inputs.nixflix}/modules/prowlarr/${unit}.nix" { inherit config lib pkgs; })
             .config.systemd.services."prowlarr-${unit}".content.script;
           dump = ''cat "$RESPONSE_FILE"'';
+          from = [ dump ] ++ lib.attrNames rewrites;
         in
-        assert lib.hasInfix dump script;
+        assert lib.all (part: lib.hasInfix part script) from;
         lib.mkForce (
-          lib.replaceStrings [ dump ] [ ''echo "Response body omitted: it may echo API keys."'' ] script
+          lib.replaceStrings from (
+            [ ''echo "Response body omitted: it may echo API keys."'' ] ++ lib.attrValues rewrites
+          ) script
         );
       decluttarrApps = [
         "sonarr"
@@ -432,9 +434,11 @@ in
           prowlarr-indexers = {
             wants = [ "easynews-indexer.service" ];
             after = [ "easynews-indexer.service" ];
-            script = withoutResponseBody "indexers";
+            script = withoutResponseBody "indexers" {
+              "exit \"$RC\"" = ''[ "$RC" -eq 0 ] || echo "Some indexers failed; the others were applied."'';
+            };
           };
-          prowlarr-applications.script = withoutResponseBody "applications";
+          prowlarr-applications.script = withoutResponseBody "applications" { };
           recyclarr.vpnConfinement = {
             enable = true;
             vpnNamespace = vpn;

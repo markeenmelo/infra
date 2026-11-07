@@ -51,4 +51,6 @@ ones. Easynews has no Newznab API, so `easynews-indexer` serves one on the names
 for Prowlarr, signing in with the Newshosting username and `arr/easynews-password`; Prowlarr
 reaches it with `arr/easynews-api-key`. SABnzbd downloads from Newshosting, then Tweaknews, both
 on the Newshosting password and with strict certificate checks. Prowlarr's indexer and
-application setup units print no response bodies, which can echo the keys they sent.
+application setup units print no response bodies, which can echo the keys they sent. An indexer
+that fails to apply (its site down, a key rejected) is logged and the rest still apply; the unit
+succeeds, so one unreachable site never fails a deploy.
