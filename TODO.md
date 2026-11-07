@@ -5,9 +5,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## Fleet plumbing
 
-- [ ] Tailnet policy: move the literal addresses, services and hosts to fleet facts when bastion
-      lands; drop the old fleet's grants, services and proton exit nodes as each host migrates,
-      and the `sparkyfitness` and `opengym` services and `member_services`.
+- [ ] Tailnet policy: move the literal addresses and hosts to fleet facts; drop the old fleet's
+      grants and proton exit nodes as each host migrates.
       Revisit `group:members` reaching `bastion:443` now that the LAN proxy and Authelia landed.
 - [ ] One NixOS VM test in `nix flake check` (boot, root rollback, `/persist` survives).
 - [ ] Build cache for CI and clients: bastion remote builder + Harmonia; decide what CI uses.
