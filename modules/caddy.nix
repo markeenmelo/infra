@@ -122,6 +122,15 @@ in
         environmentFile = config.sops.templates.caddy-env.path;
         globalConfig = "grace_period 10s";
         extraConfig = ''
+          (porkbun) {
+            tls {
+              dns porkbun {
+                api_key {env.PORKBUN_API_KEY}
+                api_secret_key {env.PORKBUN_SECRET_KEY}
+              }
+              resolvers 1.1.1.1 9.9.9.9
+            }
+          }
           (identity) {
             ${lib.concatMapStrings (header: "request_header -${header}\n") identityHeaders}
           }

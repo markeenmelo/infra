@@ -28,10 +28,6 @@ let
       baseUrl = "https://api.althub.co.za";
     }
     {
-      name = "DrunkenSlug";
-      baseUrl = "https://drunkenslug.com";
-    }
-    {
       name = "Easynews";
       schemaName = "Generic Newznab";
       baseUrl = "http://127.0.0.1:${toString easynewsPort}";
@@ -239,7 +235,6 @@ in
             ninjacentral-api-key = [ "prowlarr-indexers" ];
             nzbgeek-api-key = [ "prowlarr-indexers" ];
             althub-api-key = [ "prowlarr-indexers" ];
-            drunkenslug-api-key = [ "prowlarr-indexers" ];
             qbittorrent-password = [
               "sonarr-downloadclients"
               "radarr-downloadclients"
@@ -517,6 +512,8 @@ in
             '';
           };
           qbittorrent.serviceConfig = {
+            Restart = "on-failure";
+            RestartSec = "5s";
             LoadCredential = [
               "webui-password-hash:${config.sops.secrets.arr-qbittorrent-password-hash.path}"
             ];
@@ -545,11 +542,9 @@ in
               "${vpn}.service"
               "qbittorrent.service"
             ];
-            requires = [
-              "${vpn}.service"
-              "qbittorrent.service"
-            ];
-            wantedBy = [ "multi-user.target" ];
+            requires = [ "${vpn}.service" ];
+            bindsTo = [ "qbittorrent.service" ];
+            wantedBy = [ "qbittorrent.service" ];
             path = [
               pkgs.curl
               pkgs.iproute2

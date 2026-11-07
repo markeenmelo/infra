@@ -15,13 +15,7 @@ in
       imports = [ caddy ];
       services.caddy.virtualHosts."*.${domain}".extraConfig = lib.mkMerge [
         (lib.mkBefore ''
-          tls {
-            dns porkbun {
-              api_key {env.PORKBUN_API_KEY}
-              api_secret_key {env.PORKBUN_SECRET_KEY}
-            }
-            resolvers 1.1.1.1 9.9.9.9
-          }
+          import porkbun
           import identity
         '')
         (lib.concatStrings (

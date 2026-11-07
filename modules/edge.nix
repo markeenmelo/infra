@@ -86,12 +86,7 @@ in
             }
           '';
           extraConfig = ''
-            tls {
-              dns porkbun {
-                api_key {env.PORKBUN_API_KEY}
-                api_secret_key {env.PORKBUN_SECRET_KEY}
-              }
-            }
+            import porkbun
             header {
               Strict-Transport-Security "max-age=31536000"
               X-Content-Type-Options nosniff

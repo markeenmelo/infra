@@ -78,7 +78,6 @@
       services.restic.backups.${name} = {
         repository = repo;
         passwordFile = config.sops.secrets.backups-restic-password.path;
-        initialize = true;
         timerConfig = {
           OnCalendar = "02:30";
           Persistent = true;
