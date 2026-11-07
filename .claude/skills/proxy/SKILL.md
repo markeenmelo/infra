@@ -27,8 +27,9 @@ country database packaged in nixpkgs, so it updates with the flake lock and need
 Tailnet clients never need the edge, even behind a foreign exit node: the split DNS sends the
 domain to bastion directly.
 An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, denied paths,
-[caddy.nix](../../../modules/caddy.nix)): the LAN proxy routes every app to loopback, and only a
-`public` one is forwarded by the edge and gets its port opened on the tailnet interface. The wildcard record already
+[caddy.nix](../../../modules/caddy.nix)): the LAN proxy routes every app to loopback, or to its
+`address` when the app lives in another network namespace, refuses non-tailnet clients for a
+`tailnetOnly` app, and only a `public` one is forwarded by the edge and gets its port opened on the tailnet interface. The wildcard record already
 resolves it ([opentofu skill](../opentofu/SKILL.md#porkbun)) and the tailnet grant is a separate change. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
 credential headers and no share tokens in paths, since the published apps carry credentials in

@@ -17,13 +17,11 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## bastion
 
-- [ ] Sonarr, Radarr and Prowlarr on nixflix, with qBittorrent confined to the Proton WireGuard
-      namespace; `qbittorrent` owns its state as uid 988, not nixflix's 70, so pin it. The arr
-      apps and download clients stay tailnet-only. Dropped: Home Assistant, Mosquitto,
-      SparkyFitness, OpenGym, the Proton exit nodes and live TV; their databases in the old
-      PostgreSQL cluster are dropped by hand after the install.
-- [ ] Media extras: SABnzbd (Newshosting, Tweaknews) with the Newznab indexers and the Easynews
-      bridge, Seerr with Recyclarr's profile, and Decluttarr.
+- [ ] Media extras: SABnzbd (Newshosting, Tweaknews) with the NinjaCentral, NZBgeek, altHUB and
+      DrunkenSlug indexers and the Easynews bridge, Seerr with Recyclarr's profile, and
+      Decluttarr. Dropped: Home Assistant, Mosquitto, SparkyFitness, OpenGym, the Proton exit
+      nodes, live TV and UsenetCrawler; their databases in the old PostgreSQL cluster are
+      dropped by hand after the install.
 - [ ] Jellyfin child account: confirm the SSO plugin leaves a user's parental limits alone at
       login, then declare the account with its limits.
 - [ ] Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`

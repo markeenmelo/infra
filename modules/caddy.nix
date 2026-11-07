@@ -31,6 +31,16 @@ in
           lib.types.submodule {
             options = {
               port = lib.mkOption { type = lib.types.port; };
+              address = lib.mkOption {
+                type = lib.types.str;
+                default = "127.0.0.1";
+                description = "Address the LAN proxy reaches the app at, for apps confined to another network namespace.";
+              };
+              tailnetOnly = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Whether the LAN proxy refuses clients outside the tailnet.";
+              };
               public = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
