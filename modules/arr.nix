@@ -28,10 +28,6 @@ let
       baseUrl = "https://api.althub.co.za";
     }
     {
-      name = "DrunkenSlug";
-      baseUrl = "https://drunkenslug.com";
-    }
-    {
       name = "Easynews";
       schemaName = "Generic Newznab";
       baseUrl = "http://127.0.0.1:${toString easynewsPort}";
@@ -239,7 +235,6 @@ in
             ninjacentral-api-key = [ "prowlarr-indexers" ];
             nzbgeek-api-key = [ "prowlarr-indexers" ];
             althub-api-key = [ "prowlarr-indexers" ];
-            drunkenslug-api-key = [ "prowlarr-indexers" ];
             qbittorrent-password = [
               "sonarr-downloadclients"
               "radarr-downloadclients"
