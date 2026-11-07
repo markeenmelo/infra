@@ -316,6 +316,7 @@ in
             serviceConfig = {
               DynamicUser = true;
               Restart = "on-failure";
+              RestartSec = "5s";
               LoadCredential = map (name: "${name}:${config.sops.secrets."arr-${name}".path}") [
                 "newshosting-username"
                 "easynews-password"
