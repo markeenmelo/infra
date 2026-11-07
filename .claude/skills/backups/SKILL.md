@@ -21,7 +21,8 @@ the ThinkPad's repository; an assertion fails the build when
 Immich's or OpenCloud's data falls outside them. Media, Frigate recordings, PostgreSQL's live files,
 Immich's thumbnails and transcodes, logs, caches and every identity (host and SSH keys,
 `/persist/zfs`, sbctl, tailscale, machine-id) stay out. Each repository keeps 7 daily, 4 weekly and 6
-monthly snapshots, grouped by host only, so snapshots from older backup paths age out too. On the 15th the drill reads a twelfth of the repository, a different twelfth
+monthly snapshots, grouped by host only, so snapshots from older backup paths age out too. Each pCloud run checks a random 1% of its data, which bounds the download. On
+the 15th the drill reads a twelfth of the USB repository, a different twelfth
 each month, and tests that every dump in the latest snapshot decompresses.
 
 The ThinkPad backs its home up to `backup-thinkpad`, an append-only `rclone serve restic` on

@@ -14,12 +14,14 @@
           at = "02:30";
           mounts = [ "/mnt/backup" ];
           rcloneConfigFile = null;
+          checkOpts = [ ];
         };
         pcloud = {
           repository = "rclone:pcloud:bastion/restic";
           at = "04:00";
           mounts = [ ];
           rcloneConfigFile = config.sops.secrets.backups-rclone-pcloud.path;
+          checkOpts = [ "--read-data-subset=1%" ];
         };
       };
       snapOf = name: "restic-${name}";
@@ -100,7 +102,7 @@
       };
 
       services.restic.backups = lib.mapAttrs (name: job: {
-        inherit (job) repository rcloneConfigFile;
+        inherit (job) repository rcloneConfigFile checkOpts;
         passwordFile = config.sops.secrets.backups-restic-password.path;
         timerConfig = {
           OnCalendar = job.at;
