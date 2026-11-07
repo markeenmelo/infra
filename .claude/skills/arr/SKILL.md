@@ -24,8 +24,9 @@ setup units and the port-forward unit run as) and Caddy open new connections int
 and Seerr only to Sonarr and Radarr; replies to connections the apps open pass.
 
 Seerr takes requests at `seerr.DOMAIN`, tailnet-only, and runs outside the namespace because it
-needs Jellyfin; it signs in to Jellyfin as the declared native admin to set itself up, and its
-users sign in with their Jellyfin accounts. Requests go to Sonarr and Radarr on
+needs Jellyfin; it signs in to Jellyfin as the declared native admin to set itself up. Its login
+takes a Jellyfin password and Seerr has no OIDC, so only accounts with a native Jellyfin password
+(the admin) sign in; people who reach Jellyfin through Authelia have none. Requests go to Sonarr and Radarr on
 `1080p Storage Efficient`, the profile Recyclarr syncs daily next to the TRaSH ones it already
 manages. Its size caps (31.7 MB per minute) are Sonarr's and Radarr's quality definitions, which
 every profile shares, so they cap 1080p in all of them. Recyclarr and Decluttarr talk only to the
