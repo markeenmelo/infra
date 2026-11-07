@@ -63,8 +63,8 @@ for the domain and which answers every name under it with bastion's tailnet addr
 everything else; LAN clients through the gateway's wildcard record to bastion's LAN address.
 It serves 443 on the LAN and the tailnet, and the tailnet policy keeps racknerd off it. Both
 proxies share [caddy.nix](../../../modules/caddy.nix): the package, the Porkbun keys, the
-persisted certificates, and the DNS-01 snippet, whose checks ask public resolvers: the
-tailnet's split DNS and the LAN's resolver answer the domain locally and nothing else.
+persisted certificates, and the DNS-01 snippet, whose checks ask public resolvers, since
+the LAN's resolver may answer the domain locally.
 
 The Caddy package pins the plugin version and a hash that covers the Go module tree of both
 Caddy and the plugin, so a nixpkgs bump that moves Caddy changes it as much as a plugin update.
