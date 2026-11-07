@@ -54,6 +54,12 @@ let
       retention = 4200;
     }
   ];
+  storageProfile = "1080p Storage Efficient";
+  storageQualities = [
+    "WEBDL-1080p"
+    "WEBRip-1080p"
+    "Bluray-1080p"
+  ];
   # ProtonVPN's NAT-PMP gateway inside the tunnel
   protonGateway = "10.2.0.1";
 in
@@ -62,6 +68,7 @@ in
     {
       config,
       lib,
+      options,
       pkgs,
       ...
     }:
@@ -85,6 +92,92 @@ in
         lib.mkForce (
           lib.replaceStrings [ dump ] [ ''echo "Response body omitted: it may echo API keys."'' ] script
         );
+      decluttarrApps = [
+        "sonarr"
+        "radarr"
+      ];
+      decluttarrEnv = map (name: "${lib.toUpper name}_API_KEY") (decluttarrApps ++ [ "sabnzbd" ]) ++ [
+        "QBITTORRENT_PASSWORD"
+      ];
+      envTag = name: "@ENV:${name}@";
+      decluttarrConfig = pkgs.writeText "decluttarr.yaml" (
+        lib.replaceStrings (map (name: ''"${envTag name}"'') decluttarrEnv)
+          (map (name: "!ENV ${name}") decluttarrEnv)
+          (
+            builtins.toJSON {
+              general = {
+                test_run = false;
+              };
+              job_defaults.max_strikes = 5;
+              jobs = {
+                remove_bad_files = true;
+                remove_failed_imports.message_patterns = [
+                  "*Found potentially dangerous file with extension*"
+                  "Invalid video file*"
+                  "No files found are eligible for import*"
+                ];
+                remove_failed_downloads = true;
+                remove_metadata_missing = true;
+                remove_stalled = true;
+                remove_slow = true;
+                remove_missing_files = true;
+                remove_orphans = true;
+                remove_done_seeding.target_categories = decluttarrApps;
+                search_missing = true;
+                search_unmet_cutoff = true;
+                detect_deletions = true;
+              };
+              instances = lib.genAttrs decluttarrApps (name: [
+                {
+                  base_url = "http://${namespaceAddress}:${toString config.nixflix.${name}.config.hostConfig.port}";
+                  api_key = envTag "${lib.toUpper name}_API_KEY";
+                }
+              ]);
+              download_clients = {
+                qbittorrent = [
+                  {
+                    base_url = "http://${namespaceAddress}:${toString webuiPort}";
+                    username = "marcos";
+                    password = envTag "QBITTORRENT_PASSWORD";
+                  }
+                ];
+                sabnzbd = [
+                  {
+                    base_url = "http://${namespaceAddress}:${toString sabnzbd.settings.misc.port}";
+                    api_key = envTag "SABNZBD_API_KEY";
+                  }
+                ];
+              };
+            }
+          )
+      );
+      storageEfficient = {
+        quality_profiles = lib.mkDefault (
+          lib.mkAfter [
+            {
+              name = storageProfile;
+              min_format_score = 0;
+              reset_unmatched_scores.enabled = true;
+              upgrade = {
+                allowed = false;
+                until_quality = "1080p";
+              };
+              qualities = [
+                {
+                  name = "1080p";
+                  qualities = storageQualities;
+                }
+              ];
+            }
+          ]
+        );
+        quality_definition.qualities = map (name: {
+          inherit name;
+          min = 0;
+          preferred = 30;
+          max = 31.7;
+        }) storageQualities;
+      };
     in
     {
       imports = [
@@ -105,11 +198,16 @@ in
             sonarr-api-key = [
               "sonarr"
               "prowlarr-applications"
+              "seerr"
+              "decluttarr"
             ];
             radarr-api-key = [
               "radarr"
               "prowlarr-applications"
+              "seerr"
+              "decluttarr"
             ];
+            seerr-api-key = [ "seerr" ];
             prowlarr-api-key = [ "prowlarr" ];
             password = [
               "sonarr-config"
@@ -121,6 +219,7 @@ in
               "sabnzbd"
               "sonarr-downloadclients"
               "radarr-downloadclients"
+              "decluttarr"
             ];
             sabnzbd-nzb-key = [ "sabnzbd" ];
             newshosting-username = [
@@ -142,6 +241,7 @@ in
               "sonarr-downloadclients"
               "radarr-downloadclients"
               "qbittorrent-port-forward"
+              "decluttarr"
             ];
             qbittorrent-password-hash = [ "qbittorrent" ];
             proton-wireguard = [ vpn ];
@@ -208,6 +308,25 @@ in
               }) usenetServers;
             };
           };
+          seerr = {
+            enable = true;
+            vpn.enable = false;
+            apiKey = secret "seerr-api-key";
+            sonarr = lib.mkMerge [
+              options.nixflix.seerr.sonarr.default
+              { Sonarr.activeProfileName = storageProfile; }
+            ];
+            radarr = lib.mkMerge [
+              options.nixflix.seerr.radarr.default
+              { Radarr.activeProfileName = storageProfile; }
+            ];
+          };
+          recyclarr = {
+            enable = true;
+            config = lib.genAttrs decluttarrApps (name: {
+              ${name} = storageEfficient;
+            });
+          };
           prowlarr.config.indexers =
             map (name: {
               inherit name;
@@ -257,6 +376,10 @@ in
             address = namespaceAddress;
             tailnetOnly = true;
           };
+          seerr = {
+            inherit (config.nixflix.seerr) port;
+            tailnetOnly = true;
+          };
         }
       ];
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
@@ -270,6 +393,14 @@ in
           }
           chain output {
             type filter hook output priority -150; policy accept;
+            ct state new oifname "${vpn}-br" meta skuid ${
+              toString config.users.users.${config.nixflix.seerr.user}.uid
+            } tcp dport { ${
+              lib.concatMapStringsSep ", " (name: toString config.nixflix.${name}.config.hostConfig.port) [
+                "sonarr"
+                "radarr"
+              ]
+            } } accept
             ct state new oifname "${vpn}-br" meta skuid != { ${
               lib.concatMapStringsSep ", " toString (
                 [ 0 ] ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
@@ -285,6 +416,8 @@ in
             ++ [
               "qbittorrent"
               "sabnzbd"
+              "seerr"
+              "decluttarr"
             ]
           )
           (_: {
@@ -301,6 +434,50 @@ in
             script = withoutResponseBody "indexers";
           };
           prowlarr-applications.script = withoutResponseBody "applications";
+          recyclarr.vpnConfinement = {
+            enable = true;
+            vpnNamespace = vpn;
+          };
+          decluttarr = {
+            description = "Clean the arr queues and download clients, and search for missing media";
+            after = map (name: "${name}.service") (
+              decluttarrApps
+              ++ [
+                "qbittorrent"
+                "sabnzbd"
+              ]
+            );
+            wantedBy = [ "multi-user.target" ];
+            vpnConfinement = {
+              enable = true;
+              vpnNamespace = vpn;
+            };
+            enableStrictShellChecks = true;
+            serviceConfig = {
+              DynamicUser = true;
+              SupplementaryGroups = [ config.nixflix.globals.libraryOwner.group ];
+              Restart = "on-failure";
+              RestartSec = "30s";
+              StateDirectory = "decluttarr";
+              WorkingDirectory = "%S/decluttarr";
+              LoadCredential =
+                map (name: "${name}:${config.sops.secrets."arr-${name}".path}") (
+                  map (name: "${name}-api-key") (decluttarrApps ++ [ "sabnzbd" ])
+                )
+                ++ [ "QBITTORRENT_PASSWORD:${config.sops.secrets.arr-qbittorrent-password.path}" ];
+            };
+            script = ''
+              mkdir -p config
+              ln -sfn ${decluttarrConfig} config/config.yaml
+              ${lib.concatMapStrings (name: ''
+                ${lib.toUpper name}_API_KEY=$(< "$CREDENTIALS_DIRECTORY/${name}-api-key")
+                export ${lib.toUpper name}_API_KEY
+              '') (decluttarrApps ++ [ "sabnzbd" ])}
+              QBITTORRENT_PASSWORD=$(< "$CREDENTIALS_DIRECTORY/QBITTORRENT_PASSWORD")
+              export QBITTORRENT_PASSWORD
+              exec ${lib.getExe (pkgs.callPackage ./decluttarr.pkg.nix { })}
+            '';
+          };
           sabnzbd-categories = {
             wantedBy = [ "sabnzbd.service" ];
             partOf = [ "sabnzbd.service" ];
