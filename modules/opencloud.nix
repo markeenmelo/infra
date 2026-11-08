@@ -48,7 +48,8 @@ in
             PROXY_TLS = "false";
             OC_CONFIG_DIR = "${root}/config";
             OC_OIDC_ISSUER = "https://auth.${domain}";
-            OC_EXCLUDE_RUN_SERVICES = "idp";
+            OC_EXCLUDE_RUN_SERVICES = "idp,auth-app";
+            PROXY_ENABLE_APP_AUTH = "false";
             PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD = "jwt";
             PROXY_OIDC_REWRITE_WELLKNOWN = "true";
             PROXY_AUTOPROVISION_ACCOUNTS = "true";
