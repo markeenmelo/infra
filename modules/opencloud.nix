@@ -32,6 +32,9 @@ in
   flake.modules.nixos.opencloud =
     { pkgs, ... }:
     {
+      # the ids that own tank/opencloud, allocated by the first install
+      users.users.opencloud.uid = 995;
+      users.groups.opencloud.gid = 995;
       services.opencloud = {
         enable = true;
         package = pkgs.opencloud-production;

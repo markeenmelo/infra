@@ -42,7 +42,8 @@ Rules:
 Answer each before the module is done; a reviewer will ask otherwise.
 
 - State and logs: which paths it writes, which of them go under `/persist` and with what
-  owner and mode, which are deliberately lost on reboot.
+  owner and mode, which are deliberately lost on reboot. A user that owns data on a pool gets a
+  pinned uid and gid, since a reinstall reallocates dynamic ids.
 - Dependencies: what it needs at boot and at runtime (network, DNS, tailnet, another host, a
   secret), ordered with `after`/`wants`, and what happens when each is down. No single upstream
   for anything a certificate or a deploy needs.
