@@ -12,29 +12,32 @@ in
     in
     {
       imports = [ caddy ];
-      services.caddy.virtualHosts."*.${domain}".extraConfig = lib.mkMerge [
-        (lib.mkBefore ''
-          import porkbun
-          import identity
-        '')
-        (lib.concatStrings (
-          lib.mapAttrsToList (name: app: ''
-            @${name} host ${name}.${domain}
-            handle @${name} {
-              ${lib.optionalString app.tailnetOnly ''
-                @${name}-outside not remote_ip 100.64.0.0/10
-                abort @${name}-outside
-              ''}
-              reverse_proxy ${app.address}:${toString app.port}
+      services.caddy.virtualHosts."*.${domain}" = {
+        logFormat = null;
+        extraConfig = lib.mkMerge [
+          (lib.mkBefore ''
+            import porkbun
+            import identity
+          '')
+          (lib.concatStrings (
+            lib.mapAttrsToList (name: app: ''
+              @${name} host ${name}.${domain}
+              handle @${name} {
+                ${lib.optionalString app.tailnetOnly ''
+                  @${name}-outside not remote_ip 100.64.0.0/10
+                  abort @${name}-outside
+                ''}
+                reverse_proxy ${app.address}:${toString app.port}
+              }
+            '') config.fleet.web.apps
+          ))
+          (lib.mkAfter ''
+            handle {
+              abort
             }
-          '') config.fleet.web.apps
-        ))
-        (lib.mkAfter ''
-          handle {
-            abort
-          }
-        '')
-      ];
+          '')
+        ];
+      };
       services.dnsmasq = {
         enable = true;
         resolveLocalQueries = false;

@@ -29,10 +29,7 @@
         }
       ) { };
       uplink = config.systemd.network.links."10-uplink".linkConfig.Name;
-      disks = {
-        disk1 = "ata-ST4000VN006-3CW104_ZW63V4FM";
-        disk2 = "ata-TOSHIBA_HDWG440_2270A00MFZ1G";
-      };
+      disks = import ./_disks.nix;
     in
     {
       boot.extraModulePackages = [ driver ];

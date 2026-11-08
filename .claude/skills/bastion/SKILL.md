@@ -48,7 +48,8 @@ the UPS hooks drop to the power-saver profile on battery and cut UPS output afte
 unmount. The front-panel LEDs ([leds.nix](../../../modules/hosts/bastion/leds.nix), out-of-tree
 `led-ugreen` on the SMBus) show power, uplink and disk presence only, never activity: each blink
 is SMBus traffic that wakes a core. A disk LED follows its `/dev/disk/by-id` device, so a new
-disk gets an entry there.
+disk gets an entry in [_disks.nix](../../../modules/hosts/bastion/_disks.nix), which the spin-down
+rule in data.nix reads too.
 
 ## Firmware
 
