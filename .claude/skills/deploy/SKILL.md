@@ -15,7 +15,9 @@ same reason: MagicDNS answers with each node's tailnet IPv6 address, and a peer 
 against a host with IPv6 off waits out a connect timeout that can outlast the rollback confirm;
 the uplinks refuse IPv6 per link instead. Magic rollback and auto rollback stay on: a profile
 that breaks the SSH path reverts after the confirm timeout. `nix flake check` carries the
-deploy-rs schema and activation checks per system.
+deploy-rs schema and activation checks per system. The `deploy` binary and the hosts'
+`activate-rs` come from nixpkgs' `deploy-rs`, which cache.nixos.org serves; the flake input
+supplies only the library, since its own build follows this nixpkgs and no cache holds it.
 
 ```sh
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision

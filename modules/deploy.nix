@@ -7,6 +7,20 @@
 let
   hosts = lib.filterAttrs (_: host: !lib.hasSuffix "-darwin" host.system) config.fleet.hosts;
   systems = lib.unique (lib.mapAttrsToList (_: host: host.system) hosts);
+  deployLib =
+    system:
+    let
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+    in
+    (pkgs.appendOverlays [
+      inputs.deploy-rs.overlays.default
+      (_: prev: {
+        deploy-rs = {
+          inherit (prev.deploy-rs) lib;
+          inherit (pkgs) deploy-rs;
+        };
+      })
+    ]).deploy-rs.lib;
 in
 {
   flake = {
@@ -17,13 +31,13 @@ in
       remoteBuild = true;
       profiles.system = {
         user = "root";
-        path = inputs.deploy-rs.lib.${host.system}.activate.nixos config.flake.nixosConfigurations.${name};
+        path = (deployLib host.system).activate.nixos config.flake.nixosConfigurations.${name};
       };
     }) hosts;
 
     checks = lib.genAttrs systems (
       system:
-      inputs.deploy-rs.lib.${system}.deployChecks {
+      (deployLib system).deployChecks {
         nodes = lib.filterAttrs (
           name: _: config.fleet.hosts.${name}.system == system
         ) config.flake.deploy.nodes;
@@ -66,11 +80,11 @@ in
   };
 
   perSystem =
-    { lib, inputs', ... }:
+    { lib, pkgs, ... }:
     {
       apps.deploy = {
         meta.description = "deploy .#HOST: activate the host's committed configuration over the tailnet with magic rollback";
-        program = lib.getExe inputs'.deploy-rs.packages.deploy-rs;
+        program = lib.getExe pkgs.deploy-rs;
       };
     };
 }
