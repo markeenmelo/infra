@@ -2,6 +2,7 @@
   fleet.hosts.bastion.module =
     { lib, pkgs, ... }:
     let
+      serials = map (id: lib.last (lib.splitString "_" id)) (lib.attrValues (import ./_disks.nix));
       datasets = {
         "/srv" = "apps/srv";
         "/srv/postgresql" = "apps/postgresql";
@@ -69,7 +70,7 @@
       };
       services = {
         udev.extraRules = ''
-          ACTION=="add", SUBSYSTEM=="block", KERNEL=="sd[a-z]", ENV{ID_SERIAL_SHORT}=="ZW63V4FM|2270A00MFZ1G", RUN+="${lib.getExe pkgs.hdparm} -S 242 /dev/%k"
+          ACTION=="add", SUBSYSTEM=="block", KERNEL=="sd[a-z]", ENV{ID_SERIAL_SHORT}=="${lib.concatStringsSep "|" serials}", RUN+="${lib.getExe pkgs.hdparm} -S 242 /dev/%k"
         '';
         zfs.autoScrub.enable = true;
         sanoid = {

@@ -282,6 +282,7 @@ in
       networking.firewall.extraInputRules = ''
         iifname "${config.services.tailscale.interfaceName}" ip saddr ${thinkpad.client} tcp dport ${toString thinkpad.port} accept
       '';
+      networking.nftables.enable = true;
       networking.nftables.tables.backup-thinkpad = {
         family = "inet";
         content = ''

@@ -7,7 +7,10 @@ description: "Frigate on bastion: the NVR at frigate.DOMAIN, the Tapo camera and
 
 [frigate.nix](../../../modules/frigate.nix) serves the NVR at `frigate.` through the LAN proxy
 only ([proxy skill](../proxy/SKILL.md)); it is not public, and Frigate's own login guards it.
-Its nginx listens on loopback alone, with the RTMP listener dropped. MQTT is off: nothing
+Its nginx listens on loopback alone, with the RTMP listener dropped. The loopback ports behind
+that login (nginx's unauthenticated 5000, Frigate's API, go2rtc's API and RTSP) refuse every local
+user except `frigate` and `nginx`, by an nftables output rule, so another service on bastion
+cannot reach the cameras or Frigate's admin API. MQTT is off: nothing
 consumes Frigate's events.
 
 The Tapo C120 sits on the Cameras VLAN, which bastion may reach on RTSP and ONVIF and which has

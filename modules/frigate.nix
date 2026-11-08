@@ -163,6 +163,16 @@ in
         };
       };
       fleet.web.apps.frigate.port = port;
+      networking.nftables.enable = true;
+      networking.nftables.tables.frigate = {
+        family = "inet";
+        content = ''
+          chain output {
+            type filter hook output priority -150; policy accept;
+            oifname "lo" tcp dport { 1984, 5000, 5001, 5002, 8082, ${toString rtspPort} } meta skuid != { ${toString config.users.users.frigate.uid}, ${toString config.users.users.nginx.uid} } reject
+          }
+        '';
+      };
       systemd.services = {
         frigate = {
           wants = [ gpu ];
