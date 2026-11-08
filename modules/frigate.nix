@@ -163,6 +163,7 @@ in
         };
       };
       fleet.web.apps.frigate.port = port;
+      networking.nftables.enable = true;
       networking.nftables.tables.frigate = {
         family = "inet";
         content = ''

@@ -382,6 +382,7 @@ in
         }
       ];
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
+      networking.nftables.enable = true;
       networking.nftables.tables.arr-vpn = {
         family = "inet";
         content = ''
