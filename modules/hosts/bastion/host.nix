@@ -1,5 +1,6 @@
 { config, ... }:
 {
+  fleet.hosts.bastion.tailnetAddress = "100.105.158.109";
   fleet.hosts.bastion.module = {
     imports = with config.flake.modules.nixos; [
       server

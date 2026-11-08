@@ -1,7 +1,7 @@
 { config, inputs, ... }:
 let
   inherit (config.flake.modules.nixos) nixflix;
-  inherit (config.fleet) domain;
+  inherit (config.fleet) domain hosts;
   port = 8096;
   hostname = "jellyfin.${domain}";
   api = "(?i)^/(emby/|mediabrowser/)?";
@@ -54,10 +54,9 @@ in
           internalHttpPort = port;
           localNetworkAddresses = [ "0.0.0.0" ];
           autoDiscovery = false;
-          # shortcut: racknerd's tailnet address is a literal, read it from fleet facts when a second app trusts the edge
           knownProxies = [
             "127.0.0.1"
-            "100.96.133.3"
+            hosts.racknerd.tailnetAddress
           ];
           publicHttpsPort = 443;
         };

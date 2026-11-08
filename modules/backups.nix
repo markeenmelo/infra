@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.fleet) hosts;
+in
 {
   flake.modules.nixos.backups =
     {
@@ -64,8 +68,8 @@
       thinkpad = {
         repo = "/srv/backup-thinkpad";
         port = 8010;
-        # bastion's and the ThinkPad's tailnet addresses, from opentofu/tailscale/main.tf
-        listen = "100.105.158.109";
+        listen = hosts.${config.networking.hostName}.tailnetAddress;
+        # shortcut: the ThinkPad's tailnet address is a literal, read it from fleet facts when the thinkpad host lands
         client = "100.119.79.113";
       };
       restic = lib.getExe pkgs.restic;
