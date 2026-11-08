@@ -1,6 +1,6 @@
 ---
 name: backups
-description: "bastion's backups: the nightly restic run to the USB disk, the ZFS and /persist snapshots it reads from, the PostgreSQL dumps, the monthly restore drill, and the append-only restic server that takes the ThinkPad's home backups with its forged-date guard. Use before touching modules/backups.nix or the /mnt/backup mount, adding a dataset that holds data worth keeping, restoring anything, or rotating the restic password."
+description: "bastion's backups: the nightly restic runs to the USB disk and to pCloud, the ZFS and /persist snapshots it reads from, the PostgreSQL dumps, the monthly restore drill, and the append-only restic server that takes the ThinkPad's home backups with its forged-date guard. Use before touching modules/backups.nix or the /mnt/backup mount, adding a dataset that holds data worth keeping, restoring anything, or rotating the restic password."
 ---
 
 # Backups
@@ -9,7 +9,9 @@ description: "bastion's backups: the nightly restic run to the USB disk, the ZFS
 (ext4, automounted, [data.nix](../../../modules/hosts/bastion/data.nix)) every night at 02:30.
 Before each run it dumps every PostgreSQL database except the arr log ones to
 `/srv/backups/postgresql`, snapshots `/srv` and each backup root as `@restic-usb`, and takes a
-read-only btrfs snapshot of `/persist`; restic reads those snapshots, so each dataset is
+read-only btrfs snapshot of `/persist`; at 04:00, after the USB run, the `pcloud` job does the
+same under `@restic-pcloud` into `pcloud:bastion/restic`, the repository the old generation
+filled. restic reads those snapshots, so each dataset is
 consistent and no app stops. The dumps finish before the snapshots, so an app writing in between
 (an Immich upload) can leave its database and files a moment apart; Immich's own repair jobs
 reconcile that after a restore. A failed dump keeps the previous one as `DB.prev.sql.gz`, which
@@ -18,8 +20,9 @@ Immich, OpenCloud, Nextcloud until its dataset is destroyed (previews left out),
 the ThinkPad's repository; an assertion fails the build when
 Immich's or OpenCloud's data falls outside them. Media, Frigate recordings, PostgreSQL's live files,
 Immich's thumbnails and transcodes, logs, caches and every identity (host and SSH keys,
-`/persist/zfs`, sbctl, tailscale, machine-id) stay out. Retention is 7 daily, 4 weekly and 6
-monthly snapshots. On the 15th the drill reads a twelfth of the repository, a different twelfth
+`/persist/zfs`, sbctl, tailscale, machine-id) stay out. Each repository keeps 7 daily, 4 weekly and 6
+monthly snapshots, grouped by host only, so snapshots from older backup paths age out too. Each pCloud run checks a random 1% of its data, which bounds the download. On
+the 15th the drill reads a twelfth of the USB repository, a different twelfth
 each month, and tests that every dump in the latest snapshot decompresses.
 
 The ThinkPad backs its home up to `backup-thinkpad`, an append-only `rclone serve restic` on
@@ -34,6 +37,9 @@ data. The repository is also a backup root, so it reaches the USB disk too.
 
 The household repository opens with `backups/restic-password`, the ThinkPad's with
 `backups/thinkpad-password` ([secrets skill](../secrets/SKILL.md)), so the household key can
-change without the laptop ever learning it. Restore
-with `restic -r /mnt/backup/restic snapshots` and `restic restore`, run as root on bastion.
-Off-site copies to pCloud through racknerd and the backup metrics are not ported yet.
+change without the laptop ever learning it. bastion reaches pCloud directly with
+`backups/rclone-pcloud`, a full rclone config, so a compromised bastion can delete the off-site
+copies too; the operator accepted that over an append-only proxy on racknerd. Restore with
+`restic -r /mnt/backup/restic snapshots` and `restic restore`, run as root on bastion; for
+pCloud, `-r rclone:pcloud:bastion/restic` with `RCLONE_CONFIG` pointing at that secret. Backup
+metrics are not ported yet.

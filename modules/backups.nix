@@ -7,9 +7,24 @@
       ...
     }:
     let
-      repo = "/mnt/backup/restic";
-      name = "usb";
-      snap = "restic-${name}";
+      repo = jobs.usb.repository;
+      jobs = {
+        usb = {
+          repository = "/mnt/backup/restic";
+          at = "02:30";
+          mounts = [ "/mnt/backup" ];
+          rcloneConfigFile = null;
+          checkOpts = [ ];
+        };
+        pcloud = {
+          repository = "rclone:pcloud:bastion/restic";
+          at = "04:00";
+          mounts = [ ];
+          rcloneConfigFile = config.sops.secrets.backups-rclone-pcloud.path;
+          checkOpts = [ "--read-data-subset=1%" ];
+        };
+      };
+      snapOf = name: "restic-${name}";
       roots = [
         "/srv"
         "/srv/immich"
@@ -19,28 +34,32 @@
         "/srv/backup-thinkpad"
       ];
       datasets = map (root: config.fileSystems.${root}.device) roots;
-      inSnapshot = root: path: "${root}/.zfs/snapshot/${snap}${lib.removePrefix root path}";
+      inSnapshot =
+        name: root: path:
+        "${root}/.zfs/snapshot/${snapOf name}${lib.removePrefix root path}";
       dumps = config.services.postgresqlBackup;
       dumpDir = dumps.location;
       databases = lib.filter (db: !lib.hasSuffix "-logs" db) config.services.postgresql.ensureDatabases;
-      persisted = map (path: "/persist/.${snap}${path}") [
-        "/var/log"
-        "/var/cache"
-        "/etc/ssh"
-        "/etc/machine-id"
-        "/var/lib/sbctl"
-        "/var/lib/systemd/random-seed"
-        "/var/lib/tailscale"
-        "/zfs"
-        "/home/*/.ssh"
-        "/home/*/.config/sops"
-        "/home/*/.cache"
-      ];
-      release = ''
+      persisted =
+        name:
+        map (path: "/persist/.${snapOf name}${path}") [
+          "/var/log"
+          "/var/cache"
+          "/etc/ssh"
+          "/etc/machine-id"
+          "/var/lib/sbctl"
+          "/var/lib/systemd/random-seed"
+          "/var/lib/tailscale"
+          "/zfs"
+          "/home/*/.ssh"
+          "/home/*/.config/sops"
+          "/home/*/.cache"
+        ];
+      release = name: ''
         for dataset in ${lib.escapeShellArgs datasets}; do
-          zfs destroy "$dataset@${snap}" 2>/dev/null || true
+          zfs destroy "$dataset@${snapOf name}" 2>/dev/null || true
         done
-        if [ -d /persist/.${snap} ]; then btrfs subvolume delete /persist/.${snap}; fi
+        if [ -d /persist/.${snapOf name} ]; then btrfs subvolume delete /persist/.${snapOf name}; fi
       '';
       thinkpad = {
         repo = "/srv/backup-thinkpad";
@@ -52,10 +71,17 @@
       restic = lib.getExe pkgs.restic;
     in
     {
-      sops.secrets = lib.genAttrs [ "backups-restic-password" "backups-thinkpad-password" ] (name: {
-        sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-        key = lib.replaceStrings [ "backups-" ] [ "backups/" ] name;
-      });
+      sops.secrets =
+        lib.genAttrs
+          [
+            "backups-restic-password"
+            "backups-thinkpad-password"
+            "backups-rclone-pcloud"
+          ]
+          (name: {
+            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+            key = lib.replaceStrings [ "backups-" ] [ "backups/" ] name;
+          });
       assertions =
         map
           (path: {
@@ -75,56 +101,67 @@
         pgdumpOptions = "--no-owner --no-privileges --lock-wait-timeout=5min";
       };
 
-      services.restic.backups.${name} = {
-        repository = repo;
+      services.restic.backups = lib.mapAttrs (name: job: {
+        inherit (job) repository rcloneConfigFile checkOpts;
         passwordFile = config.sops.secrets.backups-restic-password.path;
         timerConfig = {
-          OnCalendar = "02:30";
+          OnCalendar = job.at;
           Persistent = true;
         };
-        paths = [ "/persist/.${snap}" ] ++ map (root: inSnapshot root root) roots;
+        paths = [ "/persist/.${snapOf name}" ] ++ map (root: inSnapshot name root root) roots;
         exclude = [
-          (inSnapshot "/srv/immich" "/srv/immich/library/thumbs")
-          (inSnapshot "/srv/immich" "/srv/immich/library/encoded-video")
-          (inSnapshot "/srv/nextcloud" "/srv/nextcloud/instance/data/appdata_*/preview")
-          "/persist/.${snap}/.restic-*"
+          (inSnapshot name "/srv/immich" "/srv/immich/library/thumbs")
+          (inSnapshot name "/srv/immich" "/srv/immich/library/encoded-video")
+          (inSnapshot name "/srv/nextcloud" "/srv/nextcloud/instance/data/appdata_*/preview")
+          "/persist/.${snapOf name}/.restic-*"
         ]
-        ++ persisted;
+        ++ persisted name;
         extraBackupArgs = [ "--retry-lock 30m" ];
         pruneOpts = [
           "--retry-lock 30m"
+          "--group-by host"
           "--keep-daily 7"
           "--keep-weekly 4"
           "--keep-monthly 6"
         ];
         backupPrepareCommand = ''
           set -euo pipefail
-          ${release}
+          ${release name}
           for db in ${lib.escapeShellArgs databases}; do
             systemctl start "postgresqlBackup-$db.service" || echo "Dump of $db failed; backing up the last good one."
           done
           for dataset in ${lib.escapeShellArgs datasets}; do
-            zfs snapshot "$dataset@${snap}"
+            zfs snapshot "$dataset@${snapOf name}"
           done
-          btrfs subvolume snapshot -r /persist /persist/.${snap}
+          btrfs subvolume snapshot -r /persist /persist/.${snapOf name}
         '';
-        backupCleanupCommand = release;
-      };
+        backupCleanupCommand = release name;
+      }) jobs;
 
       systemd = {
         services = lib.mkMerge [
-          {
-            "restic-backups-${name}" = {
+          (lib.mapAttrs' (
+            name: job:
+            lib.nameValuePair "restic-backups-${name}" {
               path = [
                 config.boot.zfs.package
                 pkgs.btrfs-progs
               ];
-              unitConfig.RequiresMountsFor = roots ++ [ "/mnt/backup" ];
-              serviceConfig.PrivateNetwork = true;
+              unitConfig.RequiresMountsFor = roots ++ job.mounts;
+              serviceConfig.PrivateNetwork = job.rcloneConfigFile == null;
+            }
+          ) jobs)
+          {
+            restic-backups-pcloud = {
+              wants = [ "network-online.target" ];
+              after = [
+                "network-online.target"
+                "restic-backups-usb.service"
+              ];
             };
-            "restic-drill-${name}" = {
+            restic-drill-usb = {
               description = "Read a twelfth of the USB backup and test the latest database dumps";
-              after = [ "restic-backups-${name}.service" ];
+              after = [ "restic-backups-usb.service" ];
               unitConfig.RequiresMountsFor = [ "/mnt/backup" ];
               startAt = "*-*-15 12:00";
               enableStrictShellChecks = true;
@@ -135,8 +172,8 @@
               serviceConfig = {
                 Type = "oneshot";
                 PrivateNetwork = true;
-                CacheDirectory = "restic-drill-${name}";
-                Environment = "RESTIC_CACHE_DIR=%C/restic-drill-${name}";
+                CacheDirectory = "restic-drill-usb";
+                Environment = "RESTIC_CACHE_DIR=%C/restic-drill-usb";
                 TimeoutStartSec = "12h";
               };
               path = [ pkgs.gzip ];
@@ -144,7 +181,7 @@
                 set -o pipefail
                 ${restic} check --retry-lock 30m --read-data-subset="$(date +%-m)/12"
                 for db in ${lib.escapeShellArgs databases}; do
-                  dump=${inSnapshot "/srv" "${dumpDir}/$db"}
+                  dump=${inSnapshot "usb" "/srv" "${dumpDir}/$db"}
                   if ! ${restic} ls latest "$dump.sql.gz" > /dev/null 2>&1; then
                     echo "The latest snapshot has no fresh dump of $db; testing the previous one."
                     dump=$dump.prev
@@ -222,7 +259,7 @@
             ];
           }))
         ];
-        timers."restic-drill-${name}".timerConfig = {
+        timers.restic-drill-usb.timerConfig = {
           RandomizedDelaySec = "2h";
           Persistent = true;
         };
