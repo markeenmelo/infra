@@ -1,7 +1,7 @@
 { config, lib, ... }:
 let
   inherit (config.flake.modules.nixos) postgresql;
-  inherit (config.fleet) domain;
+  inherit (config.fleet) domain hosts;
   port = 2283;
   root = "/srv/immich";
   hostname = "photos.${domain}";
@@ -69,8 +69,7 @@ in
           accelerationDevices = [ "${config.fleet.renderDevice} rw" ];
           environment = {
             IMMICH_ALLOW_SETUP = "false";
-            # shortcut: racknerd's tailnet address is a literal, read it from fleet facts when a second app trusts the edge
-            IMMICH_TRUSTED_PROXIES = "127.0.0.1,100.96.133.3";
+            IMMICH_TRUSTED_PROXIES = "127.0.0.1,${hosts.racknerd.tailnetAddress}";
           };
           settings = {
             server.externalDomain = "https://${hostname}";

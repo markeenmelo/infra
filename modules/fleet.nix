@@ -25,6 +25,10 @@ in
             default = "x86_64-linux";
             description = "Nix system the host runs; sets `nixpkgs.hostPlatform`.";
           };
+          tailnetAddress = lib.mkOption {
+            type = lib.types.str;
+            description = "The host's Tailscale IPv4 address, kept across reinstalls by its carried tailnet identity; `opentofu/tailscale/main.tf` repeats it.";
+          };
           module = lib.mkOption {
             type = lib.types.deferredModuleWith { staticModules = [ { _class = "nixos"; } ]; };
             default = { };

@@ -1,14 +1,13 @@
 { config, ... }:
 let
   inherit (config.flake.modules.nixos) caddy;
-  inherit (config.fleet) domain;
+  inherit (config.fleet) domain hosts;
 in
 {
   flake.modules.nixos.lan-proxy =
     { config, lib, ... }:
     let
-      # shortcut: bastion's tailnet address is a literal, read it from fleet facts when a second host needs it
-      tailnet = "100.105.158.109";
+      tailnet = hosts.${config.networking.hostName}.tailnetAddress;
       tailscale = config.services.tailscale.interfaceName;
     in
     {

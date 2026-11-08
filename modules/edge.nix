@@ -3,6 +3,7 @@ let
   inherit (config.flake.modules.nixos) caddy;
   inherit (config.fleet) domain;
   declared = config.flake.nixosConfigurations.bastion.config.fleet.web.apps;
+  bastion = config.fleet.hosts.bastion.tailnetAddress;
   served = lib.filterAttrs (_: app: app.public) declared;
 in
 {
@@ -14,8 +15,6 @@ in
       ...
     }:
     let
-      # shortcut: bastion's tailnet address is a literal, read it from fleet facts when a second host needs it
-      bastion = "100.105.158.109";
       countries = [ "CA" ];
       logFilter = ''
         fields {
