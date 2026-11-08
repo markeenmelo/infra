@@ -22,10 +22,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       login, then declare the account with its limits.
 - [ ] Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`
       against false positives, tuned by the operator.
-- [ ] OpenCloud data: after the install, move the files into `tank/opencloud` with `rclone copy`
-      from `/srv/nextcloud/instance/data/USER/files` over OpenCloud's WebDAV
-      (shares, links, versions and trash do not carry over), then destroy `tank/nextcloud` and
-      drop its mount, snapshots and backup root.
+- [ ] Retire Nextcloud: drop the `tank/nextcloud` mount, snapshots and backup root, then destroy
+      the dataset.
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts, with ntfy as their
       first publisher (topics `alerts`, later `media`), and the desktop subscribers; backup
       metrics and alerts.
