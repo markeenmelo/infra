@@ -750,7 +750,8 @@ in
           mode = "0755";
         }
       ]
-      ++ lib.mapAttrsToList
+      ++
+        lib.mapAttrsToList
           (directory: user: {
             inherit directory user;
             group = user;
