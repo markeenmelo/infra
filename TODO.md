@@ -8,11 +8,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Proton exit nodes on bastion (`proton-ca`, `proton-us`, `proton-br`): the old generation
       advertised them on the tailnet and the new bastion does not yet; the policy keeps their
       keys, tag and approver.
-- [ ] Once CI outgrows GitHub's 10 GB Actions cache: let CI substitute from bastion's cache through
-      the Tailscale GitHub Action as an ephemeral tagged node allowed only port 5005, with the
-      credential reachable only from this repository's branches (never fork PRs). Decide whether
-      the laptops substitute from it. GitHub-hosted arm64 Linux and Apple Silicon macOS runners
-      can build the aarch64 closures; check the macOS runner's memory against the closures first.
+- [ ] Keep each host's last deployed closure on bastion as a GC root, so `nh clean` leaves it in
+      the Harmonia cache CI fetches from; drop the GitHub Actions cache once CI runs without it.
 
 ## bastion
 

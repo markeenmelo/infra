@@ -17,6 +17,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -34,4 +35,24 @@ jobs:
           gc-max-store-size-linux: 8G
           save: ${{ github.ref == 'refs/heads/main' }}
       - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
+      - name: Fetch what cache.nixos.org holds
+        run: |
+          nix eval --json .#checks.x86_64-linux --apply builtins.attrNames |
+            jq -r '.[] | ".#checks.x86_64-linux." + .' > "$RUNNER_TEMP/checks"
+          xargs -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 || true
+      - uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
+        with:
+          oauth-client-id: ${{ vars.TS_CI_CLIENT_ID }}
+          audience: ${{ vars.TS_CI_AUDIENCE }}
+          tags: tag:ci
+          log-mode: quiet
+      - name: Fetch what bastion's Harmonia cache holds
+        run: |
+          settings=$(nix eval --json .#nixosConfigurations.racknerd.config.nix.settings \
+            --apply 's: { inherit (s) substituters trusted-public-keys; }')
+          xargs -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 \
+            --option substituters "$(jq -r '.substituters | join(" ")' <<< "$settings")" \
+            --option trusted-public-keys "$(jq -r '."trusted-public-keys" | join(" ")' <<< "$settings")" || true
+      - name: Leave the tailnet before building
+        run: sudo tailscale logout
       - run: nix flake check --print-build-logs

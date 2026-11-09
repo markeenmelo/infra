@@ -45,6 +45,11 @@ read-only for all of these; `acls_externally_managed_on` says so.
 - Approval (`autoApprovers`) is not retroactive: apply a new route or exit node approver before
   deploying the host that advertises it.
 - `tag:infra-provisioner` belongs to the OAuth client only.
+- CI joins as `tag:ci` through a federated identity: GitHub's OIDC token from `check.yml` on a
+  branch of this repository, no stored secret. Its `ci_identity` output is not secret and goes to
+  the repository variables the workflow reads:
+  `nix run .#tofu -- tailscale output -json ci_identity | jq -r .client_id | gh variable set TS_CI_CLIENT_ID`,
+  and `.audience` to `TS_CI_AUDIENCE`.
 
 ## Porkbun
 
