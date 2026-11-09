@@ -13,6 +13,7 @@
       arr
       backups
       builder
+      proton-exit
     ];
     system.stateVersion = "26.05";
   };
