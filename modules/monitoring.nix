@@ -161,7 +161,7 @@ in
 
         prometheus.remote_write "bastion" {
           endpoint {
-            url = "http://${bastion}:${toString telemetry.metrics}/api/v1/write"
+            url = "http://${bastion}:${toString telemetry.metrics}/api/v1/metrics/write"
           }
         }
       '';
