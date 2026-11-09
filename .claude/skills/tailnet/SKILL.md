@@ -30,3 +30,13 @@ applies and copies again.
 Pass the preserved `/persist/var/lib/tailscale` to nixos-anywhere `--extra-files` with
 `/persist/etc/ssh` and the node keeps its identity; otherwise it joins as a new node under the
 same name and the old one is removed in the admin console. Never `tailscale logout` a live host.
+
+## Proton exit nodes
+
+[proton-exit.nix](../../../modules/proton-exit.nix) runs one more `tailscaled` per country on
+bastion, each inside its own Proton WireGuard namespace, advertised as the exit node
+`proton-COUNTRY`; the tailnet policy approves them by tag and admits the admin clients and
+members to the internet through them. Each joins once with its own key, `proton-exit/COUNTRY-auth-key`,
+moved like a host's from the `enrollment_keys` output, and keeps `/var/lib/tailscale-COUNTRY`
+under `/persist`. A timer restarts a tunnel whose handshake is older than five minutes. Choosing
+an exit node is done on the client; the desktop switcher arrives with the laptops.
