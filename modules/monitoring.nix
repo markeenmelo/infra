@@ -193,6 +193,47 @@ in
         };
       };
 
+      # 354 is the old generation's alloy uid
+      users = {
+        users = {
+          alloy = {
+            isSystemUser = true;
+            uid = 354;
+            group = "alloy";
+            extraGroups = [ "systemd-journal" ];
+          };
+          loki.uid = 356;
+        };
+        groups = {
+          alloy.gid = 354;
+          loki.gid = 356;
+        };
+      };
+      systemd.services.alloy.serviceConfig = {
+        DynamicUser = lib.mkForce false;
+        User = "alloy";
+        Group = "alloy";
+      };
+      networking.nftables.enable = true;
+      networking.nftables.tables.monitoring = {
+        family = "inet";
+        content = ''
+          chain output {
+            type filter hook output priority -150; policy accept;
+            oifname "lo" tcp dport { ${
+              lib.concatMapStringsSep ", " toString (lib.attrValues (removeAttrs ports [ "grafana" ]))
+            } } meta skuid != { 0, ${
+              lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) [
+                "grafana"
+                "prometheus"
+                "loki"
+                "alloy"
+              ]
+            } } reject
+          }
+        '';
+      };
+
       environment.etc."alloy/config.alloy".text = ''
         loki.relabel "journal" {
           forward_to = []

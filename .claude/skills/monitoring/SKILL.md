@@ -6,6 +6,9 @@ description: "Monitoring on bastion: Prometheus and the exporters it scrapes, Lo
 # Monitoring
 
 [monitoring.nix](../../../modules/monitoring.nix) runs the stack on bastion, every port on loopback.
+Prometheus, Loki and the node exporter answer without authentication, so an nftables guard admits
+only root and the stack's own users (pinned uids) to their ports; otherwise any service on bastion
+could read the whole journal through Loki.
 Prometheus scrapes its own exporters (node with the systemd collector, itself) every 60 s and keeps
 30 days, capped at 20 GB. Alloy ships bastion's journal to Loki with `host`, `unit`,
 `syslog_identifier` and `level` labels, dropping lines older than 12 h; Loki keeps 30 days.
@@ -23,6 +26,6 @@ provisioned uid; a bump is a new revision and hash.
 
 ```sh
 ssh bastion "systemctl status prometheus loki alloy grafana"
-ssh bastion "curl -s 127.0.0.1:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health}'"
-ssh bastion "curl -s 127.0.0.1:3100/ready"
+ssh -t bastion "sudo curl -s 127.0.0.1:9090/api/v1/targets" | jq '.data.activeTargets[] | {job: .labels.job, health}'
+ssh -t bastion "sudo curl -s 127.0.0.1:3100/ready"
 ```
