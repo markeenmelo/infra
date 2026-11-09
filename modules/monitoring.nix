@@ -247,15 +247,34 @@ in
           labels.severity = severity;
           annotations.summary = summary;
         };
-      # Node Exporter Full, grafana.com dashboard 1860
-      nodeDashboard = pkgs.runCommand "node-exporter-full.json" { } ''
-        sed 's/''${DS_PROMETHEUS}/prometheus/g' ${
-          pkgs.fetchurl {
-            url = "https://grafana.com/api/dashboards/1860/revisions/46/download";
-            hash = "sha256-5Y3cXcU11MkB+U2pZIvD49Wue2946Y4YW86LKJlhzqM=";
-          }
-        } > $out
-      '';
+      # grafana.com dashboards by id: Node Exporter Full, SMARTctl Exporter Dashboard, APC UPS Dashboard (apcupsd)
+      dashboards = lib.mapAttrs (
+        name: pin:
+        pkgs.runCommand "${name}.json" { } ''
+          sed 's/''${DS_PROMETHEUS}/prometheus/g' ${
+            pkgs.fetchurl {
+              url = "https://grafana.com/api/dashboards/${toString pin.id}/revisions/${toString pin.revision}/download";
+              inherit (pin) hash;
+            }
+          } > $out
+        ''
+      ) {
+        node-exporter-full = {
+          id = 1860;
+          revision = 46;
+          hash = "sha256-5Y3cXcU11MkB+U2pZIvD49Wue2946Y4YW86LKJlhzqM=";
+        };
+        smartctl = {
+          id = 22604;
+          revision = 4;
+          hash = "sha256-ah36BdFIcaprUz39hRzuYVzfp3diEBckmalMaOls5kY=";
+        };
+        apcupsd = {
+          id = 21119;
+          revision = 1;
+          hash = "sha256-ghzogIn98S41t1swJ0E0Fo4Wxmv7Vk4YfJ1wGmcnaQg=";
+        };
+      };
     in
     {
       imports = [ ntfy ];
@@ -429,7 +448,9 @@ in
               {
                 name = "fleet";
                 allowUiUpdates = false;
-                options.path = pkgs.linkFarm "dashboards" { "node-exporter-full.json" = nodeDashboard; };
+                options.path = pkgs.linkFarm "dashboards" (
+                  lib.mapAttrs' (name: json: lib.nameValuePair "${name}.json" json) dashboards
+                );
               }
             ];
             alerting = {
