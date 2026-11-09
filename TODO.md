@@ -31,9 +31,10 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       `~/.local/state/infra` (OpenTofu state); a NixOS `remote-builds` with its own builder key, so
       its deploys build on bastion like the mac's; a desktop switcher for the Proton exit nodes,
       on the mac too. The old generation gave every restic repository one password, which the old
-      ThinkPad holds: on the reinstall, `restic key add` a fresh `backups/thinkpad-password` to its
-      repository on bastion and remove the old key there, so the laptop no longer opens the
-      household backups.
+      ThinkPad holds and the USB and pCloud repositories still accept: the reinstall must erase it
+      (encrypted disk or secure erase), and `restic key add` a fresh `backups/thinkpad-password`
+      to the laptop's repository on bastion, removing the old key there, so the new install never
+      holds the household key.
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
