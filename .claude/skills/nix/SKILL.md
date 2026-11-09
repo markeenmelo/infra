@@ -80,8 +80,8 @@ while preserved paths and the machine id survived; it needs KVM, which the linux
 [eval.yml](../../../.github/workflows/eval.yml) evaluates every system on each PR push.
 [check.yml](../../../.github/workflows/check.yml) also builds the x86_64 ones, on pushes to
 `main` and when started for a PR that is ready to merge: `gh workflow run check.yml --ref BRANCH`,
-then `gh pr merge N --squash --auto`. Its `linux` job is the required check, on the branch tip,
-which the ruleset keeps up to date with `main`; a later push needs another start. Assertions guard
+then `gh pr merge N --squash --auto`. It checks the branch tip, so a later push or an update from
+`main` needs another start. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
 **Language** — `let`, never `rec`; `inherit` over repetition; conditional config through
