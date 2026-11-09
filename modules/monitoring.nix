@@ -627,8 +627,9 @@ in
                 listen_address = "0.0.0.0"
                 listen_port    = ${toString telemetry.logs}
               }
-              labels     = { host = "${sender}" }
-              forward_to = [loki.write.local.receiver]
+              labels                 = { host = "${sender}" }
+              use_incoming_timestamp = true
+              forward_to             = [loki.write.local.receiver]
             }
           '') (lib.mapAttrs (_: host: host.telemetry) senders)
         );
