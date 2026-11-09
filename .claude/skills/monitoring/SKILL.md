@@ -33,8 +33,10 @@ Grafana evaluates the rules in the `Fleet` folder every minute; each is one `rul
 module (PromQL whose value is compared with its `threshold`, default `for` 15 m, no data counts as
 fine). Everything goes to ntfy's `alerts` topic; `severity=critical` also goes to ntfy at high
 priority and to the email of every `grafana-admins` person, through Authelia's SMTP account. The
-always-firing `Heartbeat` goes only to the healthchecks.io URL in `grafana/heartbeat-url` every
-5 minutes, so the outside check alerts when bastion, Grafana or the network stops. Provisioning
+always-firing `Heartbeat` goes only to the healthchecks.io URL in `grafana/heartbeat-url` about
+every 5 minutes (repeat 4 m on a 1 m tick, since a repeat equal to the tick fires every other
+tick), so the outside check, period 5 m and grace 10 m, alerts when bastion, Grafana or the
+network stops. Provisioning
 never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
 
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the

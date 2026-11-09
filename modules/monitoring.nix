@@ -317,8 +317,8 @@ in
                         ]
                       ];
                       group_wait = "0s";
-                      group_interval = "5m";
-                      repeat_interval = "5m";
+                      group_interval = "1m";
+                      repeat_interval = "4m";
                     }
                     {
                       receiver = "ntfy-critical";

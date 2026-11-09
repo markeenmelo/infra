@@ -30,6 +30,7 @@ in
           restartUnits = [ "ntfy-sh.service" ];
         };
       };
+      # shortcut: the message cache lives in the rolled-back root, so a phone offline across a bastion reboot misses alerts sent just before it; preserve /var/lib/private/ntfy-sh if that matters
       services.ntfy-sh = {
         enable = true;
         settings = {
