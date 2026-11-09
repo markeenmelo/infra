@@ -83,6 +83,7 @@ jobs:
           CONFIG__ADDITIONAL_REASONING_EFFORT_MODELS: '["glm-5.3-flash", "k3"]'
           CONFIG__NO_TEMPERATURE_MODELS: '["k3"]'
           PR_REVIEWER__PERSISTENT_COMMENT: ${{ matrix.name == 'glm' }}
+          PR_REVIEWER__REVIEW_HEADING: ${{ matrix.name == 'glm' && 'GLM Reviewer Guide' || 'Kimi Reviewer Guide' }}
           LITELLM__CUSTOM_LLM_PROVIDER: ${{ matrix.provider }}
           LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: anthropic
           LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.z.ai"]'
