@@ -48,6 +48,7 @@
             path = [
               pkgs.kmod
               pkgs.i2c-tools
+              config.systemd.package
             ];
             serviceConfig = {
               Type = "oneshot";
@@ -70,6 +71,13 @@
               echo 1 > /sys/class/leds/netdev/link
               echo 0 > /sys/class/leds/netdev/tx
               echo 0 > /sys/class/leds/netdev/rx
+              ${lib.concatStrings (
+                lib.mapAttrsToList (led: id: ''
+                  if [ -e /dev/disk/by-id/${id} ]; then
+                    systemctl start --no-block ugreen-${led}.service
+                  fi
+                '') disks
+              )}
             '';
           };
         }
