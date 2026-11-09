@@ -475,52 +475,52 @@ in
                       summary = "${sender} has sent no metrics to bastion for 10 minutes";
                     }) senders
                     ++ [
-                    {
-                      title = "Heartbeat";
-                      expr = "vector(1)";
-                      for = "0s";
-                      severity = "info";
-                      summary = "Always firing; healthchecks.io alerts when these stop arriving";
-                    }
-                    {
-                      title = "Scrape target down";
-                      expr = "1 - up";
-                      for = "10m";
-                      summary = "{{ $labels.job }} on {{ $labels.instance }} has not answered Prometheus for 10 minutes";
-                    }
-                    {
-                      title = "Public endpoint down";
-                      expr = "1 - probe_success";
-                      for = "5m";
-                      severity = "critical";
-                      summary = "{{ $labels.instance }} has failed its HTTPS probe from the edge for 5 minutes";
-                    }
-                    {
-                      title = "Unit failed";
-                      expr = "node_systemd_unit_state{state=\"failed\"}";
-                      for = "5m";
-                      summary = "{{ $labels.name }} failed on {{ $labels.instance }}";
-                    }
-                    {
-                      title = "Filesystem almost full";
-                      expr = "1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|nsfs\"} / node_filesystem_size_bytes";
-                      threshold = 0.85;
-                      summary = "{{ $labels.mountpoint }} on {{ $labels.instance }} is over 85% full";
-                    }
-                    {
-                      title = "Memory low";
-                      expr = "1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes";
-                      threshold = 0.9;
-                      summary = "{{ $labels.instance }} has had under 10% memory available for 15 minutes";
-                    }
-                    {
-                      title = "Out of memory kill";
-                      expr = "increase(node_vmstat_oom_kill[15m])";
-                      for = "0s";
-                      severity = "critical";
-                      summary = "The kernel killed a process for memory on {{ $labels.instance }}";
-                    }
-                  ]
+                      {
+                        title = "Heartbeat";
+                        expr = "vector(1)";
+                        for = "0s";
+                        severity = "info";
+                        summary = "Always firing; healthchecks.io alerts when these stop arriving";
+                      }
+                      {
+                        title = "Scrape target down";
+                        expr = "1 - up";
+                        for = "10m";
+                        summary = "{{ $labels.job }} on {{ $labels.instance }} has not answered Prometheus for 10 minutes";
+                      }
+                      {
+                        title = "Public endpoint down";
+                        expr = "1 - probe_success";
+                        for = "5m";
+                        severity = "critical";
+                        summary = "{{ $labels.instance }} has failed its HTTPS probe from the edge for 5 minutes";
+                      }
+                      {
+                        title = "Unit failed";
+                        expr = "node_systemd_unit_state{state=\"failed\"}";
+                        for = "5m";
+                        summary = "{{ $labels.name }} failed on {{ $labels.instance }}";
+                      }
+                      {
+                        title = "Filesystem almost full";
+                        expr = "1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|nsfs\"} / node_filesystem_size_bytes";
+                        threshold = 0.85;
+                        summary = "{{ $labels.mountpoint }} on {{ $labels.instance }} is over 85% full";
+                      }
+                      {
+                        title = "Memory low";
+                        expr = "1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes";
+                        threshold = 0.9;
+                        summary = "{{ $labels.instance }} has had under 10% memory available for 15 minutes";
+                      }
+                      {
+                        title = "Out of memory kill";
+                        expr = "increase(node_vmstat_oom_kill[15m])";
+                        for = "0s";
+                        severity = "critical";
+                        summary = "The kernel killed a process for memory on {{ $labels.instance }}";
+                      }
+                    ]
                   );
                 }
               ];
