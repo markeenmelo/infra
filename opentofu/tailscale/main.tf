@@ -149,26 +149,6 @@ resource "tailscale_tailnet_key" "enrollment" {
   depends_on          = [tailscale_acl.fleet, tailscale_tailnet_settings.fleet]
 }
 
-resource "tailscale_federated_identity" "ci" {
-  description = "check workflow"
-  scopes      = ["auth_keys"]
-  tags        = ["tag:ci"]
-  issuer      = "https://token.actions.githubusercontent.com"
-  subject     = "repo:markeenmelo/infra:ref:refs/heads/*"
-  custom_claim_rules = {
-    job_workflow_ref = "markeenmelo/infra/.github/workflows/check.yml@refs/heads/*"
-  }
-  depends_on = [tailscale_acl.fleet]
-}
-
-output "ci_identity" {
-  description = "Client id and audience the check workflow presents with its GitHub OIDC token; the opentofu skill says where they go."
-  value = {
-    client_id = tailscale_federated_identity.ci.id
-    audience  = tailscale_federated_identity.ci.audience
-  }
-}
-
 output "enrollment_keys" {
   description = "Pre-authorized auth key per host; the tailnet skill says how one reaches secrets/hosts/HOST.yaml."
   value       = { for host, key in tailscale_tailnet_key.enrollment : host => key.key }
