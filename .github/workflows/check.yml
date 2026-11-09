@@ -33,5 +33,5 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-
           gc-max-store-size-linux: 8G
           save: ${{ github.ref == 'refs/heads/main' }}
-      - run: nix flake check --all-systems --no-build
+      - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
       - run: nix flake check --print-build-logs

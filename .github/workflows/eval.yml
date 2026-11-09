@@ -20,4 +20,4 @@ jobs:
         with:
           persist-credentials: false
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
-      - run: nix flake check --all-systems --no-build
+      - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
