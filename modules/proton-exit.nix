@@ -99,8 +99,6 @@ in
                 --accept-dns=false
                 --accept-routes=false
                 --ssh=false
-                --webclient=false
-                --auto-update=false
               )
               while state=$(ts status --json --peers=false | jq -r .BackendState); [[ $state == NoState || $state == Starting ]]; do
                 sleep 1
@@ -122,6 +120,8 @@ in
             enableStrictShellChecks = true;
             serviceConfig.Type = "oneshot";
             script = ''
+              since=$(systemctl show -P ActiveEnterTimestampMonotonic pv${country}.service)
+              (( $(cut -d. -f1 /proc/uptime) - since / 1000000 < 300 )) && exit 0
               latest=$(ip netns exec pv${country} wg show pv${country}0 latest-handshakes | cut -f2 | sort -n | tail -n1)
               if (( $(date +%s) - ''${latest:-0} >= 300 )); then
                 echo "last Proton handshake ''${latest:-never}, restarting" >&2
@@ -137,7 +137,7 @@ in
           "pv${country}-watch" = {
             wantedBy = [ "timers.target" ];
             timerConfig = {
-              OnBootSec = "5min";
+              OnActiveSec = "5min";
               OnUnitActiveSec = "2min";
             };
           };
