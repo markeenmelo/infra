@@ -10,7 +10,7 @@ permissions: {}
 
 jobs:
   pr-agent:
-    name: pr-agent (glm ${{ matrix.command }})
+    name: pr-agent (${{ matrix.name }} ${{ matrix.command }})
     if: >-
       github.event.sender.type != 'Bot' &&
       ((github.event_name == 'pull_request' && !github.event.pull_request.draft &&
@@ -18,13 +18,31 @@ jobs:
       (github.event.issue.pull_request && startsWith(github.event.comment.body, '/') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
     concurrency:
-      group: review-pr-agent-${{ matrix.command }}-${{ github.event_name }}-${{ matrix.command != 'review' && github.event.action || '' }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '/')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
+      group: review-pr-agent-${{ matrix.name }}-${{ matrix.command }}-${{ github.event_name }}-${{ matrix.command != 'review' && github.event.action || '' }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '/')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
-        command: [describe, review]
+        include:
+          - name: glm
+            command: describe
+            provider: anthropic
+            model: anthropic/glm-5.3-flash
+            base: https://api.z.ai/api/anthropic
+            secret: ZAI_API_KEY
+          - name: glm
+            command: review
+            provider: anthropic
+            model: anthropic/glm-5.3-flash
+            base: https://api.z.ai/api/anthropic
+            secret: ZAI_API_KEY
+          - name: kimi
+            command: review
+            provider: openai
+            model: openai/k3
+            base: https://api.kimi.ai/coding/v1
+            secret: KIMI_API_KEY
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -51,17 +69,21 @@ jobs:
         env:
           PR_REVIEWER__EXTRA_INSTRUCTIONS: ${{ steps.guidelines.outputs.text }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANTHROPIC__KEY: ${{ secrets.ZAI_API_KEY }}
-          ANTHROPIC_BASE_URL: https://api.z.ai/api/anthropic
-          CONFIG__MODEL: anthropic/glm-5.3-flash
+          ANTHROPIC__KEY: ${{ matrix.provider == 'anthropic' && secrets[matrix.secret] || '' }}
+          ANTHROPIC_BASE_URL: ${{ matrix.provider == 'anthropic' && matrix.base || '' }}
+          OPENAI__KEY: ${{ matrix.provider == 'openai' && secrets[matrix.secret] || '' }}
+          OPENAI__API_BASE: ${{ matrix.provider == 'openai' && matrix.base || '' }}
+          CONFIG__MODEL: ${{ matrix.model }}
           CONFIG__FALLBACK_MODELS: "[]"
           CONFIG__TEMPERATURE: "1"
           CONFIG__MAX_MODEL_TOKENS: "262144"
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "262144"
           CONFIG__MAX_OUTPUT_TOKENS: "32768"
           CONFIG__REASONING_EFFORT: low
-          CONFIG__ADDITIONAL_REASONING_EFFORT_MODELS: '["glm-5.3-flash"]'
-          LITELLM__CUSTOM_LLM_PROVIDER: anthropic
+          CONFIG__ADDITIONAL_REASONING_EFFORT_MODELS: '["glm-5.3-flash", "k3"]'
+          CONFIG__NO_TEMPERATURE_MODELS: '["k3"]'
+          PR_REVIEWER__PERSISTENT_COMMENT: ${{ matrix.name == 'glm' }}
+          LITELLM__CUSTOM_LLM_PROVIDER: ${{ matrix.provider }}
           LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: anthropic
           LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.z.ai"]'
           CONFIG__AI_TIMEOUT: "600"
