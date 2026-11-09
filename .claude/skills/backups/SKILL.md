@@ -16,7 +16,7 @@ consistent and no app stops. The dumps finish before the snapshots, so an app wr
 (an Immich upload) can leave its database and files a moment apart; Immich's own repair jobs
 reconcile that after a restore. A failed dump keeps the previous one as `DB.prev.sql.gz`, which
 the drill then tests. The roots are `/srv`,
-Immich, OpenCloud, Nextcloud until its dataset is destroyed (previews left out), the arr state and
+Immich, OpenCloud, the arr state and
 the ThinkPad's repository; an assertion fails the build when
 Immich's or OpenCloud's data falls outside them. Media, Frigate recordings, PostgreSQL's live files,
 Immich's thumbnails and transcodes, logs, caches and every identity (host and SSH keys,
