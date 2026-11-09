@@ -16,8 +16,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## bastion
 
-- [ ] After the install, drop by hand the old PostgreSQL databases of the apps not ported: Home
-      Assistant, Mosquitto, SparkyFitness, OpenGym, live TV and UsenetCrawler.
 - [ ] Jellyfin child account: confirm the SSO plugin leaves a user's parental limits alone at
       login, then declare the account with its limits.
 - [ ] Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`
