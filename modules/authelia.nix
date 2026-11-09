@@ -115,6 +115,7 @@ in
             "opencloudAdmin"
             "jellyfin"
             "jellyfin-admins"
+            "grafana-admins"
           ];
         };
         nara = {

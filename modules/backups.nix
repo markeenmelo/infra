@@ -53,6 +53,8 @@ in
           "/var/lib/sbctl"
           "/var/lib/systemd/random-seed"
           "/var/lib/tailscale"
+          "/var/lib/prometheus2"
+          "/var/lib/loki"
           "/zfs"
           "/home/*/.ssh"
           "/home/*/.config/sops"
