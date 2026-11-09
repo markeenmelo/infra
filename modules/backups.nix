@@ -210,6 +210,7 @@ in
               description = "Start each restic job's success clock and drop those of removed jobs";
               wantedBy = [ "multi-user.target" ];
               after = [ "systemd-tmpfiles-setup.service" ];
+              unitConfig.RequiresMountsFor = [ config.fleet.metricsDir ];
               restartTriggers = [ (lib.concatStringsSep " " recorded) ];
               enableStrictShellChecks = true;
               serviceConfig = {
