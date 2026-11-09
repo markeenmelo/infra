@@ -47,6 +47,7 @@ in
             > ${config.fleet.metricsDir}/restic-${name}.prom.tmp
           ${lib.getExe' pkgs.coreutils "mv"} ${config.fleet.metricsDir}/restic-${name}.prom.tmp ${config.fleet.metricsDir}/restic-${name}.prom
         '';
+      recorded = lib.attrNames jobs ++ [ "drill-usb" ];
       dumps = config.services.postgresqlBackup;
       dumpDir = dumps.location;
       databases = lib.filter (db: !lib.hasSuffix "-logs" db) config.services.postgresql.ensureDatabases;
@@ -202,6 +203,28 @@ in
                     dump=$dump.prev
                   fi
                   ${restic} dump latest "$dump.sql.gz" | gzip -t
+                done
+              '';
+            };
+            restic-success-seed = {
+              description = "Start each restic job's success clock and drop those of removed jobs";
+              wantedBy = [ "multi-user.target" ];
+              after = [ "systemd-tmpfiles-setup.service" ];
+              restartTriggers = [ (lib.concatStringsSep " " recorded) ];
+              enableStrictShellChecks = true;
+              serviceConfig.Type = "oneshot";
+              script = ''
+                cd ${config.fleet.metricsDir}
+                for file in restic-*.prom; do
+                  [ -e "$file" ] || continue
+                  case "$file" in
+                    ${lib.concatMapStringsSep "|" (name: "restic-${name}.prom") recorded}) ;;
+                    *) rm -- "$file" ;;
+                  esac
+                done
+                for name in ${lib.escapeShellArgs recorded}; do
+                  [ -e "restic-$name.prom" ] ||
+                    printf 'restic_last_success_timestamp_seconds{backup="%s"} %s\n' "$name" "$(date +%s)" > "restic-$name.prom"
                 done
               '';
             };

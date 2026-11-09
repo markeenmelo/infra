@@ -57,7 +57,9 @@ tick), so the outside check, period 5 m and grace 10 m, alerts when bastion, Gra
 network stops. A job that records its own result writes a `*.prom` file to `fleet.metricsDir`
 (persisted), which the node exporter publishes: each restic backup and the restore drill write
 `restic_last_success_timestamp_seconds{backup=…}` only after succeeding, because a run that never
-starts (its USB disk missing) leaves the unit inactive rather than failed and the timer fresh.
+starts (its USB disk missing) leaves the unit inactive rather than failed and the timer fresh. `restic-success-seed` writes
+the current time for a job with no file yet, so one that never succeeds still goes stale, and
+deletes the files of removed jobs.
 Provisioning never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
 
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the
