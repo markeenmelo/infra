@@ -17,9 +17,11 @@ the uplinks refuse IPv6 per link instead. Magic rollback and auto rollback stay 
 that breaks the SSH path reverts after the confirm timeout. `nix flake check` carries the
 deploy-rs schema and activation checks per system.
 
-A host that runs the builder ([builder.nix](../../../modules/builder.nix)) builds itself; every
-other host is built on the deploying machine, which hands the build to bastion through
-`remote-builds`, and pulls what bastion already has from its Harmonia cache. Bastion trusts the
+A host that runs the builder ([builder.nix](../../../modules/builder.nix)), or has another
+system than bastion, builds itself; every other host is built on the deploying machine, which
+hands the build to bastion when it imports `remote-builds` (only the mac so far), and pulls what
+bastion already has from its Harmonia cache. The deploying machine receives the whole closure
+back from bastion before deploy-rs pushes it. Bastion trusts the
 admin clients' build keys, not the hosts it builds for: racknerd only reads the cache, signed, so
 a compromised edge cannot write into bastion's store.
 

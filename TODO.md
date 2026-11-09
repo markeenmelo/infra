@@ -39,7 +39,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 ## Laptops
 
 - [ ] `thinkpad`: host, desktop profile, Stylix, Home Manager, power, backups; persist and back up
-      `~/.local/state/infra` (OpenTofu state).
+      `~/.local/state/infra` (OpenTofu state); a NixOS `remote-builds` with its own builder key, so
+      its deploys build on bastion like the mac's.
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 

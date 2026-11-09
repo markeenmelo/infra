@@ -13,7 +13,9 @@ in
     deploy.nodes = lib.mapAttrs (name: host: {
       hostname = name;
       sshUser = "deploy";
-      remoteBuild = config.flake.nixosConfigurations.${name}.config.nix.sshServe.enable;
+      remoteBuild =
+        host.system != config.fleet.hosts.bastion.system
+        || config.flake.nixosConfigurations.${name}.config.nix.sshServe.enable;
       profiles.system = {
         user = "root";
         path = inputs.deploy-rs.lib.${host.system}.activate.nixos config.flake.nixosConfigurations.${name};
