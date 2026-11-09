@@ -30,7 +30,7 @@ app Stylix cannot theme gets the same treatment by hand.
   mac, JankyBorders draws them beside AeroSpace ([aerospace.nix](../../../modules/aerospace.nix)).
 - **Rounding:** 6 px on windows where the window manager controls it, 4 px on small elements
   (bar items, buttons, notifications). The mac's own window corners stay as macOS draws them.
-- **Bar:** top, 32 px tall, solid `base00`, monospace bold at 13. Workspaces are plain numbers;
+- **Bar:** top, 32 px tall, `base00`, monospace bold at 13. Workspaces are plain numbers;
   the active one sits on a `base0D` pill with `base00` text. Status items are text or one
   monochrome Nerd Font glyph each, no colored icons, no graphs.
 - **Notifications:** top right, `base01` background, 4 px rounding, a 2 px `base0D` border, or

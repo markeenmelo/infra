@@ -55,14 +55,13 @@ in
         if [ "$(echo "$status" | ${jq} -r .BackendState)" != Running ]; then
           sketchybar --set "$NAME" icon.color=0xff${colors.base03} label=off
         else
-          exit=$(echo "$status" | ${jq} -r '[.Peer[] | select(.ExitNode) | .HostName][0] // "direct"')
+          exit=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .HostName][0] // "direct"')
           sketchybar --set "$NAME" icon.color=0xff${colors.base05} label="$exit"
         fi
       '';
       alerts = pkgs.writeShellScript "sketchybar-alerts" ''
-        if ! response=$(curl -fsS --max-time 10 \
-          -H "Authorization: Bearer $(cat ${config.sops.secrets.grafana-mcp-token.path})" \
-          "https://grafana.${domain}/api/alertmanager/grafana/api/v2/alerts?active=true&silenced=false&inhibited=false") \
+        if ! response=$(printf 'Authorization: Bearer %s\n' "$(cat ${config.sops.secrets.grafana-mcp-token.path})" \
+          | curl -fsS --max-time 10 -H @- "https://grafana.${domain}/api/alertmanager/grafana/api/v2/alerts?active=true&silenced=false&inhibited=false") \
           || ! severities=$(echo "$response" | ${jq} -r '.[].labels.severity'); then
           sketchybar --set "$NAME" drawing=on icon.color=0xff${colors.base03} label="?"
           exit
