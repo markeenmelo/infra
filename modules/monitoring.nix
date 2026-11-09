@@ -25,8 +25,9 @@ in
       host = config.networking.hostName;
       smtp = config.services.authelia.instances.main.settings.notifier.smtp;
       adminEmails = lib.mapAttrsToList (_: person: person.email) (
-        lib.filterAttrs (_: person: lib.elem admins person.groups)
-          (builtins.fromJSON config.sops.templates.authelia-users.content).users
+        lib.filterAttrs (
+          _: person: lib.elem admins person.groups
+        ) (builtins.fromJSON config.sops.templates.authelia-users.content).users
       );
       grafanaSecrets = {
         grafana-oidc-client-secret = "oidc-client-secret";
