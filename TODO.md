@@ -22,7 +22,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       login, then declare the account with its limits.
 - [ ] Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`
       against false positives, tuned by the operator.
-- [ ] Destroy the unmounted `tank/nextcloud` dataset once nothing is missed from it.
+- [ ] Destroy the unmounted `tank/nextcloud` dataset once nothing is missed from it. Restic's
+      copies of it age out six months after it left the backup roots (`--keep-monthly 6`), so
+      after that the dataset is the only copy.
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts, with ntfy as their
       first publisher (topics `alerts`, later `media`), and the desktop subscribers; backup
       metrics and alerts.
