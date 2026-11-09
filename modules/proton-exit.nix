@@ -107,7 +107,7 @@ in
                 ts up "''${prefs[@]}" --timeout=60s \
                   --auth-key=file:${config.sops.secrets."proton-exit-${country}-auth-key".path}
               fi
-              ts set "''${prefs[@]}" --webclient=false --auto-update=false
+              ts set "''${prefs[@]}"
             '';
           };
           "pv${country}-watch" = {
@@ -120,6 +120,8 @@ in
             enableStrictShellChecks = true;
             serviceConfig.Type = "oneshot";
             script = ''
+              since=$(systemctl show -P ActiveEnterTimestampMonotonic pv${country}.service)
+              (( $(cut -d. -f1 /proc/uptime) - since / 1000000 < 300 )) && exit 0
               latest=$(ip netns exec pv${country} wg show pv${country}0 latest-handshakes | cut -f2 | sort -n | tail -n1)
               if (( $(date +%s) - ''${latest:-0} >= 300 )); then
                 echo "last Proton handshake ''${latest:-never}, restarting" >&2
