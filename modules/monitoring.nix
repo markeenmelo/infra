@@ -687,7 +687,11 @@ in
         content = ''
           chain output {
             type filter hook output priority -150; policy accept;
-            oifname "lo" tcp dport { ${
+            ${lib.optionalString config.services.caddy.enable ''
+              oifname "lo" tcp dport ${toString config.fleet.scrapeTargets.caddy} meta skuid ${
+                toString config.users.users.${config.services.caddy.user}.uid
+              } accept
+            ''}            oifname "lo" tcp dport { ${
               lib.concatMapStringsSep ", " toString (
                 lib.attrValues config.fleet.scrapeTargets
                 ++ [
@@ -703,7 +707,6 @@ in
                   "loki"
                   "alloy"
                 ]
-                ++ lib.optional config.services.caddy.enable config.services.caddy.user
               )
             } } reject
           }

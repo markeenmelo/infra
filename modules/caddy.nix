@@ -110,7 +110,6 @@ in
           restartUnits = [ "caddy.service" ];
         };
       };
-      # Caddy's admin endpoint, which also serves /metrics
       fleet.scrapeTargets.caddy = 2019;
       services.caddy = {
         enable = true;

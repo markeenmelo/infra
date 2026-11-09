@@ -135,14 +135,6 @@ in
                 "list_*"
                 "search_*"
                 "pull_request_read"
-              ]
-              ++ map (tool: "mcp__plugin_hm_grafana__${tool}") [
-                "get_*"
-                "list_*"
-                "search_*"
-                "find_*"
-                "query_prometheus"
-                "query_loki_logs"
               ];
               deny = map (file: "Read(${file})") (
                 [
