@@ -14,7 +14,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       credential reachable only from this repository's branches (never fork PRs). Decide whether
       the laptops substitute from it. GitHub-hosted arm64 Linux and Apple Silicon macOS runners
       can build the aarch64 closures; check the macOS runner's memory against the closures first.
-- [ ] Decide the shared password hash on racknerd (per-host `login.yaml` or no password on the edge).
 
 ## bastion
 
