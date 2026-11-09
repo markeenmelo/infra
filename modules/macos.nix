@@ -69,6 +69,8 @@
           NSAutomaticCapitalizationEnabled = false;
           NSDocumentSaveNewDocumentsToCloud = false;
           "com.apple.swipescrolldirection" = false;
+          "com.apple.sound.beep.volume" = 0.0;
+          "com.apple.sound.beep.feedback" = 0;
         };
         trackpad = {
           Clicking = true;
@@ -81,6 +83,9 @@
           EnableStandardClickToShowDesktop = false;
         };
         CustomUserPreferences."com.apple.finder".ShowRecentTags = false;
+        CustomUserPreferences."com.apple.systemsound"."com.apple.sound.uiaudio.enabled" = 0;
+        # 4 is macOS's blue accent
+        CustomUserPreferences.NSGlobalDomain.AppleAccentColor = 4;
         screencapture = {
           location = "${config.users.users.${config.system.primaryUser}.home}/Pictures/Screenshots";
           disable-shadow = true;
@@ -92,6 +97,7 @@
         };
         loginwindow.GuestEnabled = false;
       };
+      system.startup.chime = false;
       home-manager.users.${config.system.primaryUser} =
         { lib, pkgs, ... }:
         {

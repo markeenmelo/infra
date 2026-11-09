@@ -12,6 +12,15 @@
       workspaces = map toString (lib.range 1 4);
     in
     {
+      stylix.targets.jankyborders.enable = false;
+      services.jankyborders = {
+        enable = true;
+        active_color = "0xff${config.lib.stylix.colors.base0D}";
+        inactive_color = "0xff${config.lib.stylix.colors.base02}";
+        width = 2.0;
+        style = "round";
+        hidpi = true;
+      };
       services.aerospace = {
         enable = true;
         settings = {
@@ -54,6 +63,7 @@
                   "com.bitwarden.desktop"
                   "com.apple.systempreferences"
                 ];
+          on-focused-monitor-changed = [ "move-mouse monitor-lazy-center" ];
           exec-on-workspace-change = [
             "/bin/bash"
             "-c"
@@ -73,6 +83,12 @@
               alt-q = "close";
               alt-enter = "exec-and-forget /usr/bin/open -na /Applications/Ghostty.app";
               alt-tab = "workspace-back-and-forth";
+              alt-comma = "focus-monitor --wrap-around prev";
+              alt-period = "focus-monitor --wrap-around next";
+              alt-shift-comma = "move-node-to-monitor --wrap-around --focus-follows-window prev";
+              alt-shift-period = "move-node-to-monitor --wrap-around --focus-follows-window next";
+              alt-ctrl-comma = "move-workspace-to-monitor --wrap-around prev";
+              alt-ctrl-period = "move-workspace-to-monitor --wrap-around next";
             }
           ];
         };
