@@ -12,6 +12,7 @@
       workspaces = map toString (lib.range 1 4);
     in
     {
+      stylix.targets.jankyborders.enable = false;
       services.jankyborders = {
         enable = true;
         active_color = "0xff${config.lib.stylix.colors.base0D}";
