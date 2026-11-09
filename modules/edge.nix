@@ -94,6 +94,7 @@ in
               -Server
             }
             @abroad {
+              not remote_ip 127.0.0.0/8 ::1
               not {
                 maxmind_geolocation {
                   db_path ${pkgs.dbip-country-lite.mmdb}
@@ -110,6 +111,7 @@ in
         };
       };
       fleet.probes = lib.mapAttrs (name: _: "https://${name}.${domain}") served;
+      networking.hosts."127.0.0.1" = map (name: "${name}.${domain}") (lib.attrNames served);
       systemd.services.caddy.serviceConfig.LogsDirectoryMode = "0750";
       networking.firewall = {
         allowedTCPPorts = [

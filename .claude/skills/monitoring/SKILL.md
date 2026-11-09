@@ -31,7 +31,9 @@ provisioned uid; a bump is a new revision and hash.
 
 A host that imports `telemetry` runs Alloy, which scrapes its node metrics and every
 `fleet.scrapeTargets` endpoint (CrowdSec on racknerd), probes every `fleet.probes` URL (the
-edge's public hostnames), and ships the journal. It pushes to the port pair in its
+edge's public hostnames, which racknerd resolves to loopback so its own probes skip the country
+rule and CrowdSec; they test Caddy, the tunnel and the apps, not reachability from outside), and
+ships the journal. It pushes to the port pair in its
 `fleet.hosts.HOST.telemetry`; bastion's Alloy listens on that pair, stamps `host=HOST` and forwards
 into the local Prometheus and Loki, and its firewall admits the pair only from that host's tailnet
 address, with a tailnet grant for the same ports ([opentofu skill](../opentofu/SKILL.md)). Nothing

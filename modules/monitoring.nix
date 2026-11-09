@@ -85,10 +85,17 @@ in
           enable_collectors = ["systemd"]
         }
 
+        discovery.relabel "node" {
+          targets = prometheus.exporter.unix.node.targets
+          rule {
+            target_label = "job"
+            replacement  = "node"
+          }
+        }
+
         prometheus.scrape "node" {
-          job_name        = "node"
           scrape_interval = "60s"
-          targets         = prometheus.exporter.unix.node.targets
+          targets         = discovery.relabel.node.output
           forward_to      = [prometheus.relabel.instance.receiver]
         }
 
@@ -115,10 +122,22 @@ in
           ]
         }
 
+        discovery.relabel "probes" {
+          targets = prometheus.exporter.blackbox.probes.targets
+          rule {
+            source_labels = ["job"]
+            regex         = "integrations/blackbox/(.*)"
+            target_label  = "probe"
+          }
+          rule {
+            target_label = "job"
+            replacement  = "blackbox"
+          }
+        }
+
         prometheus.scrape "probes" {
-          job_name        = "blackbox"
           scrape_interval = "60s"
-          targets         = prometheus.exporter.blackbox.probes.targets
+          targets         = discovery.relabel.probes.output
           forward_to      = [prometheus.remote_write.bastion.receiver]
         }
 
@@ -493,7 +512,7 @@ in
                         expr = "1 - probe_success";
                         for = "5m";
                         severity = "critical";
-                        summary = "{{ $labels.instance }} has failed its HTTPS probe from the edge for 5 minutes";
+                        summary = "{{ $labels.probe }} has failed its HTTPS probe through the edge for 5 minutes";
                       }
                       {
                         title = "Unit failed";
