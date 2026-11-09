@@ -1,7 +1,7 @@
 name: review
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, reopened, ready_for_review, synchronize]
   issue_comment:
     types: [created]
@@ -13,13 +13,13 @@ jobs:
     name: pr-agent (glm ${{ matrix.command }})
     if: >-
       github.event.sender.type != 'Bot' &&
-      ((github.event_name == 'pull_request_target' && !github.event.pull_request.draft &&
+      ((github.event_name == 'pull_request' && !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository) ||
       (github.event.issue.pull_request && startsWith(github.event.comment.body, '/') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
     concurrency:
       group: review-pr-agent-${{ matrix.command }}-${{ github.event_name }}-${{ matrix.command != 'review' && github.event.action || '' }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '/')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
-      cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -46,7 +46,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      - if: (github.event_name == 'pull_request_target' && github.event.action != 'synchronize') || matrix.command == 'review'
+      - if: (github.event_name == 'pull_request' && github.event.action != 'synchronize') || matrix.command == 'review'
         uses: docker://pragent/pr-agent@sha256:548e894a88071180832b2f4233f734d0acd0db1a879e2fcbaa70bac8b8372ebe # 0.50.0-github_action
         env:
           PR_REVIEWER__EXTRA_INSTRUCTIONS: ${{ steps.guidelines.outputs.text }}
@@ -76,7 +76,7 @@ jobs:
     name: claude-code (${{ matrix.name }})
     if: >-
       github.event.sender.type != 'Bot' &&
-      ((github.event_name == 'pull_request_target' && !github.event.pull_request.draft &&
+      ((github.event_name == 'pull_request' && !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository) ||
       (github.event.issue.pull_request && startsWith(github.event.comment.body, '@claude review') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
