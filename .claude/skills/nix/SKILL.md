@@ -77,11 +77,8 @@ one that needs only tools stays in `perSystem`. Prefer `runCommand` assertions o
 over `nixosTest`; one VM test, `storage` in [storage.nix](../../../modules/storage.nix), installs
 the disk layout with disko's test library, reboots, and asserts the root subvolume was recreated
 while preserved paths and the machine id survived; it needs KVM, which the linux CI job enables.
-[eval.yml](../../../.github/workflows/eval.yml) evaluates every system on each PR push.
-[check.yml](../../../.github/workflows/check.yml) also builds the x86_64 ones, on pushes to
-`main` and when started for a PR that is ready to merge: `gh workflow run check.yml --ref BRANCH`,
-then `gh pr merge N --squash --auto`. It checks the branch tip, so a later push or an update from
-`main` needs another start. Assertions guard
+[check.yml](../../../.github/workflows/check.yml) evaluates every system and builds the x86_64
+ones on each PR push and on `main`. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
 **Language** — `let`, never `rec`; `inherit` over repetition; conditional config through

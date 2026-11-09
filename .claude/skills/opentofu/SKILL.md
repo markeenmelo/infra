@@ -45,6 +45,15 @@ read-only for all of these; `acls_externally_managed_on` says so.
 - Approval (`autoApprovers`) is not retroactive: apply a new route or exit node approver before
   deploying the host that advertises it.
 - `tag:infra-provisioner` belongs to the OAuth client only.
+- CI joins as `tag:ci` through a federated identity that accepts GitHub's OIDC token from
+  `check.yml` in this repository, so no secret is stored; GitHub gives no OIDC token to a fork's
+  PR. Like the OAuth client, it is a trust credential made in the admin console, since the OAuth
+  client lacks the scope to create one: issuer GitHub, subject
+  `repo:markeenmelo@8158196/infra@1445093287:*` (GitHub puts the owner's and repository's ids in
+  the subject, so a renamed or recreated repository of the same name does not match), claim
+  `job_workflow_ref` = `markeenmelo/infra/.github/workflows/check.yml@*`, scope `auth_keys`, tag
+  `tag:ci`. Its client id and audience are not secret and go to the repository
+  variables `TS_CI_CLIENT_ID` and `TS_CI_AUDIENCE` with `gh variable set`.
 
 ## Porkbun
 

@@ -25,7 +25,7 @@ in
       };
       systemd.sockets.harmonia.socketConfig.FreeBind = true;
       networking.firewall.extraInputRules = ''
-        iifname "${config.services.tailscale.interfaceName}" ip saddr ${hosts.racknerd.tailnetAddress} tcp dport ${toString port} accept
+        iifname "${config.services.tailscale.interfaceName}" tcp dport ${toString port} accept
       '';
       nix.sshServe = {
         enable = true;

@@ -26,6 +26,11 @@ Bastion trusts the admin clients' build keys, not the hosts it builds for: rackn
 the cache, signed, so a compromised edge cannot write into bastion's store. A build key is a
 trusted user on bastion and whatever it uploads is signed and served to racknerd; it sits on the
 admin client beside the operator's key, which is already root on every host, so it widens nothing.
+CI reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the tailnet as an
+ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds and leaves
+before it builds, so tailnet minutes stay short and nothing built from PR code reaches bastion.
+The tailnet policy decides who reaches 5005; bastion's firewall admits it from any tailnet peer.
+What bastion built for another host stays until `nh clean` collects it.
 
 ```sh
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision

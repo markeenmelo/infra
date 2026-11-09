@@ -68,6 +68,7 @@ locals {
       "tag:server"            = ["tag:infra-provisioner"]
       "tag:bastion"           = ["tag:infra-provisioner"]
       "tag:proton-exit"       = ["tag:infra-provisioner"]
+      "tag:ci"                = ["tag:infra-provisioner"]
     }
     groups = { "group:members" = ["naralidy.anjos@gmail.com", "markeenmelo@github"] }
     hosts  = local.hosts
@@ -79,6 +80,7 @@ locals {
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
       { src = ["racknerd"], dst = ["bastion"], ip = ["tcp:9091", "tcp:8096", "tcp:2283", "tcp:9200", "tcp:5005"] },
       { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:8010"] },
+      { src = ["tag:ci"], dst = ["bastion"], ip = ["tcp:5005"] },
       { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = ["192.168.2.1"], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = ["192.168.4.0/24", "192.168.20.0/24"], ip = ["*"] },
@@ -89,6 +91,7 @@ locals {
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22"] },
+      { src = "tag:ci", proto = "tcp", accept = ["bastion:5005"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22"] },
     ]
   }
 }
