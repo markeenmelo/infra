@@ -212,7 +212,10 @@ in
               after = [ "systemd-tmpfiles-setup.service" ];
               restartTriggers = [ (lib.concatStringsSep " " recorded) ];
               enableStrictShellChecks = true;
-              serviceConfig.Type = "oneshot";
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
               script = ''
                 cd ${config.fleet.metricsDir}
                 for file in restic-*.prom; do
