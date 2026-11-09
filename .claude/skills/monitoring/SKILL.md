@@ -9,7 +9,8 @@ description: "Monitoring on bastion: Prometheus and the exporters it scrapes, Lo
 Each exporter sits beside what it measures (SMART here, the UPS in the bastion host's `ups.nix`)
 and adds its port to `fleet.scrapeTargets`, which becomes a Prometheus job. Prometheus, Loki and
 every scrape target answer without authentication, so an nftables guard admits only root and the
-stack's own users (pinned uids) to Loki's ports and every `fleet.scrapeTargets` port; otherwise
+stack's own users (pinned uids), plus Caddy's for its own admin endpoint (2019, which serves
+Caddy's metrics and its reloads), to Loki's ports and every `fleet.scrapeTargets` port; otherwise
 any service on bastion could read the whole journal through Loki. Exporter ports sit at 19xxx,
 clear of OpenCloud's internal block from 9100.
 Prometheus scrapes its own exporters (node with the systemd collector, itself) every 60 s and keeps

@@ -110,6 +110,8 @@ in
           restartUnits = [ "caddy.service" ];
         };
       };
+      # Caddy's admin endpoint, which also serves /metrics
+      fleet.scrapeTargets.caddy = 2019;
       services.caddy = {
         enable = true;
         package = pkgs.caddy.withPlugins {
@@ -120,7 +122,10 @@ in
           hash = "sha256-oIhRCKOI8zD5BTIZcoZgEi/wfj7BTvm+Hqpu/LwrLPA=";
         };
         environmentFile = config.sops.templates.caddy-env.path;
-        globalConfig = "grace_period 10s";
+        globalConfig = ''
+          grace_period 10s
+          metrics
+        '';
         extraConfig = ''
           (porkbun) {
             tls {

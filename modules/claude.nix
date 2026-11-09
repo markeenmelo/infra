@@ -1,5 +1,6 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
 let
+  inherit (config.fleet) domain;
   secretDirs = [
     "/run/secrets"
     "/run/secrets.d"
@@ -24,9 +25,15 @@ in
     darwin.base =
       { config, pkgs, ... }:
       {
-        sops.secrets.github-mcp-token = {
-          sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-          owner = config.system.primaryUser;
+        sops.secrets = {
+          github-mcp-token = {
+            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+            owner = config.system.primaryUser;
+          };
+          grafana-mcp-token = {
+            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+            owner = config.system.primaryUser;
+          };
         };
         nixpkgs.config.allowUnfreePackages = [
           "claude-code"
@@ -74,6 +81,14 @@ in
               ];
               env.GITHUB_PERSONAL_ACCESS_TOKEN.file = osConfig.sops.secrets.github-mcp-token.path;
             };
+            grafana = {
+              command = lib.getExe pkgs.mcp-grafana;
+              args = [ "--disable-write" ];
+              env = {
+                GRAFANA_URL = "https://grafana.${domain}";
+                GRAFANA_SERVICE_ACCOUNT_TOKEN.file = osConfig.sops.secrets.grafana-mcp-token.path;
+              };
+            };
           };
         };
         programs.claude-code = {
@@ -120,6 +135,14 @@ in
                 "list_*"
                 "search_*"
                 "pull_request_read"
+              ]
+              ++ map (tool: "mcp__plugin_hm_grafana__${tool}") [
+                "get_*"
+                "list_*"
+                "search_*"
+                "find_*"
+                "query_prometheus"
+                "query_loki_logs"
               ];
               deny = map (file: "Read(${file})") (
                 [
