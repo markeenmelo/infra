@@ -1,6 +1,6 @@
 ---
 name: monitoring
-description: "Monitoring on bastion: Prometheus and the exporters it scrapes, Loki and the Alloy journal shipper, Grafana at grafana.DOMAIN with its Authelia sign-in, datasources and dashboards. Use before touching modules/monitoring.nix, adding a scrape target, exporter or dashboard, or debugging missing metrics, logs or Grafana sign-in."
+description: "Monitoring on bastion: Prometheus and the exporters it scrapes, Loki and the Alloy journal shipper, Grafana at grafana.DOMAIN with its Authelia sign-in, datasources and dashboards, the alert rules and where they go (ntfy, email, the healthchecks.io heartbeat), and ntfy at ntfy.DOMAIN. Use before touching modules/monitoring.nix or modules/ntfy.nix, adding a scrape target, exporter, dashboard or alert, subscribing a device, or debugging missing metrics, logs, alerts or Grafana sign-in."
 ---
 
 # Monitoring
@@ -26,6 +26,23 @@ Grafana and changes nothing. Datasources (`prometheus`, `loki`) and
 dashboards are provisioned read-only: change them in Nix, not in the UI. Dashboards are pinned
 community ones by grafana.com revision and hash, with their datasource input replaced by the
 provisioned uid; a bump is a new revision and hash.
+
+## Alerts
+
+Grafana evaluates the rules in the `Fleet` folder every minute; each is one `rule` entry in the
+module (PromQL whose value is compared with its `threshold`, default `for` 15 m, no data counts as
+fine). Everything goes to ntfy's `alerts` topic; `severity=critical` also goes to ntfy at high
+priority and to the email of every `grafana-admins` person, through Authelia's SMTP account. The
+always-firing `Heartbeat` goes only to the healthchecks.io URL in `grafana/heartbeat-url` about
+every 5 minutes (repeat 4 m on a 1 m tick, since a repeat equal to the tick fires every other
+tick), so the outside check, period 5 m and grace 10 m, alerts when bastion, Grafana or the
+network stops. Provisioning
+never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
+
+[ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the
+tailnet. Everything is denied by default; `alerts` and `media` are readable by anyone who reaches
+it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
+a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login.
 
 ```sh
 ssh bastion "systemctl status prometheus loki alloy grafana"
