@@ -35,9 +35,7 @@ in
       assertions = [
         {
           assertion = lib.all (
-            user:
-            cfg.users.${user}.policy.isAdministrator
-            || !lib.elem (lib.toLower user) autheliaUsers
+            user: cfg.users.${user}.policy.isAdministrator || !lib.elem (lib.toLower user) autheliaUsers
           ) (lib.attrNames cfg.users);
           message = "A non-admin Jellyfin user must not share an Authelia username: an SSO login adopts the account and replaces its password and admin status.";
         }

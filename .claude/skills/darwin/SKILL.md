@@ -8,7 +8,7 @@ description: "The mac host: nix-darwin plus Home Manager built from the same den
 A concern that applies to macOS sets `flake.modules.darwin.base` in the same file as its NixOS
 counterpart; [fleet.nix](../../../modules/fleet.nix) turns a host with `darwin` set into
 `darwinConfigurations.NAME` and the `darwin-NAME` check, which the mac builds for itself and
-the macOS runner builds in CI. Home Manager runs as a nix-darwin module
+CI only evaluates. Home Manager runs as a nix-darwin module
 ([home.nix](../../../modules/home.nix)); operator settings portable across hosts go to
 `flake.modules.homeManager.base`.
 

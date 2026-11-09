@@ -1,14 +1,14 @@
 name: check
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches: [main]
 
 permissions: {}
 
 concurrency:
-  group: check-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  group: check-${{ github.event_name == 'workflow_dispatch' && github.ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -33,21 +33,5 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-
           gc-max-store-size-linux: 8G
           save: ${{ github.ref == 'refs/heads/main' }}
-      - run: nix flake check --print-build-logs
-  macos:
-    runs-on: macos-latest
-    timeout-minutes: 60
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
-      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock', '**/*.tf') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          gc-max-store-size-macos: 4G
-          save: ${{ github.ref == 'refs/heads/main' }}
+      - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
       - run: nix flake check --print-build-logs

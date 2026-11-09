@@ -6,7 +6,7 @@
       imports = [ inputs.stylix.darwinModules.stylix ];
       stylix = {
         enable = true;
-        base16Scheme = "${pkgs.base16-schemes}/share/themes/onedark-dark.yaml";
+        base16Scheme = "${inputs.stylix.inputs.tinted-schemes}/base16/onedark-dark.yaml";
         polarity = "dark";
         overlays.enable = false;
         fonts = {
