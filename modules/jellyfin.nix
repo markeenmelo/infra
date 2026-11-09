@@ -44,6 +44,7 @@ in
               "jellyfin-api-key"
             ];
             password = [ "jellyfin-users-config" ];
+            ian-password = [ "jellyfin-users-config" ];
             oidc-client-secret = [ "jellyfin-plugins" ];
           };
       nixflix.jellyfin = {
@@ -89,6 +90,18 @@ in
           policy = {
             isAdministrator = true;
             enableRemoteAccess = true;
+          };
+        };
+        users.ian = {
+          mutable = false;
+          password = secret "ian-password";
+          policy = {
+            # Jellyfin's score for PG and TV-PG
+            maxParentalRating = 10;
+            blockUnratedItems = [
+              "Movie"
+              "Series"
+            ];
           };
         };
         libraries =
