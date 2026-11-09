@@ -35,7 +35,7 @@
         enable = true;
         extraPackages = [ config.services.aerospace.package ];
         config = ''
-          sketchybar --bar height=32 position=top sticky=on color=0xff${colors.base00} padding_left=8 padding_right=8
+          sketchybar --bar height=32 position=top sticky=on color=0xe6${colors.base00} blur_radius=20 padding_left=8 padding_right=8
           sketchybar --default label.font="${font}:Bold:13.0" label.color=0xff${colors.base05} padding_left=4 padding_right=4 \
             background.color=0xff${colors.base0D} background.corner_radius=4 background.height=22 background.drawing=off
           sketchybar --add event aerospace_workspace_change

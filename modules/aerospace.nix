@@ -12,6 +12,14 @@
       workspaces = map toString (lib.range 1 4);
     in
     {
+      services.jankyborders = {
+        enable = true;
+        active_color = "0xff${config.lib.stylix.colors.base0D}";
+        inactive_color = "0xff${config.lib.stylix.colors.base02}";
+        width = 2.0;
+        style = "round";
+        hidpi = true;
+      };
       services.aerospace = {
         enable = true;
         settings = {

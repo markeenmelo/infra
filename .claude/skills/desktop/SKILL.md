@@ -26,7 +26,8 @@ app Stylix cannot theme gets the same treatment by hand.
 - **Motion:** none, or a fade or slide of at most 150 ms; nothing bounces or zooms.
 - **Spacing:** multiples of 2 px. Windows: 8 px between them, 6 px to the screen edge (the bar's
   edge counts as the screen's). Terminal padding 10 px across, 8 px down.
-- **Borders:** 2 px around windows; `base0D` on the focused one, `base02` on the others.
+- **Borders:** 2 px around windows; `base0D` on the focused one, `base02` on the others. On the
+  mac, JankyBorders draws them beside AeroSpace ([aerospace.nix](../../../modules/aerospace.nix)).
 - **Rounding:** 6 px on windows where the window manager controls it, 4 px on small elements
   (bar items, buttons, notifications). The mac's own window corners stay as macOS draws them.
 - **Bar:** top, 32 px tall, solid `base00`, monospace bold at 13. Workspaces are plain numbers;
@@ -83,4 +84,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
 
 - **GTK and Qt:** themed by Stylix (adw-gtk3 dark for GTK, Qt following it), never a second
   theme engine; dark mode is on everywhere it can be asked for.
-- **Sound:** no event or notification sounds; alerts are visual.
+- **Sound:** no event or notification sounds; alerts are visual. On the mac that means no alert
+  beep, interface sounds or startup chime ([macos.nix](../../../modules/macos.nix)).
+- **System accent:** where the OS has one, it is blue (macOS `AppleAccentColor` 4), matching
+  `base0D`.
