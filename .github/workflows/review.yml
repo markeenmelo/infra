@@ -48,7 +48,7 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       # shortcut: pinned by immutable version tag, switch to @sha256 digest once resolved (SECURITY.md of pr-agent)
       - if: (github.event_name == 'pull_request_target' && github.event.action != 'synchronize') || matrix.command == 'review'
-        uses: docker://pragent/pr-agent:0.49.0-github_action
+        uses: docker://pragent/pr-agent:0.50.0-github_action
         env:
           PR_REVIEWER__EXTRA_INSTRUCTIONS: ${{ steps.guidelines.outputs.text }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
