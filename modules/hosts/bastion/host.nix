@@ -14,6 +14,7 @@
       backups
       builder
       proton-exit
+      monitoring
     ];
     system.stateVersion = "26.05";
   };
