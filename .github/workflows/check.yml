@@ -41,12 +41,15 @@ jobs:
             jq -r '.[] | ".#checks.x86_64-linux." + .' > "$RUNNER_TEMP/checks"
           xargs -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 || true
       - uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
+        id: tailnet
+        continue-on-error: true
         with:
           oauth-client-id: ${{ vars.TS_CI_CLIENT_ID }}
           audience: ${{ vars.TS_CI_AUDIENCE }}
           tags: tag:ci
           log-mode: quiet
       - name: Fetch what bastion's Harmonia cache holds
+        if: steps.tailnet.outcome == 'success'
         run: |
           settings=$(nix eval --json .#nixosConfigurations.racknerd.config.nix.settings \
             --apply 's: { inherit (s) substituters trusted-public-keys; }')
@@ -54,5 +57,6 @@ jobs:
             --option substituters "$(jq -r '.substituters | join(" ")' <<< "$settings")" \
             --option trusted-public-keys "$(jq -r '."trusted-public-keys" | join(" ")' <<< "$settings")" || true
       - name: Leave the tailnet before building
+        if: steps.tailnet.outcome == 'success'
         run: sudo tailscale logout
       - run: nix flake check --print-build-logs
