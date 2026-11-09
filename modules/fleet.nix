@@ -26,8 +26,9 @@ in
             description = "Nix system the host runs; sets `nixpkgs.hostPlatform`.";
           };
           tailnetAddress = lib.mkOption {
-            type = lib.types.str;
-            description = "The host's Tailscale IPv4 address, kept across reinstalls by its carried tailnet identity; `opentofu/tailscale/main.tf` repeats it.";
+            # Tailscale's CGNAT range, 100.64.0.0/10
+            type = lib.types.strMatching "100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.[0-9]{1,3}\\.[0-9]{1,3}";
+            description = "The host's Tailscale IPv4 address, kept across reinstalls by its carried tailnet identity; the `tofu` app hands it to `opentofu/tailscale` as `fleet_hosts`.";
           };
           module = lib.mkOption {
             type = lib.types.deferredModuleWith { staticModules = [ { _class = "nixos"; } ]; };

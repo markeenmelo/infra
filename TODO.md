@@ -5,9 +5,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## Fleet plumbing
 
-- [ ] Tailnet policy: move the literal addresses and hosts to fleet facts; drop the old fleet's
-      grants and proton exit nodes as each host migrates.
-      Revisit `group:members` reaching `bastion:443` now that the LAN proxy and Authelia landed.
+- [ ] Proton exit nodes on bastion (`proton-ca`, `proton-us`, `proton-br`): the old generation
+      advertised them on the tailnet and the new bastion does not yet; the policy keeps their
+      keys, tag and approver.
 - [ ] One NixOS VM test in `nix flake check` (boot, root rollback, `/persist` survives).
 - [ ] Build cache for CI and clients: bastion remote builder + Harmonia; decide what CI uses.
       GitHub-hosted arm64 Linux and Apple Silicon macOS runners can build the aarch64 closures

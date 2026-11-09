@@ -1,3 +1,7 @@
+{ config, lib, ... }:
+let
+  hosts = builtins.toJSON (lib.mapAttrs (_: host: host.tailnetAddress) config.fleet.hosts);
+in
 {
   perSystem =
     { lib, pkgs, ... }:
@@ -17,6 +21,7 @@
             cd "$(git rev-parse --show-toplevel)"
             state="''${XDG_STATE_HOME:-$HOME/.local/state}/infra/$project"
             mkdir -p "$state"
+            export TF_VAR_fleet_hosts=${lib.escapeShellArg hosts}
             export TF_CLI_ARGS_init="-input=false -lockfile=readonly -backend-config=path=$state/terraform.tfstate"
             command=$(printf '%q ' tofu -chdir="opentofu/$project" "$@")
             if [ -e "secrets/$project/api.yaml" ]; then
