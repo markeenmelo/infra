@@ -28,6 +28,20 @@ in
     in
     {
       imports = [ nixflix ];
+      assertions = [
+        {
+          assertion = lib.all (
+            user:
+            cfg.users.${user}.policy.isAdministrator
+            || !lib.elem "user:${user}" (
+              lib.concatMap (
+                rule: lib.toList rule.subject
+              ) config.services.authelia.instances.main.settings.identity_providers.oidc.authorization_policies.people.rules
+            )
+          ) (lib.attrNames cfg.users);
+          message = "A non-admin Jellyfin user must not share an Authelia username: an SSO login adopts the account and replaces its password and admin status.";
+        }
+      ];
       sops.secrets =
         lib.mapAttrs'
           (name: units: {

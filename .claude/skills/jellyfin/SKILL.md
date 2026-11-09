@@ -34,14 +34,13 @@ and the tailnet. Each refused attempt carries `Edge-Denied`, so repeated passwor
 outside earn a CrowdSec ban on every hostname, by design: away from home, use Quick Connect. TV and mobile apps cannot run the browser flow: they sign in with Quick Connect,
 approved from a signed-in session.
 
-A child account's name must not be an Authelia username: an SSO login adopts a native account of
-the same name, makes it admin by group and replaces its password. The plugin otherwise never
-touches native accounts nor anyone's parental limits. Its Quick Connect code is approved from a
-session signed in as the child.
 A child account is a native user declared in `nixflix.jellyfin.users` with `mutable = false` and
 parental limits (`maxParentalRating`, `blockUnratedItems`, `accessSchedules`), signed in on the TV
-by Quick Connect. Libraries are not split by rating: limits come from TMDb's ratings, so a library's
-`metadataCountryCode` decides which rating system applies.
+by Quick Connect approved from a session signed in as the child. Libraries are not split by
+rating: limits come from TMDb's ratings, so a library's `metadataCountryCode` decides which rating
+system applies. An SSO login adopts a native account of the same name, so jellyfin.nix asserts no
+non-admin native user shares an Authelia username; the plugin otherwise never touches native
+accounts nor anyone's parental limits.
 
 ## Media and transcoding
 
