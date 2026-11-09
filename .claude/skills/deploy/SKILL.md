@@ -19,11 +19,13 @@ deploy-rs schema and activation checks per system.
 
 A host that runs the builder ([builder.nix](../../../modules/builder.nix)), or has another
 system than bastion, builds itself; every other host is built on the deploying machine, which
-hands the build to bastion when it imports `remote-builds` (only the mac so far), and pulls what
-bastion already has from its Harmonia cache. The deploying machine receives the whole closure
-back from bastion before deploy-rs pushes it. Bastion trusts the
-admin clients' build keys, not the hosts it builds for: racknerd only reads the cache, signed, so
-a compromised edge cannot write into bastion's store.
+hands the build to bastion when it imports `remote-builds` (only the mac so far). The deploying
+machine receives the whole closure back from bastion; deploy-rs then pushes it with
+`--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
+Bastion trusts the admin clients' build keys, not the hosts it builds for: racknerd only reads
+the cache, signed, so a compromised edge cannot write into bastion's store. A build key is a
+trusted user on bastion and whatever it uploads is signed and served to racknerd; it sits on the
+admin client beside the operator's key, which is already root on every host, so it widens nothing.
 
 ```sh
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision
