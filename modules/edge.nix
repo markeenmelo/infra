@@ -109,6 +109,7 @@ in
           '';
         };
       };
+      fleet.probes = lib.mapAttrs (name: _: "https://${name}.${domain}") served;
       systemd.services.caddy.serviceConfig.LogsDirectoryMode = "0750";
       networking.firewall = {
         allowedTCPPorts = [

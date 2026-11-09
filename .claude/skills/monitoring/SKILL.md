@@ -27,6 +27,17 @@ dashboards are provisioned read-only: change them in Nix, not in the UI. Dashboa
 community ones by grafana.com revision and hash, with their datasource input replaced by the
 provisioned uid; a bump is a new revision and hash.
 
+## Other hosts
+
+A host that imports `telemetry` runs Alloy, which scrapes its node metrics and every
+`fleet.scrapeTargets` endpoint (CrowdSec on racknerd), probes every `fleet.probes` URL (the
+edge's public hostnames), and ships the journal. It pushes to the port pair in its
+`fleet.hosts.HOST.telemetry`; bastion's Alloy listens on that pair, stamps `host=HOST` and forwards
+into the local Prometheus and Loki, and its firewall admits the pair only from that host's tailnet
+address, with a tailnet grant for the same ports ([opentofu skill](../opentofu/SKILL.md)). Nothing
+is authenticated, an accepted risk: a compromised host can push false data under its own name but
+read nothing. Each sender gets a `Host silent HOST` alert when its metrics stop.
+
 ## Alerts
 
 Grafana evaluates the rules in the `Fleet` folder every minute; each is one `rule` entry in the
