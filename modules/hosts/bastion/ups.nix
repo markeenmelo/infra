@@ -26,6 +26,13 @@
           MINUTES 5
         '';
       };
+      services.prometheus.exporters.apcupsd = {
+        enable = true;
+        listenAddress = "127.0.0.1";
+        port = 19162;
+        apcupsdAddress = "127.0.0.1:3551";
+      };
+      fleet.scrapeTargets.apcupsd = config.services.prometheus.exporters.apcupsd.port;
       systemd.services = {
         apcupsd.serviceConfig.Restart = "on-failure";
         apcupsd-killpower.after = [ "umount.target" ];

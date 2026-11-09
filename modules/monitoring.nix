@@ -36,6 +36,7 @@ let
     loki = 3100;
     lokiGrpc = 9096;
     node = 19100;
+    smartctl = 19633;
   };
 in
 {
@@ -65,6 +66,11 @@ in
           type = lib.types.attrsOf lib.types.port;
           default = { };
           description = "Metrics endpoints this host serves on loopback, by job; bastion's Prometheus scrapes its own, and a host importing `telemetry` scrapes them with Alloy and pushes them to bastion.";
+        };
+        metricsDir = lib.mkOption {
+          type = lib.types.str;
+          default = "/var/lib/node-exporter-textfile";
+          description = "Directory whose *.prom files the node exporter publishes, for jobs that record their own results, such as a backup's last success.";
         };
         probes = lib.mkOption {
           type = lib.types.attrsOf lib.types.str;
@@ -278,11 +284,20 @@ in
             "--web.enable-remote-write-receiver"
           ];
           globalConfig.scrape_interval = "60s";
+          exporters.smartctl = {
+            enable = true;
+            listenAddress = "127.0.0.1";
+            port = ports.smartctl;
+          };
           exporters.node = {
             enable = true;
             listenAddress = "127.0.0.1";
             port = ports.node;
-            enabledCollectors = [ "systemd" ];
+            enabledCollectors = [
+              "systemd"
+              "textfile"
+            ];
+            extraFlags = [ "--collector.textfile.directory=${config.fleet.metricsDir}" ];
           };
           scrapeConfigs = lib.mapAttrsToList (job: port: {
             job_name = job;
@@ -533,6 +548,51 @@ in
                         summary = "{{ $labels.probe }} has failed its HTTPS probe through the edge for 5 minutes";
                       }
                       {
+                        title = "SMART unhealthy";
+                        expr = "(1 - smartctl_device_smart_status) and on (device, instance) smartctl_device_power_on_seconds";
+                        for = "0s";
+                        severity = "critical";
+                        summary = "{{ $labels.device }} on {{ $labels.instance }} fails its SMART self-assessment";
+                      }
+                      {
+                        title = "NVMe hot";
+                        expr = "smartctl_device_temperature{temperature_type=\"current\",device=~\"nvme.*\"}";
+                        threshold = 70;
+                        summary = "{{ $labels.device }} on {{ $labels.instance }} has been over 70°C for 15 minutes";
+                      }
+                      {
+                        title = "Disk hot";
+                        expr = "smartctl_device_temperature{temperature_type=\"current\",device!~\"nvme.*\"}";
+                        threshold = 55;
+                        summary = "{{ $labels.device }} on {{ $labels.instance }} has been over 55°C for 15 minutes";
+                      }
+                      {
+                        title = "ZFS pool not online";
+                        expr = "sum by (zpool, instance) (node_zfs_zpool_state{state!=\"online\"})";
+                        for = "5m";
+                        severity = "critical";
+                        summary = "ZFS pool {{ $labels.zpool }} on {{ $labels.instance }} is not online";
+                      }
+                      {
+                        title = "UPS on battery";
+                        expr = "apcupsd_battery_time_on_seconds";
+                        for = "1m";
+                        severity = "critical";
+                        summary = "{{ $labels.instance }} has been on UPS battery for over a minute";
+                      }
+                      {
+                        title = "Backup stale";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup!=\"drill-usb\"}";
+                        threshold = 30 * 3600;
+                        summary = "The {{ $labels.backup }} backup on {{ $labels.instance }} has not succeeded for over 30 hours";
+                      }
+                      {
+                        title = "Restore drill stale";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup=\"drill-usb\"}";
+                        threshold = 40 * 86400;
+                        summary = "The monthly restore drill on {{ $labels.instance }} has not succeeded for over 40 days";
+                      }
+                      {
                         title = "Unit failed";
                         expr = "node_systemd_unit_state{state=\"failed\"}";
                         for = "5m";
@@ -594,7 +654,13 @@ in
           chain output {
             type filter hook output priority -150; policy accept;
             oifname "lo" tcp dport { ${
-              lib.concatMapStringsSep ", " toString (lib.attrValues (removeAttrs ports [ "grafana" ]))
+              lib.concatMapStringsSep ", " toString (
+                lib.attrValues config.fleet.scrapeTargets
+                ++ [
+                  ports.loki
+                  ports.lokiGrpc
+                ]
+              )
             } } meta skuid != { 0, ${
               lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) [
                 "grafana"
@@ -659,7 +725,7 @@ in
 
       fleet = {
         scrapeTargets = {
-          inherit (ports) node prometheus;
+          inherit (ports) node prometheus smartctl;
         };
         web.apps.grafana = {
           port = ports.grafana;
@@ -677,7 +743,14 @@ in
         };
       };
 
-      preservation.preserveAt."/persist".directories =
+      systemd.tmpfiles.rules = [ "d ${config.fleet.metricsDir} 0755 root root -" ];
+      preservation.preserveAt."/persist".directories = [
+        {
+          directory = config.fleet.metricsDir;
+          mode = "0755";
+        }
+      ]
+      ++
         lib.mapAttrsToList
           (directory: user: {
             inherit directory user;

@@ -18,9 +18,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Destroy the unmounted `tank/nextcloud` dataset once nothing is missed from it. It left the
       backup roots, so restic's copies age out under the prune policy in `modules/backups.nix`
       and the dataset then holds the only copy.
-- [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts, with ntfy as their
-      first publisher (topics `alerts`, later `media`), and the desktop subscribers; backup
-      metrics and alerts.
+- [ ] Exporters and alerts for PostgreSQL and the apps (Authelia, Immich, Frigate, Jellyfin, the
+      arr apps, Caddy requests) once the core set misses something; Sonarr and Radarr publishing to
+      ntfy's `media` topic.
 - [ ] UniFi OpenTofu project: the LAN wildcard record made by hand; keep bastion to the camera on
       554 and 2020, and no internet for the
       Cameras VLAN; drop the Home Assistant to IoT media rule.
@@ -30,7 +30,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] `thinkpad`: host, desktop profile, Stylix, Home Manager, power, backups; persist and back up
       `~/.local/state/infra` (OpenTofu state); a NixOS `remote-builds` with its own builder key, so
       its deploys build on bastion like the mac's; a desktop switcher for the Proton exit nodes,
-      on the mac too. The old generation gave every restic repository one password, which the old
+      on the mac too; an ntfy subscriber for `alerts` on both. The old generation gave every restic repository one password, which the old
       ThinkPad holds and the USB and pCloud repositories still accept: the reinstall must erase it
       (encrypted disk or secure erase), and `restic key add` a fresh `backups/thinkpad-password`
       to the laptop's repository on bastion, removing the old key there, so the new install never

@@ -40,6 +40,14 @@ in
       inSnapshot =
         name: root: path:
         "${root}/.zfs/snapshot/${snapOf name}${lib.removePrefix root path}";
+      success =
+        name:
+        pkgs.writeShellScript "restic-${name}-success" ''
+          printf 'restic_last_success_timestamp_seconds{backup="${name}"} %s\n' "$(${lib.getExe' pkgs.coreutils "date"} +%s)" \
+            > ${config.fleet.metricsDir}/restic-${name}.prom.tmp
+          ${lib.getExe' pkgs.coreutils "mv"} ${config.fleet.metricsDir}/restic-${name}.prom.tmp ${config.fleet.metricsDir}/restic-${name}.prom
+        '';
+      recorded = lib.attrNames jobs ++ [ "drill-usb" ];
       dumps = config.services.postgresqlBackup;
       dumpDir = dumps.location;
       databases = lib.filter (db: !lib.hasSuffix "-logs" db) config.services.postgresql.ensureDatabases;
@@ -152,7 +160,10 @@ in
                 pkgs.btrfs-progs
               ];
               unitConfig.RequiresMountsFor = roots ++ job.mounts;
-              serviceConfig.PrivateNetwork = job.rcloneConfigFile == null;
+              serviceConfig = {
+                PrivateNetwork = job.rcloneConfigFile == null;
+                ExecStartPost = success name;
+              };
             }
           ) jobs)
           {
@@ -176,6 +187,7 @@ in
               serviceConfig = {
                 Type = "oneshot";
                 PrivateNetwork = true;
+                ExecStartPost = success "drill-usb";
                 CacheDirectory = "restic-drill-usb";
                 Environment = "RESTIC_CACHE_DIR=%C/restic-drill-usb";
                 TimeoutStartSec = "12h";
@@ -191,6 +203,31 @@ in
                     dump=$dump.prev
                   fi
                   ${restic} dump latest "$dump.sql.gz" | gzip -t
+                done
+              '';
+            };
+            restic-success-seed = {
+              description = "Start each restic job's success clock and drop those of removed jobs";
+              wantedBy = [ "multi-user.target" ];
+              after = [ "systemd-tmpfiles-setup.service" ];
+              restartTriggers = [ (lib.concatStringsSep " " recorded) ];
+              enableStrictShellChecks = true;
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+              script = ''
+                cd ${config.fleet.metricsDir}
+                for file in restic-*.prom; do
+                  [ -e "$file" ] || continue
+                  case "$file" in
+                    ${lib.concatMapStringsSep "|" (name: "restic-${name}.prom") recorded}) ;;
+                    *) rm -- "$file" ;;
+                  esac
+                done
+                for name in ${lib.escapeShellArgs recorded}; do
+                  [ -e "restic-$name.prom" ] ||
+                    printf 'restic_last_success_timestamp_seconds{backup="%s"} %s\n' "$name" "$(date +%s)" > "restic-$name.prom"
                 done
               '';
             };
