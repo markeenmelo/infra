@@ -9,9 +9,11 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       advertised them on the tailnet and the new bastion does not yet; the policy keeps their
       keys, tag and approver.
 - [ ] One NixOS VM test in `nix flake check` (boot, root rollback, `/persist` survives).
-- [ ] Decide what CI uses of bastion's builder and cache, and whether the laptops substitute
-      from it. GitHub-hosted arm64 Linux and Apple Silicon macOS runners can build the aarch64
-      closures for it; check the macOS runner's memory against the closures first.
+- [ ] Once CI outgrows GitHub's 10 GB Actions cache: let CI substitute from bastion's cache through
+      the Tailscale GitHub Action as an ephemeral tagged node allowed only port 5005, with the
+      credential reachable only from this repository's branches (never fork PRs). Decide whether
+      the laptops substitute from it. GitHub-hosted arm64 Linux and Apple Silicon macOS runners
+      can build the aarch64 closures; check the macOS runner's memory against the closures first.
 - [ ] Decide the shared password hash on racknerd (per-host `login.yaml` or no password on the edge).
 
 ## bastion
