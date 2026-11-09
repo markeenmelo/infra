@@ -30,6 +30,24 @@ in
             type = lib.types.strMatching "100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.[0-9]{1,3}\\.[0-9]{1,3}";
             description = "The host's Tailscale IPv4 address, kept across reinstalls by its carried tailnet identity; the `tofu` app hands it to `opentofu/tailscale` as `fleet_hosts`.";
           };
+          telemetry = lib.mkOption {
+            type = lib.types.nullOr (
+              lib.types.submodule {
+                options = {
+                  metrics = lib.mkOption {
+                    type = lib.types.port;
+                    description = "Port on bastion's tailnet address that takes this host's remote-written metrics.";
+                  };
+                  logs = lib.mkOption {
+                    type = lib.types.port;
+                    description = "Port on bastion's tailnet address that takes this host's pushed logs.";
+                  };
+                };
+              }
+            );
+            default = null;
+            description = "Ports a host that imports `telemetry` pushes to; bastion's Alloy listens on each pair, stamps the host label and admits only that host's tailnet address.";
+          };
           module = lib.mkOption {
             type = lib.types.deferredModuleWith { staticModules = [ { _class = "nixos"; } ]; };
             default = { };

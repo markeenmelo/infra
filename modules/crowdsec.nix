@@ -20,6 +20,12 @@
         settings = {
           config = {
             db_config.use_wal = true;
+            prometheus = {
+              enabled = true;
+              level = "full";
+              listen_addr = "127.0.0.1";
+              listen_port = 6060;
+            };
             api.server.online_client.credentials_path = "/var/lib/crowdsec/online_api_credentials.yaml";
             cscli = {
               hub_branch = "a7d441606d89f736911841c0b48151f334a2e0ce";
@@ -70,6 +76,7 @@
         };
       };
       services.crowdsec-firewall-bouncer.enable = true;
+      fleet.scrapeTargets.crowdsec = cfg.settings.config.prometheus.listen_port;
       systemd.services = {
         crowdsec = {
           after = [ "caddy.service" ];
