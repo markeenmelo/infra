@@ -8,7 +8,7 @@ let
     prometheus = 9090;
     loki = 3100;
     lokiGrpc = 9096;
-    node = 9100;
+    node = 19100;
   };
 in
 {
