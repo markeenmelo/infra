@@ -1,5 +1,6 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
 let
+  inherit (config.fleet) domain;
   secretDirs = [
     "/run/secrets"
     "/run/secrets.d"
@@ -24,9 +25,15 @@ in
     darwin.base =
       { config, pkgs, ... }:
       {
-        sops.secrets.github-mcp-token = {
-          sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-          owner = config.system.primaryUser;
+        sops.secrets = {
+          github-mcp-token = {
+            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+            owner = config.system.primaryUser;
+          };
+          grafana-mcp-token = {
+            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+            owner = config.system.primaryUser;
+          };
         };
         nixpkgs.config.allowUnfreePackages = [
           "claude-code"
@@ -73,6 +80,14 @@ in
                 "--toolsets=repos,pull_requests,actions"
               ];
               env.GITHUB_PERSONAL_ACCESS_TOKEN.file = osConfig.sops.secrets.github-mcp-token.path;
+            };
+            grafana = {
+              command = lib.getExe pkgs.mcp-grafana;
+              args = [ "--disable-write" ];
+              env = {
+                GRAFANA_URL = "https://grafana.${domain}";
+                GRAFANA_SERVICE_ACCOUNT_TOKEN.file = osConfig.sops.secrets.grafana-mcp-token.path;
+              };
             };
           };
         };
