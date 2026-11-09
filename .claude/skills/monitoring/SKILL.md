@@ -19,7 +19,10 @@ the last 12 h may be shipped twice after one.
 Grafana sits behind the LAN proxy at `grafana.`, tailnet only ([proxy skill](../proxy/SKILL.md)).
 People sign in through Authelia; membership of `grafana-admins` makes them Grafana admins and
 everyone else is refused ([identity skill](../identity/SKILL.md)). The local `admin` with
-`grafana/admin-password` is the break-glass login. Datasources (`prometheus`, `loki`) and
+`grafana/admin-password` is the break-glass login. Grafana reads that secret only when it creates
+its database, so rotating it also means setting the new value on the `admin` user under
+Administration → Users while signed in through Authelia; changing the secret alone restarts
+Grafana and changes nothing. Datasources (`prometheus`, `loki`) and
 dashboards are provisioned read-only: change them in Nix, not in the UI. Dashboards are pinned
 community ones by grafana.com revision and hash, with their datasource input replaced by the
 provisioned uid; a bump is a new revision and hash.
