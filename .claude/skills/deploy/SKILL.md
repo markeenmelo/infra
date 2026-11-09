@@ -30,7 +30,8 @@ CI reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins 
 ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds and leaves
 before it builds, so tailnet minutes stay short and nothing built from PR code reaches bastion.
 The tailnet policy decides who reaches 5005; bastion's firewall admits it from any tailnet peer.
-What bastion built for another host stays until `nh clean` collects it.
+What bastion built for another host stays until its store runs low on space: bastion collects
+garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).
 
 ```sh
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision

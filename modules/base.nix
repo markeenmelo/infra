@@ -1,5 +1,7 @@
 let
-  common = {
+  common =
+    { lib, ... }:
+    {
     nix.settings = {
       experimental-features = [
         "nix-command"
@@ -12,7 +14,7 @@ let
       enable = true;
       clean = {
         enable = true;
-        extraArgs = "--keep 10 --keep-since 14d";
+        extraArgs = lib.mkDefault "--keep 10 --keep-since 14d";
       };
     };
   };

@@ -5,8 +5,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## Fleet plumbing
 
-- [ ] Keep each host's last deployed closure on bastion as a GC root, so `nh clean` leaves it in
-      the Harmonia cache CI fetches from; drop the GitHub Actions cache once CI runs without it.
+- [ ] Drop CI's GitHub Actions cache once runs fetching from bastion's Harmonia cache do as well
+      without it.
 - [ ] Decide whether the laptops substitute from bastion's Harmonia cache.
 - [ ] Build the aarch64 closures (`asahi`, `mac`) in CI on GitHub's arm64 Linux and Apple Silicon
       macOS runners; check the macOS runner's memory against the closures first.
@@ -21,10 +21,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Monitoring: Prometheus, Loki, Alloy, Grafana dashboards and alerts, with ntfy as their
       first publisher (topics `alerts`, later `media`), and the desktop subscribers; backup
       metrics and alerts.
-- [ ] Separate the household backup key from the laptop's: the old generation gave every repository
-      one password, which the ThinkPad holds. `restic key add` a new
-      `backups/restic-password` to the USB and pCloud repositories and remove the
-      old key; `backups/thinkpad-password` keeps the old value.
 - [ ] UniFi OpenTofu project: the LAN wildcard record made by hand; keep bastion to the camera on
       554 and 2020, and no internet for the
       Cameras VLAN; drop the Home Assistant to IoT media rule.
@@ -34,7 +30,10 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] `thinkpad`: host, desktop profile, Stylix, Home Manager, power, backups; persist and back up
       `~/.local/state/infra` (OpenTofu state); a NixOS `remote-builds` with its own builder key, so
       its deploys build on bastion like the mac's; a desktop switcher for the Proton exit nodes,
-      on the mac too.
+      on the mac too. The old generation gave every restic repository one password, which the old
+      ThinkPad holds: on the reinstall, `restic key add` a fresh `backups/thinkpad-password` to its
+      repository on bastion and remove the old key there, so the laptop no longer opens the
+      household backups.
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
