@@ -39,6 +39,24 @@ let
   };
 in
 {
+  flake.checks = lib.foldlAttrs (
+    acc: host: fleetHost:
+    let
+      nixos = config.flake.nixosConfigurations.${host};
+    in
+    if lib.hasSuffix "-darwin" fleetHost.system || !(nixos.config.services.alloy.enable or false) then
+      acc
+    else
+      lib.recursiveUpdate acc {
+        ${fleetHost.system}."alloy-${host}" = nixos.pkgs.runCommand "alloy-${host}" { } ''
+          ${lib.getExe nixos.config.services.alloy.package} fmt ${
+            nixos.config.environment.etc."alloy/config.alloy".source
+          } > /dev/null
+          touch $out
+        '';
+      }
+  ) { } hosts;
+
   flake.modules.nixos.base =
     { lib, ... }:
     {

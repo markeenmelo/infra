@@ -38,7 +38,9 @@ ships the journal. It pushes to the port pair in its
 into the local Prometheus and Loki, and its firewall admits the pair only from that host's tailnet
 address, with a tailnet grant for the same ports ([opentofu skill](../opentofu/SKILL.md)). Nothing
 is authenticated, an accepted risk: a compromised host can push false data under its own name but
-read nothing. Each sender gets a `Host silent HOST` alert when its metrics stop.
+read nothing. Each sender gets a `Host silent HOST` alert when its metrics stop. The `alloy-HOST`
+check runs `alloy fmt` on every host's Alloy configuration, which catches syntax errors (a missing
+trailing comma in a multi-line list) but not unknown arguments or wrong component wiring.
 
 ## Alerts
 
