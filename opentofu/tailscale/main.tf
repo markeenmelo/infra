@@ -30,18 +30,20 @@ variable "state_passphrase" {
   sensitive   = true
 }
 
-# shortcut: addresses and hosts are literals repeating fleet.hosts.*.tailnetAddress, feed them from fleet facts as hosts migrate
+variable "fleet_hosts" {
+  description = "Tailnet address per fleet host, from fleet.hosts.*.tailnetAddress; the tofu app sets it."
+  type        = map(string)
+}
+
 locals {
   domain  = "marcosmelo.dev"
-  bastion = "100.105.158.109"
-  hosts = {
-    bastion  = local.bastion
-    racknerd = "100.96.133.3"
+  bastion = var.fleet_hosts.bastion
+  # shortcut: thinkpad and asahi are literals until their hosts land in fleet.hosts; grafite is an admin device outside the fleet
+  hosts = merge({
     thinkpad = "100.119.79.113"
     asahi    = "100.122.51.97"
-    mac      = "100.74.75.110"
     grafite  = "100.91.224.11"
-  }
+  }, var.fleet_hosts)
   admin_clients = ["thinkpad", "asahi", "mac", "grafite"]
   lans          = ["192.168.2.0/24", "192.168.4.0/24", "192.168.20.0/24"]
   enrollment = {

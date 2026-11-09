@@ -34,7 +34,9 @@ passphrase with a `fallback` key provider carrying the old one, apply, remove it
 of a local (grants only; `tests` guard the SSH boundary and run on every apply), tailnet
 settings, DNS (global resolver plus split DNS for the domain to bastion), tags on devices enrolled
 without a key, and one auth key per host. Bastion's apps are reached through that split DNS and
-its LAN proxy, so the tailnet defines no Tailscale services. The admin console is
+its LAN proxy, so the tailnet defines no Tailscale services; that is why `group:members` reach
+bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, which the `tofu`
+app passes as `TF_VAR_fleet_hosts`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
 
 - Auth keys recreate on apply once invalid; the [tailnet skill](../tailnet/SKILL.md) moves one
