@@ -6,6 +6,7 @@
       server
       edge
       crowdsec
+      cache
     ];
     system.stateVersion = "26.05";
   };

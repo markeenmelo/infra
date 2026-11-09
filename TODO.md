@@ -9,9 +9,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       advertised them on the tailnet and the new bastion does not yet; the policy keeps their
       keys, tag and approver.
 - [ ] One NixOS VM test in `nix flake check` (boot, root rollback, `/persist` survives).
-- [ ] Build cache for CI and clients: bastion remote builder + Harmonia; decide what CI uses.
-      GitHub-hosted arm64 Linux and Apple Silicon macOS runners can build the aarch64 closures
-      for it; check the macOS runner's memory against the closures first.
+- [ ] Decide what CI uses of bastion's builder and cache, and whether the laptops substitute
+      from it. GitHub-hosted arm64 Linux and Apple Silicon macOS runners can build the aarch64
+      closures for it; check the macOS runner's memory against the closures first.
 - [ ] Decide the shared password hash on racknerd (per-host `login.yaml` or no password on the edge).
 
 ## bastion
@@ -30,7 +30,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       one password, which the ThinkPad holds. `restic key add` a new
       `backups/restic-password` to the USB and pCloud repositories and remove the
       old key; `backups/thinkpad-password` keeps the old value.
-- [ ] Remote builder + Harmonia cache for the fleet.
 - [ ] UniFi OpenTofu project: the LAN wildcard record made by hand; keep bastion to the camera on
       554 and 2020, and no internet for the
       Cameras VLAN; drop the Home Assistant to IoT media rule.
