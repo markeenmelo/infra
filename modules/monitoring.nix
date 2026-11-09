@@ -1,6 +1,7 @@
 { config, ... }:
 let
   inherit (config.fleet) domain;
+  inherit (config.flake.modules.nixos) ntfy;
   hostname = "grafana.${domain}";
   admins = "grafana-admins";
   ports = {
@@ -22,6 +23,69 @@ in
     let
       credentials = "/run/credentials/grafana.service";
       host = config.networking.hostName;
+      smtp = config.services.authelia.instances.main.settings.notifier.smtp;
+      adminEmails = lib.mapAttrsToList (_: person: person.email) (
+        lib.filterAttrs (_: person: lib.elem admins person.groups)
+          (builtins.fromJSON config.sops.templates.authelia-users.content).users
+      );
+      grafanaSecrets = {
+        grafana-oidc-client-secret = "oidc-client-secret";
+        grafana-secret-key = "secret-key";
+        grafana-admin-password = "admin-password";
+        grafana-heartbeat-url = "heartbeat-url";
+        ntfy-publisher-token = "ntfy-token";
+        authelia-smtp-password = "smtp-password";
+      };
+      rule =
+        {
+          title,
+          expr,
+          summary,
+          threshold ? 0,
+          severity ? "warning",
+          for ? "15m",
+        }:
+        {
+          uid = lib.toLower (lib.replaceStrings [ " " ] [ "-" ] title);
+          inherit title for;
+          condition = "C";
+          data = [
+            {
+              refId = "A";
+              relativeTimeRange = {
+                from = 600;
+                to = 0;
+              };
+              datasourceUid = "prometheus";
+              model = {
+                inherit expr;
+                instant = true;
+                refId = "A";
+              };
+            }
+            {
+              refId = "C";
+              datasourceUid = "__expr__";
+              model = {
+                type = "threshold";
+                expression = "A";
+                conditions = [
+                  {
+                    evaluator = {
+                      type = "gt";
+                      params = [ threshold ];
+                    };
+                  }
+                ];
+                refId = "C";
+              };
+            }
+          ];
+          noDataState = "OK";
+          execErrState = "Error";
+          labels.severity = severity;
+          annotations.summary = summary;
+        };
       # Node Exporter Full, grafana.com dashboard 1860
       nodeDashboard = pkgs.runCommand "node-exporter-full.json" { } ''
         sed 's/''${DS_PROMETHEUS}/prometheus/g' ${
@@ -33,20 +97,20 @@ in
       '';
     in
     {
-      sops.secrets =
-        lib.genAttrs [ "grafana-oidc-client-secret" "grafana-secret-key" "grafana-admin-password" ]
-          (name: {
+      imports = [ ntfy ];
+      sops.secrets = lib.mapAttrs (
+        name: _:
+        lib.mkMerge [
+          { restartUnits = [ "grafana.service" ]; }
+          (lib.mkIf (lib.hasPrefix "grafana-" name) {
             sopsFile = ../secrets/hosts/${host}.yaml;
             key = "grafana/${lib.removePrefix "grafana-" name}";
-            restartUnits = [ "grafana.service" ];
-          });
-      systemd.services.grafana.serviceConfig.LoadCredential =
-        map (name: "${lib.removePrefix "grafana-" name}:${config.sops.secrets.${name}.path}")
-          [
-            "grafana-oidc-client-secret"
-            "grafana-secret-key"
-            "grafana-admin-password"
-          ];
+          })
+        ]
+      ) grafanaSecrets;
+      systemd.services.grafana.serviceConfig.LoadCredential = lib.mapAttrsToList (
+        name: credential: "${credential}:${config.sops.secrets.${name}.path}"
+      ) grafanaSecrets;
 
       services = {
         prometheus = {
@@ -144,6 +208,14 @@ in
               reporting_enabled = false;
               check_for_updates = false;
             };
+            smtp = {
+              enabled = true;
+              host = lib.removePrefix "submissions://" smtp.address;
+              user = smtp.username;
+              password = "$__file{${credentials}/smtp-password}";
+              from_address = smtp.username;
+              from_name = "Grafana";
+            };
             "auth.generic_oauth" = {
               enabled = true;
               name = "Authelia";
@@ -189,6 +261,137 @@ in
                 options.path = pkgs.linkFarm "dashboards" { "node-exporter-full.json" = nodeDashboard; };
               }
             ];
+            alerting = {
+              contactPoints.settings.contactPoints =
+                map
+                  (receiver: {
+                    orgId = 1;
+                    name = receiver.uid;
+                    receivers = [ receiver ];
+                  })
+                  [
+                    {
+                      uid = "ntfy";
+                      type = "webhook";
+                      settings = {
+                        url = "http://${config.services.ntfy-sh.settings.listen-http}/alerts?template=grafana";
+                        authorization_scheme = "Bearer";
+                        authorization_credentials = "$__file{${credentials}/ntfy-token}";
+                      };
+                    }
+                    {
+                      uid = "ntfy-critical";
+                      type = "webhook";
+                      settings = {
+                        url = "http://${config.services.ntfy-sh.settings.listen-http}/alerts?template=grafana&priority=high";
+                        authorization_scheme = "Bearer";
+                        authorization_credentials = "$__file{${credentials}/ntfy-token}";
+                      };
+                    }
+                    {
+                      uid = "email";
+                      type = "email";
+                      settings.addresses = lib.concatStringsSep ";" adminEmails;
+                    }
+                    {
+                      uid = "heartbeat";
+                      type = "webhook";
+                      settings.url = "$__file{${credentials}/heartbeat-url}";
+                    }
+                  ];
+              policies.settings.policies = [
+                {
+                  orgId = 1;
+                  receiver = "ntfy";
+                  group_by = [ "alertname" ];
+                  repeat_interval = "12h";
+                  routes = [
+                    {
+                      receiver = "heartbeat";
+                      object_matchers = [
+                        [
+                          "alertname"
+                          "="
+                          "Heartbeat"
+                        ]
+                      ];
+                      group_wait = "0s";
+                      group_interval = "5m";
+                      repeat_interval = "5m";
+                    }
+                    {
+                      receiver = "ntfy-critical";
+                      object_matchers = [
+                        [
+                          "severity"
+                          "="
+                          "critical"
+                        ]
+                      ];
+                      continue = true;
+                    }
+                    {
+                      receiver = "email";
+                      object_matchers = [
+                        [
+                          "severity"
+                          "="
+                          "critical"
+                        ]
+                      ];
+                    }
+                  ];
+                }
+              ];
+              rules.settings.groups = [
+                {
+                  orgId = 1;
+                  name = "fleet";
+                  folder = "Fleet";
+                  interval = "1m";
+                  rules = map rule [
+                    {
+                      title = "Heartbeat";
+                      expr = "vector(1)";
+                      for = "0s";
+                      severity = "info";
+                      summary = "Always firing; healthchecks.io alerts when these stop arriving";
+                    }
+                    {
+                      title = "Scrape target down";
+                      expr = "1 - up";
+                      for = "10m";
+                      summary = "{{ $labels.job }} on {{ $labels.instance }} has not answered Prometheus for 10 minutes";
+                    }
+                    {
+                      title = "Unit failed";
+                      expr = "node_systemd_unit_state{state=\"failed\"}";
+                      for = "5m";
+                      summary = "{{ $labels.name }} failed on {{ $labels.instance }}";
+                    }
+                    {
+                      title = "Filesystem almost full";
+                      expr = "1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|nsfs\"} / node_filesystem_size_bytes";
+                      threshold = 0.85;
+                      summary = "{{ $labels.mountpoint }} on {{ $labels.instance }} is over 85% full";
+                    }
+                    {
+                      title = "Memory low";
+                      expr = "1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes";
+                      threshold = 0.9;
+                      summary = "{{ $labels.instance }} has had under 10% memory available for 15 minutes";
+                    }
+                    {
+                      title = "Out of memory kill";
+                      expr = "increase(node_vmstat_oom_kill[15m])";
+                      for = "0s";
+                      severity = "critical";
+                      summary = "The kernel killed a process for memory on {{ $labels.instance }}";
+                    }
+                  ];
+                }
+              ];
+            };
           };
         };
       };
