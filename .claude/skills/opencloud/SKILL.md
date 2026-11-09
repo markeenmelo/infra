@@ -1,6 +1,6 @@
 ---
 name: opencloud
-description: "OpenCloud on bastion: file sync at cloud.DOMAIN, its Authelia sign-in and roles, the desktop and mobile clients, the dataset and the generated config that holds its secrets, the move from Nextcloud. Use before touching modules/opencloud.nix, adding a person to OpenCloud, or debugging sync, sign-in or roles."
+description: "OpenCloud on bastion: file sync at cloud.DOMAIN, its Authelia sign-in and roles, the desktop and mobile clients, the dataset and the generated config that holds its secrets. Use before touching modules/opencloud.nix, adding a person to OpenCloud, or debugging sync, sign-in or roles."
 ---
 
 # OpenCloud
