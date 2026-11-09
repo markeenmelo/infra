@@ -583,8 +583,8 @@ in
                       {
                         title = "Backup stale";
                         expr = "time() - restic_last_success_timestamp_seconds{backup!=\"drill-usb\"}";
-                        threshold = 26 * 3600;
-                        summary = "The {{ $labels.backup }} backup on {{ $labels.instance }} has not succeeded for over 26 hours";
+                        threshold = 30 * 3600;
+                        summary = "The {{ $labels.backup }} backup on {{ $labels.instance }} has not succeeded for over 30 hours";
                       }
                       {
                         title = "Restore drill stale";
