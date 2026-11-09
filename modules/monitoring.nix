@@ -36,6 +36,7 @@ let
     loki = 3100;
     lokiGrpc = 9096;
     node = 19100;
+    smartctl = 19633;
   };
 in
 {
@@ -278,6 +279,11 @@ in
             "--web.enable-remote-write-receiver"
           ];
           globalConfig.scrape_interval = "60s";
+          exporters.smartctl = {
+            enable = true;
+            listenAddress = "127.0.0.1";
+            port = ports.smartctl;
+          };
           exporters.node = {
             enable = true;
             listenAddress = "127.0.0.1";
@@ -533,6 +539,51 @@ in
                         summary = "{{ $labels.probe }} has failed its HTTPS probe through the edge for 5 minutes";
                       }
                       {
+                        title = "SMART unhealthy";
+                        expr = "1 - smartctl_device_smart_status";
+                        for = "0s";
+                        severity = "critical";
+                        summary = "{{ $labels.device }} on {{ $labels.instance }} fails its SMART self-assessment";
+                      }
+                      {
+                        title = "NVMe hot";
+                        expr = "smartctl_device_temperature{temperature_type=\"current\",device=~\"nvme.*\"}";
+                        threshold = 70;
+                        summary = "{{ $labels.device }} on {{ $labels.instance }} has been over 70°C for 15 minutes";
+                      }
+                      {
+                        title = "Disk hot";
+                        expr = "smartctl_device_temperature{temperature_type=\"current\",device!~\"nvme.*\"}";
+                        threshold = 55;
+                        summary = "{{ $labels.device }} on {{ $labels.instance }} has been over 55°C for 15 minutes";
+                      }
+                      {
+                        title = "ZFS pool not online";
+                        expr = "sum by (zpool, instance) (node_zfs_zpool_state{state!=\"online\"})";
+                        for = "5m";
+                        severity = "critical";
+                        summary = "ZFS pool {{ $labels.zpool }} on {{ $labels.instance }} is not online";
+                      }
+                      {
+                        title = "UPS on battery";
+                        expr = "apcupsd_battery_time_on_seconds";
+                        for = "1m";
+                        severity = "critical";
+                        summary = "{{ $labels.instance }} has been on UPS battery for over a minute";
+                      }
+                      {
+                        title = "Backup stale";
+                        expr = "time() - node_systemd_timer_last_trigger_seconds{name=~\"restic-backups-.+[.]timer\"}";
+                        threshold = 26 * 3600;
+                        summary = "{{ $labels.name }} on {{ $labels.instance }} has not run for over 26 hours";
+                      }
+                      {
+                        title = "Restore drill stale";
+                        expr = "time() - node_systemd_timer_last_trigger_seconds{name=\"restic-drill-usb.timer\"}";
+                        threshold = 40 * 86400;
+                        summary = "The monthly restore drill on {{ $labels.instance }} has not run for over 40 days";
+                      }
+                      {
                         title = "Unit failed";
                         expr = "node_systemd_unit_state{state=\"failed\"}";
                         for = "5m";
@@ -594,7 +645,13 @@ in
           chain output {
             type filter hook output priority -150; policy accept;
             oifname "lo" tcp dport { ${
-              lib.concatMapStringsSep ", " toString (lib.attrValues (removeAttrs ports [ "grafana" ]))
+              lib.concatMapStringsSep ", " toString (
+                lib.attrValues config.fleet.scrapeTargets
+                ++ [
+                  ports.loki
+                  ports.lokiGrpc
+                ]
+              )
             } } meta skuid != { 0, ${
               lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) [
                 "grafana"
@@ -659,7 +716,7 @@ in
 
       fleet = {
         scrapeTargets = {
-          inherit (ports) node prometheus;
+          inherit (ports) node prometheus smartctl;
         };
         web.apps.grafana = {
           port = ports.grafana;

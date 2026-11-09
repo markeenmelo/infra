@@ -6,9 +6,12 @@ description: "Monitoring on bastion: Prometheus and the exporters it scrapes, Lo
 # Monitoring
 
 [monitoring.nix](../../../modules/monitoring.nix) runs the stack on bastion, every port on loopback.
-Prometheus, Loki and the node exporter answer without authentication, so an nftables guard admits
-only root and the stack's own users (pinned uids) to their ports; otherwise any service on bastion
-could read the whole journal through Loki.
+Each exporter sits beside what it measures (SMART here, the UPS in the bastion host's `ups.nix`)
+and adds its port to `fleet.scrapeTargets`, which becomes a Prometheus job. Prometheus, Loki and
+every scrape target answer without authentication, so an nftables guard admits only root and the
+stack's own users (pinned uids) to Loki's ports and every `fleet.scrapeTargets` port; otherwise
+any service on bastion could read the whole journal through Loki. Exporter ports sit at 19xxx,
+clear of OpenCloud's internal block from 9100.
 Prometheus scrapes its own exporters (node with the systemd collector, itself) every 60 s and keeps
 30 days, capped at 20 GB. Alloy ships bastion's journal to Loki with `host`, `unit`,
 `syslog_identifier` and `level` labels, dropping lines older than 12 h; Loki keeps 30 days.
