@@ -700,14 +700,12 @@ in
                 ]
               )
             } } meta skuid != { 0, ${
-              lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) (
-                [
-                  "grafana"
-                  "prometheus"
-                  "loki"
-                  "alloy"
-                ]
-              )
+              lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) ([
+                "grafana"
+                "prometheus"
+                "loki"
+                "alloy"
+              ])
             } } reject
           }
         '';
