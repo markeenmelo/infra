@@ -33,14 +33,20 @@ in
       '';
     in
     {
-      sops.secrets = lib.genAttrs [ "grafana-oidc-client-secret" "grafana-secret-key" "grafana-admin-password" ] (name: {
-        sopsFile = ../secrets/hosts/${host}.yaml;
-        key = "grafana/${lib.removePrefix "grafana-" name}";
-        restartUnits = [ "grafana.service" ];
-      });
-      systemd.services.grafana.serviceConfig.LoadCredential = map (
-        name: "${lib.removePrefix "grafana-" name}:${config.sops.secrets.${name}.path}"
-      ) [ "grafana-oidc-client-secret" "grafana-secret-key" "grafana-admin-password" ];
+      sops.secrets =
+        lib.genAttrs [ "grafana-oidc-client-secret" "grafana-secret-key" "grafana-admin-password" ]
+          (name: {
+            sopsFile = ../secrets/hosts/${host}.yaml;
+            key = "grafana/${lib.removePrefix "grafana-" name}";
+            restartUnits = [ "grafana.service" ];
+          });
+      systemd.services.grafana.serviceConfig.LoadCredential =
+        map (name: "${lib.removePrefix "grafana-" name}:${config.sops.secrets.${name}.path}")
+          [
+            "grafana-oidc-client-secret"
+            "grafana-secret-key"
+            "grafana-admin-password"
+          ];
 
       services = {
         prometheus = {
