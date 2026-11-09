@@ -36,8 +36,11 @@ approved from a signed-in session.
 
 A child account is a native user declared in `nixflix.jellyfin.users` with `mutable = false` and
 parental limits (`maxParentalRating`, `blockUnratedItems`, `accessSchedules`), signed in on the TV
-by Quick Connect. Libraries are not split by rating: limits come from TMDb's ratings, so a library's
-`metadataCountryCode` decides which rating system applies.
+by Quick Connect approved from a session signed in as the child. Libraries are not split by
+rating: limits come from TMDb's ratings, so a library's `metadataCountryCode` decides which rating
+system applies. An SSO login adopts a native account of the same name, so jellyfin.nix asserts no
+non-admin native user shares an Authelia username; the plugin otherwise never touches native
+accounts nor anyone's parental limits.
 
 ## Media and transcoding
 

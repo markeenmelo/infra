@@ -25,9 +25,23 @@ in
       media = dirOf config.nixflix.mediaDir;
       secret = name: { _secret = config.sops.secrets."jellyfin-${name}".path; };
       sso = pkgs.callPackage ./jellyfin-sso.pkg.nix { };
+      autheliaUsers = map lib.toLower (
+        lib.attrNames
+          (builtins.fromJSON (config.sops.templates.authelia-users.content or ''{"users":{}}'')).users
+      );
     in
     {
       imports = [ nixflix ];
+      assertions = [
+        {
+          assertion = lib.all (
+            user:
+            cfg.users.${user}.policy.isAdministrator
+            || !lib.elem (lib.toLower user) autheliaUsers
+          ) (lib.attrNames cfg.users);
+          message = "A non-admin Jellyfin user must not share an Authelia username: an SSO login adopts the account and replaces its password and admin status.";
+        }
+      ];
       sops.secrets =
         lib.mapAttrs'
           (name: units: {
@@ -44,6 +58,7 @@ in
               "jellyfin-api-key"
             ];
             password = [ "jellyfin-users-config" ];
+            ian-password = [ "jellyfin-users-config" ];
             oidc-client-secret = [ "jellyfin-plugins" ];
           };
       nixflix.jellyfin = {
@@ -89,6 +104,18 @@ in
           policy = {
             isAdministrator = true;
             enableRemoteAccess = true;
+          };
+        };
+        users.ian = {
+          mutable = false;
+          password = secret "ian-password";
+          policy = {
+            # Jellyfin's score for PG and TV-PG
+            maxParentalRating = 10;
+            blockUnratedItems = [
+              "Movie"
+              "Series"
+            ];
           };
         };
         libraries =
