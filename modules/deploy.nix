@@ -11,7 +11,10 @@ let
     system:
     let
       pkgs = inputs.nixpkgs.legacyPackages.${system};
+      input = (lib.importTOML "${inputs.deploy-rs}/Cargo.toml").package.version;
     in
+    assert lib.assertMsg (pkgs.deploy-rs.version == input)
+      "nixpkgs ships deploy-rs ${pkgs.deploy-rs.version} but the deploy-rs input is ${input}: move them together";
     (pkgs.appendOverlays [
       inputs.deploy-rs.overlays.default
       (_: prev: {

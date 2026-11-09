@@ -18,6 +18,8 @@ that breaks the SSH path reverts after the confirm timeout. `nix flake check` ca
 deploy-rs schema and activation checks per system. The `deploy` binary and the hosts'
 `activate-rs` come from nixpkgs' `deploy-rs`, which cache.nixos.org serves; the flake input
 supplies only the library, since its own build follows this nixpkgs and no cache holds it.
+Evaluation fails while the two versions differ, since the library's wrapper and the sudo rules
+here assume the binary's behaviour.
 
 ```sh
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision
