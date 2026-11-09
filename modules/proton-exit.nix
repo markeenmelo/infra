@@ -99,8 +99,6 @@ in
                 --accept-dns=false
                 --accept-routes=false
                 --ssh=false
-                --webclient=false
-                --auto-update=false
               )
               while state=$(ts status --json --peers=false | jq -r .BackendState); [[ $state == NoState || $state == Starting ]]; do
                 sleep 1
@@ -109,7 +107,7 @@ in
                 ts up "''${prefs[@]}" --timeout=60s \
                   --auth-key=file:${config.sops.secrets."proton-exit-${country}-auth-key".path}
               fi
-              ts set "''${prefs[@]}"
+              ts set "''${prefs[@]}" --webclient=false --auto-update=false
             '';
           };
           "pv${country}-watch" = {
@@ -137,7 +135,7 @@ in
           "pv${country}-watch" = {
             wantedBy = [ "timers.target" ];
             timerConfig = {
-              OnBootSec = "5min";
+              OnActiveSec = "5min";
               OnUnitActiveSec = "2min";
             };
           };
