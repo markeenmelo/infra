@@ -379,6 +379,7 @@ in
                 };
               }
             ];
+            frontend.address = "127.0.0.1";
             limits_config.retention_period = "720h";
             compactor = {
               working_directory = "${config.services.loki.dataDir}/compactor";
