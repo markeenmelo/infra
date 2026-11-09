@@ -19,7 +19,10 @@ app Stylix cannot theme gets the same treatment by hand.
 
 ## Rules
 
-- **Surfaces:** solid colors only. No transparency, blur or drop shadows anywhere, terminal included.
+- **Surfaces:** app windows, terminal included, are solid. The desktop's own chrome (bar,
+  launcher, notifications, popups, the quick terminal) may be lightly translucent: its color at
+  90% opacity over a soft blur (Hyprland `blur` size 6, 2 passes; SketchyBar `blur_radius` 20), so
+  text stays fully readable. No drop shadows anywhere.
 - **Motion:** none, or a fade or slide of at most 150 ms; nothing bounces or zooms.
 - **Spacing:** multiples of 2 px. Windows: 8 px between them, 6 px to the screen edge (the bar's
   edge counts as the screen's). Terminal padding 10 px across, 8 px down.
