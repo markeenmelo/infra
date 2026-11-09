@@ -39,6 +39,24 @@ let
   };
 in
 {
+  flake.checks = lib.foldlAttrs (
+    acc: host: fleetHost:
+    let
+      nixos = config.flake.nixosConfigurations.${host};
+    in
+    if lib.hasSuffix "-darwin" fleetHost.system || !(nixos.config.services.alloy.enable or false) then
+      acc
+    else
+      lib.recursiveUpdate acc {
+        ${fleetHost.system}."alloy-${host}" = nixos.pkgs.runCommand "alloy-${host}" { } ''
+          ${lib.getExe nixos.config.services.alloy.package} fmt ${
+            nixos.config.environment.etc."alloy/config.alloy".source
+          } > /dev/null
+          touch $out
+        '';
+      }
+  ) { } hosts;
+
   flake.modules.nixos.base =
     { lib, ... }:
     {
@@ -61,12 +79,12 @@ in
     let
       host = config.networking.hostName;
       inherit (hosts.${host}) telemetry;
-      targets = lib.concatStringsSep ",\n    " (
+      targets = lib.concatMapStrings (item: item + ",\n    ") (
         lib.mapAttrsToList (
           job: port: ''{"__address__" = "127.0.0.1:${toString port}", "job" = "${job}"}''
         ) config.fleet.scrapeTargets
       );
-      probes = lib.concatStringsSep ",\n    " (
+      probes = lib.concatMapStrings (item: item + ",\n    ") (
         lib.mapAttrsToList (
           name: url: ''{"name" = "${name}", "address" = "${url}", "module" = "https"}''
         ) config.fleet.probes
