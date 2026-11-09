@@ -74,7 +74,9 @@ stay outside Nix.
 
 **Checks** — a check that needs a host's `pkgs` sits under `flake.checks.${fleet.hosts.HOST.system}`;
 one that needs only tools stays in `perSystem`. Prefer `runCommand` assertions on generated config
-over `nixosTest`; one VM test covers the root rollback and Preservation. Assertions guard
+over `nixosTest`; one VM test, `storage` in [storage.nix](../../../modules/storage.nix), installs
+the disk layout with disko's test library, reboots, and asserts the root subvolume was recreated
+while preserved paths and the machine id survived; it needs KVM, which the linux CI job enables. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
 **Language** — `let`, never `rec`; `inherit` over repetition; conditional config through
