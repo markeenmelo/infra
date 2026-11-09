@@ -67,6 +67,11 @@ in
           default = { };
           description = "Metrics endpoints this host serves on loopback, by job; bastion's Prometheus scrapes its own, and a host importing `telemetry` scrapes them with Alloy and pushes them to bastion.";
         };
+        metricsDir = lib.mkOption {
+          type = lib.types.str;
+          default = "/var/lib/node-exporter-textfile";
+          description = "Directory whose *.prom files the node exporter publishes, for jobs that record their own results, such as a backup's last success.";
+        };
         probes = lib.mkOption {
           type = lib.types.attrsOf lib.types.str;
           default = { };
@@ -288,7 +293,11 @@ in
             enable = true;
             listenAddress = "127.0.0.1";
             port = ports.node;
-            enabledCollectors = [ "systemd" ];
+            enabledCollectors = [
+              "systemd"
+              "textfile"
+            ];
+            extraFlags = [ "--collector.textfile.directory=${config.fleet.metricsDir}" ];
           };
           scrapeConfigs = lib.mapAttrsToList (job: port: {
             job_name = job;
@@ -540,7 +549,7 @@ in
                       }
                       {
                         title = "SMART unhealthy";
-                        expr = "1 - smartctl_device_smart_status";
+                        expr = "(1 - smartctl_device_smart_status) and on (device, instance) smartctl_device_power_on_seconds";
                         for = "0s";
                         severity = "critical";
                         summary = "{{ $labels.device }} on {{ $labels.instance }} fails its SMART self-assessment";
@@ -573,15 +582,15 @@ in
                       }
                       {
                         title = "Backup stale";
-                        expr = "time() - node_systemd_timer_last_trigger_seconds{name=~\"restic-backups-.+[.]timer\"}";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup!=\"drill-usb\"}";
                         threshold = 26 * 3600;
-                        summary = "{{ $labels.name }} on {{ $labels.instance }} has not run for over 26 hours";
+                        summary = "The {{ $labels.backup }} backup on {{ $labels.instance }} has not succeeded for over 26 hours";
                       }
                       {
                         title = "Restore drill stale";
-                        expr = "time() - node_systemd_timer_last_trigger_seconds{name=\"restic-drill-usb.timer\"}";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup=\"drill-usb\"}";
                         threshold = 40 * 86400;
-                        summary = "The monthly restore drill on {{ $labels.instance }} has not run for over 40 days";
+                        summary = "The monthly restore drill on {{ $labels.instance }} has not succeeded for over 40 days";
                       }
                       {
                         title = "Unit failed";
@@ -734,8 +743,14 @@ in
         };
       };
 
-      preservation.preserveAt."/persist".directories =
-        lib.mapAttrsToList
+      systemd.tmpfiles.rules = [ "d ${config.fleet.metricsDir} 0755 root root -" ];
+      preservation.preserveAt."/persist".directories = [
+        {
+          directory = config.fleet.metricsDir;
+          mode = "0755";
+        }
+      ]
+      ++ lib.mapAttrsToList
           (directory: user: {
             inherit directory user;
             group = user;

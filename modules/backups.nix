@@ -40,6 +40,13 @@ in
       inSnapshot =
         name: root: path:
         "${root}/.zfs/snapshot/${snapOf name}${lib.removePrefix root path}";
+      success =
+        name:
+        pkgs.writeShellScript "restic-${name}-success" ''
+          printf 'restic_last_success_timestamp_seconds{backup="${name}"} %s\n' "$(${lib.getExe' pkgs.coreutils "date"} +%s)" \
+            > ${config.fleet.metricsDir}/restic-${name}.prom.tmp
+          ${lib.getExe' pkgs.coreutils "mv"} ${config.fleet.metricsDir}/restic-${name}.prom.tmp ${config.fleet.metricsDir}/restic-${name}.prom
+        '';
       dumps = config.services.postgresqlBackup;
       dumpDir = dumps.location;
       databases = lib.filter (db: !lib.hasSuffix "-logs" db) config.services.postgresql.ensureDatabases;
@@ -152,7 +159,10 @@ in
                 pkgs.btrfs-progs
               ];
               unitConfig.RequiresMountsFor = roots ++ job.mounts;
-              serviceConfig.PrivateNetwork = job.rcloneConfigFile == null;
+              serviceConfig = {
+                PrivateNetwork = job.rcloneConfigFile == null;
+                ExecStartPost = success name;
+              };
             }
           ) jobs)
           {
@@ -176,6 +186,7 @@ in
               serviceConfig = {
                 Type = "oneshot";
                 PrivateNetwork = true;
+                ExecStartPost = success "drill-usb";
                 CacheDirectory = "restic-drill-usb";
                 Environment = "RESTIC_CACHE_DIR=%C/restic-drill-usb";
                 TimeoutStartSec = "12h";

@@ -54,8 +54,11 @@ priority and to the email of every `grafana-admins` person, through Authelia's S
 always-firing `Heartbeat` goes only to the healthchecks.io URL in `grafana/heartbeat-url` about
 every 5 minutes (repeat 4 m on a 1 m tick, since a repeat equal to the tick fires every other
 tick), so the outside check, period 5 m and grace 10 m, alerts when bastion, Grafana or the
-network stops. Provisioning
-never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
+network stops. A job that records its own result writes a `*.prom` file to `fleet.metricsDir`
+(persisted), which the node exporter publishes: each restic backup and the restore drill write
+`restic_last_success_timestamp_seconds{backup=…}` only after succeeding, because a run that never
+starts (its USB disk missing) leaves the unit inactive rather than failed and the timer fresh.
+Provisioning never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
 
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the
 tailnet. Everything is denied by default; `alerts` and `media` are readable by anyone who reaches
