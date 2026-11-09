@@ -54,5 +54,33 @@ One accent: `base0D` (blue) marks focus, selection and the active item, and noth
 
 ## Type
 
-JetBrainsMono Nerd Font at 12 for terminals and editors, Inter at 11 for application UI, the
-monospace at 13 bold for the bar. No other families.
+All set in Stylix, so every target agrees:
+
+| Use | Font | Size |
+|---|---|---|
+| Terminals, editors, code | JetBrainsMono Nerd Font | 12 |
+| Application UI, desktop, popups | Inter | 11 |
+| Bar | JetBrainsMono Nerd Font, bold | 13 |
+| Serif slots | Inter (no serif face) | as the app asks |
+| Emoji | Noto Color Emoji | as the text |
+
+No other families. Glyph icons come from the Nerd Font, never from a second icon font.
+
+## Cursor, icons and wallpaper
+
+- **Cursor:** Bibata Modern Classic, 24 px, through Stylix on the Linux laptops; the mac keeps
+  the macOS cursor.
+- **Icons:** Papirus-Dark through Stylix for GTK and Qt apps on the Linux laptops; bar and
+  status glyphs stay Nerd Font (see Rules).
+- **Wallpaper:** [wallpaper.jpg](../../../modules/wallpaper.jpg), set as Stylix's `image`, so
+  every machine shows the same one: Stylix applies it on Linux, and on the mac a Home Manager
+  activation step sets it with `desktoppr`. It is the only image in the look; nothing else is
+  derived from it, since the colors come from One Dark, not from the picture.
+- **Lock screen:** the wallpaper, blurred, with the clock in Inter and the password field on a
+  `base01` 4 px rounded surface.
+
+## Toolkits and sound
+
+- **GTK and Qt:** themed by Stylix (adw-gtk3 dark for GTK, Qt following it), never a second
+  theme engine; dark mode is on everywhere it can be asked for.
+- **Sound:** no event or notification sounds; alerts are visual.
