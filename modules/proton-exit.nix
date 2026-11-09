@@ -84,21 +84,32 @@ in
             wantedBy = [ "tailscaled-${country}.service" ];
             path = [ pkgs.jq ];
             enableStrictShellChecks = true;
-            serviceConfig.Type = "oneshot";
+            startLimitIntervalSec = 0;
+            serviceConfig = {
+              Type = "oneshot";
+              Restart = "on-failure";
+              RestartSec = 30;
+              TimeoutStartSec = "5min";
+            };
             script = ''
               ts() { ${tailscale} --socket=${socket country} "$@"; }
-              if [ "$(ts status --json --peers=false | jq -r .BackendState)" = NeedsLogin ]; then
-                ts up --hostname=proton-${country} --advertise-exit-node \
+              prefs=(
+                --hostname=proton-${country}
+                --advertise-exit-node=true
+                --accept-dns=false
+                --accept-routes=false
+                --ssh=false
+                --webclient=false
+                --auto-update=false
+              )
+              while state=$(ts status --json --peers=false | jq -r .BackendState); [[ $state == NoState || $state == Starting ]]; do
+                sleep 1
+              done
+              if [[ $state == NeedsLogin || $state == NeedsMachineAuth || $state == Stopped ]]; then
+                ts up "''${prefs[@]}" --timeout=60s \
                   --auth-key=file:${config.sops.secrets."proton-exit-${country}-auth-key".path}
               fi
-              ts set \
-                --hostname=proton-${country} \
-                --advertise-exit-node=true \
-                --accept-dns=false \
-                --accept-routes=false \
-                --ssh=false \
-                --webclient=false \
-                --auto-update=false
+              ts set "''${prefs[@]}"
             '';
           };
           "pv${country}-watch" = {
