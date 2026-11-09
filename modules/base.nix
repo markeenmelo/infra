@@ -2,22 +2,22 @@ let
   common =
     { lib, ... }:
     {
-    nix.settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      connect-timeout = 5;
-      fallback = true;
-    };
-    programs.nh = {
-      enable = true;
-      clean = {
+      nix.settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+        connect-timeout = 5;
+        fallback = true;
+      };
+      programs.nh = {
         enable = true;
-        extraArgs = lib.mkDefault "--keep 10 --keep-since 14d";
+        clean = {
+          enable = true;
+          extraArgs = lib.mkDefault "--keep 10 --keep-since 14d";
+        };
       };
     };
-  };
 in
 {
   flake.modules.darwin.base = {
