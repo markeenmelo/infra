@@ -4,7 +4,10 @@
     system = "aarch64-darwin";
     tailnetAddress = "100.74.75.110";
     darwin = {
-      imports = [ config.flake.modules.darwin.desktop ];
+      imports = with config.flake.modules.darwin; [
+        desktop
+        remote-builds
+      ];
       system.stateVersion = 7;
       home-manager.users.marcos.home.stateVersion = "26.11";
     };

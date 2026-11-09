@@ -12,6 +12,7 @@
       jellyfin
       arr
       backups
+      builder
     ];
     system.stateVersion = "26.05";
   };
