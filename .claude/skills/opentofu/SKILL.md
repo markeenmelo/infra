@@ -48,7 +48,9 @@ read-only for all of these; `acls_externally_managed_on` says so.
 - CI joins as `tag:ci` through a federated identity that accepts GitHub's OIDC token from
   `check.yml` on a branch of this repository, so no secret is stored. Like the OAuth client, it is
   a trust credential made in the admin console, since the OAuth client lacks the scope to create
-  one: issuer GitHub, subject `repo:markeenmelo/infra:ref:refs/heads/*`, claim
+  one: issuer GitHub, subject `repo:markeenmelo@8158196/infra@1445093287:ref:refs/heads/*`
+(GitHub puts the owner's and repository's ids in the subject, so a renamed or recreated
+repository of the same name does not match), claim
   `job_workflow_ref` = `markeenmelo/infra/.github/workflows/check.yml@refs/heads/*`, scope
   `auth_keys`, tag `tag:ci`. Its client id and audience are not secret and go to the repository
   variables `TS_CI_CLIENT_ID` and `TS_CI_AUDIENCE` with `gh variable set`.
