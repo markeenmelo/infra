@@ -41,6 +41,29 @@
             | @tsv' | sort -u | column -t -s "$(printf '\t')" | less -S
         '';
       };
+      tailnetNext = pkgs.writeShellApplication {
+        name = "tailnet-next";
+        runtimeInputs = [
+          osConfig.services.tailscale.package
+          pkgs.jq
+          pkgs.libnotify
+        ];
+        text = ''
+          status=$(tailscale status --json)
+          mapfile -t nodes < <(echo "$status" | jq -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption) | .HostName] | sort | .[])')
+          current=$(echo "$status" | jq -r '[(.Peer // {})[] | select(.ExitNode) | .HostName][0] // "direct"')
+          next=''${nodes[0]}
+          for i in "''${!nodes[@]}"; do
+            if [ "''${nodes[$i]}" = "$current" ]; then next=''${nodes[$(((i + 1) % ''${#nodes[@]}))]}; fi
+          done
+          if [ "$next" = direct ]; then
+            tailscale set --exit-node=
+          else
+            tailscale set --exit-node="$next" --exit-node-allow-lan-access
+          fi
+          notify-send --app-name=tailscale "Exit node" "$next"
+        '';
+      };
       binds = {
         "SUPER + Space" = {
           desc = "App launcher";
@@ -65,6 +88,10 @@
         "SUPER + CTRL + E" = {
           desc = "System monitor";
           dsp = app "${ghostty} -e ${lib.getExe pkgs.btop}";
+        };
+        "SUPER + T" = {
+          desc = "Next exit node";
+          dsp = exec (lib.getExe tailnetNext);
         };
         "SUPER + slash" = {
           desc = "Show keybinds";

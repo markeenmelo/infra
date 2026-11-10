@@ -40,4 +40,6 @@ members to the internet through them. Each joins once with its own key, `proton-
 moved like a host's from the `enrollment_keys` output, and keeps `/var/lib/tailscale-COUNTRY`
 under `/persist`. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tunnel that fails or
 whose handshake is older than five minutes, and starts its exit node again each time it comes up. Choosing
-an exit node is done on the client; the desktop switcher arrives with the laptops.
+an exit node is done on the client: clicking the mac's tailnet item in SketchyBar or `SUPER + T` on
+the thinkpad steps through direct and every peer offering an exit node, keeping LAN access. The
+thinkpad's tailscaled names `marcos` its operator so the switch needs no sudo.

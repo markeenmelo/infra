@@ -41,7 +41,10 @@ in
         resolved.enable = true;
         tailscale = {
           useRoutingFeatures = "client";
-          extraSetFlags = [ "--accept-routes" ];
+          extraSetFlags = [
+            "--accept-routes"
+            "--operator=marcos"
+          ];
         };
         pipewire = {
           enable = true;
