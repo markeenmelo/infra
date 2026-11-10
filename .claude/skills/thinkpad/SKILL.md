@@ -46,6 +46,11 @@ advertise, so the laptop's own LAN stays on-link and only the printer, on the Io
 through bastion. Bitwarden's desktop app is the SSH agent
 (`~/.bitwarden-ssh-agent.sock`), started at login.
 
+Claude Code runs under the same managed settings as the mac ([claude.nix](../../../modules/claude.nix)),
+written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. The sandbox does not
+block Unix sockets without Claude Code's optional seccomp helper, so `/run/user` (the session D-Bus,
+the keyring, Wayland) and Bitwarden's agent socket are hidden from it instead.
+
 Idle locks at 5 min, turns the screen off at 5.5, suspends after 10 on battery and 30 on AC. On
 battery `power-profile-ac` switches to power-saver and restores the previous profile on AC; the
 battery charges to 90% and resumes at 85%. The lid hides the built-in panel while another display
