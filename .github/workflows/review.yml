@@ -10,35 +10,24 @@ permissions: {}
 
 jobs:
   pr-agent:
-    name: pr-agent (${{ matrix.name }} ${{ matrix.command }})
+    name: pr-agent (${{ matrix.name }} review)
     if: >-
-      github.event.sender.type != 'Bot' &&
-      ((github.event_name == 'pull_request' && !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/') &&
-      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
+      github.event_name == 'pull_request' && github.event.sender.type != 'Bot' &&
+      !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository
     concurrency:
-      group: review-pr-agent-${{ matrix.name }}-${{ matrix.command }}-${{ github.event_name }}-${{ matrix.command != 'review' && github.event.action || '' }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '/')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
-      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+      group: review-pr-agent-${{ matrix.name }}-${{ github.event.pull_request.number || github.run_id }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
         include:
           - name: glm
-            command: describe
-            provider: anthropic
-            model: anthropic/glm-5.3-flash
-            base: https://api.z.ai/api/anthropic
-            secret: ZAI_API_KEY
-          - name: glm
-            command: review
             provider: anthropic
             model: anthropic/glm-5.3-flash
             base: https://api.z.ai/api/anthropic
             secret: ZAI_API_KEY
           - name: kimi
-            command: review
             provider: openai
             model: openai/k3
             base: https://api.kimi.ai/coding/v1
@@ -49,11 +38,6 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - if: github.event_name == 'issue_comment'
-        run: test "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isCrossRepository --jq .isCrossRepository)" = false
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ github.event.issue.number }}
       - id: guidelines
         run: |
           {
@@ -64,8 +48,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      - if: ((github.event_name == 'pull_request' && github.event.action != 'synchronize') || matrix.command == 'review') && (matrix.name == 'glm' || github.event_name == 'pull_request')
-        uses: docker://pragent/pr-agent@sha256:548e894a88071180832b2f4233f734d0acd0db1a879e2fcbaa70bac8b8372ebe # 0.50.0-github_action
+      - uses: docker://pragent/pr-agent@sha256:548e894a88071180832b2f4233f734d0acd0db1a879e2fcbaa70bac8b8372ebe # 0.50.0-github_action
         env:
           PR_REVIEWER__EXTRA_INSTRUCTIONS: ${{ steps.guidelines.outputs.text }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,8 +72,7 @@ jobs:
           LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.z.ai"]'
           CONFIG__AI_TIMEOUT: "600"
           CONFIG__RETRY_SAME_MODEL_ON_TIMEOUT: "false"
-          GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: ${{ matrix.command == 'describe' }}
-          GITHUB_ACTION_CONFIG__AUTO_REVIEW: ${{ matrix.command == 'review' }}
+          GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: "false"
           GITHUB_ACTION_CONFIG__AUTO_IMPROVE: "false"
           GITHUB_ACTION_CONFIG__HANDLE_PUSH_TRIGGER: "true"
           GITHUB_ACTION_CONFIG__PUSH_COMMANDS: '["/review"]'
