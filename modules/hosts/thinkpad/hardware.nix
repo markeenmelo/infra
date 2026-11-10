@@ -6,10 +6,11 @@
       pkgs,
       ...
     }:
-    let
-      internal = "eDP-1";
-    in
     {
+      fleet = {
+        internalDisplay = "eDP-1";
+        lidSwitch = "Lid Switch";
+      };
       hardware = {
         firmware = [ pkgs.sof-firmware ];
         cpu.intel.updateMicrocode = true;
@@ -23,6 +24,7 @@
       ];
       services = {
         hardware.bolt.enable = true;
+        power-profiles-daemon.enable = true;
         udev = {
           extraHwdb = ''
             battery:BAT0:*:dmi:*
@@ -87,13 +89,14 @@
       };
       preservation.preserveAt."/persist".directories = [
         "/var/lib/boltd"
+        "/var/lib/power-profiles-daemon"
         "/var/lib/power-profile-ac"
       ];
       home-manager.users.marcos = {
         wayland.windowManager.hyprland = {
           settings.monitor = [
             {
-              output = internal;
+              output = config.fleet.internalDisplay;
               position = "0x0";
               mode = "highres";
               scale = 1;
@@ -101,27 +104,6 @@
               disabled = lib.generators.mkLuaInline "lid_shut_docked()";
             }
           ];
-          extraLuaFiles.lid = ''
-            local internal = ${lib.generators.toLua { } internal}
-            function lid_shut_docked()
-              local p = io.popen("${lib.getExe' config.systemd.package "busctl"} get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager LidClosed")
-              if not p then return false end
-              local shut = p:read("a"):find("true") ~= nil
-              p:close()
-              if not shut then return false end
-              for _, m in ipairs(hl.get_monitors()) do
-                if m.name ~= internal and m.name ~= "FALLBACK" then return true end
-              end
-              return false
-            end
-            local reload = "${lib.getExe' config.programs.hyprland.package "hyprctl"} reload"
-            hl.bind("switch:Lid Switch", hl.dsp.exec_cmd(reload), { locked = true })
-            for _, event in ipairs({ "monitor.added", "monitor.removed" }) do
-              hl.on(event, function(m)
-                if m.name ~= internal and m.name ~= "FALLBACK" then hl.exec_cmd(reload) end
-              end)
-            end
-          '';
         };
       };
     };

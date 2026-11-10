@@ -47,7 +47,7 @@ in
           limine = {
             enable = lib.mkDefault true;
             panicOnChecksumMismatch = true;
-            maxGenerations = 10;
+            maxGenerations = lib.mkDefault 10;
           };
         };
         bcache.enable = false;

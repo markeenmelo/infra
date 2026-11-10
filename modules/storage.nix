@@ -5,40 +5,60 @@
 }:
 let
   inherit (config.fleet.hosts.bastion) system;
-  probe = inputs.nixpkgs.lib.nixosSystem {
-    modules = [
-      config.flake.modules.nixos.storage
-      {
-        nixpkgs.hostPlatform = system;
-        system.stateVersion = "26.05";
-        fleet.encryptState = false;
-        disko.devices.disk.os.device = "/dev/vda";
-        preservation.preserveAt."/persist".directories = [ "/var/lib/probe" ];
-      }
-    ];
-  };
+  probeWith =
+    extra:
+    inputs.nixpkgs.lib.nixosSystem {
+      modules = [
+        config.flake.modules.nixos.storage
+        {
+          nixpkgs.hostPlatform = system;
+          system.stateVersion = "26.05";
+          fleet.encryptState = false;
+          disko.devices.disk.os.device = "/dev/vda";
+          preservation.preserveAt."/persist".directories = [ "/var/lib/probe" ];
+        }
+        extra
+      ];
+    };
+  probe = probeWith { };
+  probeEsp = probeWith { fleet.esp = "/dev/vdb"; };
 in
 {
   flake.modules.nixos.base.imports = [ config.flake.modules.nixos.storage ];
 
-  flake.checks.${system}.storage = inputs.disko.lib.testLib.makeDiskoTest {
-    pkgs = inputs.nixpkgs.legacyPackages.${system};
-    name = "storage";
-    disko-config.disko.devices = probe.config.disko.devices;
-    inherit (probe) extendModules;
-    extraTestScript = ''
-      machine.wait_for_unit("multi-user.target")
-      machine.succeed("touch /stray /var/lib/probe/kept")
-      machine_id = machine.succeed("cat /etc/machine-id")
-      root_id = machine.succeed("btrfs inspect-internal rootid /")
-      machine.shutdown()
-      machine.start()
-      machine.wait_for_unit("multi-user.target")
-      machine.fail("test -e /stray")
-      machine.succeed("test -e /var/lib/probe/kept")
-      assert machine.succeed("cat /etc/machine-id") == machine_id, "machine-id changed across a reboot"
-      assert machine.succeed("btrfs inspect-internal rootid /") != root_id, "root subvolume was not recreated"
-    '';
+  flake.checks.${system} = {
+    storage = inputs.disko.lib.testLib.makeDiskoTest {
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      name = "storage";
+      disko-config.disko.devices = probe.config.disko.devices;
+      inherit (probe) extendModules;
+      extraTestScript = ''
+        machine.wait_for_unit("multi-user.target")
+        machine.succeed("touch /stray /var/lib/probe/kept")
+        machine_id = machine.succeed("cat /etc/machine-id")
+        root_id = machine.succeed("btrfs inspect-internal rootid /")
+        machine.shutdown()
+        machine.start()
+        machine.wait_for_unit("multi-user.target")
+        machine.fail("test -e /stray")
+        machine.succeed("test -e /var/lib/probe/kept")
+        assert machine.succeed("cat /etc/machine-id") == machine_id, "machine-id changed across a reboot"
+        assert machine.succeed("btrfs inspect-internal rootid /") != root_id, "root subvolume was not recreated"
+      '';
+    };
+    storage-esp = inputs.disko.lib.testLib.makeDiskoTest {
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      name = "storage-esp";
+      disko-config.disko.devices = probeEsp.config.disko.devices;
+      inherit (probeEsp) extendModules;
+      testBoot = false;
+      postMount = ''
+        machine.succeed("touch /mnt/boot/owned-by-macos")
+      '';
+      postDisko = ''
+        machine.succeed("test -e /mnt/boot/owned-by-macos")
+      '';
+    };
   };
 
   flake.modules.nixos.storage =
@@ -60,43 +80,63 @@ in
           ];
         });
       };
+      esp = {
+        type = "filesystem";
+        format = "vfat";
+        mountpoint = "/boot";
+        mountOptions = [ "umask=0077" ];
+      };
+      state =
+        if config.fleet.encryptState then
+          {
+            type = "luks";
+            name = "state";
+            settings.allowDiscards = true;
+            content = btrfs;
+          }
+        else
+          btrfs;
     in
     {
       imports = [
         inputs.disko.nixosModules.disko
         inputs.preservation.nixosModules.preservation
       ];
-      options.fleet.encryptState = lib.mkOption {
-        type = lib.types.bool;
-        description = "Whether the state partition is LUKS, opened at boot by its TPM2 token or the passphrase.";
+      options.fleet = {
+        encryptState = lib.mkOption {
+          type = lib.types.bool;
+          description = "Whether the state partition is LUKS, opened at boot by its TPM2 token or the passphrase.";
+        };
+        esp = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "An ESP another OS created and owns, mounted at /boot and never formatted; when set, `disko.devices.disk.os.device` is the state partition itself and nothing is partitioned.";
+        };
       };
       config = {
-        disko.devices.disk.os.content = {
-          type = "gpt";
-          partitions = {
-            boot = {
-              type = lib.mkDefault "EF00";
-              size = lib.mkDefault "2G";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-                mountOptions = [ "umask=0077" ];
-              };
-            };
-            state = {
-              size = "100%";
-              content =
-                if config.fleet.encryptState then
-                  {
-                    type = "luks";
-                    name = "state";
-                    settings.allowDiscards = true;
-                    content = btrfs;
-                  }
-                else
-                  btrfs;
-            };
+        disko.devices.disk = {
+          os.content =
+            if config.fleet.esp == null then
+              {
+                type = "gpt";
+                partitions = {
+                  boot = {
+                    type = lib.mkDefault "EF00";
+                    size = lib.mkDefault "2G";
+                    content = esp;
+                  };
+                  state = {
+                    size = "100%";
+                    content = state;
+                  };
+                };
+              }
+            else
+              state;
+          esp = lib.mkIf (config.fleet.esp != null) {
+            device = config.fleet.esp;
+            destroy = false;
+            content = esp;
           };
         };
         fileSystems."/persist".neededForBoot = true;

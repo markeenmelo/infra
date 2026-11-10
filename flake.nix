@@ -67,6 +67,13 @@
         home-manager.follows = "home-manager";
       };
     };
+    nixos-apple-silicon = {
+      url = "github:nix-community/nixos-apple-silicon";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "";
+      };
+    };
     nixflix = {
       url = "github:kiriwalawren/nixflix";
       inputs = {

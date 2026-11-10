@@ -52,7 +52,6 @@ in
           enable = true;
           criticalPowerAction = "PowerOff";
         };
-        power-profiles-daemon.enable = true;
         gvfs.enable = true;
         speechd.enable = false;
       };
@@ -66,16 +65,15 @@ in
         "/var/lib/NetworkManager"
         "/var/lib/bluetooth"
         "/var/lib/upower"
-        "/var/lib/power-profiles-daemon"
         "/var/lib/systemd/backlight"
         "/var/lib/systemd/rfkill"
       ];
     };
 
   flake.modules.homeManager.desktop =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
-      home.packages = [
+      home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [
         pkgs.nautilus
         pkgs.file-roller
         pkgs.loupe

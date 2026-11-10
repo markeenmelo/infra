@@ -48,9 +48,8 @@ variable "fleet_domain" {
 locals {
   domain  = var.fleet_domain
   bastion = var.fleet_hosts.bastion
-  # shortcut: asahi is a literal until its host lands in fleet.hosts; grafite is an admin device outside the fleet
+  # grafite is an admin device outside the fleet
   hosts = merge({
-    asahi   = "100.122.51.97"
     grafite = "100.91.224.11"
   }, var.fleet_hosts)
   admin_clients = ["thinkpad", "asahi", "mac", "grafite"]
