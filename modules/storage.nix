@@ -5,18 +5,23 @@
 }:
 let
   inherit (config.fleet.hosts.bastion) system;
-  probe = inputs.nixpkgs.lib.nixosSystem {
-    modules = [
-      config.flake.modules.nixos.storage
-      {
-        nixpkgs.hostPlatform = system;
-        system.stateVersion = "26.05";
-        fleet.encryptState = false;
-        disko.devices.disk.os.device = "/dev/vda";
-        preservation.preserveAt."/persist".directories = [ "/var/lib/probe" ];
-      }
-    ];
-  };
+  probeWith =
+    extra:
+    inputs.nixpkgs.lib.nixosSystem {
+      modules = [
+        config.flake.modules.nixos.storage
+        {
+          nixpkgs.hostPlatform = system;
+          system.stateVersion = "26.05";
+          fleet.encryptState = false;
+          disko.devices.disk.os.device = "/dev/vda";
+          preservation.preserveAt."/persist".directories = [ "/var/lib/probe" ];
+        }
+        extra
+      ];
+    };
+  probe = probeWith { };
+  probeEsp = probeWith { fleet.esp = "/dev/vdb"; };
 in
 {
   flake.modules.nixos.base.imports = [ config.flake.modules.nixos.storage ];
@@ -38,6 +43,20 @@ in
       machine.succeed("test -e /var/lib/probe/kept")
       assert machine.succeed("cat /etc/machine-id") == machine_id, "machine-id changed across a reboot"
       assert machine.succeed("btrfs inspect-internal rootid /") != root_id, "root subvolume was not recreated"
+    '';
+  };
+
+  flake.checks.${system}.storage-esp = inputs.disko.lib.testLib.makeDiskoTest {
+    pkgs = inputs.nixpkgs.legacyPackages.${system};
+    name = "storage-esp";
+    disko-config.disko.devices = probeEsp.config.disko.devices;
+    inherit (probeEsp) extendModules;
+    testBoot = false;
+    postMount = ''
+      machine.succeed("touch /mnt/boot/owned-by-macos")
+    '';
+    postDisko = ''
+      machine.succeed("test -e /mnt/boot/owned-by-macos")
     '';
   };
 
