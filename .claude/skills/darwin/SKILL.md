@@ -40,4 +40,6 @@ activation, app data included, so preview a switch that drops a cask with
 `brew bundle cleanup --file=<(nix eval --raw .#darwinConfigurations.mac.config.homebrew.brewfile)`. Claude Code ([claude.nix](../../../modules/claude.nix)) is the HM package with the
 operator's settings; the sandbox and bypass lock live in the managed settings file that
 activation installs under `/Library/Application Support/ClaudeCode`, which no user setting
-overrides. The cache-tax mod is a flake input pinned to its release tag.
+overrides. The plugins it loads (cache-tax, ponytail, caveman) are flake inputs pinned to a
+commit, never a tag their authors could move: their hooks run outside the sandbox with the
+operator's rights, so a bump means reading what changed in their hooks first.
