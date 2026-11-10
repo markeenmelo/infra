@@ -363,6 +363,8 @@ in
       systemd.services.restic-backups-home = {
         wants = [ "tailscaled.service" ];
         after = [ "tailscaled.service" ];
+        conflicts = [ "sleep.target" ];
+        before = [ "sleep.target" ];
         serviceConfig = {
           Restart = "on-failure";
           RestartSec = "1h";
