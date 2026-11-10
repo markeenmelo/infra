@@ -19,6 +19,7 @@
                 && unit.vpnConfinement.enable
                 && unit.vpnConfinement.vpnNamespace == namespace
                 && lib.elem "multi-user.target" unit.wantedBy
+                && (unit.serviceConfig.Type or "simple") != "oneshot"
               ) config.systemd.services
             );
           perNamespace =
