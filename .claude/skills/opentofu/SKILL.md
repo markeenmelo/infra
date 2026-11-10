@@ -96,7 +96,9 @@ HTTPS). Tailnet clients routed through bastion arrive as bastion's address, so t
   back as null.
 - `unifi_setting_ips` takes only the categories the Network UI lists; others are dropped and the
   apply fails as inconsistent.
-- A fixed client's `mac` forces replacement, which forgets the client in the controller.
+- A fixed client's `mac` forces replacement, which forgets the client in the controller. Its
+  `note` is left to the controller UI: the provider cannot clear one, so an unset note would
+  show as a change on every plan.
 - `dhcp_dns` stays unset except on Kids: any value turns DHCP DNS on.
 
 Settings no provider writes (DoH resolvers, the country block, UPnP and the NAT helpers off, the

@@ -237,6 +237,7 @@ resource "unifi_user" "fixed" {
   network_id = local.network[local.vlan_of[split(".", each.value.ip)[2]]]
   lifecycle {
     prevent_destroy = true
+    ignore_changes  = [note]
   }
 }
 
