@@ -350,6 +350,7 @@ in
             ".claude/.credentials.json"
             ".bitwarden-ssh-agent.sock"
             ".cache"
+            ".gvfs"
             ".local/share/Trash"
           ]
           ++ [ "**/node_modules" ];
