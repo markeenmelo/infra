@@ -666,9 +666,9 @@ in
                       }
                       {
                         title = "Arr health issue";
-                        expr = "{__name__=~\"(sonarr|radarr|prowlarr)_system_health_issues\"}";
+                        expr = "sum by (job, source) ({__name__=~\"(sonarr|radarr|prowlarr)_system_health_issues\"})";
                         for = "1h";
-                        summary = "{{ $labels.job }} reports a health issue for over an hour: {{ $labels.message }}";
+                        summary = "{{ $labels.job }} has failed its {{ $labels.source }} health check for over an hour; its System page names what";
                       }
                       {
                         title = "Gateway security event";
