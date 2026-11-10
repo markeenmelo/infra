@@ -107,6 +107,10 @@ in
 
         prometheus.exporter.unix "node" {
           enable_collectors = ["systemd"]
+
+          systemd {
+            enable_restarts = true
+          }
         }
 
         discovery.relabel "node" {
@@ -332,7 +336,10 @@ in
               "systemd"
               "textfile"
             ];
-            extraFlags = [ "--collector.textfile.directory=${config.fleet.metricsDir}" ];
+            extraFlags = [
+              "--collector.textfile.directory=${config.fleet.metricsDir}"
+              "--collector.systemd.enable-restarts-metrics"
+            ];
           };
           scrapeConfigs = lib.mapAttrsToList (job: port: {
             job_name = job;
@@ -641,6 +648,13 @@ in
                         expr = "node_systemd_unit_state{state=\"failed\"}";
                         for = "5m";
                         summary = "{{ $labels.name }} failed on {{ $labels.instance }}";
+                      }
+                      {
+                        title = "Unit restarting";
+                        expr = "round(increase(node_systemd_service_restart_total[30m]))";
+                        threshold = 3;
+                        for = "0s";
+                        summary = "{{ $labels.name }} on {{ $labels.instance }} restarted more than 3 times in 30 minutes";
                       }
                       {
                         title = "Filesystem almost full";

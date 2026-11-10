@@ -15,6 +15,7 @@
           parsers = [
             "crowdsecurity/syslog-logs"
             "crowdsecurity/dateparse-enrich"
+            "crowdsecurity/geoip-enrich"
           ];
         };
         settings = {

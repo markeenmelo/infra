@@ -60,7 +60,7 @@ in
           "/etc/machine-id"
           "/var/lib/sbctl"
           "/var/lib/systemd/random-seed"
-          "/var/lib/tailscale"
+          "/var/lib/tailscale*"
           "/var/lib/prometheus2"
           "/var/lib/loki"
           "/zfs"
@@ -125,7 +125,6 @@ in
         exclude = [
           (inSnapshot name "/srv/immich" "/srv/immich/library/thumbs")
           (inSnapshot name "/srv/immich" "/srv/immich/library/encoded-video")
-          "/persist/.${snapOf name}/.restic-*"
         ]
         ++ persisted name;
         extraBackupArgs = [ "--retry-lock 30m" ];
@@ -167,13 +166,7 @@ in
             }
           ) jobs)
           {
-            restic-backups-pcloud = {
-              wants = [ "network-online.target" ];
-              after = [
-                "network-online.target"
-                "restic-backups-usb.service"
-              ];
-            };
+            restic-backups-pcloud.after = [ "restic-backups-usb.service" ];
             restic-drill-usb = {
               description = "Read a twelfth of the USB backup and test the latest database dumps";
               after = [ "restic-backups-usb.service" ];

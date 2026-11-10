@@ -41,5 +41,4 @@ change without the laptop ever learning it. bastion reaches pCloud directly with
 `backups/rclone-pcloud`, a full rclone config, so a compromised bastion can delete the off-site
 copies too; the operator accepted that over an append-only proxy on racknerd. Restore with
 `restic -r /mnt/backup/restic snapshots` and `restic restore`, run as root on bastion; for
-pCloud, `-r rclone:pcloud:bastion/restic` with `RCLONE_CONFIG` pointing at that secret. Backup
-metrics are not ported yet.
+pCloud, `-r rclone:pcloud:bastion/restic` with `RCLONE_CONFIG` pointing at that secret.
