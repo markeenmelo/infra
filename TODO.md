@@ -33,6 +33,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Claude Code on the Linux laptops: managed settings under `/etc/claude-code`, the sandbox's
       bubblewrap, and the MCP tokens, which need a user-owned secret the NixOS root-0400 rule
       forbids today.
+- [ ] An alert when the thinkpad's home backups stop: the laptop sends no metrics, so the signal
+      has to come from bastion's side, such as the newest snapshot's age in its repository.
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 

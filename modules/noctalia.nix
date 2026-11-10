@@ -21,7 +21,12 @@
       ];
     };
 
-  flake.modules.homeManager.desktop = {
+  flake.modules.homeManager.desktop =
+    { lib, osConfig, ... }:
+    let
+      systemd = osConfig.systemd.package;
+    in
+    {
     programs.noctalia = {
       enable = true;
       systemd.enable = true;
@@ -62,7 +67,7 @@
           suspend-battery = {
             timeout = 600;
             action = "command";
-            command = "systemd-ac-power || systemctl suspend";
+            command = "${lib.getExe' systemd "systemd-ac-power"} || ${lib.getExe' systemd "systemctl"} suspend";
           };
           suspend = {
             timeout = 1800;
