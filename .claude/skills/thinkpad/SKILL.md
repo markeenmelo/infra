@@ -40,7 +40,10 @@ Bluetooth, PipeWire, UPower, power profiles, the apps), [hyprland.nix](../../../
 [noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the greeter),
 [wifi.nix](../../../modules/wifi.nix), [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Looks
-follow the [desktop skill](../desktop/SKILL.md). Bitwarden's desktop app is the SSH agent
+follow the [desktop skill](../desktop/SKILL.md). The tailnet client accepts bastion's subnet routes
+so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
+advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
+through bastion. Bitwarden's desktop app is the SSH agent
 (`~/.bitwarden-ssh-agent.sock`), started at login.
 
 Idle locks at 5 min, turns the screen off at 5.5, suspends after 10 on battery and 30 on AC. On
