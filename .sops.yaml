@@ -3,7 +3,7 @@ keys:
   - &racknerd age1qd9jj98f3wt0x6g6j5xme6xajhk24kpnl0hasd2pe7uenxhfcypqsyhp2k
   - &bastion age16fyy8678zedgm6nqgqnvmwzlc9cjzsc2nu9u45jaxvuh0sw5wfjst73np2
   - &mac age193u7atdy24w87fgf3csypv7zam5qkeelxt9xewwl9w9e8vze4ddss8yy6v
-  - &thinkpad age1uyv2jhru0fyy63ae3rwvzx4gzd42k8v0hl2rvjpaz6fqr5qhs5fshqat7p
+  - &thinkpad age133p0p8m0aecjw92dg8unslruhfhsupq68juht0m5j8p6xwcyp9gse344fz
 
 creation_rules:
   - path_regex: ^secrets/hosts/racknerd\.yaml$
