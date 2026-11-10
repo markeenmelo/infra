@@ -15,7 +15,7 @@ CI only evaluates. Home Manager runs as a nix-darwin module
 The mac switches itself; deploy-rs manages NixOS hosts only:
 
 ```sh
-sudo darwin-rebuild switch --flake .#mac
+nh darwin switch . -H mac   # or: just mac
 ```
 
 Tailscale is the standalone Tailscale app (Homebrew cask), not nix-darwin's `tailscaled`: the

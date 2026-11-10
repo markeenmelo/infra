@@ -15,7 +15,7 @@ deploy host:
 
 [doc("Switch the mac")]
 mac:
-    sudo darwin-rebuild switch --flake .#mac
+    nh darwin switch . -H mac
 
 [doc("Run OpenTofu in opentofu/PROJECT, e.g. `just tofu unifi plan`")]
 tofu project *args:
