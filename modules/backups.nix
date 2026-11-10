@@ -363,6 +363,10 @@ in
       systemd.services.restic-backups-home = {
         wants = [ "tailscaled.service" ];
         after = [ "tailscaled.service" ];
+        serviceConfig = {
+          Restart = "on-failure";
+          RestartSec = "1h";
+        };
       };
       preservation.preserveAt."/persist".directories = [ "/var/cache/restic-backups-home" ];
       networking.nftables.enable = true;
