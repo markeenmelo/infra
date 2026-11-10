@@ -15,12 +15,15 @@
             lib.attrNames (
               lib.filterAttrs (
                 _: unit:
-                unit.vpnConfinement.enable
+                unit.enable
+                && unit.vpnConfinement.enable
                 && unit.vpnConfinement.vpnNamespace == namespace
                 && (unit.serviceConfig.Type or "simple") != "oneshot"
               ) config.systemd.services
             );
-          perNamespace = f: lib.mkMerge (map f (lib.attrNames config.vpnNamespaces));
+          perNamespace =
+            f:
+            lib.mkMerge (map f (lib.attrNames (lib.filterAttrs (_: namespace: namespace.enable) config.vpnNamespaces)));
         in
         {
           systemd.services = perNamespace (namespace: {
