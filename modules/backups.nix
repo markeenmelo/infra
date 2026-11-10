@@ -48,7 +48,10 @@ in
             > ${config.fleet.metricsDir}/restic-${name}.prom.tmp
           ${lib.getExe' pkgs.coreutils "mv"} ${config.fleet.metricsDir}/restic-${name}.prom.tmp ${config.fleet.metricsDir}/restic-${name}.prom
         '';
-      recorded = lib.attrNames jobs ++ [ "drill-usb" ];
+      recorded = lib.attrNames jobs ++ [
+        "drill-usb"
+        "thinkpad"
+      ];
       dumps = config.services.postgresqlBackup;
       dumpDir = dumps.location;
       databases = lib.filter (db: !lib.hasSuffix "-logs" db) config.services.postgresql.ensureDatabases;
@@ -244,6 +247,33 @@ in
                 NoNewPrivileges = true;
                 PrivateTmp = true;
               };
+            };
+            backup-thinkpad-freshness = {
+              description = "Record when the ThinkPad last uploaded a snapshot";
+              startAt = "hourly";
+              unitConfig.RequiresMountsFor = [
+                thinkpad.repo
+                config.fleet.metricsDir
+              ];
+              enableStrictShellChecks = true;
+              path = [
+                pkgs.coreutils
+                pkgs.findutils
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+                ProtectSystem = "strict";
+                ProtectHome = true;
+                ReadWritePaths = [ config.fleet.metricsDir ];
+              };
+              script = ''
+                set -o pipefail
+                newest=$(find ${thinkpad.repo}/snapshots -type f -printf '%T@\n' | sort -n | tail -n 1)
+                [ -n "$newest" ] || exit 0
+                printf 'restic_last_success_timestamp_seconds{backup="thinkpad"} %s\n' "''${newest%.*}" \
+                  > ${config.fleet.metricsDir}/restic-thinkpad.prom.tmp
+                mv ${config.fleet.metricsDir}/restic-thinkpad.prom.tmp ${config.fleet.metricsDir}/restic-thinkpad.prom
+              '';
             };
             backup-thinkpad-retention = {
               description = "Prune and check the ThinkPad's backups unless a snapshot carries a forged date";

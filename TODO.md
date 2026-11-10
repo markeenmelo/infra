@@ -31,8 +31,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Claude Code on the Linux laptops: managed settings under `/etc/claude-code`, the sandbox's
       bubblewrap, and the MCP tokens, which need a user-owned secret the NixOS root-0400 rule
       forbids today.
-- [ ] An alert when the thinkpad's home backups stop: the laptop sends no metrics, so the signal
-      has to come from bastion's side, such as the newest snapshot's age in its repository.
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
@@ -41,6 +39,5 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] `ci-deploy`: deploy on merge from GitHub-hosted runners (Tailscale GitHub Action + deploy-rs),
       protected environment with manual approval gated by a path filter on access-changing files;
       its own key on the `deploy` account, which is root-equivalent.
-- [ ] Update the `nix` skill placement table once the laptops' desktop modules land.
 - [ ] Delete `~/projects/infra-old/` (duplicate) and, when every host runs the new config,
       `infra/infra-old/` and its mention in CLAUDE.md.

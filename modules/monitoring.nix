@@ -640,9 +640,15 @@ in
                       }
                       {
                         title = "Backup stale";
-                        expr = "time() - restic_last_success_timestamp_seconds{backup!=\"drill-usb\"}";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup!~\"drill-usb|thinkpad\"}";
                         threshold = 30 * 3600;
                         summary = "The {{ $labels.backup }} backup on {{ $labels.instance }} has not succeeded for over 30 hours";
+                      }
+                      {
+                        title = "Laptop backup stale";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup=\"thinkpad\"}";
+                        threshold = 3 * 86400;
+                        summary = "The ThinkPad has not uploaded a home backup to {{ $labels.instance }} for over 3 days";
                       }
                       {
                         title = "Restore drill stale";
