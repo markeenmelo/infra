@@ -19,6 +19,9 @@ let
     "/private/var/run/secrets"
     "/private/var/run/secrets.d"
     "/run/user"
+    "/run/dbus"
+    "/run/tailscale"
+    "/nix/var/nix/daemon-socket"
   ];
   managedSettings = builtins.toJSON {
     permissions.disableBypassPermissionsMode = "disable";
