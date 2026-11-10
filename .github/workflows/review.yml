@@ -13,7 +13,7 @@ jobs:
       github.event.sender.type != 'Bot' && !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository
     concurrency:
-      group: review-fable-${{ github.event.sender.type == 'Bot' && github.run_id || github.event.pull_request.number }}
+      group: review-fable-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -56,7 +56,7 @@ jobs:
       - if: steps.claude.outputs.structured_output != ''
         run: |
           body=${SUMMARY:?}
-          for name in REVIEW_KEY GH_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN; do
+          for name in REVIEW_KEY GH_TOKEN; do
             [ -z "${!name-}" ] || [[ $body != *"${!name}"* ]] || {
               echo "the summary contains the value of $name" >&2
               exit 1

@@ -71,8 +71,9 @@ Permissions apply within the requested task. Continue independent safe work whil
 
 Pull request reviewers (claude-code-action in [review.yml](.github/workflows/review.yml), and
 Codex code review, which reads this file as
-`AGENTS.md`) review the whole diff, including cross-file
-interactions; every diff reaches those vendors, which is accepted for a public repository whose
+`AGENTS.md`) review the whole diff, including cross-file interactions, and
+[audit.yml](.github/workflows/audit.yml), started by hand, audits the whole tree with the same
+guidelines plus the ponytail audit; every diff reaches those vendors, which is accepted for a public repository whose
 secrets are ciphertext. Prioritize correctness, security and trust boundaries, edge cases,
 concurrency, data loss and persistence, error handling, performance regressions and missing tests.
 Give actionable findings with severity, file/line evidence and rationale. Do not invent defects or

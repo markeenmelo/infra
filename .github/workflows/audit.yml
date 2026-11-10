@@ -1,0 +1,65 @@
+name: audit
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  claude:
+    name: claude-code audit (fable)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fetch ponytail at the commit flake.lock pins
+        run: |
+          rev=$(jq -r .nodes.ponytail.locked.rev flake.lock)
+          git init -q "$RUNNER_TEMP/ponytail"
+          git -C "$RUNNER_TEMP/ponytail" fetch -q --depth 1 https://github.com/DietrichGebert/ponytail "$rev"
+          git -C "$RUNNER_TEMP/ponytail" checkout -q FETCH_HEAD
+      - id: claude
+        uses: anthropics/claude-code-action@9eb012b6d0900c2b9eede65ee1758cec4d2973e9 # v1.0.270
+        env:
+          CLAUDE_CODE_PLUGIN_DIRS: ${{ runner.temp }}/ponytail
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          settings: '{"permissions":{"deny":["Read(//proc/**)","Read(~/.claude/**)"],"blockReadsOutsideWorkingDirectories":true}}'
+          prompt: |
+            REPO: ${{ github.repository }}
+            REF: ${{ github.ref_name }} at ${{ github.sha }}
+
+            Audit the whole repository in the working directory, not a diff. Run the
+            `ponytail:ponytail-audit` skill with the Skill tool on the whole repository, and
+            hold every finding to the "Review guidelines" section of CLAUDE.md and the skill
+            that owns each area under .claude/skills/. Go deep where a mistake costs the most:
+            access, secrets, the public edge, data persistence and backups, deploys. Read,
+            Glob, Grep and Skill are the only tools.
+            Return the report as the `report` field of your structured output, in the
+            ponytail-audit format. Return the report even if you run short of turns.
+          claude_args: >-
+            --model claude-fable-5-2
+            --effort high
+            --max-turns 200
+            --allowedTools "Read,Glob,Grep,Skill"
+            --disallowedTools "Agent,Task,Bash"
+            --json-schema '{"type":"object","properties":{"report":{"type":"string"}},"required":["report"]}'
+      - if: steps.claude.outputs.structured_output != ''
+        run: |
+          body=${REPORT:?}
+          for name in REVIEW_KEY GH_TOKEN; do
+            [ -z "${!name-}" ] || [[ $body != *"${!name}"* ]] || {
+              echo "the report contains the value of $name" >&2
+              exit 1
+            }
+          done
+          printf '%s\n' "$body" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          REVIEW_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').report }}

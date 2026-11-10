@@ -30,9 +30,10 @@ Bastion also holds what the workstations build themselves: `remote-builds` gives
 post-build hook that copies every output it builds to bastion over that key (failing quietly,
 after a 3-second connect timeout, off the tailnet), and makes bastion's cache its first
 substituter, so a cleaned mac or asahi store refills from bastion instead of rebuilding.
-CI reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the tailnet as an
-ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds and leaves
-before it builds, so tailnet minutes stay short and nothing built from PR code reaches bastion.
+CI on `main` reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the
+tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds
+and leaves before it builds, so tailnet minutes stay short and nothing built by CI reaches
+bastion. Pull requests never join ([opentofu skill](../opentofu/SKILL.md)).
 The tailnet policy decides who reaches 5005; bastion's firewall admits it from any tailnet peer.
 What bastion built for another host stays until its store runs low on space: bastion collects
 garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).
