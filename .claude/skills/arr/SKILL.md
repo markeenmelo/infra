@@ -19,7 +19,8 @@ All of them run in nixflix's WireGuard namespace on Proton's config (`arr/proton
 generated with NAT-PMP on), so indexer searches, metadata and downloads leave only through the
 tunnel. nixflix confines them together: an app inside cannot reach one outside.
 [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts the tunnel when it fails or its handshake
-goes stale, and starts the confined apps again once it is back. Their web UIs are
+goes stale, and starts the confined apps again once it is back; a stopped app is started again at
+once, so stop one for maintenance with `systemctl mask --runtime --now`. Their web UIs are
 `sonarr.`, `radarr.`, `prowlarr.`, `qbittorrent.` and `sabnzbd.DOMAIN` through the LAN proxy for
 tailnet clients only ([proxy skill](../proxy/SKILL.md)); the arr apps and SABnzbd log in as
 `marcos` with `arr/password`. An nftables table drops forwarding across the namespace's bridge, so

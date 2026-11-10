@@ -18,7 +18,7 @@
                 unit.enable
                 && unit.vpnConfinement.enable
                 && unit.vpnConfinement.vpnNamespace == namespace
-                && (unit.serviceConfig.Type or "simple") != "oneshot"
+                && lib.elem "multi-user.target" unit.wantedBy
               ) config.systemd.services
             );
           perNamespace =
@@ -41,6 +41,7 @@
               unitConfig.ConditionPathExists = "/run/netns/${namespace}";
               path = [
                 pkgs.iproute2
+                pkgs.iputils
                 pkgs.wireguard-tools
               ];
               enableStrictShellChecks = true;
@@ -48,8 +49,13 @@
               script = ''
                 since=$(systemctl show -P ActiveEnterTimestampMonotonic ${namespace}.service)
                 (( $(cut -d. -f1 /proc/uptime) - since / 1000000 < 300 )) && exit 0
-                latest=$(ip netns exec ${namespace} wg show ${namespace}0 latest-handshakes | cut -f2 | sort -n | tail -n1)
-                if (( $(date +%s) - ''${latest:-0} >= 300 )); then
+                stale() {
+                  latest=$(ip netns exec ${namespace} wg show ${namespace}0 latest-handshakes | cut -f2 | sort -n | tail -n1)
+                  (( $(date +%s) - ''${latest:-0} >= 300 ))
+                }
+                stale || exit 0
+                ip netns exec ${namespace} ping -c 3 -W 2 1.1.1.1 > /dev/null || true
+                if stale; then
                   echo "last handshake ''${latest:-never}, restarting" >&2
                   systemctl restart ${namespace}.service
                 fi
