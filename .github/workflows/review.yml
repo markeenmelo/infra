@@ -3,30 +3,17 @@ name: review
 on:
   pull_request:
     types: [opened, reopened, ready_for_review, synchronize]
-  issue_comment:
-    types: [created]
 
 permissions: {}
 
 jobs:
   claude:
-    name: claude-code (${{ matrix.name }})
+    name: claude-code (opus)
     if: >-
-      github.event.sender.type != 'Bot' &&
-      ((github.event_name == 'pull_request' && !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event.issue.pull_request && startsWith(github.event.comment.body, '@claude review') &&
-      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: opus
-            model: claude-opus-5-5
-            args: --effort medium
-            secret: CLAUDE_CODE_OAUTH_TOKEN
+      github.event.sender.type != 'Bot' && !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
     concurrency:
-      group: review-${{ matrix.name }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '@claude review')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
+      group: review-opus-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -34,11 +21,6 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - if: github.event_name == 'issue_comment'
-        run: test "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isCrossRepository --jq .isCrossRepository)" = false
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ github.event.issue.number }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
@@ -46,13 +28,13 @@ jobs:
       - id: claude
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1.0.269
         with:
-          claude_code_oauth_token: ${{ secrets[matrix.secret] }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           classify_inline_comments: "false"
           settings: '{"permissions":{"deny":["Read(//proc/**)","Read(~/.claude/**)"],"blockReadsOutsideWorkingDirectories":true}}'
           prompt: |
             REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
 
             Review this pull request following the "Review guidelines" section of CLAUDE.md.
             The working directory holds the trusted base branch, not the PR; read the PR only
@@ -62,11 +44,11 @@ jobs:
             Return the top-level summary as the `summary` field of your structured output and
             post line-specific findings with
             `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`),
-            starting every inline comment body with the line `**${{ matrix.name }}**`.
+            starting every inline comment body with the line `**opus**`.
             Post nothing else. Return the summary even if you run short of turns.
           claude_args: >-
-            --model ${{ matrix.model }}
-            ${{ matrix.args }}
+            --model claude-opus-5-5
+            --effort medium
             --max-turns 100
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*)"
             --disallowedTools "Agent,Task"
@@ -80,7 +62,7 @@ jobs:
               exit 1
             }
           done
-          body="$MARKER"$'\n'"**$NAME**"$'\n\n'"$body"
+          body="$MARKER"$'\n'"**opus**"$'\n\n'"$body"
           id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
             --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id' | tail -n 1)
           if [ -n "$id" ]; then
@@ -89,9 +71,8 @@ jobs:
             gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body="$body"
           fi
         env:
-          REVIEW_KEY: ${{ secrets[matrix.secret] }}
+          REVIEW_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
-          MARKER: <!-- ${{ matrix.name }}-review -->
-          NAME: ${{ matrix.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MARKER: <!-- opus-review -->
           SUMMARY: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').summary }}
