@@ -89,6 +89,7 @@ in
         };
         Service = {
           ExecStart = "${lib.getExe' pkgs.ntfy-sh "ntfy"} subscribe ntfy.${domain}/alerts ${notify}";
+          Environment = "PATH=${lib.makeBinPath [ pkgs.bash ]}";
           Restart = "always";
           RestartSec = 30;
         };
