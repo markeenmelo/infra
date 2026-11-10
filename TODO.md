@@ -10,11 +10,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## bastion
 
-- [ ] Frigate's person object filters (`min_area`, ratios, `threshold`) and zone `inertia`
-      against false positives, tuned by the operator.
-- [ ] Destroy the unmounted `tank/nextcloud` dataset once nothing is missed from it. It left the
-      backup roots, so restic's copies age out under the prune policy in `modules/backups.nix`
-      and the dataset then holds the only copy.
 - [ ] Exporters and alerts for PostgreSQL and the apps (Authelia, Immich, Frigate, Jellyfin, the
       arr apps, Caddy requests) once the core set misses something; Sonarr and Radarr publishing to
       ntfy's `media` topic.
