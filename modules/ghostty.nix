@@ -4,7 +4,7 @@
     {
       programs.ghostty = {
         enable = true;
-        package = null;
+        package = lib.mkDefault null;
         settings = {
           keybind = "global:cmd+grave_accent=toggle_quick_terminal";
           command = "${lib.getExe config.programs.tmux.package} new-session -A -s main";

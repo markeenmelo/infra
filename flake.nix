@@ -60,6 +60,13 @@
         flake-parts.follows = "flake-parts";
       };
     };
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "home-manager";
+      };
+    };
     nixflix = {
       url = "github:kiriwalawren/nixflix";
       inputs = {

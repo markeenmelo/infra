@@ -26,14 +26,15 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## Laptops
 
-- [ ] `thinkpad`: host, desktop profile, Stylix, Home Manager, power, backups; persist and back up
-      `~/.local/state/infra` (OpenTofu state); a NixOS `remote-builds` with its own builder key, so
-      its deploys build on bastion like the mac's; a desktop switcher for the Proton exit nodes,
-      on the mac too; an ntfy subscriber for `alerts` on both. The old generation gave every restic repository one password, which the old
-      ThinkPad holds and the USB and pCloud repositories still accept: the reinstall must erase it
-      (encrypted disk or secure erase), and `restic key add` a fresh `backups/thinkpad-password`
-      to the laptop's repository on bastion, removing the old key there, so the new install never
-      holds the household key.
+- [ ] `thinkpad`: a desktop switcher for the Proton exit nodes, on the mac too; an ntfy
+      subscriber for `alerts` on both. Before bastion or the thinkpad deploys this revision, `restic key add` the fresh
+      `backups/thinkpad-password` to the laptop's repository on bastion; after the reinstall,
+      remove the household key there, so the new install never holds it.
+- [ ] Claude Code on the Linux laptops: managed settings under `/etc/claude-code`, the sandbox's
+      bubblewrap, and the MCP tokens, which need a user-owned secret the NixOS root-0400 rule
+      forbids today.
+- [ ] An alert when the thinkpad's home backups stop: the laptop sends no metrics, so the signal
+      has to come from bastion's side, such as the newest snapshot's age in its repository.
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 

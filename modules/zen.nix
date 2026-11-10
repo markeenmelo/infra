@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ inputs, lib, ... }:
 let
   locked = lib.mapAttrs (
     _: Value: {
@@ -6,10 +6,7 @@ let
       Status = "locked";
     }
   );
-in
-{
-  flake.modules.darwin.desktop.system.defaults.CustomUserPreferences."app.zen-browser.zen" = {
-    EnterprisePoliciesEnabled = true;
+  policies = {
     ExtensionSettings = {
       "*" = {
         installation_mode = "allowed";
@@ -95,6 +92,31 @@ in
       MoreFromMozilla = false;
       FirefoxLabs = false;
       Locked = true;
+    };
+  };
+in
+{
+  flake.modules.darwin.desktop.system.defaults.CustomUserPreferences."app.zen-browser.zen" =
+    lib.mkMerge
+      [
+        policies
+        { EnterprisePoliciesEnabled = true; }
+      ];
+
+  flake.modules.homeManager.desktop = {
+    imports = [ inputs.zen-browser.homeModules.beta ];
+    programs.zen-browser = {
+      enable = true;
+      inherit policies;
+      profiles.default = { };
+    };
+    xdg.mimeApps = {
+      enable = true;
+      defaultApplications = lib.genAttrs [
+        "text/html"
+        "x-scheme-handler/http"
+        "x-scheme-handler/https"
+      ] (_: "zen-beta.desktop");
     };
   };
 }
