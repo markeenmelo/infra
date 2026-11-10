@@ -88,17 +88,17 @@
     "cache-tax": {
       "flake": false,
       "locked": {
-        "lastModified": 1792647102,
-        "narHash": "sha256-XizQA4ijhcLThwjWbByvwTx88pivf2M7gnYWokukK7I=",
+        "lastModified": 1794137643,
+        "narHash": "sha256-De1wDZFSgUeuAphM9k5xhaRMTAgLMPs1UC1t7UDTCSY=",
         "owner": "karanb192",
         "repo": "cache-tax",
-        "rev": "e4940afcc62c109bd667bae1b996bee765021759",
+        "rev": "b05ec14e8d327021ade8c4969003547be8076812",
         "type": "github"
       },
       "original": {
         "owner": "karanb192",
         "repo": "cache-tax",
-        "rev": "e4940afcc62c109bd667bae1b996bee765021759",
+        "rev": "b05ec14e8d327021ade8c4969003547be8076812",
         "type": "github"
       }
     },
