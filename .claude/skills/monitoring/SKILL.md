@@ -42,13 +42,18 @@ A host that imports `telemetry` runs Alloy, which scrapes its node metrics and e
 `fleet.scrapeTargets` endpoint (CrowdSec on racknerd), probes every `fleet.probes` URL (the
 edge's public hostnames, which racknerd resolves to loopback so its own probes skip the country
 rule and CrowdSec; they test Caddy, the tunnel and the apps, not reachability from outside), and
-ships the journal. It pushes to the port pair in its
+ships the journal. As on bastion, an nftables guard lets only root and Alloy (pinned to bastion's
+uid) connect to its scrape targets, plus Caddy to its own admin API on 2019, which also holds the
+Porkbun keys. It pushes to the port pair in its
 `fleet.hosts.HOST.telemetry`; bastion's Alloy listens on that pair, stamps `host=HOST` and forwards
 into the local Prometheus and Loki, and its firewall admits the pair only from that host's tailnet
 address, with a tailnet grant for the same ports ([opentofu skill](../opentofu/SKILL.md)). Nothing
 is authenticated, an accepted risk: a compromised host can push false data under its own name but
 read nothing. Each sender gets a critical `Host silent HOST` alert once its metrics have stopped for 10 minutes,
-since its own alerts, the edge's probes among them, stop with it and no data counts as fine. The `alloy-HOST`
+since its own alerts, the edge's probes among them, stop with it and no data counts as fine.
+Bastion's own Alloy probes `https://auth.DOMAIN` through the gateway's wildcard record, so the
+LAN proxy's certificate and reachability get the same `Public endpoint down` and `Certificate
+expiring` alerts as the edge's. The `alloy-HOST`
 check runs `alloy fmt` on every host's Alloy configuration, which catches syntax errors (a missing
 trailing comma in a multi-line list) but not unknown arguments or wrong component wiring.
 

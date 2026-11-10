@@ -186,7 +186,7 @@ in
         prometheus.scrape "probes" {
           scrape_interval = "60s"
           targets         = discovery.relabel.probes.output
-          forward_to      = [prometheus.remote_write.bastion.receiver]
+          forward_to      = [prometheus.relabel.instance.receiver]
         }
 
         prometheus.remote_write "bastion" {
@@ -618,7 +618,7 @@ in
                         expr = "1 - probe_success";
                         for = "5m";
                         severity = "critical";
-                        summary = "{{ $labels.probe }} has failed its HTTPS probe through the edge for 5 minutes";
+                        summary = "{{ $labels.probe }} has failed its HTTPS probe from {{ $labels.instance }} for 5 minutes";
                       }
                       {
                         title = "Certificate expiring";
@@ -811,6 +811,40 @@ in
             endpoint {
               url = "http://127.0.0.1:${toString ports.prometheus}/api/v1/write"
             }
+          }
+
+          prometheus.exporter.blackbox "lan_proxy" {
+            config  = "{ modules: { https: { prober: http, timeout: 10s, http: { preferred_ip_protocol: ip4, fail_if_not_ssl: true } } } }"
+            targets = [
+              {"name" = "lan-proxy", "address" = "https://auth.${domain}", "module" = "https"},
+            ]
+          }
+
+          discovery.relabel "lan_proxy" {
+            targets = prometheus.exporter.blackbox.lan_proxy.targets
+            rule {
+              source_labels = ["job"]
+              regex         = "integrations/blackbox/(.*)"
+              target_label  = "probe"
+            }
+            rule {
+              target_label = "job"
+              replacement  = "blackbox"
+            }
+            rule {
+              target_label = "instance"
+              replacement  = "${host}"
+            }
+            rule {
+              target_label = "host"
+              replacement  = "${host}"
+            }
+          }
+
+          prometheus.scrape "lan_proxy" {
+            scrape_interval = "60s"
+            targets         = discovery.relabel.lan_proxy.output
+            forward_to      = [prometheus.remote_write.local.receiver]
           }
         ''
         + lib.concatStrings (
