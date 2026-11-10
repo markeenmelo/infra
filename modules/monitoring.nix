@@ -40,22 +40,18 @@ let
   };
 in
 {
-  flake.checks = lib.foldlAttrs (
-    acc: host: nixos:
-    if !nixos.config.services.alloy.enable then
-      acc
-    else
-      lib.recursiveUpdate acc {
-        ${nixos.config.nixpkgs.hostPlatform.system}."alloy-${host}" =
-          nixos.pkgs.runCommand "alloy-${host}" { }
-            ''
-              ${lib.getExe nixos.config.services.alloy.package} fmt ${
-                nixos.config.environment.etc."alloy/config.alloy".source
-              } > /dev/null
-              touch $out
-            '';
-      }
-  ) { } config.flake.nixosConfigurations;
+  flake.checks =
+    import ./_host-checks.nix { inherit config lib; } "alloy"
+      (nixos: nixos.config.services.alloy.enable)
+      (
+        host: nixos:
+        nixos.pkgs.runCommand "alloy-${host}" { } ''
+          ${lib.getExe nixos.config.services.alloy.package} fmt ${
+            nixos.config.environment.etc."alloy/config.alloy".source
+          } > /dev/null
+          touch $out
+        ''
+      );
 
   flake.modules.nixos.base =
     { lib, ... }:
@@ -572,6 +568,8 @@ in
                     lib.mapAttrsToList (sender: _: {
                       title = "Host silent ${sender}";
                       expr = "absent_over_time(up{host=\"${sender}\",job=\"node\"}[10m])";
+                      for = "0s";
+                      severity = "critical";
                       summary = "${sender} has sent no metrics to bastion for 10 minutes";
                     }) senders
                     ++ [
@@ -731,6 +729,7 @@ in
                   ports.loki
                   ports.lokiGrpc
                 ]
+                ++ lib.concatMap lib.attrValues (lib.mapAttrsToList (_: sender: sender.telemetry) senders)
               )
             } } meta skuid != { 0, ${
               lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) ([
@@ -740,6 +739,9 @@ in
                 "alloy"
               ])
             } } reject
+            ${lib.optionalString (lan != null) ''
+              oifname "lo" udp dport ${toString lan.syslogPort} reject
+            ''}
           }
         '';
       };

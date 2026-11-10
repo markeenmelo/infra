@@ -10,8 +10,9 @@ Each exporter sits beside what it measures (SMART here, the UPS in the bastion h
 and adds its port to `fleet.scrapeTargets`, which becomes a Prometheus job. Prometheus, Loki and
 every scrape target answer without authentication, so an nftables guard admits only root and the
 stack's own users (pinned uids), plus Caddy's for its own admin endpoint (2019, which serves
-Caddy's metrics and its reloads), to Loki's ports and every `fleet.scrapeTargets` port; otherwise
-any service on bastion could read the whole journal through Loki. Exporter ports sit at 19xxx,
+Caddy's metrics and its reloads), to Loki's ports, every `fleet.scrapeTargets` port and the ports Alloy receives other hosts' telemetry
+on, and refuses the gateway's syslog port to every local sender; otherwise
+any service on bastion could read the whole journal through Loki or push data under another host's name. Exporter ports sit at 19xxx,
 clear of OpenCloud's internal block from 9100.
 Prometheus scrapes its own exporters (node with the systemd collector, itself) every 60 s and keeps
 30 days, capped at 20 GB. Alloy ships bastion's journal to Loki with `host`, `unit`,
@@ -45,7 +46,8 @@ ships the journal. It pushes to the port pair in its
 into the local Prometheus and Loki, and its firewall admits the pair only from that host's tailnet
 address, with a tailnet grant for the same ports ([opentofu skill](../opentofu/SKILL.md)). Nothing
 is authenticated, an accepted risk: a compromised host can push false data under its own name but
-read nothing. Each sender gets a `Host silent HOST` alert when its metrics stop. The `alloy-HOST`
+read nothing. Each sender gets a critical `Host silent HOST` alert once its metrics have stopped for 10 minutes,
+since its own alerts, the edge's probes among them, stop with it and no data counts as fine. The `alloy-HOST`
 check runs `alloy fmt` on every host's Alloy configuration, which catches syntax errors (a missing
 trailing comma in a multi-line list) but not unknown arguments or wrong component wiring.
 

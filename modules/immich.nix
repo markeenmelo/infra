@@ -7,35 +7,31 @@ let
   hostname = "photos.${domain}";
 in
 {
-  flake.checks = lib.foldlAttrs (
-    acc: host: nixos:
-    let
-      inherit (nixos.config.services) immich;
-    in
-    if !immich.enable then
-      acc
-    else
-      lib.recursiveUpdate acc {
-        ${nixos.config.nixpkgs.hostPlatform.system}."immich-${host}" =
-          nixos.pkgs.runCommand "immich-${host}" { }
-            ''
-              IMMICH_ALLOW_SETUP=${lib.escapeShellArg immich.environment.IMMICH_ALLOW_SETUP} \
-                ${lib.getExe nixos.pkgs.nodejs} <<'JS'
-              const load = require('node:module').createRequire('${immich.package}/lib/node_modules/immich/package.json');
-              const { ConfigRepository } = load('./dist/repositories/config.repository');
-              if (new ConfigRepository().getEnv().setup.allow) throw new Error('admin sign-up is still offered');
-              const { AdminConfigDto, defaults } = load('./dist/dtos/config.dto');
-              const settings = ${
-                lib.toJSON (
-                  lib.recursiveUpdate immich.settings { oauth.clientSecret = "test-only-not-a-credential"; }
-                )
-              };
-              AdminConfigDto.schema.parse(load('lodash-es').defaultsDeep(settings, defaults));
-              JS
-              touch $out
-            '';
-      }
-  ) { } config.flake.nixosConfigurations;
+  flake.checks =
+    import ./_host-checks.nix { inherit config lib; } "immich"
+      (nixos: nixos.config.services.immich.enable)
+      (
+        host: nixos:
+        let
+          inherit (nixos.config.services) immich;
+        in
+        nixos.pkgs.runCommand "immich-${host}" { } ''
+          IMMICH_ALLOW_SETUP=${lib.escapeShellArg immich.environment.IMMICH_ALLOW_SETUP} \
+            ${lib.getExe nixos.pkgs.nodejs} <<'JS'
+          const load = require('node:module').createRequire('${immich.package}/lib/node_modules/immich/package.json');
+          const { ConfigRepository } = load('./dist/repositories/config.repository');
+          if (new ConfigRepository().getEnv().setup.allow) throw new Error('admin sign-up is still offered');
+          const { AdminConfigDto, defaults } = load('./dist/dtos/config.dto');
+          const settings = ${
+            lib.toJSON (
+              lib.recursiveUpdate immich.settings { oauth.clientSecret = "test-only-not-a-credential"; }
+            )
+          };
+          AdminConfigDto.schema.parse(load('lodash-es').defaultsDeep(settings, defaults));
+          JS
+          touch $out
+        ''
+      );
 
   flake.modules.nixos.base =
     { lib, ... }:

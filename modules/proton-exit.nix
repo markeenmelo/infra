@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  inherit (config.flake.modules.nixos) nixflix;
+  inherit (config.flake.modules.nixos) vpn-watch;
   # the third octet of each tunnel's namespace subnet
   countries = {
     ca = 1;
@@ -22,7 +22,7 @@ in
       perCountry = f: lib.mkMerge (lib.mapAttrsToList f countries);
     in
     {
-      imports = [ nixflix ];
+      imports = [ vpn-watch ];
 
       sops.secrets = perCountry (
         country: _:
