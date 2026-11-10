@@ -56,14 +56,14 @@ in
         if [ "$(echo "$status" | ${jq} -r .BackendState)" != Running ]; then
           sketchybar --set "$NAME" icon.color=0xff${colors.base03} label=off
         else
-          exit=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .HostName][0] // "direct"')
+          exit=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .DNSName | split(".")[0]][0] // "direct"')
           sketchybar --set "$NAME" icon.color=0xff${colors.base05} label="$exit"
         fi
       '';
       tailnetNext = pkgs.writeShellScript "sketchybar-tailnet-next" ''
         status=$(${tailscale} status --json) || exit
-        mapfile -t nodes < <(echo "$status" | ${jq} -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption and .Online) | .HostName] | sort | .[])')
-        current=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .HostName][0] // "direct"')
+        mapfile -t nodes < <(echo "$status" | ${jq} -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption and .Online) | .DNSName | split(".")[0]] | sort | .[])')
+        current=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .DNSName | split(".")[0]][0] // "direct"')
         next=''${nodes[0]}
         for i in "''${!nodes[@]}"; do
           if [ "''${nodes[$i]}" = "$current" ]; then next=''${nodes[$(((i + 1) % ''${#nodes[@]}))]}; fi
