@@ -71,10 +71,10 @@ Provisioning never deletes a rule: a retitled or removed rule's uid goes in `del
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the
 tailnet. Everything is denied by default; `alerts` and `media` are readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
-a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. The Linux desktop subscribes
-itself: `ntfy-alerts`, a Home Manager user service, shows each alert as a notification, critical
-from priority 4, and only while the tailnet is up, so alerts sent while the laptop was off or
-away reach only the phone.
+a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. Each workstation subscribes
+itself: `ntfy-alerts`, a Home Manager user service (a launchd agent on the mac), shows each alert
+as a notification, critical from priority 4 on Linux, and only while the tailnet is up, so alerts
+sent while the laptop was off or away reach only the phone.
 
 ```sh
 ssh bastion "systemctl status prometheus loki alloy grafana"
