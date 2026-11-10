@@ -662,7 +662,7 @@ in
                         title = "Proxy server errors";
                         expr = "(sum by (instance) (increase(caddy_http_request_duration_seconds_count{code=~\"5..\"}[15m])) > 10) / sum by (instance) (increase(caddy_http_request_duration_seconds_count[15m]))";
                         threshold = 0.1;
-                        summary = "Caddy on {{ $labels.instance }} answered more than 10% of requests with a server error for 15 minutes";
+                        summary = "Caddy on {{ $labels.instance }} answered more than 10% of requests, and more than 10 in all, with a server error for 15 minutes";
                       }
                       {
                         title = "Arr health issue";

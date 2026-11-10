@@ -5,11 +5,11 @@ default:
 fmt:
     nix fmt
 
-[doc("Evaluate every host and run the checks that need no build")]
+[doc("Evaluate every host and every system's checks, building nothing")]
 check:
-    nix flake check --no-build
+    nix flake check --no-build --all-systems
 
-[doc("Activate HOST's committed configuration over the tailnet, with magic rollback")]
+[doc("Activate HOST's configuration from this checkout over the tailnet, with magic rollback")]
 deploy host:
     nix run .#deploy -- .#{{ host }}
 

@@ -24,7 +24,7 @@ wraps a flake app or a Nix command:
 
 ```sh
 just check            # evaluate every host
-just deploy bastion   # activate a committed revision over the tailnet
+just deploy bastion   # activate this checkout on bastion over the tailnet
 just tofu unifi plan  # plan an OpenTofu project
 ```
 
