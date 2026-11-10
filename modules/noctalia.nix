@@ -27,55 +27,55 @@
       systemd = osConfig.systemd.package;
     in
     {
-    programs.noctalia = {
-      enable = true;
-      systemd.enable = true;
-      settings = {
-        shell.clipboard_enabled = false;
-        bar.default = {
-          margin_ends = 0;
-          margin_edge = 0;
-          start = [
-            "session"
-            "workspaces"
-            "media"
-          ];
-          center = [ ];
-          end = [
-            "tray"
-            "volume"
-            "brightness"
-            "bluetooth"
-            "battery"
-            "network"
-            "control-center"
-            "notifications"
-            "clock"
-          ];
-        };
-        nightlight.enabled = true;
-        idle.behavior = {
-          lock = {
-            timeout = 300;
-            action = "lock";
+      programs.noctalia = {
+        enable = true;
+        systemd.enable = true;
+        settings = {
+          shell.clipboard_enabled = false;
+          bar.default = {
+            margin_ends = 0;
+            margin_edge = 0;
+            start = [
+              "session"
+              "workspaces"
+              "media"
+            ];
+            center = [ ];
+            end = [
+              "tray"
+              "volume"
+              "brightness"
+              "bluetooth"
+              "battery"
+              "network"
+              "control-center"
+              "notifications"
+              "clock"
+            ];
           };
-          screen-off = {
-            timeout = 330;
-            locked_timeout = 30;
-            action = "screen_off";
-          };
-          suspend-battery = {
-            timeout = 600;
-            action = "command";
-            command = "${lib.getExe' systemd "systemd-ac-power"} || ${lib.getExe' systemd "systemctl"} suspend";
-          };
-          suspend = {
-            timeout = 1800;
-            action = "lock_and_suspend";
+          nightlight.enabled = true;
+          idle.behavior = {
+            lock = {
+              timeout = 300;
+              action = "lock";
+            };
+            screen-off = {
+              timeout = 330;
+              locked_timeout = 30;
+              action = "screen_off";
+            };
+            suspend-battery = {
+              timeout = 600;
+              action = "command";
+              command = "${lib.getExe' systemd "systemd-ac-power"} || ${lib.getExe' systemd "systemctl"} suspend";
+            };
+            suspend = {
+              timeout = 1800;
+              action = "lock_and_suspend";
+            };
           };
         };
       };
+      systemd.user.services.noctalia.Unit.X-RestartIfChanged = false;
     };
-    systemd.user.services.noctalia.Unit.X-RestartIfChanged = false;
-  };
 }
