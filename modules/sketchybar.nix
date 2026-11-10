@@ -50,14 +50,30 @@ in
         fi
         sketchybar --set "$NAME" icon="$icon"
       '';
+      tailscale = "/Applications/Tailscale.app/Contents/MacOS/Tailscale";
       tailnet = pkgs.writeShellScript "sketchybar-tailnet" ''
-        status=$(/Applications/Tailscale.app/Contents/MacOS/Tailscale status --json 2>/dev/null)
+        status=$(${tailscale} status --json 2>/dev/null)
         if [ "$(echo "$status" | ${jq} -r .BackendState)" != Running ]; then
           sketchybar --set "$NAME" icon.color=0xff${colors.base03} label=off
         else
-          exit=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .HostName][0] // "direct"')
+          exit=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .DNSName | split(".")[0]][0] // "direct"')
           sketchybar --set "$NAME" icon.color=0xff${colors.base05} label="$exit"
         fi
+      '';
+      tailnetNext = pkgs.writeShellScript "sketchybar-tailnet-next" ''
+        status=$(${tailscale} status --json) || exit
+        mapfile -t nodes < <(echo "$status" | ${jq} -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption and .Online) | .DNSName | split(".")[0]] | sort | .[])')
+        current=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .DNSName | split(".")[0]][0] // "direct"')
+        next=''${nodes[0]}
+        for i in "''${!nodes[@]}"; do
+          if [ "''${nodes[$i]}" = "$current" ]; then next=''${nodes[$(((i + 1) % ''${#nodes[@]}))]}; fi
+        done
+        if [ "$next" = direct ]; then
+          ${tailscale} set --exit-node=
+        else
+          ${tailscale} set --exit-node="$next" --exit-node-allow-lan-access
+        fi
+        exec ${tailnet}
       '';
       alerts = pkgs.writeShellScript "sketchybar-alerts" ''
         if ! response=$(printf 'Authorization: Bearer %s\n' "$(cat ${config.sops.secrets.grafana-mcp-token.path})" \
@@ -123,7 +139,7 @@ in
           sketchybar --add item network right --subscribe network wifi_change system_woke \
             --set network update_freq=60 label.drawing=off script="${network}"
           sketchybar --add item tailnet right --subscribe tailnet system_woke \
-            --set tailnet update_freq=30 icon=󰦝 script="${tailnet}"
+            --set tailnet update_freq=30 icon=󰦝 script="${tailnet}" click_script="${tailnetNext}"
           sketchybar --add item memory right --set memory icon=󰍛
           sketchybar --add item cpu right --set cpu icon=󰻠 update_freq=10 script="${load}"
           sketchybar --add item alerts right --subscribe alerts system_woke \

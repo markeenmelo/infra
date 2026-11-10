@@ -1,11 +1,52 @@
-{
-  flake.modules.nixos.desktop = {
-    programs.hyprland = {
-      enable = true;
-      withUWSM = true;
+let
+  exitNode =
+    pkgs: tailscale:
+    pkgs.writeShellApplication {
+      name = "tailnet-exit-node";
+      runtimeInputs = [
+        tailscale
+        pkgs.jq
+      ];
+      text = ''
+        node=$1
+        if [ "$node" = direct ]; then
+          exec tailscale set --exit-node=
+        fi
+        if ! tailscale status --json | jq -e --arg node "$node" '[(.Peer // {})[] | select(.ExitNodeOption and .Online) | .DNSName | split(".")[0]] | index($node)' > /dev/null; then
+          echo "not an online exit node: $node" >&2
+          exit 1
+        fi
+        exec tailscale set --exit-node="$node" --exit-node-allow-lan-access
+      '';
     };
-    environment.sessionVariables.NIXOS_OZONE_WL = "1";
-  };
+in
+{
+  flake.modules.nixos.desktop =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    {
+      programs.hyprland = {
+        enable = true;
+        withUWSM = true;
+      };
+      environment.sessionVariables.NIXOS_OZONE_WL = "1";
+      security.sudo.extraRules = [
+        {
+          users = [ "marcos" ];
+          runAs = "root";
+          commands = [
+            {
+              command = "${lib.getExe (exitNode pkgs config.services.tailscale.package)} ^[a-z0-9-]+$";
+              options = [ "NOPASSWD" ];
+            }
+          ];
+        }
+      ];
+    };
 
   flake.modules.homeManager.desktop =
     {
@@ -41,6 +82,26 @@
             | @tsv' | sort -u | column -t -s "$(printf '\t')" | less -S
         '';
       };
+      tailnetNext = pkgs.writeShellApplication {
+        name = "tailnet-next";
+        runtimeInputs = [
+          osConfig.services.tailscale.package
+          pkgs.jq
+          pkgs.libnotify
+        ];
+        text = ''
+          trap 'notify-send --app-name=tailscale "Exit node" "switch failed"' ERR
+          status=$(tailscale status --json)
+          mapfile -t nodes < <(echo "$status" | jq -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption and .Online) | .DNSName | split(".")[0]] | sort | .[])')
+          current=$(echo "$status" | jq -r '[(.Peer // {})[] | select(.ExitNode) | .DNSName | split(".")[0]][0] // "direct"')
+          next=''${nodes[0]}
+          for i in "''${!nodes[@]}"; do
+            if [ "''${nodes[$i]}" = "$current" ]; then next=''${nodes[$(((i + 1) % ''${#nodes[@]}))]}; fi
+          done
+          ${osConfig.security.wrapperDir}/sudo -n ${lib.getExe (exitNode pkgs osConfig.services.tailscale.package)} "$next"
+          notify-send --app-name=tailscale "Exit node" "$next"
+        '';
+      };
       binds = {
         "SUPER + Space" = {
           desc = "App launcher";
@@ -65,6 +126,10 @@
         "SUPER + CTRL + E" = {
           desc = "System monitor";
           dsp = app "${ghostty} -e ${lib.getExe pkgs.btop}";
+        };
+        "SUPER + T" = {
+          desc = "Next exit node";
+          dsp = exec (lib.getExe tailnetNext);
         };
         "SUPER + slash" = {
           desc = "Show keybinds";
