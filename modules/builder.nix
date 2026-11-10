@@ -80,5 +80,8 @@ in
 
   flake.modules.darwin.remote-builds = remoteBuilds;
 
-  flake.modules.nixos.remote-builds = remoteBuilds;
+  flake.modules.nixos.remote-builds = {
+    imports = [ remoteBuilds ];
+    nix.settings.max-jobs = 0;
+  };
 }

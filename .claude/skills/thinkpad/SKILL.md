@@ -6,9 +6,10 @@ description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with
 # ThinkPad
 
 [modules/hosts/thinkpad/](../../../modules/hosts/thinkpad/) is an Intel ThinkPad on Thunderbolt.
-It runs the `desktop` role, `remote-builds` (its builds go to bastion over the tailnet, with
+It runs the `desktop` role, `remote-builds` (every build goes to bastion over the tailnet, with
 `nix-build-ssh-key`, whose public half is `builderKeys.thinkpad` in
-[builder.nix](../../../modules/builder.nix)) and `backup-home`.
+[builder.nix](../../../modules/builder.nix); `max-jobs = 0` keeps the laptop from building
+itself, so without bastion only substitutes work) and `backup-home`.
 
 ## Disk, unlock and boot
 
