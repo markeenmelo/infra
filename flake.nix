@@ -42,7 +42,7 @@
       flake = false;
     };
     cache-tax = {
-      url = "github:karanb192/cache-tax/e4940afcc62c109bd667bae1b996bee765021759";
+      url = "github:karanb192/cache-tax/b05ec14e8d327021ade8c4969003547be8076812";
       flake = false;
     };
     ponytail = {
