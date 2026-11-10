@@ -24,7 +24,7 @@ let
     "/nix/var/nix/daemon-socket"
     "/run/cups"
     "/run/nscd"
-    "/run/systemd/resolve"
+    "/run/systemd"
     "/tmp/.X11-unix"
     "/persist"
   ];
@@ -35,7 +35,7 @@ let
       failIfUnavailable = true;
       allowUnsandboxedCommands = false;
       network.strictAllowlist = true;
-      filesystem.denyRead = deniedDirs;
+      filesystem.denyRead = deniedDirs ++ [ "/home/marcos/.bitwarden-ssh-agent.sock" ];
     };
   };
 in
