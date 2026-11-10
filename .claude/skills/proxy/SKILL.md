@@ -35,7 +35,9 @@ An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, d
 [caddy.nix](../../../modules/caddy.nix)): the LAN proxy routes every app to loopback, or to its
 `address` when the app lives in another network namespace, refuses non-tailnet clients and
 bastion's own tailnet address (which any local process could borrow) for a `tailnetOnly` app, and
-only a `public` one is forwarded by the edge and gets its port opened on the tailnet interface. The wildcard record already
+only a `public` one is forwarded by the edge and gets its port opened on the tailnet interface,
+to racknerd's address alone, so a tailnet grant mistake cannot let a client skip the edge's
+denied paths and country check. The wildcard record already
 resolves it ([opentofu skill](../opentofu/SKILL.md#porkbun)) and the tailnet grant follows from the same fact on the next `tofu` apply of the tailscale project. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
 credential headers and no share tokens in paths, since the published apps carry credentials in
