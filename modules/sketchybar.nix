@@ -78,7 +78,7 @@ in
       '';
       spotify = pkgs.writeShellScript "sketchybar-spotify" ''
         if [ "$(echo "$INFO" | ${jq} -r '."Player State"')" = Playing ]; then
-          sketchybar --set "$NAME" drawing=on label="$(echo "$INFO" | ${jq} -r '"\(.Artist) - \(.Name)"' | cut -c1-40)"
+          sketchybar --set "$NAME" drawing=on label="$(echo "$INFO" | ${jq} -r '"\(.Artist) - \(.Name)" | .[0:40]')"
         else
           sketchybar --set "$NAME" drawing=off
         fi

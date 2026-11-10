@@ -20,7 +20,10 @@
           pkgs.tmuxPlugins.resurrect
           {
             plugin = pkgs.tmuxPlugins.continuum;
-            extraConfig = "set -g @continuum-restore 'on'";
+            extraConfig = ''
+              set -g @continuum-restore 'on'
+              set -g status-right ""
+            '';
           }
         ];
         terminal = "tmux-256color";
@@ -28,7 +31,6 @@
           set -g renumber-windows on
           set -g set-clipboard on
           set -g status-left ""
-          set -g status-right ""
           set -g status-style "bg=#${colors.base00},fg=#${colors.base03}"
           set -g window-status-current-style "fg=#${colors.base05},bold"
           set -g pane-border-style "fg=#${colors.base03}"
