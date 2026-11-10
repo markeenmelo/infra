@@ -51,8 +51,8 @@ written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. Th
 block Unix sockets without Claude Code's optional seccomp helper, which has no documented path
 outside an npm install, so `deniedDirs` in claude.nix hides the sockets one by one: `/run/user`
 (the session D-Bus, the keyring, Wayland), the system D-Bus, tailscaled, CUPS, Xwayland,
-Bitwarden's agent and the Nix daemon, whose fixed-output builds reach the network outside the
-sandbox. It is a deny list, so a daemon added later needs its socket added there. `/persist` is
+Bitwarden's agent, nscd and resolved, which would resolve any name outside the network
+namespace, and the Nix daemon, whose fixed-output builds reach the network outside the sandbox. It is a deny list, so a daemon added later needs its socket added there. `/persist` is
 hidden too, since it holds a second path to the whole home. As on the mac, `nix` commands that
 need the daemon run outside Claude's sandbox.
 

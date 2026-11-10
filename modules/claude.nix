@@ -23,6 +23,8 @@ let
     "/run/tailscale"
     "/nix/var/nix/daemon-socket"
     "/run/cups"
+    "/run/nscd"
+    "/run/systemd/resolve"
     "/tmp/.X11-unix"
     "/persist"
   ];
