@@ -28,36 +28,36 @@ in
 
   flake.checks.${system} = {
     storage = inputs.disko.lib.testLib.makeDiskoTest {
-    pkgs = inputs.nixpkgs.legacyPackages.${system};
-    name = "storage";
-    disko-config.disko.devices = probe.config.disko.devices;
-    inherit (probe) extendModules;
-    extraTestScript = ''
-      machine.wait_for_unit("multi-user.target")
-      machine.succeed("touch /stray /var/lib/probe/kept")
-      machine_id = machine.succeed("cat /etc/machine-id")
-      root_id = machine.succeed("btrfs inspect-internal rootid /")
-      machine.shutdown()
-      machine.start()
-      machine.wait_for_unit("multi-user.target")
-      machine.fail("test -e /stray")
-      machine.succeed("test -e /var/lib/probe/kept")
-      assert machine.succeed("cat /etc/machine-id") == machine_id, "machine-id changed across a reboot"
-      assert machine.succeed("btrfs inspect-internal rootid /") != root_id, "root subvolume was not recreated"
-    '';
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      name = "storage";
+      disko-config.disko.devices = probe.config.disko.devices;
+      inherit (probe) extendModules;
+      extraTestScript = ''
+        machine.wait_for_unit("multi-user.target")
+        machine.succeed("touch /stray /var/lib/probe/kept")
+        machine_id = machine.succeed("cat /etc/machine-id")
+        root_id = machine.succeed("btrfs inspect-internal rootid /")
+        machine.shutdown()
+        machine.start()
+        machine.wait_for_unit("multi-user.target")
+        machine.fail("test -e /stray")
+        machine.succeed("test -e /var/lib/probe/kept")
+        assert machine.succeed("cat /etc/machine-id") == machine_id, "machine-id changed across a reboot"
+        assert machine.succeed("btrfs inspect-internal rootid /") != root_id, "root subvolume was not recreated"
+      '';
     };
     storage-esp = inputs.disko.lib.testLib.makeDiskoTest {
-    pkgs = inputs.nixpkgs.legacyPackages.${system};
-    name = "storage-esp";
-    disko-config.disko.devices = probeEsp.config.disko.devices;
-    inherit (probeEsp) extendModules;
-    testBoot = false;
-    postMount = ''
-      machine.succeed("touch /mnt/boot/owned-by-macos")
-    '';
-    postDisko = ''
-      machine.succeed("test -e /mnt/boot/owned-by-macos")
-    '';
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      name = "storage-esp";
+      disko-config.disko.devices = probeEsp.config.disko.devices;
+      inherit (probeEsp) extendModules;
+      testBoot = false;
+      postMount = ''
+        machine.succeed("touch /mnt/boot/owned-by-macos")
+      '';
+      postDisko = ''
+        machine.succeed("test -e /mnt/boot/owned-by-macos")
+      '';
     };
   };
 

@@ -232,7 +232,9 @@ in
             return false
           end
           local reload = "${lib.getExe' osConfig.programs.hyprland.package "hyprctl"} reload"
-          hl.bind(${lib.generators.toLua { } "switch:${osConfig.fleet.lidSwitch}"}, hl.dsp.exec_cmd(reload), { locked = true })
+          hl.bind(${
+            lib.generators.toLua { } "switch:${osConfig.fleet.lidSwitch}"
+          }, hl.dsp.exec_cmd(reload), { locked = true })
           for _, event in ipairs({ "monitor.added", "monitor.removed" }) do
             hl.on(event, function(m)
               if m.name ~= internal and m.name ~= "FALLBACK" then hl.exec_cmd(reload) end
