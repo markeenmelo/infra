@@ -568,7 +568,7 @@ in
                     lib.mapAttrsToList (sender: _: {
                       title = "Host silent ${sender}";
                       expr = "absent_over_time(up{host=\"${sender}\",job=\"node\"}[10m])";
-                      for = "0s";
+                      for = "2m";
                       severity = "critical";
                       summary = "${sender} has sent no metrics to bastion for 10 minutes";
                     }) senders

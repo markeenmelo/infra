@@ -40,14 +40,14 @@ jobs:
               exit 1
             fi
             count=$(jq '[.[] | select(.affected_by | length > 0)] | length' "$host.json")
-            severe=$(jq '[.[] | select(.affected_by | length > 0) | select(([.cvssv3_basescore[]?] | max // 0) >= 9)] | length' "$host.json")
+            severe=$(jq '[.[] | select(.affected_by | length > 0) | select([.cvssv3_basescore as $s | .affected_by[] | $s[.] // 10] | max >= 9)] | length' "$host.json")
             [ "$severe" -eq 0 ] || found=1
             {
-              echo "### $host: $count packages with unwhitelisted CVEs, $severe of them CVSS 9 or higher"
+              echo "### $host: $count packages with unwhitelisted CVEs, $severe of them CVSS 9 or higher or unscored"
               echo
               echo "| CVSS | Package | CVEs |"
               echo "|---|---|---|"
-              jq -r 'map(select(.affected_by | length > 0) | {n: .name, s: ([.cvssv3_basescore[]?] | max // 0), c: (.affected_by | join(" "))}) | sort_by(-.s)[] | "| \(.s) | \(.n) | \(.c) |"' "$host.json"
+              jq -r 'map(select(.affected_by | length > 0) | {n: .name, s: ([.cvssv3_basescore as $s | .affected_by[] | $s[.] // 10] | max), c: (.affected_by | join(" "))}) | sort_by(-.s)[] | "| \(.s) | \(.n) | \(.c) |"' "$host.json"
               echo
             } >> "$GITHUB_STEP_SUMMARY"
           done
