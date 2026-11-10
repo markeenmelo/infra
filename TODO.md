@@ -22,7 +22,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       arr apps, Caddy requests) once the core set misses something; Sonarr and Radarr publishing to
       ntfy's `media` topic.
 - [ ] UniFi: an alert on the gateway's IPS and honeypot detections from its syslog, which needs
-      Loki-backed alert rules; drop `opentofu/unifi/moved.tf` after its first apply.
+      Loki-backed alert rules.
 
 ## Laptops
 
