@@ -88,6 +88,10 @@ internet), `shared` (IoT that Home and the tailnet reach), `player` (IoT that re
 HTTPS). Tailnet clients routed through bastion arrive as bastion's address, so the
 "Bastion-routed" rows decide what they reach, behind the tailnet grants.
 
+Kids DHCP hands out AdGuard's family DNS and the Kids rows allow only it among external
+resolvers, so devices that follow DHCP are filtered. A Kids device set to the gateway's own
+resolver, or to DoH on 443, is not: an accepted gap.
+
 **Provider limits** (filipowm/unifi):
 - The WAN, ad blocking and per-network mDNS stay in the controller UI: the provider rewrites a
   whole network from its schema, which drops the WAN's PPPoE VLAN tag, discards the ad-blocking
