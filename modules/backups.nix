@@ -340,6 +340,24 @@ in
         group = "backup-thinkpad";
       };
       users.groups.backup-thinkpad.gid = 355;
+      preservation.preserveAt."/persist".directories =
+        map
+          (directory: {
+            inherit directory;
+            mode = "0700";
+          })
+          (
+            map (name: "/var/cache/restic-backups-${name}") (lib.attrNames jobs)
+            ++ [ "/var/cache/restic-drill-usb" ]
+          )
+        ++ [
+          {
+            directory = "/var/cache/backup-thinkpad";
+            user = "backup-thinkpad";
+            group = "backup-thinkpad";
+            mode = "0700";
+          }
+        ];
 
       networking.firewall.extraInputRules = ''
         iifname "${config.services.tailscale.interfaceName}" ip saddr ${thinkpad.client} tcp dport ${toString thinkpad.port} accept
