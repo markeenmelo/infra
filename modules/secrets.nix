@@ -30,11 +30,13 @@
           lib.mapAttrsToList (name: entry: {
             assertion =
               entry.mode == "0400"
-              && entry.owner == null
-              && entry.group == null
+              && (
+                (entry.owner == null && entry.group == null)
+                || (entry.owner == "marcos" && entry.group == config.users.users.marcos.group)
+              )
               && entry.uid == 0
               && entry.gid == 0;
-            message = "sops.${kind}.${name} must keep the root-owned 0400 default; a unit reads it through LoadCredential or a *File option.";
+            message = "sops.${kind}.${name} must keep the root-owned 0400 default, or belong to marcos for a tool that account runs; a unit reads it through LoadCredential or a *File option.";
           }) entries
         ) { inherit (config.sops) secrets templates; }
       );

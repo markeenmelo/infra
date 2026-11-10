@@ -1,12 +1,32 @@
-{ config, inputs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 let
   inherit (config.fleet) domain;
   inherit (config.flake.modules.homeManager) claude;
-  secretDirs = [
+  tokens =
+    owner:
+    lib.genAttrs [ "github-mcp-token" "grafana-mcp-token" ] (_: {
+      inherit owner;
+      sopsFile = ../secrets/shared/mcp.yaml;
+    });
+  deniedDirs = [
     "/run/secrets"
     "/run/secrets.d"
     "/private/var/run/secrets"
     "/private/var/run/secrets.d"
+    "/run/user"
+    "/run/dbus"
+    "/run/tailscale"
+    "/nix/var/nix/daemon-socket"
+    "/run/cups"
+    "/run/nscd"
+    "/run/systemd"
+    "/tmp/.X11-unix"
+    "/persist"
   ];
   managedSettings = builtins.toJSON {
     permissions.disableBypassPermissionsMode = "disable";
@@ -15,7 +35,7 @@ let
       failIfUnavailable = true;
       allowUnsandboxedCommands = false;
       network.strictAllowlist = true;
-      filesystem.denyRead = secretDirs;
+      filesystem.denyRead = deniedDirs ++ [ "/home/marcos/.bitwarden-ssh-agent.sock" ];
     };
   };
 in
@@ -27,10 +47,7 @@ in
       { config, pkgs, ... }:
       {
         home-manager.users.${config.system.primaryUser}.imports = [ claude ];
-        sops.secrets = {
-          github-mcp-token.owner = config.system.primaryUser;
-          grafana-mcp-token.owner = config.system.primaryUser;
-        };
+        sops.secrets = tokens config.system.primaryUser;
         nixpkgs.config.allowUnfreePackages = [
           "claude-code"
           "rtk"
@@ -39,6 +56,24 @@ in
           install -d -m 0755 "/Library/Application Support/ClaudeCode"
           ln -sfn ${pkgs.writeText "claude-managed-settings.json" managedSettings} "/Library/Application Support/ClaudeCode/managed-settings.json"
         '';
+      };
+
+    nixos.desktop =
+      { pkgs, ... }:
+      {
+        home-manager.users.marcos.imports = [ claude ];
+        sops.secrets = tokens "marcos";
+        nixpkgs.config.allowUnfreePackages = [
+          "claude-code"
+          "rtk"
+        ];
+        environment = {
+          systemPackages = [
+            pkgs.bubblewrap
+            pkgs.socat
+          ];
+          etc."claude-code/managed-settings.json".text = managedSettings;
+        };
       };
 
     homeManager.claude =
@@ -144,8 +179,14 @@ in
                   "~/Library/Application Support/Bitwarden/**"
                   "~/Library/Application Support/Zen/**"
                   "~/Library/Application Support/Claude/**"
+                  "~/.bitwarden-ssh-agent.sock"
+                  "~/.gnupg/**"
+                  "~/.local/share/keyrings/**"
+                  "~/.config/Bitwarden/**"
+                  "~/.zen/**"
+                  "~/.config/zen/**"
                 ]
-                ++ map (dir: "/${dir}/**") secretDirs
+                ++ map (dir: "/${dir}/**") deniedDirs
               );
             };
           };

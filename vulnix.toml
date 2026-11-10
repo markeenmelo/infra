@@ -1,0 +1,47 @@
+["brotli-1.2.1"]
+cve = ["CVE-2026-111497"]
+comment = "fixed in 1.2.1 per NVD; the match is the CPE range end"
+until = "2027-05-10"
+
+["orc"]
+cve = ["CVE-2025-47436"]
+comment = "Apache ORC's C++ LZO decompressor, not GStreamer's orc"
+until = "2027-05-10"
+
+["perl-5.42.3"]
+cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
+comment = "fixed in 5.42.3 per the CNA ranges; NVD's CPE nodes lack a lower bound"
+until = "2027-05-10"
+
+["perl-5.42.3-env"]
+cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
+comment = "the perl-5.42.3 entry's environment wrapper"
+until = "2027-05-10"
+
+["snappy"]
+cve = ["CVE-2023-28115", "CVE-2023-41330"]
+comment = "KnpLabs' PHP snappy, not Google's compressor"
+until = "2027-05-10"
+
+["zlib"]
+cve = ["CVE-2023-6992", "CVE-2026-27820"]
+comment = "Cloudflare's zlib fork (upstream not affected) and Ruby's zlib gem"
+until = "2027-05-10"
+
+["lapack"]
+cve = ["CVE-2021-4048"]
+comment = "nixpkgs' lapack wraps OpenBLAS 0.3.33, fixed since 0.3.18; the version string is 3"
+until = "2027-05-10"
+
+["whatsapp"]
+cve = [
+  "CVE-2021-24026", "CVE-2021-24027", "CVE-2021-24035", "CVE-2021-24041", "CVE-2021-24042", "CVE-2022-27492",
+  "CVE-2022-36934", "CVE-2023-38537", "CVE-2023-38538", "CVE-2025-30401", "CVE-2026-23863"
+]
+comment = "whatsapp-electron wraps web.whatsapp.com; NVD's whatsapp CPE is Meta's native apps"
+until = "2027-05-10"
+
+["bolt"]
+cve = ["CVE-2021-27367", "CVE-2022-31321", "CVE-2023-5214", "CVE-2025-34086"]
+comment = "Bolt CMS and Puppet Bolt, not boltd, the Thunderbolt daemon"
+until = "2027-05-10"
