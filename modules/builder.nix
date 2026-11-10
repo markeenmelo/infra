@@ -11,6 +11,7 @@ let
   builderKeys = {
     mac = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINoA+orfMja/cji7njutAe9r4c4xe3w5j0iCRzp+tYwE";
     thinkpad = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEDFHuli2Hq2SXHpI0ssAe+F/No0lEGfGXnh/0F3hEsf";
+    asahi = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILIb4eAjq8vyvDQuSkigT359wRoqU+pfVfny1OKl0oN2";
   };
   remoteBuilds =
     { config, ... }:
@@ -80,8 +81,10 @@ in
 
   flake.modules.darwin.remote-builds = remoteBuilds;
 
-  flake.modules.nixos.remote-builds = {
-    imports = [ remoteBuilds ];
-    nix.settings.max-jobs = 0;
-  };
+  flake.modules.nixos.remote-builds =
+    { lib, pkgs, ... }:
+    {
+      imports = [ remoteBuilds ];
+      nix.settings.max-jobs = lib.mkIf (pkgs.stdenv.hostPlatform.system == hosts.bastion.system) 0;
+    };
 }

@@ -60,43 +60,63 @@ in
           ];
         });
       };
+      esp = {
+        type = "filesystem";
+        format = "vfat";
+        mountpoint = "/boot";
+        mountOptions = [ "umask=0077" ];
+      };
+      state =
+        if config.fleet.encryptState then
+          {
+            type = "luks";
+            name = "state";
+            settings.allowDiscards = true;
+            content = btrfs;
+          }
+        else
+          btrfs;
     in
     {
       imports = [
         inputs.disko.nixosModules.disko
         inputs.preservation.nixosModules.preservation
       ];
-      options.fleet.encryptState = lib.mkOption {
-        type = lib.types.bool;
-        description = "Whether the state partition is LUKS, opened at boot by its TPM2 token or the passphrase.";
+      options.fleet = {
+        encryptState = lib.mkOption {
+          type = lib.types.bool;
+          description = "Whether the state partition is LUKS, opened at boot by its TPM2 token or the passphrase.";
+        };
+        esp = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "An ESP another OS created and owns, mounted at /boot and never formatted; when set, `disko.devices.disk.os.device` is the state partition itself and nothing is partitioned.";
+        };
       };
       config = {
-        disko.devices.disk.os.content = {
-          type = "gpt";
-          partitions = {
-            boot = {
-              type = lib.mkDefault "EF00";
-              size = lib.mkDefault "2G";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-                mountOptions = [ "umask=0077" ];
-              };
-            };
-            state = {
-              size = "100%";
-              content =
-                if config.fleet.encryptState then
-                  {
-                    type = "luks";
-                    name = "state";
-                    settings.allowDiscards = true;
-                    content = btrfs;
-                  }
-                else
-                  btrfs;
-            };
+        disko.devices.disk = {
+          os.content =
+            if config.fleet.esp == null then
+              {
+                type = "gpt";
+                partitions = {
+                  boot = {
+                    type = lib.mkDefault "EF00";
+                    size = lib.mkDefault "2G";
+                    content = esp;
+                  };
+                  state = {
+                    size = "100%";
+                    content = state;
+                  };
+                };
+              }
+            else
+              state;
+          esp = lib.mkIf (config.fleet.esp != null) {
+            device = config.fleet.esp;
+            destroy = false;
+            content = esp;
           };
         };
         fileSystems."/persist".neededForBoot = true;

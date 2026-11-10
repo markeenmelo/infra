@@ -4,6 +4,7 @@ keys:
   - &bastion age16fyy8678zedgm6nqgqnvmwzlc9cjzsc2nu9u45jaxvuh0sw5wfjst73np2
   - &mac age193u7atdy24w87fgf3csypv7zam5qkeelxt9xewwl9w9e8vze4ddss8yy6v
   - &thinkpad age133p0p8m0aecjw92dg8unslruhfhsupq68juht0m5j8p6xwcyp9gse344fz
+  - &asahi age1euv9v32msl3t0fm5e820mk9zhyxwcs8q9qysrmslhpmfytkwhehqv64xre
 
 creation_rules:
   - path_regex: ^secrets/hosts/racknerd\.yaml$
@@ -21,6 +22,11 @@ creation_rules:
       - age:
           - *operator
           - *thinkpad
+  - path_regex: ^secrets/hosts/asahi(-senecanet)?\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *asahi
   - path_regex: ^secrets/hosts/mac\.yaml$
     key_groups:
       - age:
@@ -33,12 +39,14 @@ creation_rules:
           - *racknerd
           - *bastion
           - *thinkpad
+          - *asahi
   - path_regex: ^secrets/shared/mcp\.yaml$
     key_groups:
       - age:
           - *operator
           - *mac
           - *thinkpad
+          - *asahi
   - path_regex: ^secrets/tailscale/operator\.yaml$
     key_groups:
       - age:

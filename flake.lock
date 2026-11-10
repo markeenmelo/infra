@@ -148,11 +148,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792526520,
-        "narHash": "sha256-3hSJlv8mUVnZPMWK2+CM7a9O+nR6Z4mCh27NfLCmTPc=",
+        "lastModified": 1794328522,
+        "narHash": "sha256-h2BYMW4nTFpIqnMd8gwAPFmJAp/1wWLQ6vT0NfL5qt4=",
         "owner": "nix-community",
         "repo": "disko",
-        "rev": "cedd626e11b635470fa6f9fdb8ad79b0075dd7f9",
+        "rev": "1dd30c29c88d99ce295f15e27f93c49bc5fbae07",
         "type": "github"
       },
       "original": {
@@ -255,11 +255,11 @@
     "homebrew-cask": {
       "flake": false,
       "locked": {
-        "lastModified": 1794326014,
-        "narHash": "sha256-+4rvdfHPO4iNT7BrOJQerdnvtYWvbH633zzAq2RXlNQ=",
+        "lastModified": 1794337730,
+        "narHash": "sha256-rO2a1e968Y/KChX1o6DT/E9N6OpIi6ikkFoas/StFpE=",
         "owner": "homebrew",
         "repo": "homebrew-cask",
-        "rev": "85acac964c0cf990f4d1eb3884c428a0b78d7d9c",
+        "rev": "3200105c64d6a09d7a6d1db3884e02eb33634286",
         "type": "github"
       },
       "original": {
@@ -271,11 +271,11 @@
     "homebrew-core": {
       "flake": false,
       "locked": {
-        "lastModified": 1794326304,
-        "narHash": "sha256-evyQY8cnryqmRqExVwDY/ZrRasIYdHl6CMuM9ML7YDI=",
+        "lastModified": 1794337668,
+        "narHash": "sha256-/9KeDQzcvBXvqcwMG8ST9cx3Zt020gQnpPjGsfe/vis=",
         "owner": "homebrew",
         "repo": "homebrew-core",
-        "rev": "858b59b5f77cc8da714a1ffa097aff6192a50247",
+        "rev": "f5afc40ad42c397046c0261fdec8c0e5597972df",
         "type": "github"
       },
       "original": {
@@ -357,6 +357,27 @@
       "original": {
         "owner": "kiriwalawren",
         "repo": "nixflix",
+        "type": "github"
+      }
+    },
+    "nixos-apple-silicon": {
+      "inputs": {
+        "flake-compat": [],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794313216,
+        "narHash": "sha256-vMLsA5eX6qMsrXAPuHhvo4K3z4NW09V+DP78L2G4HbQ=",
+        "owner": "nix-community",
+        "repo": "nixos-apple-silicon",
+        "rev": "32b53b2408522ca8895c5baaad16fa7ac3714c93",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixos-apple-silicon",
         "type": "github"
       }
     },
@@ -447,6 +468,7 @@
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
         "nixflix": "nixflix",
+        "nixos-apple-silicon": "nixos-apple-silicon",
         "nixpkgs": "nixpkgs",
         "ponytail": "ponytail",
         "preservation": "preservation",

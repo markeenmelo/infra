@@ -29,12 +29,22 @@ in
       ...
     }:
     {
-      programs.hyprland = {
+      options.fleet = {
+        internalDisplay = lib.mkOption {
+          type = lib.types.str;
+          description = "The laptop's built-in panel as Hyprland names it; hidden while the lid is shut and another display is connected.";
+        };
+        lidSwitch = lib.mkOption {
+          type = lib.types.str;
+          description = "The lid's switch as Hyprland names it (`hyprctl devices`), which reapplies the monitor rules when it moves.";
+        };
+      };
+      config.programs.hyprland = {
         enable = true;
         withUWSM = true;
       };
-      environment.sessionVariables.NIXOS_OZONE_WL = "1";
-      security.sudo.extraRules = [
+      config.environment.sessionVariables.NIXOS_OZONE_WL = "1";
+      config.security.sudo.extraRules = [
         {
           users = [ "marcos" ];
           runAs = "root";
@@ -208,6 +218,27 @@ in
         portalPackage = null;
         systemd.enable = false;
         extraLuaFiles.stock = "${osConfig.programs.hyprland.package}/share/hypr/hyprland.lua";
+        extraLuaFiles.lid = ''
+          local internal = ${lib.generators.toLua { } osConfig.fleet.internalDisplay}
+          function lid_shut_docked()
+            local p = io.popen("${lib.getExe' osConfig.systemd.package "busctl"} get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager LidClosed")
+            if not p then return false end
+            local shut = p:read("a"):find("true") ~= nil
+            p:close()
+            if not shut then return false end
+            for _, m in ipairs(hl.get_monitors()) do
+              if m.name ~= internal and m.name ~= "FALLBACK" then return true end
+            end
+            return false
+          end
+          local reload = "${lib.getExe' osConfig.programs.hyprland.package "hyprctl"} reload"
+          hl.bind(${lib.generators.toLua { } "switch:${osConfig.fleet.lidSwitch}"}, hl.dsp.exec_cmd(reload), { locked = true })
+          for _, event in ipairs({ "monitor.added", "monitor.removed" }) do
+            hl.on(event, function(m)
+              if m.name ~= internal and m.name ~= "FALLBACK" then hl.exec_cmd(reload) end
+            end)
+          end
+        '';
         importantPrefixes = lib.mkOptionDefault [ "unbind" ];
         extraConfig = ''
           hl.animation({ leaf = "global", enabled = true, speed = 1.5, bezier = "default" })
