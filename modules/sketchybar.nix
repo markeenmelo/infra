@@ -62,7 +62,7 @@ in
       '';
       tailnetNext = pkgs.writeShellScript "sketchybar-tailnet-next" ''
         status=$(${tailscale} status --json) || exit
-        mapfile -t nodes < <(echo "$status" | ${jq} -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption) | .HostName] | sort | .[])')
+        mapfile -t nodes < <(echo "$status" | ${jq} -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption and .Online) | .HostName] | sort | .[])')
         current=$(echo "$status" | ${jq} -r '[(.Peer // {})[] | select(.ExitNode) | .HostName][0] // "direct"')
         next=''${nodes[0]}
         for i in "''${!nodes[@]}"; do

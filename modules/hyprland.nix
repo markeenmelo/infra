@@ -49,8 +49,9 @@
           pkgs.libnotify
         ];
         text = ''
+          trap 'notify-send --app-name=tailscale "Exit node" "switch failed"' ERR
           status=$(tailscale status --json)
-          mapfile -t nodes < <(echo "$status" | jq -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption) | .HostName] | sort | .[])')
+          mapfile -t nodes < <(echo "$status" | jq -r '"direct", ([(.Peer // {})[] | select(.ExitNodeOption and .Online) | .HostName] | sort | .[])')
           current=$(echo "$status" | jq -r '[(.Peer // {})[] | select(.ExitNode) | .HostName][0] // "direct"')
           next=''${nodes[0]}
           for i in "''${!nodes[@]}"; do
