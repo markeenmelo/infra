@@ -41,4 +41,29 @@ in
       };
       fleet.web.apps.ntfy = { inherit port; };
     };
+
+  flake.modules.homeManager.desktop =
+    { lib, pkgs, ... }:
+    let
+      notify = pkgs.writeShellScript "ntfy-notify" ''
+        urgency=normal
+        if [ "''${NTFY_PRIORITY:-3}" -ge 4 ]; then urgency=critical; fi
+        exec ${lib.getExe' pkgs.libnotify "notify-send"} --app-name=ntfy --urgency="$urgency" "''${NTFY_TITLE:-alerts}" "$NTFY_MESSAGE"
+      '';
+    in
+    {
+      systemd.user.services.ntfy-alerts = {
+        Unit = {
+          Description = "Show the fleet's alerts as desktop notifications";
+          After = [ "graphical-session.target" ];
+          PartOf = [ "graphical-session.target" ];
+        };
+        Service = {
+          ExecStart = "${lib.getExe' pkgs.ntfy-sh "ntfy"} subscribe ntfy.${domain}/alerts ${notify}";
+          Restart = "always";
+          RestartSec = 30;
+        };
+        Install.WantedBy = [ "graphical-session.target" ];
+      };
+    };
 }
