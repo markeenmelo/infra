@@ -80,7 +80,7 @@ over `nixosTest`; one VM test, `storage` in [storage.nix](../../../modules/stora
 the disk layout with disko's test library, reboots, and asserts the root subvolume was recreated
 while preserved paths and the machine id survived; it needs KVM, which the linux CI job enables.
 [check.yml](../../../.github/workflows/check.yml) evaluates every system and builds the x86_64
-ones on each PR push and on `main`. Assertions guard
+ones (`linux`) and the mac (`darwin`, on a macOS runner) on each PR push and on `main`. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
 **Language** — `let`, never `rec`; `inherit` over repetition; conditional config through

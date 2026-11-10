@@ -60,8 +60,8 @@ Permissions apply within the requested task. Continue independent safe work whil
   behaviour or name the reason it goes. Then walk the `nix` skill's new-service checklist.
 - Run every shell snippet handed to the operator, or its closest local equivalent, first.
 - Edit, run the narrowest check that can fail on the change, fix, repeat; then `nix flake check`
-  naming every affected x86_64 host so its toplevel builds. `asahi` and `mac` only evaluate in CI
-  and build on themselves.
+  naming every affected x86_64 host so its toplevel builds. The `darwin` CI job builds
+  `mac` on a macOS runner; `asahi` only evaluates in CI and builds on itself.
 - A refactor keeps every host's outPath identical (`nix` skill).
 - Report exactly what passed, failed and is unknown. A build proves evaluation and closure, not
   boot, networking, credentials or backups. Never report green from a partial run.

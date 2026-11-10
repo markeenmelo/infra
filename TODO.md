@@ -5,8 +5,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## Fleet plumbing
 
-- [ ] Build the aarch64 closures (`asahi`, `mac`) in CI on GitHub's arm64 Linux and Apple Silicon
-      macOS runners; check the macOS runner's memory against the closures first.
 
 ## bastion
 
@@ -15,7 +13,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## Laptops
 
-- [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
+- [ ] `asahi`: host, desktop profile shared with thinkpad, and a CI job building it on GitHub's
+      arm64 Linux runner.
 
 ## Closing out
 
