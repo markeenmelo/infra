@@ -92,7 +92,6 @@ in
             "backups-rclone-pcloud"
           ]
           (name: {
-            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
             key = lib.replaceStrings [ "backups-" ] [ "backups/" ] name;
           });
       assertions =
@@ -185,13 +184,16 @@ in
                 Environment = "RESTIC_CACHE_DIR=%C/restic-drill-usb";
                 TimeoutStartSec = "12h";
               };
-              path = [ pkgs.gzip ];
+              path = [
+                pkgs.gzip
+                pkgs.gnugrep
+              ];
               script = ''
                 set -o pipefail
                 ${restic} check --retry-lock 30m --read-data-subset="$(date +%-m)/12"
                 for db in ${lib.escapeShellArgs databases}; do
                   dump=${inSnapshot "usb" "/srv" "${dumpDir}/$db"}
-                  if ! ${restic} ls latest "$dump.sql.gz" > /dev/null 2>&1; then
+                  if ! ${restic} ls latest "$dump.sql.gz" 2> /dev/null | grep -cxF "$dump.sql.gz" > /dev/null; then
                     echo "The latest snapshot has no fresh dump of $db; testing the previous one."
                     dump=$dump.prev
                   fi

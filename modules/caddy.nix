@@ -64,17 +64,15 @@ in
           (lib.filterAttrs (_: app: app.public) config.fleet.web.apps);
     };
 
-  config.flake.checks = lib.foldlAttrs (
-    acc: name: host:
-    let
-      nixos = config.flake.nixosConfigurations.${name};
-      inherit (nixos.config.services) caddy;
-    in
-    if lib.hasSuffix "-darwin" host.system || !caddy.enable then
-      acc
-    else
-      lib.recursiveUpdate acc {
-        ${host.system}."caddyfile-${name}" = nixos.pkgs.runCommand "caddyfile-${name}" { } ''
+  config.flake.checks =
+    import ./_host-checks.nix { inherit config lib; } "caddyfile"
+      (nixos: nixos.config.services.caddy.enable)
+      (
+        name: nixos:
+        let
+          inherit (nixos.config.services) caddy;
+        in
+        nixos.pkgs.runCommand "caddyfile-${name}" { } ''
           sed "s|${caddy.logDir}|$TMPDIR|g" ${caddy.configFile} > Caddyfile
           HOME=$TMPDIR XDG_DATA_HOME=$TMPDIR XDG_CONFIG_HOME=$TMPDIR \
             ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
@@ -86,9 +84,8 @@ in
                             | select(.handler == "headers") | .request.delete // [] | .[] ]
               | length == 0' config.json > /dev/null
           touch $out
-        '';
-      }
-  ) { } config.fleet.hosts;
+        ''
+      );
 
   config.flake.modules.nixos.caddy =
     {

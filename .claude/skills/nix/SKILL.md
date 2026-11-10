@@ -73,7 +73,8 @@ Substituters go in `nix.settings`, never flake `nixConfig`.
 stay outside Nix.
 
 **Checks** — a check that needs a host's `pkgs` sits under `flake.checks.${fleet.hosts.HOST.system}`;
-one that needs only tools stays in `perSystem`. Prefer `runCommand` assertions on generated config
+one that needs only tools stays in `perSystem`. A check made for every NixOS host that runs a
+service goes through [_host-checks.nix](../../../modules/_host-checks.nix) (name, enabled predicate, derivation). Prefer `runCommand` assertions on generated config
 over `nixosTest`; one VM test, `storage` in [storage.nix](../../../modules/storage.nix), installs
 the disk layout with disko's test library, reboots, and asserts the root subvolume was recreated
 while preserved paths and the machine id survived; it needs KVM, which the linux CI job enables.
@@ -108,7 +109,8 @@ Each pin keeps its own version literal so only that line is rewritten.
 
 [vulnix.yml](../../../.github/workflows/vulnix.yml) builds each x86_64 host weekly and matches
 its runtime closure against NIST's CVEs, listing the matches in the run summary; the run fails
-while any match is unwhitelisted. vulnix matches by name and version, so most matches are
+while an unwhitelisted match scores CVSS 9 or higher; a match NIST has not scored yet counts as
+10, so a fresh one fails until it is scored or whitelisted. vulnix matches by name and version, so most matches are
 another project with the same name or a CVE nixpkgs already patches. A confirmed false positive
 or an accepted risk goes in [vulnix.toml](../../../vulnix.toml) as a section per package with
 `cve`, `comment` and an `until` date, so it comes back for review; a real one is fixed by the

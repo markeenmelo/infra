@@ -6,16 +6,24 @@
       home.sessionVariables.SOPS_AGE_KEY_FILE = "${config.xdg.configHome}/sops/age/keys.txt";
     };
 
-  flake.modules.darwin.base = {
-    imports = [ inputs.sops-nix.darwinModules.sops ];
-    sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
-  };
+  flake.modules.darwin.base =
+    { config, ... }:
+    {
+      imports = [ inputs.sops-nix.darwinModules.sops ];
+      sops = {
+        defaultSopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+        age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+      };
+    };
 
   flake.modules.nixos.base =
     { config, lib, ... }:
     {
       imports = [ inputs.sops-nix.nixosModules.sops ];
-      sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
+      sops = {
+        defaultSopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+        age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
+      };
       assertions = lib.concatLists (
         lib.mapAttrsToList (
           kind: entries:
@@ -53,7 +61,7 @@
           -e 'sk-(ant|proj)-[A-Za-z0-9_-]{20,}' \
           -e '[ps]k1_[A-Za-z0-9]{32,}' \
           -e 'eyJ[A-Za-z0-9_-]{8,}\.eyJ' \
-          -e '\$(y|7|6|5|2[abxy]|argon2(id|i|d))\$[./A-Za-z0-9+=,$-]{20,}' \
+          -e '\$(y|7|6|5|2[abxy]|argon2(id|i|d)|pbkdf2(-sha[0-9]+)?|scrypt)\$[./A-Za-z0-9+=,$-]{20,}' \
           . || status=$?
         [ "$status" -eq 1 ] || { echo "secret material in the tree, or grep failed" >&2; exit 1; }
         touch $out

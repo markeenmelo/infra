@@ -58,13 +58,12 @@ provider "unifi" {
 
 locals {
   # shortcut: the domain is a literal, feed it from fleet.domain once the tofu app passes it
-  domain     = "marcosmelo.dev"
-  bastion    = var.fleet_lan.bastion
-  vlans      = { Homelab = 2, Cameras = 3, IoT = 4, Home = 10, Kids = 20 }
-  vlan_of    = { for name, id in local.vlans : id => name }
-  family_dns = ["94.140.14.15", "94.140.15.16"]
-  network    = merge({ Default = unifi_network.default.id }, { for name, net in unifi_network.vlan : name => net.id })
-  zone       = merge({ for name, zone in data.unifi_firewall_zone.builtin : name => zone.id }, { for name, zone in unifi_firewall_zone.custom : name => zone.id })
+  domain  = "marcosmelo.dev"
+  bastion = var.fleet_lan.bastion
+  vlans   = { Homelab = 2, Cameras = 3, IoT = 4, Home = 10, Kids = 20 }
+  vlan_of = { for name, id in local.vlans : id => name }
+  network = merge({ Default = unifi_network.default.id }, { for name, net in unifi_network.vlan : name => net.id })
+  zone    = merge({ for name, zone in data.unifi_firewall_zone.builtin : name => zone.id }, { for name, zone in unifi_firewall_zone.custom : name => zone.id })
   wlans = {
     MN-Home    = { network = "Home", bands = ["2g", "5g", "6g"], legacy = false, multicast = true, isolated = false }
     MN-Kids    = { network = "Kids", bands = ["5g"], legacy = false, multicast = false, isolated = false }
@@ -123,7 +122,6 @@ locals {
       "Allow IoT cloud devices to internet"           = { from = "IoT", from_ips = local.role.cloud, to = "External" }
       "Block IoT to internet"                         = { from = "IoT", to = "External", block = true }
       "Block Kids internet at bedtime"                = { from = "Kids", to = "External", block = true, schedule = { mode = "EVERY_DAY", time_from = "21:00", time_to = "09:00" } }
-      "Allow Kids to AdGuard family DNS"              = { from = "Kids", to = "External", to_ips = local.family_dns, protocol = "tcp_udp" }
       "Block Kids to external DNS"                    = { from = "Kids", to = "External", protocol = "tcp_udp", ports = "DNS", block = true }
     },
     [for vlan in keys(local.vlans) : {
@@ -135,8 +133,7 @@ locals {
 
   orders = merge(
     {
-      "IoT External"  = ["Block IoT to external DNS", "Allow IoT cloud devices to internet", "Block IoT to internet"]
-      "Kids External" = ["Block Kids internet at bedtime", "Allow Kids to AdGuard family DNS", "Block Kids to external DNS"]
+      "IoT External" = ["Block IoT to external DNS", "Allow IoT cloud devices to internet", "Block IoT to internet"]
     },
     { for vlan in keys(local.vlans) : "${vlan} Gateway" => [for name in [
       "Allow ${vlan} to gateway network services",
@@ -185,7 +182,6 @@ resource "unifi_network" "vlan" {
   dhcp_start                 = "192.168.${each.value}.100"
   dhcp_stop                  = "192.168.${each.value}.254"
   dhcp_lease                 = 86400
-  dhcp_dns                   = each.key == "Kids" ? local.family_dns : null
   dhcp_v6_lease              = 0
   dhcp_v6_dns_auto           = false
   ipv6_interface_type        = "none"

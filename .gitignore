@@ -26,6 +26,3 @@ keys.txt
 *~
 *.swp
 *.orig
-
-# TODO: to be removed once finished working on the migration
-infra-old/

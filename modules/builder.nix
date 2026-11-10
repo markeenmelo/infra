@@ -14,10 +14,7 @@ in
   flake.modules.nixos.builder =
     { config, ... }:
     {
-      sops.secrets.harmonia-sign-key = {
-        sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-        restartUnits = [ "harmonia.service" ];
-      };
+      sops.secrets.harmonia-sign-key.restartUnits = [ "harmonia.service" ];
       services.harmonia.cache = {
         enable = true;
         signKeyPaths = [ config.sops.secrets.harmonia-sign-key.path ];
@@ -53,7 +50,7 @@ in
   flake.modules.darwin.remote-builds =
     { config, ... }:
     {
-      sops.secrets.nix-build-ssh-key.sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+      sops.secrets.nix-build-ssh-key = { };
       programs.ssh.knownHosts.bastion = {
         hostNames = [ bastion ];
         publicKey = hostKey;

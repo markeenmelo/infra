@@ -36,7 +36,9 @@ settings, DNS (global resolver plus split DNS for the domain to bastion), tags o
 without a key, and one auth key per host. Bastion's apps are reached through that split DNS and
 its LAN proxy, so the tailnet defines no Tailscale services; that is why `group:members` reach
 bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, which the `tofu`
-app passes as `TF_VAR_fleet_hosts`. The admin console is
+app passes as `TF_VAR_fleet_hosts`; the bastion ports racknerd reaches (the public apps in
+`fleet.web.apps` and its telemetry pair) come the same way as `TF_VAR_fleet_edge_ports`, so a
+new public app or a moved port needs only a plan and an apply. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
 
 - Auth keys recreate on apply once invalid; the [tailnet skill](../tailnet/SKILL.md) moves one
@@ -88,9 +90,12 @@ internet), `shared` (IoT that Home and the tailnet reach), `player` (IoT that re
 HTTPS). Tailnet clients routed through bastion arrive as bastion's address, so the
 "Bastion-routed" rows decide what they reach, behind the tailnet grants.
 
-Kids DHCP hands out AdGuard's family DNS and the Kids rows allow only it among external
-resolvers, so devices that follow DHCP are filtered. A Kids device set to the gateway's own
-resolver, or to DoH on 443, is not: an accepted gap.
+Kids resolve through the gateway like every other VLAN, so they get the LAN wildcard record and
+reach bastion directly instead of through the edge. Filtering is the gateway's content filter
+(Family) applied to the Kids network in the controller UI, which the provider cannot write, and
+a Kids row blocks every external resolver on 53 and 853. A Kids device set to DoH on 443 is not
+filtered: an accepted gap. After an apply that touches the Kids network, check in the UI that the
+filter still lists it.
 
 **Provider limits** (filipowm/unifi):
 - The WAN, ad blocking and per-network mDNS stay in the controller UI: the provider rewrites a
@@ -103,7 +108,7 @@ resolver, or to DoH on 443, is not: an accepted gap.
 - A fixed client's `mac` forces replacement, which forgets the client in the controller. Its
   `note` is left to the controller UI: the provider cannot clear one, so an unset note would
   show as a change on every plan.
-- `dhcp_dns` stays unset except on Kids: any value turns DHCP DNS on.
+- `dhcp_dns` stays unset: any value turns DHCP DNS on.
 
 Settings no provider writes (DoH resolvers, the country block, UPnP and the NAT helpers off, the
 weekly controller backup) live in [settings.json](../../../opentofu/unifi/settings.json), keyed

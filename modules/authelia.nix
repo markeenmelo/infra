@@ -11,79 +11,75 @@ let
     map (id: "${id}-client-secret-hash") (lib.attrNames (lib.filterAttrs (_: c: !c.public) clients));
 in
 {
-  flake.checks = lib.foldlAttrs (
-    acc: host: fleetHost:
-    let
-      nixos = config.flake.nixosConfigurations.${host};
-      instance = nixos.config.services.authelia.instances.main or { enable = false; };
-      configs = lib.splitString "," (
-        lib.removePrefix "${lib.getExe instance.package} --config "
-          nixos.config.systemd.services.${name}.serviceConfig.ExecStart
+  flake.checks =
+    import ./_host-checks.nix { inherit config lib; } "authelia"
+      (nixos: (nixos.config.services.authelia.instances.main or { enable = false; }).enable)
+      (
+        host: nixos:
+        let
+          instance = nixos.config.services.authelia.instances.main;
+          configs = lib.splitString "," (
+            lib.removePrefix "${lib.getExe instance.package} --config "
+              nixos.config.systemd.services.${name}.serviceConfig.ExecStart
+          );
+          oidc = instance.settings.identity_providers.oidc;
+          unsafe = lib.filter (
+            client:
+            client.authorization_policy != "people"
+            || !client.require_pkce
+            || client.pkce_challenge_method != "S256"
+            || !lib.all (
+              uri:
+              lib.hasPrefix "https://" uri
+              || builtins.match "http://(127[.]0[.]0[.]1|localhost)" uri != null
+              || builtins.match "([a-z]+[.][a-z.]+|oc):/.*" uri != null
+            ) client.redirect_uris
+          ) oidc.clients;
+        in
+        assert lib.assertMsg (
+          instance.settings.access_control.default_policy == "deny"
+        ) "Authelia's access_control.default_policy must stay deny";
+        assert lib.assertMsg (
+          oidc.authorization_policies.people.default_policy == "deny"
+          && lib.all (rule: rule.policy == "two_factor") oidc.authorization_policies.people.rules
+        ) "Authelia's OIDC people policy must deny by default and require two factors";
+        assert lib.assertMsg (
+          nixos.config.systemd.services.${name}.environment.X_AUTHELIA_CONFIG_FILTERS or null == "template"
+        ) "authelia-main must run with the template filter, or OIDC client secrets stay literal templates";
+        assert lib.assertMsg (unsafe == [ ])
+          "OIDC clients must keep the people policy, S256 PKCE and https or app-scheme redirects: ${
+            toString (map (client: client.client_id) unsafe)
+          }";
+        nixos.pkgs.runCommand "authelia-${host}" { } ''
+          mkdir credentials
+          printf '%064d' 0 > secret
+          cp secret credentials/smtp-password
+          printf '{"users":{"check":{"displayname":"Check","email":"check@example.org","groups":[],"password":"%s"}}}' \
+            "$(${lib.getExe instance.package} crypto hash generate argon2 --password test-only-not-a-credential | ${lib.getExe nixos.pkgs.gawk} '/Digest:/{print $2}')" \
+            > credentials/users
+          ${lib.getExe nixos.pkgs.openssl} genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
+            -out credentials/oidcIssuerPrivateKeyFile 2>/dev/null
+          ${lib.getExe instance.package} crypto hash generate pbkdf2 --password test-only-not-a-credential \
+            | ${lib.getExe nixos.pkgs.gawk} '/Digest:/{print $2}' > hash
+          test -s hash
+          for file in ${lib.escapeShellArgs (hashes nixos.config.fleet.oidc.clients)}; do
+            cp hash "credentials/$file"
+          done
+          files=()
+          for source in ${lib.escapeShellArgs configs}; do
+            ${lib.getExe nixos.pkgs.gnused} "s@${credentials}@$PWD/credentials@g" "$source" > "$(basename "$source")"
+            files+=("$PWD/$(basename "$source")")
+          done
+          export X_AUTHELIA_CONFIG_FILTERS=template
+          export CREDENTIALS_DIRECTORY=$PWD/credentials
+          export AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE=$PWD/secret
+          export AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=$PWD/secret
+          export AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE=$PWD/secret
+          export AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE=$PWD/credentials/smtp-password
+          (IFS=,; ${lib.getExe instance.package} --config "''${files[*]}" validate-config)
+          touch $out
+        ''
       );
-      oidc = instance.settings.identity_providers.oidc;
-      unsafe = lib.filter (
-        client:
-        client.authorization_policy != "people"
-        || !client.require_pkce
-        || client.pkce_challenge_method != "S256"
-        || !lib.all (
-          uri:
-          lib.hasPrefix "https://" uri
-          || builtins.match "http://(127[.]0[.]0[.]1|localhost)" uri != null
-          || builtins.match "([a-z]+[.][a-z.]+|oc):/.*" uri != null
-        ) client.redirect_uris
-      ) oidc.clients;
-    in
-    if lib.hasSuffix "-darwin" fleetHost.system || !instance.enable then
-      acc
-    else
-      lib.recursiveUpdate acc {
-        ${fleetHost.system}."authelia-${host}" =
-          assert lib.assertMsg (
-            instance.settings.access_control.default_policy == "deny"
-          ) "Authelia's access_control.default_policy must stay deny";
-          assert lib.assertMsg (
-            oidc.authorization_policies.people.default_policy == "deny"
-            && lib.all (rule: rule.policy == "two_factor") oidc.authorization_policies.people.rules
-          ) "Authelia's OIDC people policy must deny by default and require two factors";
-          assert lib.assertMsg (
-            nixos.config.systemd.services.${name}.environment.X_AUTHELIA_CONFIG_FILTERS or null == "template"
-          ) "authelia-main must run with the template filter, or OIDC client secrets stay literal templates";
-          assert lib.assertMsg (unsafe == [ ])
-            "OIDC clients must keep the people policy, S256 PKCE and https or app-scheme redirects: ${
-              toString (map (client: client.client_id) unsafe)
-            }";
-          nixos.pkgs.runCommand "authelia-${host}" { } ''
-            mkdir credentials
-            printf '%064d' 0 > secret
-            cp secret credentials/smtp-password
-            printf '{"users":{"check":{"displayname":"Check","email":"check@example.org","groups":[],"password":"%s"}}}' \
-              "$(${lib.getExe instance.package} crypto hash generate argon2 --password test-only-not-a-credential | ${lib.getExe nixos.pkgs.gawk} '/Digest:/{print $2}')" \
-              > credentials/users
-            ${lib.getExe nixos.pkgs.openssl} genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
-              -out credentials/oidcIssuerPrivateKeyFile 2>/dev/null
-            ${lib.getExe instance.package} crypto hash generate pbkdf2 --password test-only-not-a-credential \
-              | ${lib.getExe nixos.pkgs.gawk} '/Digest:/{print $2}' > hash
-            test -s hash
-            for file in ${lib.escapeShellArgs (hashes nixos.config.fleet.oidc.clients)}; do
-              cp hash "credentials/$file"
-            done
-            files=()
-            for source in ${lib.escapeShellArgs configs}; do
-              ${lib.getExe nixos.pkgs.gnused} "s@${credentials}@$PWD/credentials@g" "$source" > "$(basename "$source")"
-              files+=("$PWD/$(basename "$source")")
-            done
-            export X_AUTHELIA_CONFIG_FILTERS=template
-            export CREDENTIALS_DIRECTORY=$PWD/credentials
-            export AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE=$PWD/secret
-            export AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=$PWD/secret
-            export AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE=$PWD/secret
-            export AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE=$PWD/credentials/smtp-password
-            (IFS=,; ${lib.getExe instance.package} --config "''${files[*]}" validate-config)
-            touch $out
-          '';
-      }
-  ) { } config.fleet.hosts;
 
   flake.modules.nixos.base =
     { lib, ... }:
@@ -128,7 +124,6 @@ in
         };
       };
       secret = key: {
-        sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
         key = "authelia/${key}";
         restartUnits = [ "${name}.service" ];
       };

@@ -1,7 +1,9 @@
+{ inputs, ... }:
 {
   flake.modules.nixos.vpn-watch = {
     key = "fleet-vpn-watch";
     imports = [
+      inputs.nixflix.inputs.vpn-confinement.nixosModules.default
       (
         {
           config,

@@ -40,23 +40,18 @@ let
   };
 in
 {
-  flake.checks = lib.foldlAttrs (
-    acc: host: fleetHost:
-    let
-      nixos = config.flake.nixosConfigurations.${host};
-    in
-    if lib.hasSuffix "-darwin" fleetHost.system || !(nixos.config.services.alloy.enable or false) then
-      acc
-    else
-      lib.recursiveUpdate acc {
-        ${fleetHost.system}."alloy-${host}" = nixos.pkgs.runCommand "alloy-${host}" { } ''
+  flake.checks =
+    import ./_host-checks.nix { inherit config lib; } "alloy"
+      (nixos: nixos.config.services.alloy.enable)
+      (
+        host: nixos:
+        nixos.pkgs.runCommand "alloy-${host}" { } ''
           ${lib.getExe nixos.config.services.alloy.package} fmt ${
             nixos.config.environment.etc."alloy/config.alloy".source
           } > /dev/null
           touch $out
-        '';
-      }
-  ) { } hosts;
+        ''
+      );
 
   flake.modules.nixos.base =
     { lib, ... }:
@@ -301,7 +296,6 @@ in
         lib.mkMerge [
           { restartUnits = [ "grafana.service" ]; }
           (lib.mkIf (lib.hasPrefix "grafana-" name) {
-            sopsFile = ../secrets/hosts/${host}.yaml;
             key = "grafana/${lib.removePrefix "grafana-" name}";
           })
         ]
@@ -574,6 +568,8 @@ in
                     lib.mapAttrsToList (sender: _: {
                       title = "Host silent ${sender}";
                       expr = "absent_over_time(up{host=\"${sender}\",job=\"node\"}[10m])";
+                      for = "2m";
+                      severity = "critical";
                       summary = "${sender} has sent no metrics to bastion for 10 minutes";
                     }) senders
                     ++ [
@@ -596,6 +592,12 @@ in
                         for = "5m";
                         severity = "critical";
                         summary = "{{ $labels.probe }} has failed its HTTPS probe through the edge for 5 minutes";
+                      }
+                      {
+                        title = "Certificate expiring";
+                        expr = "7 * 86400 - (probe_ssl_earliest_cert_expiry - time())";
+                        for = "1h";
+                        summary = "The certificate {{ $labels.probe }} serves expires in under 7 days";
                       }
                       {
                         title = "SMART unhealthy";
@@ -727,6 +729,7 @@ in
                   ports.loki
                   ports.lokiGrpc
                 ]
+                ++ lib.concatMap lib.attrValues (lib.mapAttrsToList (_: sender: sender.telemetry) senders)
               )
             } } meta skuid != { 0, ${
               lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) ([
@@ -736,6 +739,9 @@ in
                 "alloy"
               ])
             } } reject
+            ${lib.optionalString (lan != null) ''
+              oifname "lo" udp dport ${toString lan.syslogPort} reject
+            ''}
           }
         '';
       };

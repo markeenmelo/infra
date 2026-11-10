@@ -35,6 +35,11 @@ variable "fleet_hosts" {
   type        = map(string)
 }
 
+variable "fleet_edge_ports" {
+  description = "Bastion ports racknerd reaches: the public apps in fleet.web.apps and racknerd's telemetry pair; the tofu app sets it."
+  type        = list(number)
+}
+
 locals {
   domain  = "marcosmelo.dev"
   bastion = var.fleet_hosts.bastion
@@ -78,7 +83,7 @@ locals {
     }
     grants = [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
-      { src = ["racknerd"], dst = ["bastion"], ip = ["tcp:9091", "tcp:8096", "tcp:2283", "tcp:9200", "tcp:5005", "tcp:9095", "tcp:3102"] },
+      { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:5005"]) },
       { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:8010"] },
       { src = ["tag:ci"], dst = ["bastion"], ip = ["tcp:5005"] },
       { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443"] },

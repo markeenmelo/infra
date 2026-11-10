@@ -48,7 +48,8 @@ server's `--read-only` mode never uses to write.
 
 ## Delivery
 
-Declare `sops.secrets.NAME` beside its consumer with `sopsFile`, `key` when the SOPS path differs,
+Declare `sops.secrets.NAME` beside its consumer, with `sopsFile` only when it is not the host's own
+`hosts/HOST.yaml` (the default, set in [secrets.nix](../../../modules/secrets.nix)), `key` when the SOPS path differs,
 `neededForUsers` for a password hash and `restartUnits` for every reader. Delivery is root-owned
 0400 (asserted in [secrets.nix](../../../modules/secrets.nix)); a unit reads through
 `LoadCredential` or the upstream module's `*File` option. A unit that needs a file in its own
