@@ -70,7 +70,10 @@ in
       };
       home-manager.sharedModules = [
         {
-          stylix.targets.zen-browser.profileNames = [ "default" ];
+          stylix.targets = {
+            rofi.enable = false;
+            zen-browser.profileNames = [ "default" ];
+          };
         }
       ];
     };
