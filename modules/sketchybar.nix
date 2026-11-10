@@ -51,7 +51,7 @@ in
         sketchybar --set "$NAME" icon="$icon"
       '';
       tailnet = pkgs.writeShellScript "sketchybar-tailnet" ''
-        status=$(${lib.getExe config.services.tailscale.package} status --json 2>/dev/null)
+        status=$(/Applications/Tailscale.app/Contents/MacOS/Tailscale status --json 2>/dev/null)
         if [ "$(echo "$status" | ${jq} -r .BackendState)" != Running ]; then
           sketchybar --set "$NAME" icon.color=0xff${colors.base03} label=off
         else

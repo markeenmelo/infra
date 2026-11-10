@@ -306,6 +306,9 @@ in
       ) grafanaSecrets;
 
       services = {
+        udev.extraRules = ''
+          SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", GROUP="disk", MODE="0660"
+        '';
         prometheus = {
           enable = true;
           listenAddress = "127.0.0.1";
@@ -588,6 +591,12 @@ in
                         for = "0s";
                         severity = "critical";
                         summary = "{{ $labels.device }} on {{ $labels.instance }} fails its SMART self-assessment";
+                      }
+                      {
+                        title = "Disk unmonitored";
+                        expr = "(count by (instance) (node_disk_info{device=~\"sd[a-z]+|nvme[0-9]+n1\"}) - (count by (instance) (smartctl_device) or count by (instance) (node_disk_info) * 0)) and on (instance) up{job=\"smartctl\"}";
+                        for = "1h";
+                        summary = "Disks on {{ $labels.instance }} report no SMART data to the smartctl exporter";
                       }
                       {
                         title = "NVMe hot";

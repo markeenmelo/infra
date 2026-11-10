@@ -18,10 +18,11 @@ The mac switches itself; deploy-rs manages NixOS hosts only:
 sudo darwin-rebuild switch --flake .#mac
 ```
 
-Tailscale is nix-darwin's `tailscaled`, which needs no app or system extension; the node
-identity lives in its state directory and survives a switch. A re-enrolment uses the host's key from the
-[OpenTofu project](../opentofu/SKILL.md), `tailscale up --auth-key file:PATH` with the key
-written to a private file. sops-nix on darwin decrypts with the mac's SSH host key and holds the
+Tailscale is the standalone Tailscale app (Homebrew cask), not nix-darwin's `tailscaled`: the
+open-source daemon on macOS cannot route through an exit node. The app's network extension holds
+the node identity across switches; its CLI is `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
+A re-enrolment uses the host's key from the [OpenTofu project](../opentofu/SKILL.md),
+`Tailscale up --auth-key file:PATH` with the key written to a private file. sops-nix on darwin decrypts with the mac's SSH host key and holds the
 GitHub MCP token and the build key for bastion ([secrets skill](../secrets/SKILL.md)). Touch ID answers sudo. Claude Code's
 managed sandbox ([claude.nix](../../../modules/claude.nix)) admits no network host, so nothing a
 sandboxed command reads can leave, and blocks writes to `.git/config`; git's network commands, `gh`

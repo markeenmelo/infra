@@ -1,5 +1,5 @@
 {
-  flake.modules.darwin.base.services.tailscale.enable = true;
+  flake.modules.darwin.desktop.homebrew.casks = [ "tailscale-app" ];
 
   flake.modules.nixos.base =
     { config, ... }:

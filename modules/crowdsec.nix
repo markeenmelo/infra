@@ -63,7 +63,7 @@
             {
               name = "escalating_ip_ban";
               filters = [ "Alert.Remediation == true && Alert.GetScope() == 'Ip'" ];
-              duration_expr = "Sprintf('%%dh', (GetDecisionsCount(Alert.GetValue()) + 1) * 4)";
+              duration_expr = "Sprintf('%dh', (GetDecisionsCount(Alert.GetValue()) + 1) * 4)";
               decisions = [
                 {
                   type = "ban";
