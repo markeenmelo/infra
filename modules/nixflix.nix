@@ -1,9 +1,10 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
 {
   flake.modules.nixos.nixflix = {
     key = "fleet-nixflix";
     imports = [
       inputs.nixflix.nixosModules.default
+      config.flake.modules.nixos.vpn-watch
       (
         { config, ... }:
         let

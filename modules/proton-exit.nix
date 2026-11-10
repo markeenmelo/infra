@@ -50,15 +50,6 @@ in
       # shortcut: tailscaled's own control, DERP and peer traffic also leaves through Proton, so peers mostly relay over DERP; route its fwmark over the bridge if throughput matters
       systemd.services = perCountry (
         country: _: {
-          "pv${country}" = {
-            upholds = [ "tailscaled-${country}.service" ];
-            startLimitIntervalSec = 3600;
-            startLimitBurst = 120;
-            serviceConfig = {
-              Restart = "on-failure";
-              RestartSec = 30;
-            };
-          };
           "tailscaled-${country}" = {
             description = "Tailscale exit node through Proton VPN (${country})";
             wantedBy = [ "multi-user.target" ];
@@ -109,37 +100,6 @@ in
               fi
               ts set "''${prefs[@]}"
             '';
-          };
-          "pv${country}-watch" = {
-            description = "Restart the Proton tunnel (${country}) when its handshake is stale";
-            unitConfig.ConditionPathExists = "/run/netns/pv${country}";
-            path = [
-              pkgs.iproute2
-              pkgs.wireguard-tools
-            ];
-            enableStrictShellChecks = true;
-            serviceConfig.Type = "oneshot";
-            script = ''
-              since=$(systemctl show -P ActiveEnterTimestampMonotonic pv${country}.service)
-              (( $(cut -d. -f1 /proc/uptime) - since / 1000000 < 300 )) && exit 0
-              latest=$(ip netns exec pv${country} wg show pv${country}0 latest-handshakes | cut -f2 | sort -n | tail -n1)
-              if (( $(date +%s) - ''${latest:-0} >= 300 )); then
-                echo "last Proton handshake ''${latest:-never}, restarting" >&2
-                systemctl restart pv${country}.service
-              fi
-            '';
-          };
-        }
-      );
-
-      systemd.timers = perCountry (
-        country: _: {
-          "pv${country}-watch" = {
-            wantedBy = [ "timers.target" ];
-            timerConfig = {
-              OnActiveSec = "5min";
-              OnUnitActiveSec = "2min";
-            };
           };
         }
       );

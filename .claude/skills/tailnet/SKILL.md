@@ -38,5 +38,6 @@ bastion, each inside its own Proton WireGuard namespace, advertised as the exit 
 `proton-COUNTRY`; the tailnet policy approves them by tag and admits the admin clients and
 members to the internet through them. Each joins once with its own key, `proton-exit/COUNTRY-auth-key`,
 moved like a host's from the `enrollment_keys` output, and keeps `/var/lib/tailscale-COUNTRY`
-under `/persist`. A timer restarts a tunnel whose handshake is older than five minutes. Choosing
+under `/persist`. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tunnel that fails or
+whose handshake is older than five minutes, and keeps its exit node running. Choosing
 an exit node is done on the client; the desktop switcher arrives with the laptops.
