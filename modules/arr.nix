@@ -388,7 +388,9 @@ in
           }
         ) apps
       );
-      fleet.scrapeTargets = lib.mapAttrs' (name: port: lib.nameValuePair "exportarr-${name}" port) exporterPorts;
+      fleet.scrapeTargets = lib.mapAttrs' (
+        name: port: lib.nameValuePair "exportarr-${name}" port
+      ) exporterPorts;
       fleet.web.apps = lib.mkMerge [
         (lib.genAttrs apps (name: {
           inherit (config.nixflix.${name}.config.hostConfig) port;
