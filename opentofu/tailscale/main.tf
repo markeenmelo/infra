@@ -43,11 +43,10 @@ variable "fleet_edge_ports" {
 locals {
   domain  = "marcosmelo.dev"
   bastion = var.fleet_hosts.bastion
-  # shortcut: thinkpad and asahi are literals until their hosts land in fleet.hosts; grafite is an admin device outside the fleet
+  # shortcut: asahi is a literal until its host lands in fleet.hosts; grafite is an admin device outside the fleet
   hosts = merge({
-    thinkpad = "100.119.79.113"
-    asahi    = "100.122.51.97"
-    grafite  = "100.91.224.11"
+    asahi   = "100.122.51.97"
+    grafite = "100.91.224.11"
   }, var.fleet_hosts)
   admin_clients = ["thinkpad", "asahi", "mac", "grafite"]
   lans          = ["192.168.2.0/24", "192.168.4.0/24", "192.168.20.0/24"]

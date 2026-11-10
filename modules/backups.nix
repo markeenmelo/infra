@@ -1,6 +1,7 @@
 { config, ... }:
 let
   inherit (config.fleet) hosts;
+  laptopPort = 8010;
 in
 {
   flake.modules.nixos.backups =
@@ -76,10 +77,9 @@ in
       '';
       thinkpad = {
         repo = "/srv/backup-thinkpad";
-        port = 8010;
+        port = laptopPort;
         listen = hosts.${config.networking.hostName}.tailnetAddress;
-        # shortcut: the ThinkPad's tailnet address is a literal, read it from fleet facts when the thinkpad host lands
-        client = "100.119.79.113";
+        client = hosts.thinkpad.tailnetAddress;
       };
       restic = lib.getExe pkgs.restic;
     in
@@ -322,6 +322,52 @@ in
           chain output {
             type filter hook output priority -150; policy accept;
             oifname "lo" ip daddr ${thinkpad.listen} tcp dport ${toString thinkpad.port} reject
+          }
+        '';
+      };
+    };
+
+  flake.modules.nixos.backup-home =
+    { config, ... }:
+    let
+      server = "${hosts.bastion.tailnetAddress}:${toString laptopPort}";
+      home = config.users.users.marcos.home;
+    in
+    {
+      sops.secrets.backups-thinkpad-password.key = "backups/thinkpad-password";
+      services.restic.backups.home = {
+        repository = "rest:http://${server}/";
+        passwordFile = config.sops.secrets.backups-thinkpad-password.path;
+        initialize = true;
+        paths = [ home ];
+        exclude = map (path: "${home}/${path}") [
+          ".ssh"
+          ".config/sops"
+          ".config/gh"
+          ".claude/.credentials.json"
+          ".bitwarden-ssh-agent.sock"
+          ".cache"
+          ".local/share/Trash"
+        ] ++ [ "**/node_modules" ];
+        extraBackupArgs = [ "--exclude-caches" ];
+        timerConfig = {
+          OnCalendar = "daily";
+          RandomizedDelaySec = "1h";
+          Persistent = true;
+        };
+      };
+      systemd.services.restic-backups-home = {
+        wants = [ "tailscaled.service" ];
+        after = [ "tailscaled.service" ];
+      };
+      preservation.preserveAt."/persist".directories = [ "/var/cache/restic-backups-home" ];
+      networking.nftables.enable = true;
+      networking.nftables.tables.backup-home = {
+        family = "inet";
+        content = ''
+          chain output {
+            type filter hook output priority -150; policy accept;
+            ip daddr ${hosts.bastion.tailnetAddress} tcp dport ${toString laptopPort} meta skuid != 0 reject
           }
         '';
       };

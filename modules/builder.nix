@@ -8,7 +8,38 @@ let
   # bastion's SSH host key
   hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICMInx05Ck0g1CMi7PlOOxABh/o8rDFnZAJxNXwPgiih";
   # the key each admin client's nix daemon presents to bastion's builder; private half is nix-build-ssh-key
-  builderKeys.mac = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINoA+orfMja/cji7njutAe9r4c4xe3w5j0iCRzp+tYwE";
+  builderKeys = {
+    mac = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINoA+orfMja/cji7njutAe9r4c4xe3w5j0iCRzp+tYwE";
+    thinkpad = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEDFHuli2Hq2SXHpI0ssAe+F/No0lEGfGXnh/0F3hEsf";
+  };
+  remoteBuilds =
+    { config, ... }:
+    {
+      sops.secrets.nix-build-ssh-key = { };
+      programs.ssh.knownHosts.bastion = {
+        hostNames = [ bastion ];
+        publicKey = hostKey;
+      };
+      nix = {
+        distributedBuilds = true;
+        settings.builders-use-substitutes = true;
+        buildMachines = [
+          {
+            hostName = bastion;
+            protocol = "ssh-ng";
+            sshUser = "nix-ssh";
+            sshKey = config.sops.secrets.nix-build-ssh-key.path;
+            systems = [ hosts.bastion.system ];
+            maxJobs = 2;
+            supportedFeatures = [
+              "big-parallel"
+              "kvm"
+              "nixos-test"
+            ];
+          }
+        ];
+      };
+    };
 in
 {
   flake.modules.nixos.builder =
@@ -47,32 +78,7 @@ in
     trusted-public-keys = [ cacheKey ];
   };
 
-  flake.modules.darwin.remote-builds =
-    { config, ... }:
-    {
-      sops.secrets.nix-build-ssh-key = { };
-      programs.ssh.knownHosts.bastion = {
-        hostNames = [ bastion ];
-        publicKey = hostKey;
-      };
-      nix = {
-        distributedBuilds = true;
-        settings.builders-use-substitutes = true;
-        buildMachines = [
-          {
-            hostName = bastion;
-            protocol = "ssh-ng";
-            sshUser = "nix-ssh";
-            sshKey = config.sops.secrets.nix-build-ssh-key.path;
-            systems = [ hosts.bastion.system ];
-            maxJobs = 2;
-            supportedFeatures = [
-              "big-parallel"
-              "kvm"
-              "nixos-test"
-            ];
-          }
-        ];
-      };
-    };
+  flake.modules.darwin.remote-builds = remoteBuilds;
+
+  flake.modules.nixos.remote-builds = remoteBuilds;
 }

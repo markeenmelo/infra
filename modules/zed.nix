@@ -4,7 +4,7 @@
     {
       programs.zed-editor = {
         enable = true;
-        package = null;
+        package = lib.mkDefault null;
         mutableUserSettings = false;
         extensions = [ "nix" ];
         userSettings = {
