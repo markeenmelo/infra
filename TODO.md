@@ -10,9 +10,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## bastion
 
-- [ ] Exporters and alerts for PostgreSQL and the apps (Authelia, Immich, Frigate, Jellyfin, the
-      arr apps, Caddy requests) once the core set misses something; Sonarr and Radarr publishing to
-      ntfy's `media` topic.
+- [ ] Sonarr and Radarr publishing to ntfy's `media` topic, which needs a path out of the VPN
+      namespace to bastion's ntfy.
 
 ## Laptops
 
