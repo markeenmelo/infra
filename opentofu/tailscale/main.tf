@@ -92,6 +92,7 @@ locals {
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:5005"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22"] },
+      { src = "racknerd", proto = "tcp", accept = ["bastion:9091"], deny = ["bastion:443", "bastion:53"] },
     ]
   }
 }
