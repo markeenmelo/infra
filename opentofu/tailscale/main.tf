@@ -88,7 +88,7 @@ locals {
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
       { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:5005"]) },
       { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:8010"] },
-      { src = ["tag:ci"], dst = ["bastion"], ip = ["tcp:5005"] },
+      { src = concat(local.admin_clients, ["tag:ci"]), dst = ["bastion"], ip = ["tcp:5005"] },
       { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = ["192.168.2.1"], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = ["192.168.4.0/24", "192.168.20.0/24"], ip = ["*"] },
@@ -96,7 +96,7 @@ locals {
       { src = ["tag:admin-client", "group:members"], dst = ["autogroup:internet"], ip = ["*"] },
     ]
     tests = [
-      { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22"] },
+      { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "bastion:5005"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:5005"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22"] },
