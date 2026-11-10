@@ -56,9 +56,14 @@ in
                 exit 2
                 ;;
             esac
-            if [ -z "''${UNIFI_API_KEY-}" ]; then
+            if [ -z "''${UNIFI_SETTINGS_DECRYPTED-}" ]; then
               cd "$(git rev-parse --show-toplevel)"
+              export UNIFI_SETTINGS_DECRYPTED=1
               exec sops exec-env secrets/unifi/operator.yaml "$(printf '%q ' "$0" "$@")"
+            fi
+            if [ -z "''${UNIFI_API_KEY-}" ]; then
+              echo "secrets/unifi/operator.yaml has no UNIFI_API_KEY" >&2
+              exit 1
             fi
             # shortcut: unverified TLS like the provider's allow_insecure, verify once the gateway serves a certificate for the domain
             api() {

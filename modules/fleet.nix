@@ -8,6 +8,7 @@ let
   isDarwin = host: lib.hasSuffix "-darwin" host.system;
   nixosHosts = lib.filterAttrs (_: host: !isDarwin host) config.fleet.hosts;
   darwinHosts = lib.filterAttrs (_: host: isDarwin host) config.fleet.hosts;
+  ipv4 = lib.types.strMatching "(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])(\\.(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}";
 in
 {
   options.fleet.hosts = lib.mkOption {
@@ -35,15 +36,15 @@ in
               lib.types.submodule {
                 options = {
                   address = lib.mkOption {
-                    type = lib.types.str;
+                    type = ipv4;
                     description = "IPv4 address the host holds on its LAN.";
                   };
                   gateway = lib.mkOption {
-                    type = lib.types.str;
+                    type = ipv4;
                     description = "The LAN's UniFi gateway, which is also its controller.";
                   };
                   mac = lib.mkOption {
-                    type = lib.types.str;
+                    type = lib.types.strMatching "([0-9a-f]{2}:){5}[0-9a-f]{2}";
                     description = "MAC address of the uplink, which the gateway fixes `address` to.";
                   };
                   syslogPort = lib.mkOption {
