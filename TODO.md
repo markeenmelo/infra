@@ -5,9 +5,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 ## Fleet plumbing
 
-- [ ] Drop CI's GitHub Actions cache once runs fetching from bastion's Harmonia cache do as well
-      without it.
-- [ ] Decide whether the laptops substitute from bastion's Harmonia cache.
 - [ ] Build the aarch64 closures (`asahi`, `mac`) in CI on GitHub's arm64 Linux and Apple Silicon
       macOS runners; check the macOS runner's memory against the closures first.
 
@@ -21,18 +18,13 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Exporters and alerts for PostgreSQL and the apps (Authelia, Immich, Frigate, Jellyfin, the
       arr apps, Caddy requests) once the core set misses something; Sonarr and Radarr publishing to
       ntfy's `media` topic.
-- [ ] UniFi: an alert on the gateway's IPS and honeypot detections from its syslog, which needs
-      Loki-backed alert rules.
 
 ## Laptops
 
-- [ ] `thinkpad`: a desktop switcher for the Proton exit nodes, on the mac too; an ntfy
-      subscriber for `alerts` on both.
+- [ ] `thinkpad`: a desktop switcher for the Proton exit nodes, on the mac too.
 - [ ] Claude Code on the Linux laptops: managed settings under `/etc/claude-code`, the sandbox's
       bubblewrap, and the MCP tokens, which need a user-owned secret the NixOS root-0400 rule
       forbids today.
-- [ ] An alert when the thinkpad's home backups stop: the laptop sends no metrics, so the signal
-      has to come from bastion's side, such as the newest snapshot's age in its repository.
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
@@ -41,6 +33,4 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] `ci-deploy`: deploy on merge from GitHub-hosted runners (Tailscale GitHub Action + deploy-rs),
       protected environment with manual approval gated by a path filter on access-changing files;
       its own key on the `deploy` account, which is root-equivalent.
-- [ ] Update the `nix` skill placement table once the laptops' desktop modules land.
-- [ ] Delete `~/projects/infra-old/` (duplicate) and, when every host runs the new config,
-      `infra/infra-old/` and its mention in CLAUDE.md.
+- [ ] Delete `infra/infra-old/` and its mention in CLAUDE.md once every host runs the new config.

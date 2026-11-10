@@ -33,7 +33,10 @@ compromised laptop cannot delete its history. On Sundays the retention job stops
 refuses to prune if any snapshot claims a date more than an hour ahead or was uploaded more than
 8 days after its claimed date, then keeps everything from the last 14 days, so a forged snapshot
 cannot displace a genuine recent one, plus 7 daily, 5 weekly and 12 monthly, and checks 5% of the
-data. The repository is also a backup root, so it reaches the USB disk too.
+data. The repository is also a backup root, so it reaches the USB disk too. The laptop sends no
+metrics, so every hour `backup-thinkpad-freshness` records the upload time of the newest snapshot
+file, which the laptop cannot forge, as the `thinkpad` success clock, alerted on after 3 days
+rather than 30 hours since the laptop is often off.
 
 The household repository opens with `backups/restic-password`, the ThinkPad's with
 `backups/thinkpad-password` ([secrets skill](../secrets/SKILL.md)), so the household key can

@@ -54,8 +54,10 @@ trailing comma in a multi-line list) but not unknown arguments or wrong componen
 ## Alerts
 
 Grafana evaluates the rules in the `Fleet` folder every minute; each is one `rule` entry in the
-module (PromQL whose value is compared with its `threshold`, default `for` 15 m, no data counts as
-fine). Everything goes to ntfy's `alerts` topic; `severity=critical` also goes to ntfy at high
+module (PromQL, or a LogQL metric query with `datasource = "loki"`, whose value is compared with
+its `threshold`, default `for` 15 m, no data counts as fine). The gateway's syslog has no sample
+of an IPS or honeypot event yet, so `Gateway security event` fires on any `UNIFIcategory=Security`
+line except a plain firewall block. Everything goes to ntfy's `alerts` topic; `severity=critical` also goes to ntfy at high
 priority and to the email of every `grafana-admins` person, through Authelia's SMTP account. The
 always-firing `Heartbeat` goes only to the healthchecks.io URL in `grafana/heartbeat-url` about
 every 5 minutes (repeat 4 m on a 1 m tick, since a repeat equal to the tick fires every other
@@ -71,7 +73,10 @@ Provisioning never deletes a rule: a retitled or removed rule's uid goes in `del
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the
 tailnet. Everything is denied by default; `alerts` and `media` are readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
-a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login.
+a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. Each workstation subscribes
+itself: `ntfy-alerts`, a Home Manager user service (a launchd agent on the mac), shows each alert
+as a notification, critical from priority 4 on Linux, and only while the tailnet is up, so alerts
+sent while the laptop was off or away reach only the phone.
 
 ```sh
 ssh bastion "systemctl status prometheus loki alloy grafana"

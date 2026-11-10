@@ -205,6 +205,7 @@ in
           threshold ? 0,
           severity ? "warning",
           for ? "15m",
+          datasource ? "prometheus",
         }:
         {
           uid = lib.toLower (lib.replaceStrings [ " " ] [ "-" ] title);
@@ -217,10 +218,11 @@ in
                 from = 600;
                 to = 0;
               };
-              datasourceUid = "prometheus";
-              model = {
+              datasourceUid = datasource;
+              model = lib.filterAttrs (_: value: value != null) {
                 inherit expr;
-                instant = true;
+                instant = if datasource == "prometheus" then true else null;
+                queryType = if datasource == "loki" then "instant" else null;
                 refId = "A";
               };
             }
@@ -640,15 +642,28 @@ in
                       }
                       {
                         title = "Backup stale";
-                        expr = "time() - restic_last_success_timestamp_seconds{backup!=\"drill-usb\"}";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup!~\"drill-usb|thinkpad\"}";
                         threshold = 30 * 3600;
                         summary = "The {{ $labels.backup }} backup on {{ $labels.instance }} has not succeeded for over 30 hours";
+                      }
+                      {
+                        title = "Laptop backup stale";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup=\"thinkpad\"}";
+                        threshold = 3 * 86400;
+                        summary = "The ThinkPad has not uploaded a home backup to {{ $labels.instance }} for over 3 days";
                       }
                       {
                         title = "Restore drill stale";
                         expr = "time() - restic_last_success_timestamp_seconds{backup=\"drill-usb\"}";
                         threshold = 40 * 86400;
                         summary = "The monthly restore drill on {{ $labels.instance }} has not succeeded for over 40 days";
+                      }
+                      {
+                        title = "Gateway security event";
+                        datasource = "loki";
+                        expr = "sum by (name) (count_over_time({host=\"gateway\"} |= \"UNIFIcategory=Security\" != \"|Blocked by Firewall|\" | regexp `CEF:0\\|[^|]*\\|[^|]*\\|[^|]*\\|[^|]*\\|(?P<name>[^|]*)\\|` [10m]))";
+                        for = "0s";
+                        summary = "The UniFi gateway reported {{ $labels.name }} (IPS or honeypot); details in Loki under host=gateway";
                       }
                       {
                         title = "Unit failed";

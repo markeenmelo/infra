@@ -38,6 +38,7 @@ in
             cd "$(git rev-parse --show-toplevel)"
             state="''${XDG_STATE_HOME:-$HOME/.local/state}/infra/$project"
             mkdir -p "$state"
+            export TF_VAR_fleet_domain=${lib.escapeShellArg config.fleet.domain}
             export TF_VAR_fleet_hosts=${lib.escapeShellArg hosts}
             export TF_VAR_fleet_edge_ports=${lib.escapeShellArg edgePorts}
             export TF_VAR_fleet_lan=${lib.escapeShellArg (builtins.toJSON lan)}

@@ -41,4 +41,59 @@ in
       };
       fleet.web.apps.ntfy = { inherit port; };
     };
+
+  flake.modules.darwin.desktop =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      notify = pkgs.writeShellScript "ntfy-notify" ''
+        exec /usr/bin/osascript -e 'on run argv' -e 'display notification (item 2 of argv) with title (item 1 of argv)' -e 'end run' "''${NTFY_TITLE:-alerts}" "$NTFY_MESSAGE"
+      '';
+    in
+    {
+      home-manager.users.${config.system.primaryUser}.launchd.agents.ntfy-alerts = {
+        enable = true;
+        config = {
+          ProgramArguments = [
+            (lib.getExe' pkgs.ntfy-sh "ntfy")
+            "subscribe"
+            "ntfy.${domain}/alerts"
+            "${notify}"
+          ];
+          RunAtLoad = true;
+          KeepAlive = true;
+          ThrottleInterval = 30;
+        };
+      };
+    };
+
+  flake.modules.homeManager.desktop =
+    { lib, pkgs, ... }:
+    let
+      notify = pkgs.writeShellScript "ntfy-notify" ''
+        urgency=normal
+        if [ "''${NTFY_PRIORITY:-3}" -ge 4 ]; then urgency=critical; fi
+        exec ${lib.getExe' pkgs.libnotify "notify-send"} --app-name=ntfy --urgency="$urgency" -- "''${NTFY_TITLE:-alerts}" "$NTFY_MESSAGE"
+      '';
+    in
+    {
+      systemd.user.services.ntfy-alerts = {
+        Unit = {
+          Description = "Show the fleet's alerts as desktop notifications";
+          After = [ "graphical-session.target" ];
+          PartOf = [ "graphical-session.target" ];
+        };
+        Service = {
+          ExecStart = "${lib.getExe' pkgs.ntfy-sh "ntfy"} subscribe ntfy.${domain}/alerts ${notify}";
+          Environment = "PATH=${lib.makeBinPath [ pkgs.bash ]}";
+          Restart = "always";
+          RestartSec = 30;
+        };
+        Install.WantedBy = [ "graphical-session.target" ];
+      };
+    };
 }
