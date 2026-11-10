@@ -26,13 +26,13 @@ Bastion trusts the admin clients' build keys, not the hosts it builds for: rackn
 the cache, signed, so a compromised edge cannot write into bastion's store. A build key is a
 trusted user on bastion and whatever it uploads is signed and served to racknerd; it sits on the
 admin client beside the operator's key, which is already root on every host, so it widens nothing.
-Bastion also holds, best effort, what the workstations build themselves: `remote-builds` gives
-each a post-build hook that copies every output it builds to bastion over that key, with bastion
-substituting what cache.nixos.org holds so only local builds are uploaded; an output whose copy
-fails is not retried (failing quietly
-after a 3-second connect timeout, then skipping pushes for 10 minutes so a build off the tailnet
-waits once, not per derivation), and makes bastion's cache its first
-substituter, so a cleaned mac or asahi store refills from bastion instead of rebuilding.
+`remote-builds` makes bastion's cache each workstation's first substituter, so a cleaned store
+refills from bastion instead of rebuilding. Bastion also holds, best effort, what the mac and
+asahi build themselves, since it cannot build their systems: a post-build hook copies each output
+they build over their build key, with bastion substituting what cache.nixos.org holds so only
+local builds are uploaded. A failed copy is not retried; it fails quietly after a 3-second
+connect timeout and pauses pushes for 10 minutes, so a build off the tailnet waits once, not per
+derivation. The thinkpad has no hook: bastion already built everything it uses.
 CI on `main` reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the
 tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds
 and leaves before it builds, so tailnet minutes stay short and nothing built by CI reaches

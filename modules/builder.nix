@@ -32,6 +32,7 @@ let
         NIX_SSHOPTS="-o ConnectTimeout=3 -o ServerAliveInterval=5 -o ServerAliveCountMax=2" ${lib.getExe config.nix.package} copy --substitute-on-destination \
           --to "ssh-ng://nix-ssh@${bastion}?ssh-key=${config.sops.secrets.nix-build-ssh-key.path}" $OUT_PATHS \
           || touch "$failed"
+        exit 0
       '';
     in
     {
@@ -45,7 +46,7 @@ let
         distributedBuilds = true;
         settings = {
           builders-use-substitutes = true;
-          post-build-hook = push;
+          post-build-hook = lib.mkIf (pkgs.stdenv.hostPlatform.system != hosts.bastion.system) push;
         };
         buildMachines = [
           {
