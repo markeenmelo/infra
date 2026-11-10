@@ -24,6 +24,7 @@ jobs:
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
       - name: Scan each x86_64 host's runtime closure
         run: |
+          # shortcut: vulnix reads only the last six yearly NVD feeds, so older CVEs never match; merge older years into the oldest served file if that coverage matters
           feeds=$RUNNER_TEMP/nvd
           mkdir -p "$feeds"
           year=$(date -u +%Y)

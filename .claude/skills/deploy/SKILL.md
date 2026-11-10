@@ -27,8 +27,9 @@ the cache, signed, so a compromised edge cannot write into bastion's store. A bu
 trusted user on bastion and whatever it uploads is signed and served to racknerd; it sits on the
 admin client beside the operator's key, which is already root on every host, so it widens nothing.
 Bastion also holds what the workstations build themselves: `remote-builds` gives each a
-post-build hook that copies every output it builds to bastion over that key (failing quietly,
-after a 3-second connect timeout, off the tailnet), and makes bastion's cache its first
+post-build hook that copies every output it builds to bastion over that key (failing quietly
+after a 3-second connect timeout, then skipping pushes for 10 minutes so a build off the tailnet
+waits once, not per derivation), and makes bastion's cache its first
 substituter, so a cleaned mac or asahi store refills from bastion instead of rebuilding.
 CI on `main` reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the
 tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds

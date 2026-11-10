@@ -96,7 +96,8 @@ locals {
       { src = ["tag:admin-client", "group:members"], dst = ["autogroup:internet"], ip = ["*"] },
     ]
     tests = [
-      { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "bastion:5005"] },
+      { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22"] },
+      { src = "thinkpad", proto = "tcp", accept = ["bastion:5005"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:5005"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22"] },

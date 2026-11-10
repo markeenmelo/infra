@@ -27,8 +27,11 @@ let
     let
       push = pkgs.writeShellScript "push-to-bastion" ''
         set -f
+        failed=/var/run/nix-push-to-bastion-failed
+        if [ -n "$(find "$failed" -mmin -10 2>/dev/null)" ]; then exit 0; fi
         NIX_SSHOPTS="-o ConnectTimeout=3" ${lib.getExe config.nix.package} copy \
-          --to "ssh-ng://nix-ssh@${bastion}?ssh-key=${config.sops.secrets.nix-build-ssh-key.path}" $OUT_PATHS || true
+          --to "ssh-ng://nix-ssh@${bastion}?ssh-key=${config.sops.secrets.nix-build-ssh-key.path}" $OUT_PATHS \
+          || touch "$failed"
       '';
     in
     {
