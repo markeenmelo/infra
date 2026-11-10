@@ -26,7 +26,8 @@ in
 {
   flake.modules.nixos.base.imports = [ config.flake.modules.nixos.storage ];
 
-  flake.checks.${system}.storage = inputs.disko.lib.testLib.makeDiskoTest {
+  flake.checks.${system} = {
+    storage = inputs.disko.lib.testLib.makeDiskoTest {
     pkgs = inputs.nixpkgs.legacyPackages.${system};
     name = "storage";
     disko-config.disko.devices = probe.config.disko.devices;
@@ -44,9 +45,8 @@ in
       assert machine.succeed("cat /etc/machine-id") == machine_id, "machine-id changed across a reboot"
       assert machine.succeed("btrfs inspect-internal rootid /") != root_id, "root subvolume was not recreated"
     '';
-  };
-
-  flake.checks.${system}.storage-esp = inputs.disko.lib.testLib.makeDiskoTest {
+    };
+    storage-esp = inputs.disko.lib.testLib.makeDiskoTest {
     pkgs = inputs.nixpkgs.legacyPackages.${system};
     name = "storage-esp";
     disko-config.disko.devices = probeEsp.config.disko.devices;
@@ -58,6 +58,7 @@ in
     postDisko = ''
       machine.succeed("test -e /mnt/boot/owned-by-macos")
     '';
+    };
   };
 
   flake.modules.nixos.storage =
