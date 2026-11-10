@@ -102,8 +102,13 @@ in
         };
         groups.alloy.gid = 354;
       };
+      systemd.services.alloy.serviceConfig = {
+        DynamicUser = lib.mkForce false;
+        User = "alloy";
+        Group = "alloy";
+      };
       networking.nftables.enable = true;
-      networking.nftables.tables.telemetry = {
+      networking.nftables.tables.telemetry = lib.mkIf (config.fleet.scrapeTargets != { }) {
         family = "inet";
         content = ''
           chain output {
