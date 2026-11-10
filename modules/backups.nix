@@ -267,8 +267,7 @@ in
                 ReadWritePaths = [ config.fleet.metricsDir ];
               };
               script = ''
-                set -o pipefail
-                newest=$(find ${thinkpad.repo}/snapshots -type f -printf '%T@\n' | sort -n | tail -n 1)
+                newest=$(find ${thinkpad.repo}/snapshots -type f -printf '%T@\n' 2> /dev/null | sort -n | tail -n 1)
                 [ -n "$newest" ] || exit 0
                 printf 'restic_last_success_timestamp_seconds{backup="thinkpad"} %s\n' "''${newest%.*}" \
                   > ${config.fleet.metricsDir}/restic-thinkpad.prom.tmp

@@ -77,7 +77,7 @@ in
       notify = pkgs.writeShellScript "ntfy-notify" ''
         urgency=normal
         if [ "''${NTFY_PRIORITY:-3}" -ge 4 ]; then urgency=critical; fi
-        exec ${lib.getExe' pkgs.libnotify "notify-send"} --app-name=ntfy --urgency="$urgency" "''${NTFY_TITLE:-alerts}" "$NTFY_MESSAGE"
+        exec ${lib.getExe' pkgs.libnotify "notify-send"} --app-name=ntfy --urgency="$urgency" -- "''${NTFY_TITLE:-alerts}" "$NTFY_MESSAGE"
       '';
     in
     {
