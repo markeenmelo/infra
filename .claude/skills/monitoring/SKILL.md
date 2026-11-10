@@ -54,8 +54,10 @@ trailing comma in a multi-line list) but not unknown arguments or wrong componen
 ## Alerts
 
 Grafana evaluates the rules in the `Fleet` folder every minute; each is one `rule` entry in the
-module (PromQL whose value is compared with its `threshold`, default `for` 15 m, no data counts as
-fine). Everything goes to ntfy's `alerts` topic; `severity=critical` also goes to ntfy at high
+module (PromQL, or a LogQL metric query with `datasource = "loki"`, whose value is compared with
+its `threshold`, default `for` 15 m, no data counts as fine). The gateway's syslog has no sample
+of an IPS or honeypot event yet, so `Gateway security event` fires on any `UNIFIcategory=Security`
+line except a plain firewall block. Everything goes to ntfy's `alerts` topic; `severity=critical` also goes to ntfy at high
 priority and to the email of every `grafana-admins` person, through Authelia's SMTP account. The
 always-firing `Heartbeat` goes only to the healthchecks.io URL in `grafana/heartbeat-url` about
 every 5 minutes (repeat 4 m on a 1 m tick, since a repeat equal to the tick fires every other
