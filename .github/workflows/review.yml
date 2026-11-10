@@ -3,116 +3,17 @@ name: review
 on:
   pull_request:
     types: [opened, reopened, ready_for_review, synchronize]
-  issue_comment:
-    types: [created]
 
 permissions: {}
 
 jobs:
-  pr-agent:
-    name: pr-agent (${{ matrix.name }} ${{ matrix.command }})
-    if: >-
-      github.event.sender.type != 'Bot' &&
-      ((github.event_name == 'pull_request' && !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/') &&
-      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
-    concurrency:
-      group: review-pr-agent-${{ matrix.name }}-${{ matrix.command }}-${{ github.event_name }}-${{ matrix.command != 'review' && github.event.action || '' }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '/')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
-      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        include:
-          - name: glm
-            command: describe
-            provider: anthropic
-            model: anthropic/glm-5.3-flash
-            base: https://api.z.ai/api/anthropic
-            secret: ZAI_API_KEY
-          - name: glm
-            command: review
-            provider: anthropic
-            model: anthropic/glm-5.3-flash
-            base: https://api.z.ai/api/anthropic
-            secret: ZAI_API_KEY
-          - name: kimi
-            command: review
-            provider: openai
-            model: openai/k3
-            base: https://api.kimi.ai/coding/v1
-            secret: KIMI_API_KEY
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - if: github.event_name == 'issue_comment'
-        run: test "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isCrossRepository --jq .isCrossRepository)" = false
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ github.event.issue.number }}
-      - id: guidelines
-        run: |
-          {
-            echo 'text<<EOF'
-            gh api "repos/$GITHUB_REPOSITORY/contents/CLAUDE.md?ref=$DEFAULT_BRANCH" -H 'Accept: application/vnd.github.raw' | sed -n '/^## Review guidelines/,$p'
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      - if: ((github.event_name == 'pull_request' && github.event.action != 'synchronize') || matrix.command == 'review') && (matrix.name == 'glm' || github.event_name == 'pull_request')
-        uses: docker://pragent/pr-agent@sha256:548e894a88071180832b2f4233f734d0acd0db1a879e2fcbaa70bac8b8372ebe # 0.50.0-github_action
-        env:
-          PR_REVIEWER__EXTRA_INSTRUCTIONS: ${{ steps.guidelines.outputs.text }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANTHROPIC__KEY: ${{ matrix.provider == 'anthropic' && secrets[matrix.secret] || '' }}
-          ANTHROPIC_BASE_URL: ${{ matrix.provider == 'anthropic' && matrix.base || '' }}
-          OPENAI__KEY: ${{ matrix.provider == 'openai' && secrets[matrix.secret] || '' }}
-          OPENAI__API_BASE: ${{ matrix.provider == 'openai' && matrix.base || '' }}
-          CONFIG__MODEL: ${{ matrix.model }}
-          CONFIG__FALLBACK_MODELS: "[]"
-          CONFIG__TEMPERATURE: "1"
-          CONFIG__MAX_MODEL_TOKENS: "262144"
-          CONFIG__CUSTOM_MODEL_MAX_TOKENS: "262144"
-          CONFIG__MAX_OUTPUT_TOKENS: "32768"
-          CONFIG__REASONING_EFFORT: low
-          CONFIG__ADDITIONAL_REASONING_EFFORT_MODELS: '["glm-5.3-flash", "k3"]'
-          CONFIG__NO_TEMPERATURE_MODELS: '["k3"]'
-          PR_REVIEWER__PERSISTENT_COMMENT: ${{ matrix.name == 'glm' }}
-          PR_REVIEWER__REVIEW_HEADING: ${{ matrix.name == 'glm' && 'GLM Reviewer Guide' || 'Kimi Reviewer Guide' }}
-          LITELLM__CUSTOM_LLM_PROVIDER: ${{ matrix.provider }}
-          LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: anthropic
-          LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.z.ai"]'
-          CONFIG__AI_TIMEOUT: "600"
-          CONFIG__RETRY_SAME_MODEL_ON_TIMEOUT: "false"
-          GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: ${{ matrix.command == 'describe' }}
-          GITHUB_ACTION_CONFIG__AUTO_REVIEW: ${{ matrix.command == 'review' }}
-          GITHUB_ACTION_CONFIG__AUTO_IMPROVE: "false"
-          GITHUB_ACTION_CONFIG__HANDLE_PUSH_TRIGGER: "true"
-          GITHUB_ACTION_CONFIG__PUSH_COMMANDS: '["/review"]'
-
   claude:
-    name: claude-code (${{ matrix.name }})
+    name: claude-code (fable)
     if: >-
-      github.event.sender.type != 'Bot' &&
-      ((github.event_name == 'pull_request' && !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event.issue.pull_request && startsWith(github.event.comment.body, '@claude review') &&
-      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: opus
-            model: claude-opus-5-5
-            args: --effort medium
-            secret: CLAUDE_CODE_OAUTH_TOKEN
+      github.event.sender.type != 'Bot' && !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
     concurrency:
-      group: review-${{ matrix.name }}-${{ (github.event.sender.type == 'Bot' || (github.event_name == 'issue_comment' && (!contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) || !startsWith(github.event.comment.body, '@claude review')))) && github.run_id || github.event.pull_request.number || github.event.issue.number }}
+      group: review-fable-${{ github.event.sender.type == 'Bot' && github.run_id || github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -120,27 +21,20 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - if: github.event_name == 'issue_comment'
-        run: test "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isCrossRepository --jq .isCrossRepository)" = false
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ github.event.issue.number }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
-      - id: start
-        run: echo "at=$(date -u +%FT%TZ)" >> "$GITHUB_OUTPUT"
       - id: claude
-        uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1.0.269
+        uses: anthropics/claude-code-action@9eb012b6d0900c2b9eede65ee1758cec4d2973e9 # v1.0.270
         with:
-          claude_code_oauth_token: ${{ secrets[matrix.secret] }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           classify_inline_comments: "false"
           settings: '{"permissions":{"deny":["Read(//proc/**)","Read(~/.claude/**)"],"blockReadsOutsideWorkingDirectories":true}}'
           prompt: |
             REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
 
             Review this pull request following the "Review guidelines" section of CLAUDE.md.
             The working directory holds the trusted base branch, not the PR; read the PR only
@@ -150,12 +44,11 @@ jobs:
             Return the top-level summary as the `summary` field of your structured output and
             post line-specific findings with
             `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`),
-            starting every inline comment body with the line `<!-- ${{ matrix.name }}-review -->`
-            followed by `**${{ matrix.name }}**`.
+            starting every inline comment body with the line `**fable**`.
             Post nothing else. Return the summary even if you run short of turns.
           claude_args: >-
-            --model ${{ matrix.model }}
-            ${{ matrix.args }}
+            --model claude-fable-5-2
+            --effort medium
             --max-turns 100
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*)"
             --disallowedTools "Agent,Task"
@@ -169,7 +62,7 @@ jobs:
               exit 1
             }
           done
-          body="$MARKER"$'\n'"**$NAME**"$'\n\n'"$body"
+          body="$MARKER"$'\n'"**fable**"$'\n\n'"$body"
           id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
             --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id' | tail -n 1)
           if [ -n "$id" ]; then
@@ -177,17 +70,9 @@ jobs:
           else
             gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body="$body"
           fi
-          gh api graphql --paginate -F owner="${GITHUB_REPOSITORY%/*}" -F name="${GITHUB_REPOSITORY#*/}" -F pr="$PR_NUMBER" \
-            -f query='query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) { repository(owner: $owner, name: $name) { pullRequest(number: $pr) { reviewThreads(first: 100, after: $endCursor) { nodes { id isResolved comments(first: 1) { totalCount nodes { author { login } body createdAt } } } pageInfo { hasNextPage endCursor } } } } }' \
-            --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select((.isResolved | not) and .comments.totalCount == 1 and .comments.nodes[0].author.login == "github-actions" and (.comments.nodes[0].body | startswith(env.MARKER)) and .comments.nodes[0].createdAt < env.SINCE) | .id' |
-            while read -r thread; do
-              gh api graphql -F thread="$thread" -f query='mutation($thread: ID!) { resolveReviewThread(input: { threadId: $thread }) { thread { id } } }' > /dev/null
-            done
         env:
-          REVIEW_KEY: ${{ secrets[matrix.secret] }}
+          REVIEW_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
-          MARKER: <!-- ${{ matrix.name }}-review -->
-          NAME: ${{ matrix.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MARKER: <!-- fable-review -->
           SUMMARY: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').summary }}
-          SINCE: ${{ steps.start.outputs.at }}
