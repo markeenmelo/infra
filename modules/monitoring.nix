@@ -659,6 +659,18 @@ in
                         summary = "The monthly restore drill on {{ $labels.instance }} has not succeeded for over 40 days";
                       }
                       {
+                        title = "Proxy server errors";
+                        expr = "(sum by (instance) (increase(caddy_http_request_duration_seconds_count{code=~\"5..\"}[15m])) > 10) / sum by (instance) (increase(caddy_http_request_duration_seconds_count[15m]))";
+                        threshold = 0.1;
+                        summary = "Caddy on {{ $labels.instance }} answered more than 10% of requests with a server error for 15 minutes";
+                      }
+                      {
+                        title = "Arr health issue";
+                        expr = "{__name__=~\"(sonarr|radarr|prowlarr)_system_health_issues\"}";
+                        for = "1h";
+                        summary = "{{ $labels.job }} reports a health issue for over an hour: {{ $labels.message }}";
+                      }
+                      {
                         title = "Gateway security event";
                         datasource = "loki";
                         expr = "sum by (name) (count_over_time({host=\"gateway\"} |= \"UNIFIcategory=Security\" != \"|Blocked by Firewall|\" | regexp `CEF:0\\|[^|]*\\|[^|]*\\|[^|]*\\|[^|]*\\|(?P<name>[^|]*)\\|` [10m]))";

@@ -13,9 +13,9 @@ check:
 deploy host:
     nix run .#deploy -- .#{{ host }}
 
-[doc("Switch the mac")]
-mac:
-    nh darwin switch . -H mac
+[doc("Switch the machine you are on to this checkout: the mac, the thinkpad or asahi")]
+switch:
+    nh {{ if os() == "macos" { "darwin" } else { "os" } }} switch .
 
 [doc("Run OpenTofu in opentofu/PROJECT, e.g. `just tofu unifi plan`")]
 tofu project *args:
