@@ -6,6 +6,7 @@
       devShells.default = pkgs.mkShellNoCC {
         packages = [
           config.formatter
+          pkgs.just
           pkgs.sops
         ];
       };

@@ -6,7 +6,8 @@ description: "Monitoring on bastion: Prometheus and the exporters it scrapes, Lo
 # Monitoring
 
 [monitoring.nix](../../../modules/monitoring.nix) runs the stack on bastion, every port on loopback.
-Each exporter sits beside what it measures (SMART here, the UPS in the bastion host's `ups.nix`)
+Each exporter sits beside what it measures (SMART here, the UPS in the bastion host's `ups.nix`,
+the arr apps' health in `arr.nix`)
 and adds its port to `fleet.scrapeTargets`, which becomes a Prometheus job. Prometheus, Loki and
 every scrape target answer without authentication, so an nftables guard admits only root and the
 stack's own users (pinned uids), plus Caddy's for its own admin endpoint (2019, which serves

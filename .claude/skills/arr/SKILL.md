@@ -25,7 +25,11 @@ tailnet clients only ([proxy skill](../proxy/SKILL.md)); the arr apps and SABnzb
 `marcos` with `arr/password`. An nftables table drops forwarding across the namespace's bridge, so
 nixflix's port mappings never expose the apps to the LAN, and lets only root (which nixflix's
 setup units and the port-forward unit run as) and Caddy open new connections into the namespace,
-and Seerr only to Sonarr and Radarr; replies to connections the apps open pass.
+and Seerr only to Sonarr and Radarr, and the `exportarr` user (uid 357) only to the three arr
+apps; replies to connections the apps open pass. One exportarr exporter per app publishes its
+health checks (indexers, download clients, root folders, remote path mappings), which the `Arr
+health issue` alert reports after an hour; a single failed import is a queue item, which
+Decluttarr handles instead.
 
 Seerr takes requests at `seerr.DOMAIN`, tailnet-only, and runs outside the namespace because it
 needs Jellyfin; it signs in to Jellyfin as the declared native admin to set itself up. Its login

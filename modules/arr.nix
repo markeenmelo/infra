@@ -74,6 +74,12 @@ in
       inherit (config.services.qbittorrent) webuiPort;
       sabnzbd = config.nixflix.usenetClients.sabnzbd;
       secret = name: { _secret = config.sops.secrets."arr-${name}".path; };
+      appPort = name: config.nixflix.${name}.config.hostConfig.port;
+      exporterPorts = {
+        sonarr = 19708;
+        radarr = 19709;
+        prowlarr = 19710;
+      };
       media = dirOf config.nixflix.mediaDir;
       withoutResponseBody =
         unit: rewrites:
@@ -195,18 +201,23 @@ in
           {
             sonarr-api-key = [
               "sonarr"
+              "prometheus-exportarr-sonarr-exporter"
               "prowlarr-applications"
               "seerr"
               "decluttarr"
             ];
             radarr-api-key = [
               "radarr"
+              "prometheus-exportarr-radarr-exporter"
               "prowlarr-applications"
               "seerr"
               "decluttarr"
             ];
             seerr-api-key = [ "seerr" ];
-            prowlarr-api-key = [ "prowlarr" ];
+            prowlarr-api-key = [
+              "prowlarr"
+              "prometheus-exportarr-prowlarr-exporter"
+            ];
             password = [
               "sonarr-config"
               "radarr-config"
@@ -357,6 +368,29 @@ in
       ];
       # the uid that owns qbittorrent's state, allocated by the old generation; nixflix pins 70 with mkForce
       users.users.qbittorrent.uid = lib.mkOverride 49 988;
+      users.users.exportarr = {
+        isSystemUser = true;
+        uid = 357;
+        group = "exportarr";
+      };
+      users.groups.exportarr.gid = 357;
+      services.prometheus.exporters = lib.listToAttrs (
+        map (
+          name:
+          lib.nameValuePair "exportarr-${name}" {
+            enable = true;
+            url = "http://${namespaceAddress}:${toString (appPort name)}";
+            apiKeyFile = config.sops.secrets."arr-${name}-api-key".path;
+            environment.INTERFACE = "127.0.0.1";
+            port = exporterPorts.${name};
+            user = "exportarr";
+            group = "exportarr";
+          }
+        ) apps
+      );
+      fleet.scrapeTargets = lib.mapAttrs' (
+        name: port: lib.nameValuePair "exportarr-${name}" port
+      ) exporterPorts;
       fleet.web.apps = lib.mkMerge [
         (lib.genAttrs apps (name: {
           inherit (config.nixflix.${name}.config.hostConfig) port;
@@ -400,6 +434,9 @@ in
                 "radarr"
               ]
             } } accept
+            ct state new oifname "${vpn}-br" meta skuid ${toString config.users.users.exportarr.uid} tcp dport { ${
+              lib.concatMapStringsSep ", " (name: toString (appPort name)) apps
+            } } accept
             ct state new oifname "${vpn}-br" meta skuid != { ${
               lib.concatMapStringsSep ", " toString (
                 [ 0 ] ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
@@ -409,6 +446,9 @@ in
         '';
       };
       systemd.services = lib.mkMerge [
+        (lib.genAttrs (map (name: "prometheus-exportarr-${name}-exporter") apps) (_: {
+          serviceConfig.DynamicUser = false;
+        }))
         (lib.genAttrs
           (
             apps
