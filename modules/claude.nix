@@ -22,6 +22,9 @@ let
     "/run/dbus"
     "/run/tailscale"
     "/nix/var/nix/daemon-socket"
+    "/run/cups"
+    "/tmp/.X11-unix"
+    "/persist"
   ];
   managedSettings = builtins.toJSON {
     permissions.disableBypassPermissionsMode = "disable";

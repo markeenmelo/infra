@@ -19,7 +19,8 @@ comment = "the perl-5.42.3 entry's environment wrapper"
 until = "2027-05-10"
 
 ["snappy"]
-comment = "every snappy CVE in NVD is KnpLabs' PHP library, not Google's compressor"
+cve = ["CVE-2023-28115", "CVE-2023-41330"]
+comment = "KnpLabs' PHP snappy, not Google's compressor"
 until = "2027-05-10"
 
 ["zlib"]
@@ -33,9 +34,14 @@ comment = "nixpkgs' lapack wraps OpenBLAS 0.3.33, fixed since 0.3.18; the versio
 until = "2027-05-10"
 
 ["whatsapp"]
+cve = [
+  "CVE-2021-24026", "CVE-2021-24027", "CVE-2021-24035", "CVE-2021-24041", "CVE-2021-24042", "CVE-2022-27492",
+  "CVE-2022-36934", "CVE-2023-38537", "CVE-2023-38538", "CVE-2025-30401", "CVE-2026-23863"
+]
 comment = "whatsapp-electron wraps web.whatsapp.com; NVD's whatsapp CPE is Meta's native apps"
 until = "2027-05-10"
 
 ["bolt"]
-comment = "boltd, the Thunderbolt daemon; NVD's bolt CVEs are Bolt CMS and Puppet Bolt"
+cve = ["CVE-2021-27367", "CVE-2022-31321", "CVE-2023-5214", "CVE-2025-34086"]
+comment = "Bolt CMS and Puppet Bolt, not boltd, the Thunderbolt daemon"
 until = "2027-05-10"
