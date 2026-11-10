@@ -93,6 +93,31 @@ in
     in
     {
       services.alloy.enable = true;
+      users = {
+        users.alloy = {
+          isSystemUser = true;
+          uid = 354;
+          group = "alloy";
+          extraGroups = [ "systemd-journal" ];
+        };
+        groups.alloy.gid = 354;
+      };
+      networking.nftables.enable = true;
+      networking.nftables.tables.telemetry = {
+        family = "inet";
+        content = ''
+          chain output {
+            type filter hook output priority -150; policy accept;
+            ${lib.optionalString config.services.caddy.enable ''
+              oifname "lo" tcp dport ${toString config.fleet.scrapeTargets.caddy} meta skuid ${
+                toString config.users.users.${config.services.caddy.user}.uid
+              } accept
+            ''}            oifname "lo" tcp dport { ${
+              lib.concatMapStringsSep ", " toString (lib.attrValues config.fleet.scrapeTargets)
+            } } meta skuid != { 0, ${toString config.users.users.alloy.uid} } reject
+          }
+        '';
+      };
       environment.etc."alloy/config.alloy".text = journal "loki.write.bastion.receiver" "{}" + ''
         loki.write "bastion" {
           endpoint {
