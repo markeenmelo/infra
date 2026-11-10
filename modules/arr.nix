@@ -570,16 +570,16 @@ in
               fw -N qbittorrent-port 2>/dev/null || true
               fw -C INPUT -j qbittorrent-port 2>/dev/null || fw -I INPUT -j qbittorrent-port
               open_port() {
-                fw -F qbittorrent-port
+                fw -F qbittorrent-port || return
                 for proto in tcp udp; do
-                  fw -A qbittorrent-port -i ${vpn}0 -p "$proto" --dport "$1" -j ACCEPT
+                  fw -A qbittorrent-port -i ${vpn}0 -p "$proto" --dport "$1" -j ACCEPT || return
                 done
               }
               set_port() {
                 curl -fsS -c "$cookies" --data-urlencode username=marcos \
-                  --data-urlencode "password@$CREDENTIALS_DIRECTORY/password" "$api/auth/login" > /dev/null
-                curl -fsS -b "$cookies" --data "json={\"listen_port\":$1,\"random_port\":false}" "$api/app/setPreferences"
-                curl -fsS -b "$cookies" --data hashes=all "$api/torrents/reannounce"
+                  --data-urlencode "password@$CREDENTIALS_DIRECTORY/password" "$api/auth/login" > /dev/null &&
+                  curl -fsS -b "$cookies" --data "json={\"listen_port\":$1,\"random_port\":false}" "$api/app/setPreferences" &&
+                  curl -fsS -b "$cookies" --data hashes=all "$api/torrents/reannounce"
               }
               while true; do
                 port=$(ip netns exec ${vpn} natpmpc -a 1 0 udp 60 -g ${protonGateway} | awk '/Mapped public port/ { print $4 }')
