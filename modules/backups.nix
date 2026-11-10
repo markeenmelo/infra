@@ -355,8 +355,8 @@ in
           ++ [ "**/node_modules" ];
         extraBackupArgs = [ "--exclude-caches" ];
         timerConfig = {
-          OnCalendar = "daily";
-          RandomizedDelaySec = "1h";
+          OnCalendar = "00/6:00";
+          RandomizedDelaySec = "30m";
           Persistent = true;
         };
       };

@@ -46,7 +46,7 @@ is connected.
 
 ## Backups
 
-`restic-backups-home` sends `/home/marcos` daily to the append-only server on bastion
+`restic-backups-home` sends `/home/marcos` every 6 hours to the append-only server on bastion
 ([backups skill](../backups/SKILL.md)) with `backups/thinkpad-password`, never the household key;
 only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh), the keyring,
 caches and the Bitwarden socket stay out. App data stays in, browser and messenger sessions
