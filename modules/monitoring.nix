@@ -594,7 +594,7 @@ in
                       }
                       {
                         title = "Disk unmonitored";
-                        expr = "count by (instance) (node_disk_info{device=~\"sd[a-z]+|nvme[0-9]+n1\"}) - (count by (instance) (smartctl_device) or count by (instance) (node_disk_info) * 0)";
+                        expr = "(count by (instance) (node_disk_info{device=~\"sd[a-z]+|nvme[0-9]+n1\"}) - (count by (instance) (smartctl_device) or count by (instance) (node_disk_info) * 0)) and on (instance) up{job=\"smartctl\"}";
                         for = "1h";
                         summary = "Disks on {{ $labels.instance }} report no SMART data to the smartctl exporter";
                       }
