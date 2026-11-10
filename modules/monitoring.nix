@@ -802,7 +802,7 @@ in
           '') senders
         )
         + lib.optionalString (lan != null) ''
-          iifname "${config.systemd.network.links."10-uplink".linkConfig.Name}" ip saddr ${lan.gateway} ip daddr ${lan.address} udp dport ${toString lan.syslogPort} accept
+          ip saddr ${lan.gateway} ip daddr ${lan.address} udp dport ${toString lan.syslogPort} accept
         '';
 
       fleet = {

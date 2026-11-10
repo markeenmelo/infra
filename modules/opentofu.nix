@@ -3,7 +3,12 @@ let
   lan = lib.mapAttrs (_: host: host.lan) (
     lib.filterAttrs (_: host: host.lan != null) config.fleet.hosts
   );
-  inherit (lib.head (lib.attrValues lan)) gateway;
+  gateways = lib.unique (lib.mapAttrsToList (_: host: host.gateway) lan);
+  gateway =
+    assert lib.assertMsg (
+      lib.length gateways == 1
+    ) "every fleet.hosts.*.lan must name the one UniFi gateway, found: ${toString gateways}";
+    lib.head gateways;
   hosts = builtins.toJSON (lib.mapAttrs (_: host: host.tailnetAddress) config.fleet.hosts);
   settings = ../opentofu/unifi/settings.json;
   program = ../opentofu/unifi/settings.jq;
