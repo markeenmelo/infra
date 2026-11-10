@@ -43,7 +43,12 @@ in
     };
 
   flake.modules.darwin.desktop =
-    { config, lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       notify = pkgs.writeShellScript "ntfy-notify" ''
         exec /usr/bin/osascript -e 'on run argv' -e 'display notification (item 2 of argv) with title (item 1 of argv)' -e 'end run' "''${NTFY_TITLE:-alerts}" "$NTFY_MESSAGE"
