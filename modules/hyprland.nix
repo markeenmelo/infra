@@ -116,13 +116,20 @@
         };
       };
       moves = lib.listToAttrs (
-        map (
-          direction:
-          lib.nameValuePair "SUPER + SHIFT + ${direction}" {
-            desc = "Move window ${direction}";
-            dsp = lua "hl.dsp.window.move({ direction = ${lib.generators.toLua { } direction} })";
-          }
-        ) [ "left" "right" "up" "down" ]
+        map
+          (
+            direction:
+            lib.nameValuePair "SUPER + SHIFT + ${direction}" {
+              desc = "Move window ${direction}";
+              dsp = lua "hl.dsp.window.move({ direction = ${lib.generators.toLua { } direction} })";
+            }
+          )
+          [
+            "left"
+            "right"
+            "up"
+            "down"
+          ]
       );
     in
     {
@@ -242,15 +249,21 @@
             "SUPER + R"
             "SUPER + E"
           ];
-          bind = lib.concatMap (lib.mapAttrsToList (
-            key: bind: {
-              _args = [
-                key
-                bind.dsp
-                { description = bind.desc; }
+          bind =
+            lib.concatMap
+              (lib.mapAttrsToList (
+                key: bind: {
+                  _args = [
+                    key
+                    bind.dsp
+                    { description = bind.desc; }
+                  ];
+                }
+              ))
+              [
+                binds
+                moves
               ];
-            }
-          )) [ binds moves ];
         };
       };
       xdg.configFile."uwsm/env".text =

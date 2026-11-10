@@ -30,6 +30,9 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
       subscriber for `alerts` on both. With the reinstall, `restic key add` the fresh
       `backups/thinkpad-password` to the laptop's repository on bastion and remove the household
       key there, so the new install never holds it.
+- [ ] Claude Code on the Linux laptops: managed settings under `/etc/claude-code`, the sandbox's
+      bubblewrap, and the MCP tokens, which need a user-owned secret the NixOS root-0400 rule
+      forbids today.
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
 - [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 

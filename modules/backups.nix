@@ -340,15 +340,17 @@ in
         passwordFile = config.sops.secrets.backups-thinkpad-password.path;
         initialize = true;
         paths = [ home ];
-        exclude = map (path: "${home}/${path}") [
-          ".ssh"
-          ".config/sops"
-          ".config/gh"
-          ".claude/.credentials.json"
-          ".bitwarden-ssh-agent.sock"
-          ".cache"
-          ".local/share/Trash"
-        ] ++ [ "**/node_modules" ];
+        exclude =
+          map (path: "${home}/${path}") [
+            ".ssh"
+            ".config/sops"
+            ".config/gh"
+            ".claude/.credentials.json"
+            ".bitwarden-ssh-agent.sock"
+            ".cache"
+            ".local/share/Trash"
+          ]
+          ++ [ "**/node_modules" ];
         extraBackupArgs = [ "--exclude-caches" ];
         timerConfig = {
           OnCalendar = "daily";

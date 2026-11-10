@@ -1,6 +1,7 @@
 { config, inputs, ... }:
 let
   inherit (config.fleet) domain;
+  inherit (config.flake.modules.homeManager) claude;
   secretDirs = [
     "/run/secrets"
     "/run/secrets.d"
@@ -25,6 +26,7 @@ in
     darwin.base =
       { config, pkgs, ... }:
       {
+        home-manager.users.${config.system.primaryUser}.imports = [ claude ];
         sops.secrets = {
           github-mcp-token.owner = config.system.primaryUser;
           grafana-mcp-token.owner = config.system.primaryUser;
@@ -39,7 +41,7 @@ in
         '';
       };
 
-    homeManager.base =
+    homeManager.claude =
       {
         config,
         lib,
