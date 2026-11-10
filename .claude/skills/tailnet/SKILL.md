@@ -41,5 +41,7 @@ moved like a host's from the `enrollment_keys` output, and keeps `/var/lib/tails
 under `/persist`. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tunnel that fails or
 whose handshake is older than five minutes, and starts its exit node again each time it comes up. Choosing
 an exit node is done on the client: clicking the mac's tailnet item in SketchyBar or `SUPER + T` on
-the thinkpad steps through direct and every peer offering an exit node, keeping LAN access. The
-thinkpad's tailscaled names `marcos` its operator so the switch needs no sudo.
+the thinkpad steps through direct and every online peer offering an exit node, by MagicDNS name,
+keeping LAN access. The thinkpad has no Tailscale operator, which would hand every process of
+`marcos` the whole LocalAPI: a passwordless sudo rule in [hyprland.nix](../../../modules/hyprland.nix)
+runs one root script that accepts only `direct` or an online exit node's name.

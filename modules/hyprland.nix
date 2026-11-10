@@ -1,11 +1,47 @@
-{
-  flake.modules.nixos.desktop = {
-    programs.hyprland = {
-      enable = true;
-      withUWSM = true;
+let
+  exitNode =
+    pkgs: tailscale:
+    pkgs.writeShellApplication {
+      name = "tailnet-exit-node";
+      runtimeInputs = [
+        tailscale
+        pkgs.jq
+      ];
+      text = ''
+        node=$1
+        if [ "$node" = direct ]; then
+          exec tailscale set --exit-node=
+        fi
+        if ! tailscale status --json | jq -e --arg node "$node" '[(.Peer // {})[] | select(.ExitNodeOption and .Online) | .DNSName | split(".")[0]] | index($node)' > /dev/null; then
+          echo "not an online exit node: $node" >&2
+          exit 1
+        fi
+        exec tailscale set --exit-node="$node" --exit-node-allow-lan-access
+      '';
     };
-    environment.sessionVariables.NIXOS_OZONE_WL = "1";
-  };
+in
+{
+  flake.modules.nixos.desktop =
+    { config, lib, pkgs, ... }:
+    {
+      programs.hyprland = {
+        enable = true;
+        withUWSM = true;
+      };
+      environment.sessionVariables.NIXOS_OZONE_WL = "1";
+      security.sudo.extraRules = [
+        {
+          users = [ "marcos" ];
+          runAs = "root";
+          commands = [
+            {
+              command = "${lib.getExe (exitNode pkgs config.services.tailscale.package)} ^[a-z0-9-]+$";
+              options = [ "NOPASSWD" ];
+            }
+          ];
+        }
+      ];
+    };
 
   flake.modules.homeManager.desktop =
     {
@@ -57,11 +93,7 @@
           for i in "''${!nodes[@]}"; do
             if [ "''${nodes[$i]}" = "$current" ]; then next=''${nodes[$(((i + 1) % ''${#nodes[@]}))]}; fi
           done
-          if [ "$next" = direct ]; then
-            tailscale set --exit-node=
-          else
-            tailscale set --exit-node="$next" --exit-node-allow-lan-access
-          fi
+          ${osConfig.security.wrapperDir}/sudo -n ${lib.getExe (exitNode pkgs osConfig.services.tailscale.package)} "$next"
           notify-send --app-name=tailscale "Exit node" "$next"
         '';
       };
