@@ -114,7 +114,19 @@ in
           restartUnits = [ "caddy.service" ];
         };
       };
-      fleet.scrapeTargets.caddy = 2019;
+      fleet.scrapeTargets.caddy = 19290;
+      networking.nftables.enable = true;
+      networking.nftables.tables.caddy-admin = {
+        family = "inet";
+        content = ''
+          chain output {
+            type filter hook output priority -150; policy accept;
+            oifname "lo" tcp dport 2019 meta skuid != { 0, ${
+              toString config.users.users.${config.services.caddy.user}.uid
+            } } reject
+          }
+        '';
+      };
       services.caddy = {
         enable = true;
         package = pkgs.caddy.withPlugins {
@@ -141,6 +153,10 @@ in
           }
           (identity) {
             ${lib.concatMapStrings (header: "request_header -${header}\n") identityHeaders}
+          }
+          :19290 {
+            bind 127.0.0.1
+            metrics
           }
         '';
       };

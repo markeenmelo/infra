@@ -10,8 +10,7 @@ Each exporter sits beside what it measures (SMART here, the UPS in the bastion h
 the arr apps' health in `arr.nix`)
 and adds its port to `fleet.scrapeTargets`, which becomes a Prometheus job. Prometheus, Loki and
 every scrape target answer without authentication, so an nftables guard admits only root and the
-stack's own users (pinned uids), plus Caddy's for its own admin endpoint (2019, which serves
-Caddy's metrics and its reloads), to Loki's ports, every `fleet.scrapeTargets` port and the ports Alloy receives other hosts' telemetry
+stack's own users (pinned uids) to Loki's ports, every `fleet.scrapeTargets` port and the ports Alloy receives other hosts' telemetry
 on, and refuses the gateway's syslog port to every local sender; otherwise
 any service on bastion could read the whole journal through Loki or push data under another host's name. Exporter ports sit at 19xxx,
 clear of OpenCloud's internal block from 9100.
@@ -42,9 +41,9 @@ A host that imports `telemetry` runs Alloy, which scrapes its node metrics and e
 `fleet.scrapeTargets` endpoint (CrowdSec on racknerd), probes every `fleet.probes` URL (the
 edge's public hostnames, which racknerd resolves to loopback so its own probes skip the country
 rule and CrowdSec; they test Caddy, the tunnel and the apps, not reachability from outside), and
-ships the journal. As on bastion, an nftables guard lets only root and Alloy (pinned to bastion's
-uid) connect to its scrape targets, plus Caddy to its own admin API on 2019, which also holds the
-Porkbun keys. It pushes to the port pair in its
+ships the journal. Caddy serves its metrics on a loopback port of their own; its admin API on 2019,
+which can rewrite its config and expose the Porkbun keys it holds, admits only root and Caddy on
+every host ([caddy.nix](../../../modules/caddy.nix)). It pushes to the port pair in its
 `fleet.hosts.HOST.telemetry`; bastion's Alloy listens on that pair, stamps `host=HOST` and forwards
 into the local Prometheus and Loki, and its firewall admits the pair only from that host's tailnet
 address, with a tailnet grant for the same ports ([opentofu skill](../opentofu/SKILL.md)). Nothing
