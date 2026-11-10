@@ -9,7 +9,7 @@ description: "deploy-rs: how a host's committed configuration is activated over 
 reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
 Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
 `activate-rs` and remove the rollback canary. Its key is therefore the operator's root key on
-every host, and CI gets its own. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
+every host. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
 off: it would make sudo unexecutable for it and break every deploy. IPv6 stays on host-wide for the
 same reason: MagicDNS answers with each node's tailnet IPv6 address, and a peer that tries it first
 against a host with IPv6 off waits out a connect timeout that can outlast the rollback confirm;
@@ -19,16 +19,24 @@ deploy-rs schema and activation checks per system.
 
 A host that runs the builder ([builder.nix](../../../modules/builder.nix)), or has another
 system than bastion, builds itself; every other host is built on the deploying machine, which
-hands the build to bastion when it imports `remote-builds` (only the mac so far). The deploying
+hands the build to bastion when it imports `remote-builds` (the mac, the thinkpad and asahi). The deploying
 machine receives the whole closure back from bastion; deploy-rs then pushes it with
 `--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
 Bastion trusts the admin clients' build keys, not the hosts it builds for: racknerd only reads
 the cache, signed, so a compromised edge cannot write into bastion's store. A build key is a
 trusted user on bastion and whatever it uploads is signed and served to racknerd; it sits on the
 admin client beside the operator's key, which is already root on every host, so it widens nothing.
-CI reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the tailnet as an
-ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds and leaves
-before it builds, so tailnet minutes stay short and nothing built from PR code reaches bastion.
+`remote-builds` makes bastion's cache each workstation's first substituter, so a cleaned store
+refills from bastion instead of rebuilding. Bastion also holds, best effort, what the mac and
+asahi build themselves, since it cannot build their systems: a post-build hook copies each output
+they build over their build key, with bastion substituting what cache.nixos.org holds so only
+local builds are uploaded. A failed copy is not retried; it fails quietly after a 3-second
+connect timeout and pauses pushes for 10 minutes, so a build off the tailnet waits once, not per
+derivation. The thinkpad has no hook: bastion already built everything it uses.
+CI on `main` reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the
+tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds
+and leaves before it builds, so tailnet minutes stay short and nothing built by CI reaches
+bastion. Pull requests never join ([opentofu skill](../opentofu/SKILL.md)).
 The tailnet policy decides who reaches 5005; bastion's firewall admits it from any tailnet peer.
 What bastion built for another host stays until its store runs low on space: bastion collects
 garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).

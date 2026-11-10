@@ -8,7 +8,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: vulnix
+  group: vulnix-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -24,12 +24,24 @@ jobs:
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
       - name: Scan each x86_64 host's runtime closure
         run: |
+          # shortcut: vulnix reads only the last six yearly NVD feeds, so older CVEs never match; merge older years into the oldest served file if that coverage matters
+          feeds=$RUNNER_TEMP/nvd
+          mkdir -p "$feeds"
+          year=$(date -u +%Y)
+          for feed in $(seq $((year - 5)) "$year"); do
+            curl -fsSL --retry 8 --retry-all-errors --retry-delay 30 --connect-timeout 30 \
+              --speed-limit 1024 --speed-time 120 --max-time 900 \
+              -o "$feeds/nvdcve-2.0-$feed.json.gz" "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-$feed.json.gz"
+            gzip -t "$feeds/nvdcve-2.0-$feed.json.gz"
+          done
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory "$feeds" > /dev/null 2>&1 &
+          curl -fsS --retry 10 --retry-connrefused --retry-delay 1 -o /dev/null http://127.0.0.1:8765/
           hosts=$(nix eval --raw .#nixosConfigurations --apply 'cs: builtins.concatStringsSep " " (builtins.filter (n: cs.${n}.pkgs.stdenv.hostPlatform.system == "x86_64-linux") (builtins.attrNames cs))')
           found=0
           for host in $hosts; do
             out=$(nix build --no-link --print-out-paths ".#nixosConfigurations.$host.config.system.build.toplevel")
             rc=0
-            nix shell --inputs-from . nixpkgs#vulnix -c vulnix --closure --json --whitelist vulnix.toml "$out" > "$host.json" || rc=$?
+            nix shell --inputs-from . nixpkgs#vulnix -c vulnix --closure --json --mirror http://127.0.0.1:8765/ --whitelist vulnix.toml "$out" > "$host.json" || rc=$?
             if [ "$rc" -gt 2 ] || ! jq -e 'type == "array"' "$host.json" > /dev/null; then
               echo "vulnix failed on $host (exit $rc), no report" >&2
               exit 1

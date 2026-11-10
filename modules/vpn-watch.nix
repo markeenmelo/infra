@@ -43,7 +43,6 @@
             };
             "${namespace}-watch" = {
               description = "Restart the ${namespace} tunnel when its handshake is stale";
-              unitConfig.ConditionPathExists = "/run/netns/${namespace}";
               path = [
                 pkgs.iproute2
                 pkgs.iputils
@@ -52,6 +51,7 @@
               enableStrictShellChecks = true;
               serviceConfig.Type = "oneshot";
               script = ''
+                [ -e /run/netns/${namespace} ] || exit 0
                 since=$(systemctl show -P ActiveEnterTimestampMonotonic ${namespace}.service)
                 (( $(cut -d. -f1 /proc/uptime) - since / 1000000 < 300 )) && exit 0
                 stale() {

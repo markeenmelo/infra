@@ -6,7 +6,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 ## bastion
 
 - [ ] Sonarr and Radarr publishing to ntfy's `media` topic, which needs a path out of the VPN
-      namespace to bastion's ntfy.
+      namespace to bastion's ntfy, whose loopback port admits only root, Caddy and Grafana.
 
 ## Closing out
 

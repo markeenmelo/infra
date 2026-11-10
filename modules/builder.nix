@@ -13,9 +13,30 @@ let
     thinkpad = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEDFHuli2Hq2SXHpI0ssAe+F/No0lEGfGXnh/0F3hEsf";
     asahi = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILIb4eAjq8vyvDQuSkigT359wRoqU+pfVfny1OKl0oN2";
   };
+  cacheClient.nix.settings = {
+    substituters = [ "http://${bastion}:${toString port}" ];
+    trusted-public-keys = [ cacheKey ];
+  };
   remoteBuilds =
-    { config, ... }:
     {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      push = pkgs.writeShellScript "push-to-bastion" ''
+        set -f
+        failed=/var/run/nix-push-to-bastion-failed
+        if [ -n "$(find "$failed" -mmin -10 2>/dev/null)" ]; then exit 0; fi
+        NIX_SSHOPTS="-o ConnectTimeout=3 -o ServerAliveInterval=5 -o ServerAliveCountMax=2" ${lib.getExe config.nix.package} copy --substitute-on-destination \
+          --to "ssh-ng://nix-ssh@${bastion}?ssh-key=${config.sops.secrets.nix-build-ssh-key.path}" $OUT_PATHS \
+          || touch "$failed"
+        exit 0
+      '';
+    in
+    {
+      imports = [ cacheClient ];
       sops.secrets.nix-build-ssh-key = { };
       programs.ssh.knownHosts.bastion = {
         hostNames = [ bastion ];
@@ -23,7 +44,10 @@ let
       };
       nix = {
         distributedBuilds = true;
-        settings.builders-use-substitutes = true;
+        settings = {
+          builders-use-substitutes = true;
+          post-build-hook = lib.mkIf (pkgs.stdenv.hostPlatform.system != hosts.bastion.system) push;
+        };
         buildMachines = [
           {
             hostName = bastion;
@@ -74,10 +98,7 @@ in
       };
     };
 
-  flake.modules.nixos.cache.nix.settings = {
-    substituters = [ "http://${bastion}:${toString port}" ];
-    trusted-public-keys = [ cacheKey ];
-  };
+  flake.modules.nixos.cache = cacheClient;
 
   flake.modules.darwin.remote-builds = remoteBuilds;
 

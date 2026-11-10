@@ -42,15 +42,15 @@
       flake = false;
     };
     cache-tax = {
-      url = "github:karanb192/cache-tax/v2.3.1";
+      url = "github:karanb192/cache-tax/e4940afcc62c109bd667bae1b996bee765021759";
       flake = false;
     };
     ponytail = {
-      url = "github:DietrichGebert/ponytail/v5.3.3";
+      url = "github:DietrichGebert/ponytail/7801d061243d7b753bad0e0b3c057cd250b11755";
       flake = false;
     };
     caveman = {
-      url = "github:JuliusBrussee/caveman/v4.0.1";
+      url = "github:JuliusBrussee/caveman/1e91f1306d602d4ca23618701b1185575ae1869b";
       flake = false;
     };
     stylix = {

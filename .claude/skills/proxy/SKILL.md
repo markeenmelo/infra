@@ -10,9 +10,14 @@ only redirecting there, one wildcard certificate for the domain obtained through
 `secrets/porkbun/api.yaml` ([secrets skill](../secrets/SKILL.md)), and one `handle` per published
 hostname forwarding to a bastion port over the tailnet. Anything else on the wildcard is aborted
 without a response, so scanners learn nothing. The published apps authenticate natively, since
-their mobile clients cannot pass a forward-auth portal; Authelia guards the admin apps that only
-bastion's LAN proxy serves. Its portal is still published, because the apps' single sign-on
-redirects there from wherever the user is.
+their mobile clients cannot pass a forward-auth portal, and so do the apps only bastion's LAN
+proxy serves (Grafana through Authelia's OIDC, the arr apps with `arr/password`, Frigate);
+nothing sits behind forward-auth. Authelia's portal is still published, because the apps' single
+sign-on redirects there from wherever the user is.
+
+Every app is reachable on the LAN and the tailnet, and a `public` one on the WAN as well. The one
+exception is ntfy, whose `alerts` topic describes the fleet and is readable without a login, so
+it is `tailnetOnly`.
 The tailnet policy must let racknerd reach each backend port ([opentofu skill](../opentofu/SKILL.md)).
 
 Every forwarded request loses the `Remote-*` and `X-Forwarded-*` identity headers, so only
@@ -28,8 +33,11 @@ Tailnet clients never need the edge, even behind a foreign exit node: the split 
 domain to bastion directly.
 An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, denied paths,
 [caddy.nix](../../../modules/caddy.nix)): the LAN proxy routes every app to loopback, or to its
-`address` when the app lives in another network namespace, refuses non-tailnet clients for a
-`tailnetOnly` app, and only a `public` one is forwarded by the edge and gets its port opened on the tailnet interface. The wildcard record already
+`address` when the app lives in another network namespace, refuses non-tailnet clients and
+bastion's own tailnet address (which any local process could borrow) for a `tailnetOnly` app, and
+only a `public` one is forwarded by the edge and gets its port opened on the tailnet interface,
+to racknerd's address alone, so a tailnet grant mistake cannot let a client skip the edge's
+denied paths and country check. The wildcard record already
 resolves it ([opentofu skill](../opentofu/SKILL.md#porkbun)) and the tailnet grant follows from the same fact on the next `tofu` apply of the tailscale project. Certificates, the ACME account and the JSON access logs CrowdSec reads live
 in Caddy's data and log directories under `/persist`; the log keeps no query strings, no
 credential headers and no share tokens in paths, since the published apps carry credentials in
@@ -49,7 +57,9 @@ denials by the edge itself, which marks them with a response header so backend 4
 count; the community blocklist comes from the central API the setup unit registers with
 on first boot. The firewall bouncer registers itself with the local API and drops banned
 addresses in nftables, which is why the server uses the nftables backend. Ban length grows
-with each repeat. The hub is pinned to a commit so `cscli hub update` cannot change what the
+with each repeat. A home browser resolving over DNS-over-HTTPS reaches the apps through the edge
+instead of the LAN proxy, and a few admin pages there would ban the household's own address, so
+Zen's enforced policies ([zen.nix](../../../modules/zen.nix)) turn DNS-over-HTTPS off. The hub is pinned to a commit so `cscli hub update` cannot change what the
 engine runs; moving it is a lock-style bump of that literal. State under `/var/lib/crowdsec`
 (database, hub, API credentials) persists, and the engine runs as a static user so the
 persisted files keep their owner across reboots.

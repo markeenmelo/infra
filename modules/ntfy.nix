@@ -39,7 +39,21 @@ in
         };
         environmentFile = config.sops.templates."ntfy.env".path;
       };
-      fleet.web.apps.ntfy = { inherit port; };
+      fleet.web.apps.ntfy = {
+        inherit port;
+        tailnetOnly = true;
+      };
+      networking.nftables.tables.ntfy = {
+        family = "inet";
+        content = ''
+          chain output {
+            type filter hook output priority -150; policy accept;
+            oifname "lo" tcp dport ${toString port} meta skuid != { 0, ${
+              toString config.users.users.${config.services.caddy.user}.uid
+            }, ${toString config.users.users.grafana.uid} } reject
+          }
+        '';
+      };
     };
 
   flake.modules.darwin.desktop =

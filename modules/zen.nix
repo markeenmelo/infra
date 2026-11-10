@@ -36,6 +36,10 @@ let
     DisableFeedbackCommands = true;
     DisableFirefoxAccounts = true;
     DontCheckDefaultBrowser = true;
+    DNSOverHTTPS = {
+      Enabled = false;
+      Locked = true;
+    };
     EnableTrackingProtection = {
       Value = true;
       Locked = true;

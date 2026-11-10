@@ -1,5 +1,6 @@
 { config, lib, ... }:
 let
+  edge = config.fleet.hosts.racknerd.tailnetAddress;
   identityHeaders = [
     "Remote-User"
     "Remote-Groups"
@@ -39,7 +40,7 @@ in
               tailnetOnly = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
-                description = "Whether the LAN proxy refuses clients outside the tailnet.";
+                description = "Whether the LAN proxy refuses clients outside the tailnet and bastion's own tailnet address, which local processes would otherwise borrow.";
               };
               public = lib.mkOption {
                 type = lib.types.bool;
@@ -59,9 +60,15 @@ in
         assertion = app.public -> !app.tailnetOnly && app.address == "127.0.0.1";
         message = "fleet.web.apps.${name}: the edge reaches a public app on the host's port, bypassing the LAN proxy, so it cannot be tailnetOnly or live at another address.";
       }) config.fleet.web.apps;
-      config.networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts =
-        lib.mapAttrsToList (_: app: app.port)
-          (lib.filterAttrs (_: app: app.public) config.fleet.web.apps);
+      config.networking.firewall.extraInputRules =
+        let
+          ports = lib.mapAttrsToList (_: app: toString app.port) (
+            lib.filterAttrs (_: app: app.public) config.fleet.web.apps
+          );
+        in
+        lib.optionalString (ports != [ ]) ''
+          iifname "${config.services.tailscale.interfaceName}" ip saddr ${edge} tcp dport { ${lib.concatStringsSep ", " ports} } accept
+        '';
     };
 
   config.flake.checks =

@@ -20,8 +20,8 @@ generated with NAT-PMP on), so indexer searches, metadata and downloads leave on
 tunnel. nixflix confines them together: an app inside cannot reach one outside.
 [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts the tunnel when it fails or its handshake
 goes stale, and starts the confined apps again each time it comes up. Their web UIs are
-`sonarr.`, `radarr.`, `prowlarr.`, `qbittorrent.` and `sabnzbd.DOMAIN` through the LAN proxy for
-tailnet clients only ([proxy skill](../proxy/SKILL.md)); the arr apps and SABnzbd log in as
+`sonarr.`, `radarr.`, `prowlarr.`, `qbittorrent.` and `sabnzbd.DOMAIN` through the LAN proxy, on
+the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)); the arr apps and SABnzbd log in as
 `marcos` with `arr/password`. An nftables table drops forwarding across the namespace's bridge, so
 nixflix's port mappings never expose the apps to the LAN, and lets only root (which nixflix's
 setup units and the port-forward unit run as) and Caddy open new connections into the namespace,
@@ -31,7 +31,7 @@ health checks (indexers, download clients, root folders, remote path mappings), 
 health issue` alert reports after an hour; a single failed import is a queue item, which
 Decluttarr handles instead.
 
-Seerr takes requests at `seerr.DOMAIN`, tailnet-only, and runs outside the namespace because it
+Seerr takes requests at `seerr.DOMAIN`, on the LAN and the tailnet, and runs outside the namespace because it
 needs Jellyfin; it signs in to Jellyfin as the declared native admin to set itself up. Its login
 takes a Jellyfin password and Seerr has no OIDC, so only accounts with a native Jellyfin password
 (the admin) sign in; people who reach Jellyfin through Authelia have none. Requests go to Sonarr and Radarr on
