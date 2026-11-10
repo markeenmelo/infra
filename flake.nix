@@ -46,7 +46,7 @@
       flake = false;
     };
     ponytail = {
-      url = "github:DietrichGebert/ponytail/7801d061243d7b753bad0e0b3c057cd250b11755";
+      url = "github:DietrichGebert/ponytail/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846";
       flake = false;
     };
     caveman = {
