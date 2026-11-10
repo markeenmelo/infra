@@ -92,7 +92,6 @@ in
             "backups-rclone-pcloud"
           ]
           (name: {
-            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
             key = lib.replaceStrings [ "backups-" ] [ "backups/" ] name;
           });
       assertions =

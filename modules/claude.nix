@@ -26,14 +26,8 @@ in
       { config, pkgs, ... }:
       {
         sops.secrets = {
-          github-mcp-token = {
-            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-            owner = config.system.primaryUser;
-          };
-          grafana-mcp-token = {
-            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-            owner = config.system.primaryUser;
-          };
+          github-mcp-token.owner = config.system.primaryUser;
+          grafana-mcp-token.owner = config.system.primaryUser;
         };
         nixpkgs.config.allowUnfreePackages = [
           "claude-code"

@@ -108,7 +108,8 @@ Each pin keeps its own version literal so only that line is rewritten.
 
 [vulnix.yml](../../../.github/workflows/vulnix.yml) builds each x86_64 host weekly and matches
 its runtime closure against NIST's CVEs, listing the matches in the run summary; the run fails
-while any match is unwhitelisted. vulnix matches by name and version, so most matches are
+while an unwhitelisted match scores CVSS 9 or higher, and a match NIST has not scored counts as
+0. vulnix matches by name and version, so most matches are
 another project with the same name or a CVE nixpkgs already patches. A confirmed false positive
 or an accepted risk goes in [vulnix.toml](../../../vulnix.toml) as a section per package with
 `cve`, `comment` and an `until` date, so it comes back for review; a real one is fixed by the

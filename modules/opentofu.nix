@@ -10,6 +10,12 @@ let
     ) "every fleet.hosts.*.lan must name the one UniFi gateway, found: ${toString gateways}";
     lib.head gateways;
   hosts = builtins.toJSON (lib.mapAttrs (_: host: host.tailnetAddress) config.fleet.hosts);
+  edgePorts = builtins.toJSON (
+    lib.mapAttrsToList (_: app: app.port) (
+      lib.filterAttrs (_: app: app.public) config.flake.nixosConfigurations.bastion.config.fleet.web.apps
+    )
+    ++ lib.attrValues config.fleet.hosts.racknerd.telemetry
+  );
   settings = ../opentofu/unifi/settings.json;
   program = ../opentofu/unifi/settings.jq;
 in
@@ -33,6 +39,7 @@ in
             state="''${XDG_STATE_HOME:-$HOME/.local/state}/infra/$project"
             mkdir -p "$state"
             export TF_VAR_fleet_hosts=${lib.escapeShellArg hosts}
+            export TF_VAR_fleet_edge_ports=${lib.escapeShellArg edgePorts}
             export TF_VAR_fleet_lan=${lib.escapeShellArg (builtins.toJSON lan)}
             export TF_CLI_ARGS_init="-input=false -lockfile=readonly -backend-config=path=$state/terraform.tfstate"
             command=$(printf '%q ' tofu -chdir="opentofu/$project" "$@")

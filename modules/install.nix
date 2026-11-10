@@ -39,8 +39,8 @@ in
             cp -a "$extra/persist/." "$extra/"
             mount=$(ssh "$target" findmnt -n -o TARGET -T "$root")
             [ "$mount" != / ] || { echo "install: $root is on the installer's root, not a mounted old disk" >&2; exit 1; }
-            trap - EXIT
             ssh "$target" umount -R "$mount"
+            trap - EXIT
             nixos-anywhere --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
               echo "install: failed after the old disk was unmounted; identity kept in $extra, rerun nixos-anywhere with --extra-files $extra" >&2
               exit 1

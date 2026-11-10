@@ -65,30 +65,31 @@ in
     };
 
   config.flake.checks = lib.foldlAttrs (
-    acc: name: host:
+    acc: name: nixos:
     let
-      nixos = config.flake.nixosConfigurations.${name};
       inherit (nixos.config.services) caddy;
     in
-    if lib.hasSuffix "-darwin" host.system || !caddy.enable then
+    if !caddy.enable then
       acc
     else
       lib.recursiveUpdate acc {
-        ${host.system}."caddyfile-${name}" = nixos.pkgs.runCommand "caddyfile-${name}" { } ''
-          sed "s|${caddy.logDir}|$TMPDIR|g" ${caddy.configFile} > Caddyfile
-          HOME=$TMPDIR XDG_DATA_HOME=$TMPDIR XDG_CONFIG_HOME=$TMPDIR \
-            ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
-          ${caddy.package}/bin/caddy adapt --config Caddyfile --adapter caddyfile > config.json
-          ${lib.getExe nixos.pkgs.jq} -e --argjson expected '${builtins.toJSON identityHeaders}' '
-            [ .apps.http.servers[].routes[] | .handle[]? | select(.handler == "subroute") | .routes[] ] as $site
-            | ($site | to_entries | map(select(.value | tojson | test("reverse_proxy"))) | map(.key) | min // ($site | length)) as $proxy
-            | $expected - [ $site[:$proxy][] | select(has("match") | not) | .handle[]
-                            | select(.handler == "headers") | .request.delete // [] | .[] ]
-              | length == 0' config.json > /dev/null
-          touch $out
-        '';
+        ${nixos.config.nixpkgs.hostPlatform.system}."caddyfile-${name}" =
+          nixos.pkgs.runCommand "caddyfile-${name}" { }
+            ''
+              sed "s|${caddy.logDir}|$TMPDIR|g" ${caddy.configFile} > Caddyfile
+              HOME=$TMPDIR XDG_DATA_HOME=$TMPDIR XDG_CONFIG_HOME=$TMPDIR \
+                ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
+              ${caddy.package}/bin/caddy adapt --config Caddyfile --adapter caddyfile > config.json
+              ${lib.getExe nixos.pkgs.jq} -e --argjson expected '${builtins.toJSON identityHeaders}' '
+                [ .apps.http.servers[].routes[] | .handle[]? | select(.handler == "subroute") | .routes[] ] as $site
+                | ($site | to_entries | map(select(.value | tojson | test("reverse_proxy"))) | map(.key) | min // ($site | length)) as $proxy
+                | $expected - [ $site[:$proxy][] | select(has("match") | not) | .handle[]
+                                | select(.handler == "headers") | .request.delete // [] | .[] ]
+                  | length == 0' config.json > /dev/null
+              touch $out
+            '';
       }
-  ) { } config.fleet.hosts;
+  ) { } config.flake.nixosConfigurations;
 
   config.flake.modules.nixos.caddy =
     {

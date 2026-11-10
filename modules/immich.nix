@@ -8,33 +8,34 @@ let
 in
 {
   flake.checks = lib.foldlAttrs (
-    acc: host: fleetHost:
+    acc: host: nixos:
     let
-      nixos = config.flake.nixosConfigurations.${host};
       inherit (nixos.config.services) immich;
     in
-    if lib.hasSuffix "-darwin" fleetHost.system || !(immich.enable or false) then
+    if !immich.enable then
       acc
     else
       lib.recursiveUpdate acc {
-        ${fleetHost.system}."immich-${host}" = nixos.pkgs.runCommand "immich-${host}" { } ''
-          IMMICH_ALLOW_SETUP=${lib.escapeShellArg immich.environment.IMMICH_ALLOW_SETUP} \
-            ${lib.getExe nixos.pkgs.nodejs} <<'JS'
-          const load = require('node:module').createRequire('${immich.package}/lib/node_modules/immich/package.json');
-          const { ConfigRepository } = load('./dist/repositories/config.repository');
-          if (new ConfigRepository().getEnv().setup.allow) throw new Error('admin sign-up is still offered');
-          const { AdminConfigDto, defaults } = load('./dist/dtos/config.dto');
-          const settings = ${
-            lib.toJSON (
-              lib.recursiveUpdate immich.settings { oauth.clientSecret = "test-only-not-a-credential"; }
-            )
-          };
-          AdminConfigDto.schema.parse(load('lodash-es').defaultsDeep(settings, defaults));
-          JS
-          touch $out
-        '';
+        ${nixos.config.nixpkgs.hostPlatform.system}."immich-${host}" =
+          nixos.pkgs.runCommand "immich-${host}" { }
+            ''
+              IMMICH_ALLOW_SETUP=${lib.escapeShellArg immich.environment.IMMICH_ALLOW_SETUP} \
+                ${lib.getExe nixos.pkgs.nodejs} <<'JS'
+              const load = require('node:module').createRequire('${immich.package}/lib/node_modules/immich/package.json');
+              const { ConfigRepository } = load('./dist/repositories/config.repository');
+              if (new ConfigRepository().getEnv().setup.allow) throw new Error('admin sign-up is still offered');
+              const { AdminConfigDto, defaults } = load('./dist/dtos/config.dto');
+              const settings = ${
+                lib.toJSON (
+                  lib.recursiveUpdate immich.settings { oauth.clientSecret = "test-only-not-a-credential"; }
+                )
+              };
+              AdminConfigDto.schema.parse(load('lodash-es').defaultsDeep(settings, defaults));
+              JS
+              touch $out
+            '';
       }
-  ) { } config.fleet.hosts;
+  ) { } config.flake.nixosConfigurations;
 
   flake.modules.nixos.base =
     { lib, ... }:
@@ -56,7 +57,6 @@ in
       users.users.immich.uid = 983;
       users.groups.immich.gid = 985;
       sops.secrets.immich-oidc-client-secret = {
-        sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
         key = "immich/oidc-client-secret";
         restartUnits = [ "immich-server.service" ];
       };

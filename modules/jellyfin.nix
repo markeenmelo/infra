@@ -45,7 +45,6 @@ in
           (name: units: {
             name = "jellyfin-${name}";
             value = {
-              sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
               key = "jellyfin/${name}";
               restartUnits = map (unit: "${unit}.service") units;
             };

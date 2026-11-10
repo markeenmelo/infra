@@ -188,7 +188,6 @@ in
           (name: units: {
             name = "arr-${name}";
             value = {
-              sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
               key = "arr/${name}";
               restartUnits = map (unit: "${unit}.service") units;
             };

@@ -41,22 +41,21 @@ let
 in
 {
   flake.checks = lib.foldlAttrs (
-    acc: host: fleetHost:
-    let
-      nixos = config.flake.nixosConfigurations.${host};
-    in
-    if lib.hasSuffix "-darwin" fleetHost.system || !(nixos.config.services.alloy.enable or false) then
+    acc: host: nixos:
+    if !nixos.config.services.alloy.enable then
       acc
     else
       lib.recursiveUpdate acc {
-        ${fleetHost.system}."alloy-${host}" = nixos.pkgs.runCommand "alloy-${host}" { } ''
-          ${lib.getExe nixos.config.services.alloy.package} fmt ${
-            nixos.config.environment.etc."alloy/config.alloy".source
-          } > /dev/null
-          touch $out
-        '';
+        ${nixos.config.nixpkgs.hostPlatform.system}."alloy-${host}" =
+          nixos.pkgs.runCommand "alloy-${host}" { }
+            ''
+              ${lib.getExe nixos.config.services.alloy.package} fmt ${
+                nixos.config.environment.etc."alloy/config.alloy".source
+              } > /dev/null
+              touch $out
+            '';
       }
-  ) { } hosts;
+  ) { } config.flake.nixosConfigurations;
 
   flake.modules.nixos.base =
     { lib, ... }:
@@ -301,7 +300,6 @@ in
         lib.mkMerge [
           { restartUnits = [ "grafana.service" ]; }
           (lib.mkIf (lib.hasPrefix "grafana-" name) {
-            sopsFile = ../secrets/hosts/${host}.yaml;
             key = "grafana/${lib.removePrefix "grafana-" name}";
           })
         ]
@@ -596,6 +594,12 @@ in
                         for = "5m";
                         severity = "critical";
                         summary = "{{ $labels.probe }} has failed its HTTPS probe through the edge for 5 minutes";
+                      }
+                      {
+                        title = "Certificate expiring";
+                        expr = "7 * 86400 - (probe_ssl_earliest_cert_expiry - time())";
+                        for = "1h";
+                        summary = "The certificate {{ $labels.probe }} serves expires in under 7 days";
                       }
                       {
                         title = "SMART unhealthy";

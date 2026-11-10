@@ -27,7 +27,6 @@ in
       sops.secrets = perCountry (
         country: _:
         lib.genAttrs [ "proton-exit-${country}" "proton-exit-${country}-auth-key" ] (name: {
-          sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
           key = "proton-exit/${lib.removePrefix "proton-exit-" name}";
           restartUnits = [
             "pv${country}.service"

@@ -12,9 +12,8 @@ let
 in
 {
   flake.checks = lib.foldlAttrs (
-    acc: host: fleetHost:
+    acc: host: nixos:
     let
-      nixos = config.flake.nixosConfigurations.${host};
       instance = nixos.config.services.authelia.instances.main or { enable = false; };
       configs = lib.splitString "," (
         lib.removePrefix "${lib.getExe instance.package} --config "
@@ -34,11 +33,11 @@ in
         ) client.redirect_uris
       ) oidc.clients;
     in
-    if lib.hasSuffix "-darwin" fleetHost.system || !instance.enable then
+    if !instance.enable then
       acc
     else
       lib.recursiveUpdate acc {
-        ${fleetHost.system}."authelia-${host}" =
+        ${nixos.config.nixpkgs.hostPlatform.system}."authelia-${host}" =
           assert lib.assertMsg (
             instance.settings.access_control.default_policy == "deny"
           ) "Authelia's access_control.default_policy must stay deny";
@@ -83,7 +82,7 @@ in
             touch $out
           '';
       }
-  ) { } config.fleet.hosts;
+  ) { } config.flake.nixosConfigurations;
 
   flake.modules.nixos.base =
     { lib, ... }:
@@ -128,7 +127,6 @@ in
         };
       };
       secret = key: {
-        sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
         key = "authelia/${key}";
         restartUnits = [ "${name}.service" ];
       };

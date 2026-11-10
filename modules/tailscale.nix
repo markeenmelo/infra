@@ -4,10 +4,7 @@
   flake.modules.nixos.base =
     { config, ... }:
     {
-      sops.secrets.tailscale-auth-key = {
-        sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-        restartUnits = [ "tailscaled-autoconnect.service" ];
-      };
+      sops.secrets.tailscale-auth-key.restartUnits = [ "tailscaled-autoconnect.service" ];
       services = {
         tailscale = {
           enable = true;

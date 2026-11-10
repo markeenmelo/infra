@@ -34,7 +34,6 @@ in
       users.users.frigate.uid = 968;
       users.groups.frigate.gid = 964;
       sops.secrets = lib.genAttrs (lib.attrValues secrets) (_: {
-        sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
         restartUnits = [
           "frigate.service"
           "go2rtc.service"

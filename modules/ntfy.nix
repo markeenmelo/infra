@@ -11,10 +11,7 @@ in
         "alerts"
         "media"
       ];
-      secret = name: {
-        sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-        key = "ntfy/${name}";
-      };
+      secret = name: { key = "ntfy/${name}"; };
     in
     {
       sops = {
