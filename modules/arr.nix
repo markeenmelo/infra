@@ -362,6 +362,7 @@ in
             hostConfig = {
               username = "marcos";
               password = secret "password";
+              authenticationRequired = "enabled";
             };
           };
         }))

@@ -29,7 +29,7 @@ let
         set -f
         failed=/var/run/nix-push-to-bastion-failed
         if [ -n "$(find "$failed" -mmin -10 2>/dev/null)" ]; then exit 0; fi
-        NIX_SSHOPTS="-o ConnectTimeout=3" ${lib.getExe config.nix.package} copy \
+        NIX_SSHOPTS="-o ConnectTimeout=3 -o ServerAliveInterval=5 -o ServerAliveCountMax=2" ${lib.getExe config.nix.package} copy \
           --to "ssh-ng://nix-ssh@${bastion}?ssh-key=${config.sops.secrets.nix-build-ssh-key.path}" $OUT_PATHS \
           || touch "$failed"
       '';
