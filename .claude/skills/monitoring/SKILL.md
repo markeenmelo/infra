@@ -18,7 +18,10 @@ Prometheus scrapes its own exporters (node with the systemd collector, itself) e
 `syslog_identifier` and `level` labels, dropping lines older than 12 h; Loki keeps 30 days.
 Their data lives under `/persist` and stays out of the backups ([backups skill](../backups/SKILL.md)):
 losing it costs history, nothing else. Alloy keeps no journal position across reboots, so
-the last 12 h may be shipped twice after one.
+the last 12 h may be shipped twice after one. On a host with a `fleet.hosts.HOST.lan` fact, Alloy
+also takes the UniFi gateway's syslog (firewall blocks, IPS detections, admin activity) over UDP
+from the gateway alone and stores the lines unparsed under `host="gateway"`
+([opentofu skill](../opentofu/SKILL.md)).
 
 Grafana sits behind the LAN proxy at `grafana.`, tailnet only ([proxy skill](../proxy/SKILL.md)).
 People sign in through Authelia; membership of `grafana-admins` makes them Grafana admins and

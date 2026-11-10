@@ -1,6 +1,6 @@
 ---
 name: opentofu
-description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, device tags, auth keys; Porkbun: the public DNS records), the tofu flake app, encrypted state, provider pins, plan and apply rules. Use before changing opentofu/ or modules/opentofu.nix, reviewing a plan the operator pasted, changing a public DNS record, or answering who can reach what on the tailnet."
+description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, device tags, auth keys; Porkbun: the public DNS records; UniFi: VLANs, Wi-Fi, fixed addresses, the LAN firewall, gateway settings), the tofu and unifi-settings flake apps, encrypted state, provider pins, plan and apply rules. Use before changing opentofu/ or modules/opentofu.nix, reviewing a plan the operator pasted, changing a public DNS record, adding a LAN device or firewall rule, or answering who can reach what on the tailnet or the LAN."
 ---
 
 # OpenTofu
@@ -66,3 +66,41 @@ DMARC covering subdomains, empty DKIM) that lets no one send as the domain or an
 edge's DNS-01 keys and are full-authority, so a plan already carries risk. A record that exists before its block is
 adopted with an `import` block (`<record_id>_<domain>_<type>`, ids from the operator's
 private listing), never duplicated.
+
+## UniFi
+
+[main.tf](../../../opentofu/unifi/main.tf) owns the gateway's LAN side: the VLANs, Wi-Fi networks,
+fixed client addresses, the LAN wildcard record that points the domain at bastion, IPS and
+controller settings, remote syslog to bastion ([monitoring skill](../monitoring/SKILL.md)) and
+the firewall. Bastion's LAN address, MAC, gateway and syslog port come from `fleet.hosts.*.lan`
+as `fleet_lan`. Plan and apply from the LAN or through bastion's subnet route to the gateway;
+apply a network or Wi-Fi change from a wired client, since it can cut the route mid-apply.
+
+**Who reaches what.** Each VLAN is its own firewall zone. The controller lets a custom zone out
+to the gateway and the internet and keeps it from the other zones, so `local.policies` lists
+only the exceptions, one row each: `from` and `to` zones, optional `from_ips`, `to_ips`,
+`protocol`, one `port` or a `ports` group, and `block`. An allow towards another VLAN gets its
+return policy from the controller; one towards the gateway or the internet must not ask for it,
+and an ICMP policy is IPv4 only, both of which the resource derives. `local.orders` lists the
+zone pairs where order decides, first match first. A client's flags in `local.clients` put it in
+a role the rows use: `admin` (reaches the gateway's own HTTPS), `cloud` (IoT allowed to the
+internet), `shared` (IoT that Home and the tailnet reach), `player` (IoT that reaches bastion's
+HTTPS). Tailnet clients routed through bastion arrive as bastion's address, so the
+"Bastion-routed" rows decide what they reach, behind the tailnet grants.
+
+**Provider limits** (filipowm/unifi):
+- The WAN, ad blocking and per-network mDNS stay in the controller UI: the provider rewrites a
+  whole network from its schema, which drops the WAN's PPPoE VLAN tag, discards the ad-blocking
+  networks, and fails in-place updates of `multicast_dns` and the Default network's IPv6 flags.
+- A policy takes one `port`; several ports go through a port group, since a comma list reads
+  back as null.
+- `unifi_setting_ips` takes only the categories the Network UI lists; others are dropped and the
+  apply fails as inconsistent.
+- A fixed client's `mac` forces replacement, which forgets the client in the controller.
+- `dhcp_dns` stays unset except on Kids: any value turns DHCP DNS on.
+
+Settings no provider writes (DoH resolvers, the country block, UPnP and the NAT helpers off, the
+weekly controller backup) live in [settings.json](../../../opentofu/unifi/settings.json), keyed
+by the controller's setting name. `nix run .#unifi-settings -- check` exits 1 and lists the
+drift; `apply`, which needs the same approval as an OpenTofu apply, merges the file into each
+setting and leaves every other field alone.

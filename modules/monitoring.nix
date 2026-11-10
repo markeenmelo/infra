@@ -187,6 +187,7 @@ in
     let
       credentials = "/run/credentials/grafana.service";
       host = config.networking.hostName;
+      inherit (hosts.${host}) lan;
       smtp = config.services.authelia.instances.main.settings.notifier.smtp;
       adminEmails = lib.mapAttrsToList (_: person: person.email) (
         lib.filterAttrs (
@@ -400,7 +401,11 @@ in
           };
         };
 
-        alloy.enable = true;
+        alloy = {
+          enable = true;
+          # shortcut: Alloy's raw syslog format is experimental, drop the flag once it is stable or the gateway's lines parse as rfc3164
+          extraFlags = lib.optional (lan != null) "--stability.level=experimental";
+        };
 
         grafana = {
           enable = true;
@@ -778,12 +783,27 @@ in
               forward_to             = [loki.write.local.receiver]
             }
           '') (lib.mapAttrs (_: host: host.telemetry) senders)
-        );
-      networking.firewall.extraInputRules = lib.concatStrings (
-        lib.mapAttrsToList (_: host: ''
-          iifname "${config.services.tailscale.interfaceName}" ip saddr ${host.tailnetAddress} tcp dport { ${toString host.telemetry.metrics}, ${toString host.telemetry.logs} } accept
-        '') senders
-      );
+        )
+        + lib.optionalString (lan != null) ''
+          loki.source.syslog "gateway" {
+            listener {
+              address       = "0.0.0.0:${toString lan.syslogPort}"
+              protocol      = "udp"
+              syslog_format = "raw"
+              labels        = { host = "gateway" }
+            }
+            forward_to = [loki.write.local.receiver]
+          }
+        '';
+      networking.firewall.extraInputRules =
+        lib.concatStrings (
+          lib.mapAttrsToList (_: host: ''
+            iifname "${config.services.tailscale.interfaceName}" ip saddr ${host.tailnetAddress} tcp dport { ${toString host.telemetry.metrics}, ${toString host.telemetry.logs} } accept
+          '') senders
+        )
+        + lib.optionalString (lan != null) ''
+          ip saddr ${lan.gateway} ip daddr ${lan.address} udp dport ${toString lan.syslogPort} accept
+        '';
 
       fleet = {
         scrapeTargets = {

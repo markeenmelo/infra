@@ -30,6 +30,32 @@ in
             type = lib.types.strMatching "100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.[0-9]{1,3}\\.[0-9]{1,3}";
             description = "The host's Tailscale IPv4 address, kept across reinstalls by its carried tailnet identity; the `tofu` app hands it to `opentofu/tailscale` as `fleet_hosts`.";
           };
+          lan = lib.mkOption {
+            type = lib.types.nullOr (
+              lib.types.submodule {
+                options = {
+                  address = lib.mkOption {
+                    type = lib.types.str;
+                    description = "IPv4 address the host holds on its LAN.";
+                  };
+                  gateway = lib.mkOption {
+                    type = lib.types.str;
+                    description = "The LAN's UniFi gateway, which is also its controller.";
+                  };
+                  mac = lib.mkOption {
+                    type = lib.types.str;
+                    description = "MAC address of the uplink, which the gateway fixes `address` to.";
+                  };
+                  syslogPort = lib.mkOption {
+                    type = lib.types.port;
+                    description = "UDP port on `address` that takes the gateway's syslog.";
+                  };
+                };
+              }
+            );
+            default = null;
+            description = "A host wired to the LAN at a fixed address; the `tofu` app hands these to `opentofu/unifi` as `fleet_lan`.";
+          };
           telemetry = lib.mkOption {
             type = lib.types.nullOr (
               lib.types.submodule {
