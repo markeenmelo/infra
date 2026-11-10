@@ -24,7 +24,9 @@
             );
           perNamespace =
             f:
-            lib.mkMerge (map f (lib.attrNames (lib.filterAttrs (_: namespace: namespace.enable) config.vpnNamespaces)));
+            lib.mkMerge (
+              map f (lib.attrNames (lib.filterAttrs (_: namespace: namespace.enable) config.vpnNamespaces))
+            );
         in
         {
           systemd.services = perNamespace (namespace: {

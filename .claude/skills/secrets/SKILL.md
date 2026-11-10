@@ -32,6 +32,7 @@ rotating every value its files held.
 | `tailscale/operator.yaml` | operator | Tailscale OAuth client, tailnet name, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
 | `porkbun/api.yaml` | operator, racknerd, bastion | `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` for DNS-01 ([proxy skill](../proxy/SKILL.md)) |
 | `porkbun/operator.yaml` | operator | state passphrase for the DNS records; the app adds `api.yaml` ([opentofu skill](../opentofu/SKILL.md)) |
+| `unifi/operator.yaml` | operator | `UNIFI_API_KEY` for the gateway, the Wi-Fi passphrases by SSID, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
 
 The mac decrypts with its SSH host key like the servers do. Its `github-mcp-token` and
 `grafana-mcp-token`, read by the GitHub and Grafana MCP servers ([claude.nix](../../../modules/claude.nix)),

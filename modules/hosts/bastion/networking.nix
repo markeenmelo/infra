@@ -1,8 +1,8 @@
+{ config, ... }:
 {
   fleet.hosts.bastion.module =
     let
-      mac = "6c:1f:f7:56:0a:10";
-      gateway = "192.168.2.1";
+      inherit (config.fleet.hosts.bastion.lan) address gateway mac;
       lans = {
         homelab = "192.168.2.0/24";
         iot = "192.168.4.0/24";
@@ -40,7 +40,7 @@
         };
         networks."10-uplink" = {
           matchConfig.MACAddress = mac;
-          address = [ "192.168.2.2/24" ];
+          address = [ "${address}/24" ];
           gateway = [ gateway ];
           dns = [ gateway ];
           networkConfig = {

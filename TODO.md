@@ -21,9 +21,8 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 - [ ] Exporters and alerts for PostgreSQL and the apps (Authelia, Immich, Frigate, Jellyfin, the
       arr apps, Caddy requests) once the core set misses something; Sonarr and Radarr publishing to
       ntfy's `media` topic.
-- [ ] UniFi OpenTofu project: the LAN wildcard record made by hand; keep bastion to the camera on
-      554 and 2020, and no internet for the
-      Cameras VLAN; drop the Home Assistant to IoT media rule.
+- [ ] UniFi: an alert on the gateway's IPS and honeypot detections from its syslog, which needs
+      Loki-backed alert rules.
 
 ## Laptops
 

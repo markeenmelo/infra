@@ -1,0 +1,29 @@
+{
+  "doh": {
+    "state": "manual",
+    "server_names": ["cloudflare-security", "quad9-doh-ip4-port443-filter-pri"]
+  },
+  "usg_geo": {
+    "ip_filtering": {
+      "enabled": true,
+      "action": "block",
+      "traffic_direction": "both",
+      "countries": "KP,IR,SY,CU,RU,BY"
+    }
+  },
+  "usg": {
+    "ftp_module": false,
+    "gre_module": false,
+    "h323_module": false,
+    "pptp_module": false,
+    "sip_module": false,
+    "tftp_module": false,
+    "send_redirects": false,
+    "upnp_enabled": false,
+    "upnp_nat_pmp_enabled": false
+  },
+  "super_mgmt": {
+    "autobackup_cron_expr": "0 1 * * 0",
+    "discoverable": false
+  }
+}
