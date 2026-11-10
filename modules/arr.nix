@@ -381,7 +381,7 @@ in
             enable = true;
             url = "http://${namespaceAddress}:${toString (appPort name)}";
             apiKeyFile = config.sops.secrets."arr-${name}-api-key".path;
-            listenAddress = "127.0.0.1";
+            environment.INTERFACE = "127.0.0.1";
             port = exporterPorts.${name};
             user = "exportarr";
             group = "exportarr";

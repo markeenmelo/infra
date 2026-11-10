@@ -18,16 +18,19 @@ switch:
     nh {{ if os() == "macos" { "darwin" } else { "os" } }} switch .
 
 [doc("Run OpenTofu in opentofu/PROJECT, e.g. `just tofu unifi plan`")]
+[positional-arguments]
 tofu project *args:
-    nix run .#tofu -- {{ project }} {{ args }}
+    nix run .#tofu -- "$@"
 
 [doc("Compare (check) or merge (apply) the UniFi settings no provider writes")]
+[positional-arguments]
 unifi-settings action:
-    nix run .#unifi-settings -- {{ action }}
+    nix run .#unifi-settings -- "$@"
 
 [doc("Reinstall HOST from an installer at TARGET, carrying its identity from the old persist tree ROOT")]
+[positional-arguments]
 install host target root:
-    nix run .#install -- {{ host }} {{ target }} {{ root }}
+    nix run .#install -- "$@"
 
 [doc("Update every flake input")]
 update:

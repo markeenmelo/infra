@@ -70,7 +70,8 @@ Substituters go in `nix.settings`, never flake `nixConfig`.
 
 **Apps** — every operator task is a flake app built with `writeShellApplication`; switch to
 `writers.writePython3Bin` past ~100 lines or when it parses data. Only workflow YAML, `.envrc` and
-the `justfile` stay outside Nix; a recipe only names a flake app or a Nix command, never logic.
+the `justfile` stay outside Nix; a recipe only names a flake app or a Nix or nh command, with no
+logic beyond picking the platform's switch.
 
 **Checks** — a check that needs a host's `pkgs` sits under `flake.checks.${fleet.hosts.HOST.system}`;
 one that needs only tools stays in `perSystem`. A check made for every NixOS host that runs a
