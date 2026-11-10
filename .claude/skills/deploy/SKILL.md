@@ -26,8 +26,10 @@ Bastion trusts the admin clients' build keys, not the hosts it builds for: rackn
 the cache, signed, so a compromised edge cannot write into bastion's store. A build key is a
 trusted user on bastion and whatever it uploads is signed and served to racknerd; it sits on the
 admin client beside the operator's key, which is already root on every host, so it widens nothing.
-Bastion also holds what the workstations build themselves: `remote-builds` gives each a
-post-build hook that copies every output it builds to bastion over that key (failing quietly
+Bastion also holds, best effort, what the workstations build themselves: `remote-builds` gives
+each a post-build hook that copies every output it builds to bastion over that key, with bastion
+substituting what cache.nixos.org holds so only local builds are uploaded; an output whose copy
+fails is not retried (failing quietly
 after a 3-second connect timeout, then skipping pushes for 10 minutes so a build off the tailnet
 waits once, not per derivation), and makes bastion's cache its first
 substituter, so a cleaned mac or asahi store refills from bastion instead of rebuilding.
