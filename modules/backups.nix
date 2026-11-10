@@ -388,18 +388,14 @@ in
         initialize = true;
         paths = [ home ];
         exclude =
-          map (path: "${home}/${path}") [
-            ".ssh"
-            ".gnupg"
-            ".local/share/keyrings"
-            ".config/sops"
-            ".config/gh"
-            ".claude/.credentials.json"
-            ".bitwarden-ssh-agent.sock"
-            ".cache"
-            ".gvfs"
-            ".local/share/Trash"
-          ]
+          map (path: "${home}/${path}") (
+            import ./_home-secrets.nix
+            ++ [
+              ".cache"
+              ".gvfs"
+              ".local/share/Trash"
+            ]
+          )
           ++ [ "**/node_modules" ];
         extraBackupArgs = [ "--exclude-caches" ];
         timerConfig = {

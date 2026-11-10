@@ -42,7 +42,10 @@ The mac decrypts with its SSH host key like the servers do. The workstations' `g
 and `grafana-mcp-token`, read by the GitHub and Grafana MCP servers ([claude.nix](../../../modules/claude.nix)),
 are the secrets owned by the operator account instead of root, since Claude Code runs as that user.
 The workstations share one pair, so a lost laptop means rotating both tokens for every workstation.
-The Grafana one is a Viewer service account's token, and the server runs with `--disable-write`. Its directories are one
+The Grafana one is a Viewer service account's token, and the server runs with `--disable-write`.
+The identity keys in the home folder (SSH, GnuPG, the keyring, sops, gh, Claude's credentials,
+Bitwarden's agent socket) are one list, [_home-secrets.nix](../../../modules/_home-secrets.nix),
+which both Claude's `Read` denies and the laptop backup's excludes read. The secret directories outside home are one
 list in claude.nix feeding both the `Read` denies, which guard Claude's built-in tools, and the
 managed sandbox's `filesystem.denyRead`, which guards Bash and anything it starts: Claude Code
 copies home-relative `Read(~/…)` denies into the sandbox but not absolute `//` ones, so an

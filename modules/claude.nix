@@ -168,20 +168,17 @@ in
                 "pull_request_read"
               ];
               deny = map (file: "Read(${file})") (
-                [
-                  "~/.claude/.credentials.json"
+                lib.concatMap (path: [
+                  "~/${path}"
+                  "~/${path}/**"
+                ]) (import ./_home-secrets.nix)
+                ++ [
                   "~/.claude.json"
-                  "~/.ssh/**"
-                  "~/.config/sops/**"
-                  "~/.config/gh/**"
                   "~/Library/Keychains/**"
                   "~/Library/Application Support/sops/**"
                   "~/Library/Application Support/Bitwarden/**"
                   "~/Library/Application Support/Zen/**"
                   "~/Library/Application Support/Claude/**"
-                  "~/.bitwarden-ssh-agent.sock"
-                  "~/.gnupg/**"
-                  "~/.local/share/keyrings/**"
                   "~/.config/Bitwarden/**"
                   "~/.zen/**"
                   "~/.config/zen/**"
