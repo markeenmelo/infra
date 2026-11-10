@@ -22,7 +22,12 @@ let
 in
 {
   flake.modules.nixos.desktop =
-    { config, lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       programs.hyprland = {
         enable = true;
