@@ -30,9 +30,13 @@ variable "state_passphrase" {
   sensitive   = true
 }
 
-# shortcut: the domain and the edge address are literals, feed them from fleet facts when racknerd migrates
+variable "fleet_domain" {
+  description = "The fleet's domain, from fleet.domain; the tofu app sets it."
+  type        = string
+}
+
 locals {
-  domain = "marcosmelo.dev"
+  domain = var.fleet_domain
   edge   = "72.11.150.242"
   records = {
     edge          = { subdomain = "*", type = "A", content = local.edge }

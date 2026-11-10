@@ -40,8 +40,13 @@ variable "fleet_edge_ports" {
   type        = list(number)
 }
 
+variable "fleet_domain" {
+  description = "The fleet's domain, from fleet.domain; the tofu app sets it."
+  type        = string
+}
+
 locals {
-  domain  = "marcosmelo.dev"
+  domain  = var.fleet_domain
   bastion = var.fleet_hosts.bastion
   # shortcut: asahi is a literal until its host lands in fleet.hosts; grafite is an admin device outside the fleet
   hosts = merge({

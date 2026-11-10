@@ -56,9 +56,13 @@ provider "unifi" {
   allow_insecure = true
 }
 
+variable "fleet_domain" {
+  description = "The fleet's domain, from fleet.domain; the tofu app sets it."
+  type        = string
+}
+
 locals {
-  # shortcut: the domain is a literal, feed it from fleet.domain once the tofu app passes it
-  domain  = "marcosmelo.dev"
+  domain  = var.fleet_domain
   bastion = var.fleet_lan.bastion
   vlans   = { Homelab = 2, Cameras = 3, IoT = 4, Home = 10, Kids = 20 }
   vlan_of = { for name, id in local.vlans : id => name }
