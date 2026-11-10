@@ -57,7 +57,9 @@ denials by the edge itself, which marks them with a response header so backend 4
 count; the community blocklist comes from the central API the setup unit registers with
 on first boot. The firewall bouncer registers itself with the local API and drops banned
 addresses in nftables, which is why the server uses the nftables backend. Ban length grows
-with each repeat. The hub is pinned to a commit so `cscli hub update` cannot change what the
+with each repeat. A home browser resolving over DNS-over-HTTPS reaches the apps through the edge
+instead of the LAN proxy, and a few admin pages there would ban the household's own address, so
+Zen's enforced policies ([zen.nix](../../../modules/zen.nix)) turn DNS-over-HTTPS off. The hub is pinned to a commit so `cscli hub update` cannot change what the
 engine runs; moving it is a lock-style bump of that literal. State under `/var/lib/crowdsec`
 (database, hub, API credentials) persists, and the engine runs as a static user so the
 persisted files keep their owner across reboots.
