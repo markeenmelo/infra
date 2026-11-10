@@ -395,23 +395,17 @@ in
         (lib.genAttrs apps (name: {
           inherit (config.nixflix.${name}.config.hostConfig) port;
           address = namespaceAddress;
-          tailnetOnly = true;
         }))
         {
           qbittorrent = {
             port = webuiPort;
             address = namespaceAddress;
-            tailnetOnly = true;
           };
           sabnzbd = {
             inherit (sabnzbd.settings.misc) port;
             address = namespaceAddress;
-            tailnetOnly = true;
           };
-          seerr = {
-            inherit (config.nixflix.seerr) port;
-            tailnetOnly = true;
-          };
+          seerr = { inherit (config.nixflix.seerr) port; };
         }
       ];
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];

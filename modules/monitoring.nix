@@ -842,10 +842,7 @@ in
         scrapeTargets = {
           inherit (ports) node prometheus smartctl;
         };
-        web.apps.grafana = {
-          port = ports.grafana;
-          tailnetOnly = true;
-        };
+        web.apps.grafana.port = ports.grafana;
         oidc.clients.grafana = {
           client_name = "Grafana";
           redirect_uris = [ "https://${hostname}/login/generic_oauth" ];

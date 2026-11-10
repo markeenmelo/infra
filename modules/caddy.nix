@@ -39,7 +39,7 @@ in
               tailnetOnly = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
-                description = "Whether the LAN proxy refuses clients outside the tailnet.";
+                description = "Whether the LAN proxy refuses clients outside the tailnet and bastion's own tailnet address, which local processes would otherwise borrow.";
               };
               public = lib.mkOption {
                 type = lib.types.bool;

@@ -25,7 +25,7 @@ also takes the UniFi gateway's syslog (firewall blocks, IPS detections, admin ac
 from the gateway alone and stores the lines unparsed under `host="gateway"`
 ([opentofu skill](../opentofu/SKILL.md)).
 
-Grafana sits behind the LAN proxy at `grafana.`, tailnet only ([proxy skill](../proxy/SKILL.md)).
+Grafana sits behind the LAN proxy at `grafana.`, on the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)).
 People sign in through Authelia; membership of `grafana-admins` makes them Grafana admins and
 everyone else is refused ([identity skill](../identity/SKILL.md)). The local `admin` with
 `grafana/admin-password` is the break-glass login. Grafana reads that secret only when it creates
@@ -71,8 +71,8 @@ the current time for a job with no file yet, so one that never succeeds still go
 deletes the files of removed jobs.
 Provisioning never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
 
-[ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the
-tailnet. Everything is denied by default; `alerts` and `media` are readable by anyone who reaches
+[ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the tailnet only,
+since the `alerts` topic needs no login and describes the fleet. Everything is denied by default; `alerts` and `media` are readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
 a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. Each workstation subscribes
 itself: `ntfy-alerts`, a Home Manager user service (a launchd agent on the mac), shows each alert

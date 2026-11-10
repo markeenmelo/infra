@@ -39,7 +39,10 @@ in
         };
         environmentFile = config.sops.templates."ntfy.env".path;
       };
-      fleet.web.apps.ntfy = { inherit port; };
+      fleet.web.apps.ntfy = {
+        inherit port;
+        tailnetOnly = true;
+      };
     };
 
   flake.modules.darwin.desktop =
