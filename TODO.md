@@ -22,11 +22,7 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 ## Laptops
 
 - [ ] `asahi`: host (evaluates in CI, builds on itself), desktop profile shared with thinkpad.
-- [ ] Operator Home Manager: shell, tmux, neovim, dev tooling, shared across hosts.
 
 ## Closing out
 
-- [ ] `ci-deploy`: deploy on merge from GitHub-hosted runners (Tailscale GitHub Action + deploy-rs),
-      protected environment with manual approval gated by a path filter on access-changing files;
-      its own key on the `deploy` account, which is root-equivalent.
 - [ ] Delete `infra/infra-old/` and its mention in CLAUDE.md once every host runs the new config.
