@@ -50,7 +50,7 @@
       flake = false;
     };
     caveman = {
-      url = "github:JuliusBrussee/caveman/d262ab3882952a59312ff3537cd86d894523c5ab";
+      url = "github:JuliusBrussee/caveman/1e91f1306d602d4ca23618701b1185575ae1869b";
       flake = false;
     };
     stylix = {
