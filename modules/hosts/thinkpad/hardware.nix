@@ -41,6 +41,10 @@
           AllowHybridSleep = false;
           AllowSuspendThenHibernate = false;
         };
+        services.upower = {
+          enableStrictShellChecks = true;
+          preStart = "printf 1 > /var/lib/upower/charging-threshold-status";
+        };
         services.power-profile-ac = {
           description = "Use power-saver on battery and restore the previous profile on AC";
           wantedBy = [ "power-profiles-daemon.service" ];
