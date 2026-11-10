@@ -22,11 +22,6 @@ jobs:
         with:
           persist-credentials: false
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
-      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock', '**/*.tf') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          save: false
       - name: Scan each x86_64 host's runtime closure
         run: |
           hosts=$(nix eval --raw .#nixosConfigurations --apply 'cs: builtins.concatStringsSep " " (builtins.filter (n: cs.${n}.pkgs.stdenv.hostPlatform.system == "x86_64-linux") (builtins.attrNames cs))')
