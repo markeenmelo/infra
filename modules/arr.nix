@@ -591,7 +591,11 @@ in
                 fi
                 if [ "$port" != "$current" ]; then
                   echo "Forwarded port $current -> $port"
-                  open_port "$port" && set_port "$port" && current=$port || { sleep 5; continue; }
+                  if ! { open_port "$port" && set_port "$port"; }; then
+                    sleep 5
+                    continue
+                  fi
+                  current=$port
                 fi
                 sleep 45
               done

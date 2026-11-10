@@ -651,7 +651,7 @@ in
                       }
                       {
                         title = "Unit restarting";
-                        expr = "increase(node_systemd_service_restart_total[30m])";
+                        expr = "round(increase(node_systemd_service_restart_total[30m]))";
                         threshold = 3;
                         for = "0s";
                         summary = "{{ $labels.name }} on {{ $labels.instance }} restarted more than 3 times in 30 minutes";
