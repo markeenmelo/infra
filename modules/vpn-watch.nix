@@ -29,7 +29,7 @@
         {
           systemd.services = perNamespace (namespace: {
             ${namespace} = {
-              upholds = map (name: "${name}.service") (confined namespace);
+              wants = map (name: "${name}.service") (confined namespace);
               startLimitIntervalSec = 3600;
               startLimitBurst = 120;
               serviceConfig = {
