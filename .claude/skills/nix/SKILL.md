@@ -15,7 +15,7 @@ Background: [dendritic pattern](https://github.com/mightyiam/dendritic),
 | Contribution | Owner |
 |---|---|
 | Every host / role / service | `flake.modules.nixos.base` / `server`, `desktop` / `flake.modules.nixos.SERVICE` |
-| Operator user settings | `flake.modules.homeManager.base` when portable to darwin, else `homeManager.desktop` |
+| Operator user settings | `flake.modules.homeManager.base` on every workstation; `homeManager.desktop` for the Linux desktop; mac-only ones in the darwin module's `home-manager.users` |
 | nix-darwin base / role | `flake.modules.darwin.base` / `desktop`, in the same file as the NixOS counterpart |
 | Host facts (system, addresses, keys, role flags) and imports | `modules/hosts/HOST/host.nix`, the only writer of `fleet.hosts.HOST` |
 | Hardware, disko, networking, host-only data | `modules/hosts/HOST/` |
