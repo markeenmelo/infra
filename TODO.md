@@ -7,7 +7,6 @@ sequence. Decisions are in [CLAUDE.md](CLAUDE.md); remove a line in the PR that 
 
 - [ ] Drop CI's GitHub Actions cache once runs fetching from bastion's Harmonia cache do as well
       without it.
-- [ ] Decide whether the laptops substitute from bastion's Harmonia cache.
 - [ ] Build the aarch64 closures (`asahi`, `mac`) in CI on GitHub's arm64 Linux and Apple Silicon
       macOS runners; check the macOS runner's memory against the closures first.
 
