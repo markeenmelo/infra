@@ -12,6 +12,7 @@
         customPaneNavigationAndResize = true;
         baseIndex = 1;
         escapeTime = 10;
+        focusEvents = true;
         historyLimit = 50000;
         clock24 = true;
         mouse = true;

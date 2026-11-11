@@ -8,8 +8,11 @@ description: "deploy-rs: how a host's committed configuration is activated over 
 [deploy.nix](../../../modules/deploy.nix) turns every `fleet.hosts` entry into a deploy-rs node
 reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
 Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
-`activate-rs` and remove the rollback canary. Its key is therefore the operator's root key on
-every host. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
+`activate-rs`, remove the rollback canary and reboot, the only way to reboot a server without its
+console. Its key is therefore the operator's root key on
+every host, so it is not the operator's login key: its private half lives only in the operator's
+Bitwarden SSH agent, which asks before each use. The servers have no login account
+([access.nix](../../../modules/access.nix)), so `deploy` is the only way into them. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
 off: it would make sudo unexecutable for it and break every deploy. IPv6 stays on host-wide for the
 same reason: MagicDNS answers with each node's tailnet IPv6 address, and a peer that tries it first
 against a host with IPv6 off waits out a connect timeout that can outlast the rollback confirm;
@@ -24,8 +27,10 @@ machine receives the whole closure back from bastion; deploy-rs then pushes it w
 `--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
 Bastion trusts the admin clients' build keys, not the hosts it builds for: racknerd only reads
 the cache, signed, so a compromised edge cannot write into bastion's store. A build key is a
-trusted user on bastion and whatever it uploads is signed and served to racknerd; it sits on the
-admin client beside the operator's key, which is already root on every host, so it widens nothing.
+trusted user on bastion and whatever it uploads is signed and served to racknerd, so a stolen
+build key is root on bastion without the deploy key's Bitwarden prompt. That is accepted: Nix
+refuses remote builds from an untrusted user (`you are not privileged to build input-addressed
+derivations`), and the key is readable only by root on an admin client.
 `remote-builds` makes bastion's cache each workstation's first substituter, so a cleaned store
 refills from bastion instead of rebuilding. Bastion also holds, best effort, what the mac and
 asahi build themselves, since it cannot build their systems: a post-build hook copies each output
@@ -44,6 +49,8 @@ garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).
 ```sh
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision
 nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
+nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
+nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```
 
 Claude prepares the command and asks first ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
@@ -53,8 +60,9 @@ deploy-rs activation files, so the first deploy after an install cannot roll bac
 activation leaves the new configuration running with the profile pointing at the old generation,
 until a deploy succeeds. Any failed unit fails the activation, so setup units stay idempotent and
 do not fail on an outside service being down. A host without a tailnet
-connection is unreachable to deploy-rs by design: recover through the provider or physical
-console.
+connection is unreachable to deploy-rs by design. No server accepts a console login, so recover
+by booting the previous generation from the Limine menu on the provider or physical console, or
+reinstall from the installer image as below.
 
 ## Install
 

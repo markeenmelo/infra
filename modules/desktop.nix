@@ -83,6 +83,7 @@ in
         pkgs.spotify
         pkgs.vesktop
         pkgs.bruno
+        pkgs.wl-clipboard
       ];
       programs = {
         ghostty.package = pkgs.ghostty;

@@ -36,8 +36,13 @@ variable "fleet_hosts" {
 }
 
 variable "fleet_edge_ports" {
-  description = "Bastion ports racknerd reaches: the public apps in fleet.web.apps and racknerd's telemetry pair; the tofu app sets it."
+  description = "Bastion ports racknerd reaches for the public apps in fleet.web.apps; the tofu app sets it."
   type        = list(number)
+}
+
+variable "fleet_telemetry" {
+  description = "Bastion ports each host pushes its telemetry to, from fleet.hosts.*.telemetry, null where a host pushes nothing; the tofu app sets it."
+  type        = map(object({ metrics = number, logs = number }))
 }
 
 variable "fleet_domain" {
@@ -46,8 +51,9 @@ variable "fleet_domain" {
 }
 
 locals {
-  domain  = var.fleet_domain
-  bastion = var.fleet_hosts.bastion
+  domain    = var.fleet_domain
+  bastion   = var.fleet_hosts.bastion
+  telemetry = { for host, ports in var.fleet_telemetry : host => [for port in values(ports) : port if port != null] if ports != null }
   # grafite is an admin device outside the fleet
   hosts = merge({
     grafite = "100.91.224.11"
@@ -84,7 +90,7 @@ locals {
       exitNode = ["tag:proton-exit"]
       routes   = { for lan in local.lans : lan => ["tag:bastion"] }
     }
-    grants = [
+    grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
       { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:5005"]) },
       { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:8010"] },
@@ -94,15 +100,15 @@ locals {
       { src = local.admin_clients, dst = ["192.168.4.0/24", "192.168.20.0/24"], ip = ["*"] },
       { src = ["tag:admin-client", "tag:server", "group:members"], dst = ["bastion"], ip = ["tcp:53", "udp:53"] },
       { src = ["tag:admin-client", "group:members"], dst = ["autogroup:internet"], ip = ["*"] },
-    ]
-    tests = [
+    ])
+    tests = concat([for host, ports in local.telemetry : { src = host, proto = "tcp", accept = [for port in ports : "bastion:${port}"], deny = [for port in setsubtract(flatten(values(local.telemetry)), ports) : "bastion:${port}"] }], [
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22"] },
       { src = "thinkpad", proto = "tcp", accept = ["bastion:5005"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:5005"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22"] },
       { src = "racknerd", proto = "tcp", accept = ["bastion:9091"], deny = ["bastion:443"] },
-    ]
+    ])
   }
 }
 

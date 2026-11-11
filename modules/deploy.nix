@@ -31,47 +31,69 @@ in
       }
     );
 
-    modules.nixos.base =
-      { config, ... }:
-      {
-        users = {
-          users.deploy = {
-            isSystemUser = true;
-            group = "deploy";
-            useDefaultShell = true;
-            openssh.authorizedKeys.keys = map (
-              key: "restrict ${key}"
-            ) config.users.users.marcos.openssh.authorizedKeys.keys;
-          };
-          groups.deploy = { };
+    modules.nixos.base = {
+      users = {
+        users.deploy = {
+          isSystemUser = true;
+          group = "deploy";
+          useDefaultShell = true;
+          openssh.authorizedKeys.keys = [
+            "restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGT8qIye6ycv8MsJFQuX05FGRhyhouGszp2SW7Qmbz0D"
+          ];
         };
-        services.openssh.settings.AllowUsers = [ "deploy" ];
-        nix.settings.trusted-users = [ "deploy" ];
-        security.sudo.extraRules = [
-          {
-            users = [ "deploy" ];
-            runAs = "root";
-            commands = [
-              {
-                command = "/nix/store/*/activate-rs *";
-                options = [ "NOPASSWD" ];
-              }
-              {
-                command = "/run/current-system/sw/bin/rm ^/tmp/deploy-rs-canary-[a-z0-9]{32}$";
-                options = [ "NOPASSWD" ];
-              }
-            ];
-          }
-        ];
+        groups.deploy = { };
       };
+      services.openssh.settings.AllowUsers = [ "deploy" ];
+      nix.settings.trusted-users = [ "deploy" ];
+      security.sudo.extraRules = [
+        {
+          users = [ "deploy" ];
+          runAs = "root";
+          commands = [
+            {
+              command = "/nix/store/*/activate-rs *";
+              options = [ "NOPASSWD" ];
+            }
+            {
+              command = "/run/current-system/sw/bin/rm ^/tmp/deploy-rs-canary-[a-z0-9]{32}$";
+              options = [ "NOPASSWD" ];
+            }
+            {
+              command = "/run/current-system/sw/bin/systemctl reboot";
+              options = [ "NOPASSWD" ];
+            }
+          ];
+        }
+      ];
+    };
   };
 
   perSystem =
-    { lib, inputs', ... }:
+    {
+      lib,
+      pkgs,
+      inputs',
+      ...
+    }:
     {
       apps.deploy = {
         meta.description = "deploy .#HOST: activate the host's committed configuration over the tailnet with magic rollback";
         program = lib.getExe inputs'.deploy-rs.packages.deploy-rs;
+      };
+      apps.reboot = {
+        meta.description = "reboot HOST: reboot a NixOS host over the tailnet as the deploy account, e.g. after deploy --boot";
+        program = pkgs.writeShellApplication {
+          name = "reboot";
+          runtimeInputs = [ pkgs.openssh ];
+          text = ''
+            case ''${1-} in
+            ${
+              lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts)
+            }  *) echo "reboot: no NixOS host named ''${1-}" >&2; exit 1 ;;
+            esac
+            ssh "deploy@$1" sudo /run/current-system/sw/bin/systemctl reboot
+          '';
+        };
       };
     };
 }

@@ -283,6 +283,12 @@ in
               scale = 1;
               vrr = 1;
             }
+            {
+              output = "desc:Dell Inc. DELL U3423WE 4TSGMP3";
+              position = "auto-center-up";
+              mode = "3440x1440@59.97";
+              scale = 1;
+            }
           ];
           window_rule = [
             {
