@@ -2,12 +2,14 @@
   flake.modules.homeManager.base =
     { lib, pkgs, ... }:
     {
+      stylix.targets.zed.colors.enable = false;
       programs.zed-editor = {
         enable = true;
         package = lib.mkDefault null;
         mutableUserSettings = false;
         extensions = [ "nix" ];
         userSettings = {
+          theme = "One Dark";
           disable_ai = true;
           telemetry = {
             diagnostics = false;

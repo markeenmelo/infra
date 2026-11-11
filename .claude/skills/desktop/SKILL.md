@@ -17,6 +17,13 @@ hand-tuned in its own module to the rules below, reading `config.lib.stylix.colo
 and `config.stylix.fonts`, never a hex or font literal, so a scheme or font change reaches it. An
 app Stylix cannot theme gets the same treatment by hand.
 
+An app that ships its own One Dark uses it instead of Stylix's base16 colors, while its fonts still
+come from Stylix: its target's `colors.enable` is false (or the whole target when it only sets
+colors) and the native theme is selected. This holds where the native theme is clearly richer, as
+in editors (Zed's `One Dark`, Neovim's `onedark-nvim`) and bat (`OneHalfDark`). Terminals and
+desktop chrome stay on Stylix, whose `onedark-dark` already is Atom One Dark. A native theme does
+not follow a scheme change.
+
 ## Rules
 
 - **Surfaces:** app windows, terminal included, are solid. The desktop's own chrome (bar,
@@ -59,10 +66,10 @@ All set in Stylix, so every target agrees:
 
 | Use | Font | Size |
 |---|---|---|
-| Terminals, editors, code | JetBrainsMono Nerd Font | 12 |
-| Application UI, desktop, popups | Inter | 11 |
-| Bar | JetBrainsMono Nerd Font, bold | 13 |
-| Serif slots | Inter (no serif face) | as the app asks |
+| Terminals, editors, code | JetBrainsMono Nerd Font Mono | 12 |
+| Application UI, desktop, popups | NotoSans Nerd Font Propo | 11 |
+| Bar | JetBrainsMono Nerd Font Mono, bold | 13 |
+| Serif slots | NotoSans Nerd Font Propo (no serif face) | as the app asks |
 | Emoji | Noto Color Emoji | as the text |
 
 No other families. Glyph icons come from the Nerd Font, never from a second icon font.
@@ -77,7 +84,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
   every machine shows the same one: Stylix applies it on Linux, and on the mac a Home Manager
   activation step sets it with `desktoppr`. It is the only image in the look; nothing else is
   derived from it, since the colors come from One Dark, not from the picture.
-- **Lock screen:** the wallpaper, blurred, with the clock in Inter and the password field on a
+- **Lock screen:** the wallpaper, blurred, with the clock in NotoSans Nerd Font Propo and the password field on a
   `base01` 4 px rounded surface.
 
 ## Toolkits and sound

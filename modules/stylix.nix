@@ -18,11 +18,11 @@ let
           };
           monospace = {
             package = pkgs.nerd-fonts.jetbrains-mono;
-            name = "JetBrainsMono Nerd Font";
+            name = "JetBrainsMono Nerd Font Mono";
           };
           sansSerif = {
-            package = pkgs.inter;
-            name = "Inter";
+            package = pkgs.nerd-fonts.noto;
+            name = "NotoSans Nerd Font Propo";
           };
           serif = config.stylix.fonts.sansSerif;
         };

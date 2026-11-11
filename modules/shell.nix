@@ -4,6 +4,8 @@
     promptInit = "";
   };
 
+  flake.modules.homeManager.base.stylix.targets.bat.enable = false;
+
   flake.modules.homeManager.base.programs = {
     zsh = {
       enable = true;
@@ -33,7 +35,10 @@
     fzf.enable = true;
     zoxide.enable = true;
     eza.enable = true;
-    bat.enable = true;
+    bat = {
+      enable = true;
+      config.theme = "OneHalfDark";
+    };
     fd.enable = true;
     ripgrep.enable = true;
   };
