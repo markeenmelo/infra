@@ -54,7 +54,8 @@ A Linux workstation imports `logs` instead, the journal half of `telemetry`, wit
 in its `telemetry` fact: no metrics and no `Host silent` alert, since a laptop that is shut, asleep
 or off the tailnet is normal. Every sender retries its log pushes forever, so while bastion is out
 of reach Alloy's queue fills and then stops reading the journal, which holds the backlog until the
-tailnet returns; Loki drops lines over a week old, and positions are lost on reboot as above, so
+tailnet returns; Loki refuses pushed lines over a week old (its default ingestion window, apart
+from how long it keeps what it stored), and positions are lost on reboot as above, so
 a laptop rebooted after more than 12 h away loses the lines it never sent. The mac ships nothing:
 macOS has no journal and nix-darwin no Alloy module.
 Bastion's own Alloy probes `https://auth.DOMAIN` through the gateway's wildcard record, so the

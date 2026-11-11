@@ -36,8 +36,6 @@ creation_rules:
     key_groups:
       - age:
           - *operator
-          - *racknerd
-          - *bastion
           - *thinkpad
           - *asahi
   - path_regex: ^secrets/shared/mcp\.yaml$

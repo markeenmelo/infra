@@ -14,7 +14,7 @@
       telemetry
     ];
     security.lockKernelModules = true;
-    # shortcut: the modules racknerd's firewall, Tailscale and CrowdSec loaded at runtime when listed, add one here when a deploy fails on a module that cannot load
+    # shortcut: the modules racknerd's firewall, Tailscale and CrowdSec loaded at runtime when listed, add one here and deploy with --boot then reboot when a unit fails on a module that cannot load, since the lock holds until reboot
     boot.kernelModules = [
       "tun"
       "nft_chain_nat"
