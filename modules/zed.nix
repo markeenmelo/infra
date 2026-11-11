@@ -54,9 +54,10 @@
             dark = "Material Icon Theme";
             light = "Material Icon Theme";
           };
-          edit_predictions = {
-            provider = "none";
-            button = false;
+          edit_predictions.provider = "copilot";
+          agent.commit_message_model = {
+            provider = "copilot_chat";
+            model = "gpt-4.1";
           };
           agent_servers.claude-acp.type = "registry";
           telemetry = {
