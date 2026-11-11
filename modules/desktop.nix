@@ -43,6 +43,7 @@ in
       networking.modemmanager.enable = false;
       security.rtkit.enable = true;
       programs.zsh.enable = true;
+      programs.nix-ld.enable = true;
       users.users.marcos.shell = pkgs.zsh;
       services = {
         resolved.enable = true;
