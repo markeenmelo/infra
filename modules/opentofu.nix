@@ -1,8 +1,9 @@
 { config, lib, ... }:
 let
-  lan = lib.mapAttrs (_: host: host.lan) (
-    lib.filterAttrs (_: host: host.lan != null) config.fleet.hosts
-  );
+  wired = lib.filterAttrs (_: host: host.lan != null) config.fleet.hosts;
+  lan = lib.mapAttrs (_: host: removeAttrs host.lan [ "routes" ]) wired;
+  routes = lib.mergeAttrsList (lib.mapAttrsToList (_: host: host.lan.routes) wired);
+  edge = config.fleet.hosts.racknerd.publicAddress;
   gateways = lib.unique (lib.mapAttrsToList (_: host: host.gateway) lan);
   gateway =
     assert lib.assertMsg (
@@ -43,6 +44,10 @@ in
             export TF_VAR_fleet_edge_ports=${lib.escapeShellArg edgePorts}
             export TF_VAR_fleet_telemetry=${lib.escapeShellArg telemetry}
             export TF_VAR_fleet_lan=${lib.escapeShellArg (builtins.toJSON lan)}
+            export TF_VAR_fleet_routes=${lib.escapeShellArg (builtins.toJSON routes)}
+            export TF_VAR_fleet_edge_address=${lib.escapeShellArg edge}
+            export TF_VAR_fleet_cache_port=${toString config.fleet.cachePort}
+            export TF_VAR_fleet_home_backup_port=${toString config.fleet.homeBackupPort}
             export TF_CLI_ARGS_init="-input=false -lockfile=readonly -backend-config=path=$state/terraform.tfstate"
             command=$(printf '%q ' tofu -chdir="opentofu/$project" "$@")
             if [ -e "secrets/$project/api.yaml" ]; then

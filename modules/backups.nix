@@ -1,10 +1,16 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   inherit (config.fleet) hosts;
-  laptopPort = 8010;
+  laptopPort = config.fleet.homeBackupPort;
 in
 {
-  flake.modules.nixos.backups =
+  options.fleet.homeBackupPort = lib.mkOption {
+    type = lib.types.port;
+    description = "Port on bastion's tailnet address where the append-only restic server takes the ThinkPad's home backups; the `tofu` app hands it to `opentofu/tailscale` as `fleet_home_backup_port`.";
+  };
+  config.fleet.homeBackupPort = 8010;
+
+  config.flake.modules.nixos.backups =
     {
       config,
       lib,
@@ -362,19 +368,13 @@ in
       networking.firewall.extraInputRules = ''
         iifname "${config.services.tailscale.interfaceName}" ip saddr ${thinkpad.client} tcp dport ${toString thinkpad.port} accept
       '';
-      networking.nftables.enable = true;
-      networking.nftables.tables.backup-thinkpad = {
-        family = "inet";
-        content = ''
-          chain output {
-            type filter hook output priority -150; policy accept;
-            oifname "lo" ip daddr ${thinkpad.listen} tcp dport ${toString thinkpad.port} reject
-          }
-        '';
+      fleet.loopbackGuards.backup-thinkpad = {
+        ports = [ thinkpad.port ];
+        users = [ ];
       };
     };
 
-  flake.modules.nixos.backup-home =
+  config.flake.modules.nixos.backup-home =
     { config, ... }:
     let
       server = "${hosts.bastion.tailnetAddress}:${toString laptopPort}";

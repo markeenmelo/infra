@@ -147,11 +147,15 @@ in
 
         boot.initrd.systemd.services.root-reset = {
           wantedBy = [ "initrd.target" ];
+          requiredBy = [ "sysroot.mount" ];
           requires = [ "${utils.escapeSystemdPath root}.device" ];
           after = [ "${utils.escapeSystemdPath root}.device" ];
           before = [ "sysroot.mount" ];
           unitConfig.DefaultDependencies = "no";
-          serviceConfig.Type = "oneshot";
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
           enableStrictShellChecks = true;
           script = ''
             mkdir -p /btrfs

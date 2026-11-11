@@ -29,6 +29,47 @@ let
       forward_to    = [${forward}]
     }
   '';
+  httpsProbe =
+    extra:
+    "{ prober: http, timeout: 10s, http: { preferred_ip_protocol: ip4, fail_if_not_ssl: true${extra} } }";
+  target =
+    name: address: module:
+    ''{"name" = "${name}", "address" = "${address}", "module" = "${module}"},'' + "\n";
+  blackbox =
+    {
+      targets,
+      forward,
+      modules ? "",
+      rules ? "",
+    }:
+    ''
+      prometheus.exporter.blackbox "probes" {
+        config  = "{ modules: { https: ${httpsProbe ""}${modules} } }"
+        targets = [
+          ${targets}
+        ]
+      }
+
+      discovery.relabel "probes" {
+        targets = prometheus.exporter.blackbox.probes.targets
+        rule {
+          source_labels = ["job"]
+          regex         = "integrations/blackbox/(.*)"
+          target_label  = "probe"
+        }
+        rule {
+          target_label = "job"
+          replacement  = "blackbox"
+        }
+        ${rules}
+      }
+
+      prometheus.scrape "probes" {
+        scrape_interval = "60s"
+        targets         = discovery.relabel.probes.output
+        forward_to      = [${forward}]
+      }
+    '';
   inherit (config.flake.modules.nixos) ntfy logs;
   hostname = "grafana.${domain}";
   admins = "grafana-admins";
@@ -110,11 +151,6 @@ in
           job: port: ''{"__address__" = "127.0.0.1:${toString port}", "job" = "${job}"}''
         ) config.fleet.scrapeTargets
       );
-      probes = lib.concatMapStrings (item: item + ",\n    ") (
-        lib.mapAttrsToList (
-          name: url: ''{"name" = "${name}", "address" = "${url}", "module" = "https"}''
-        ) config.fleet.probes
-      );
     in
     {
       imports = [ logs ];
@@ -157,38 +193,18 @@ in
           }
         }
 
-        prometheus.exporter.blackbox "probes" {
-          config  = "{ modules: { https: { prober: http, timeout: 10s, http: { preferred_ip_protocol: ip4, fail_if_not_ssl: true } } } }"
-          targets = [
-            ${probes}
-          ]
-        }
-
-        discovery.relabel "probes" {
-          targets = prometheus.exporter.blackbox.probes.targets
-          rule {
-            source_labels = ["job"]
-            regex         = "integrations/blackbox/(.*)"
-            target_label  = "probe"
-          }
-          rule {
-            target_label = "job"
-            replacement  = "blackbox"
-          }
-        }
-
-        prometheus.scrape "probes" {
-          scrape_interval = "60s"
-          targets         = discovery.relabel.probes.output
-          forward_to      = [prometheus.relabel.instance.receiver]
-        }
-
         prometheus.remote_write "bastion" {
           endpoint {
             url = "http://${bastion}:${toString telemetry.metrics}/api/v1/metrics/write"
           }
         }
-      '';
+      ''
+      + blackbox {
+        targets = lib.concatStrings (
+          lib.mapAttrsToList (name: url: target name url "https") config.fleet.probes
+        );
+        forward = "prometheus.relabel.instance.receiver";
+      };
     };
 
   flake.modules.nixos.monitoring =
@@ -764,35 +780,33 @@ in
         User = "alloy";
         Group = "alloy";
       };
-      networking.nftables.enable = true;
-      networking.nftables.tables.monitoring = {
-        family = "inet";
-        content = ''
-          chain output {
-            type filter hook output priority -150; policy accept;
-            oifname "lo" tcp dport { ${
-              lib.concatMapStringsSep ", " toString (
-                lib.attrValues config.fleet.scrapeTargets
-                ++ [
-                  ports.loki
-                  ports.lokiGrpc
-                ]
-                ++ lib.concatMap (sender: senderPorts sender.telemetry) (lib.attrValues senders)
-              )
-            } } meta skuid != { 0, ${
-              lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) ([
-                "grafana"
-                "prometheus"
-                "loki"
-                "alloy"
-              ])
-            } } reject
-            ${lib.optionalString (lan != null) ''
-              oifname "lo" udp dport ${toString lan.syslogPort} reject
-            ''}
-          }
-        '';
-      };
+      fleet.loopbackGuards = lib.mkMerge [
+        {
+          monitoring = {
+            ports =
+              lib.attrValues config.fleet.scrapeTargets
+              ++ [
+                ports.loki
+                ports.lokiGrpc
+              ]
+              ++ lib.concatMap (sender: senderPorts sender.telemetry) (lib.attrValues senders);
+            users = [
+              "root"
+              "grafana"
+              "prometheus"
+              "loki"
+              "alloy"
+            ];
+          };
+        }
+        (lib.mkIf (lan != null) {
+          gateway-syslog = {
+            ports = [ lan.syslogPort ];
+            protocol = "udp";
+            users = [ ];
+          };
+        })
+      ];
 
       environment.etc."alloy/config.alloy".text =
         journal "loki.write.local.receiver" ''{ host = "${host}" }''
@@ -808,25 +822,17 @@ in
               url = "http://127.0.0.1:${toString ports.prometheus}/api/v1/write"
             }
           }
-
-          prometheus.exporter.blackbox "lan_proxy" {
-            config  = "{ modules: { https: { prober: http, timeout: 10s, http: { preferred_ip_protocol: ip4, fail_if_not_ssl: true } } } }"
-            targets = [
-              {"name" = "lan-proxy", "address" = "https://auth.${domain}", "module" = "https"},
-            ]
-          }
-
-          discovery.relabel "lan_proxy" {
-            targets = prometheus.exporter.blackbox.lan_proxy.targets
-            rule {
-              source_labels = ["job"]
-              regex         = "integrations/blackbox/(.*)"
-              target_label  = "probe"
-            }
-            rule {
-              target_label = "job"
-              replacement  = "blackbox"
-            }
+        ''
+        + blackbox {
+          modules = ", public: ${httpsProbe ", headers: { Host: auth.${domain} }, tls_config: { server_name: auth.${domain} }"}";
+          targets =
+            target "lan-proxy" "https://auth.${domain}" "https"
+            + lib.concatStrings (
+              lib.mapAttrsToList (
+                name: public: target "public-${name}" "https://${public.publicAddress}" "public"
+              ) (lib.filterAttrs (_: other: other.publicAddress != null) hosts)
+            );
+          rules = ''
             rule {
               target_label = "instance"
               replacement  = "${host}"
@@ -835,14 +841,9 @@ in
               target_label = "host"
               replacement  = "${host}"
             }
-          }
-
-          prometheus.scrape "lan_proxy" {
-            scrape_interval = "60s"
-            targets         = discovery.relabel.lan_proxy.output
-            forward_to      = [prometheus.remote_write.local.receiver]
-          }
-        ''
+          '';
+          forward = "prometheus.remote_write.local.receiver";
+        }
         + lib.concatStrings (
           lib.mapAttrsToList (
             sender: telemetry:

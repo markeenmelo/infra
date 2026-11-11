@@ -1,6 +1,6 @@
 ---
 name: arr
-description: "Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr and Decluttarr on bastion through nixflix: their logins and databases, the Proton WireGuard namespace they run in, ProtonVPN port forwarding, the firewall around the namespace, their tailnet-only web UIs, the torrent and usenet indexers, the Easynews bridge, the usenet servers, media requests and the quality profile. Use before touching modules/arr.nix, modules/easynews-indexer.pkg.nix or modules/decluttarr.pkg.nix, changing indexers, servers, quality profiles or download limits, rotating the WireGuard config or a provider credential, or debugging downloads, imports or the VPN."
+description: "Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr and Decluttarr on bastion through nixflix: their logins and databases, the Proton WireGuard namespace they run in, ProtonVPN port forwarding, the firewall around the namespace, their web UIs on the LAN and the tailnet, the torrent and usenet indexers, the Easynews bridge, the usenet servers, media requests and the quality profile. Use before touching modules/arr.nix, modules/easynews-indexer.pkg.nix or modules/decluttarr.pkg.nix, changing indexers, servers, quality profiles or download limits, rotating the WireGuard config or a provider credential, or debugging downloads, imports or the VPN."
 ---
 
 # Arr apps
