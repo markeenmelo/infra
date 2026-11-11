@@ -41,6 +41,12 @@ Terminals and desktop chrome stay on Stylix.
 - **Bar:** top, 32 px tall, `base00`, monospace bold at 13. Workspaces are plain numbers;
   the active one sits on a `base0D` pill with `base00` text. Status items are text or one
   monochrome Nerd Font glyph each, no colored icons, no graphs.
+- **Bar items,** the same on both bars: workspaces, the active app and media on the left; on the
+  right agenda, alerts, cpu, memory, tailnet, network, volume, battery and the clock last, as
+  `%a %d %b %H:%M`. An item one platform lacks is left out, and a platform's own items (tray,
+  bluetooth, brightness, notifications, control center, session) sit beside the related ones.
+  An item that holds more opens a `base01` popup on click: the clock lists today's events, volume
+  has a slider, tailnet lists the exit nodes.
 - **Notifications:** top right, `base01` background, 4 px rounding, a 2 px `base0D` border, or
   `base08` for critical ones.
 - **Icons:** Nerd Font glyphs in the text color; color only where it carries state.

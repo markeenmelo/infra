@@ -2,7 +2,9 @@
   flake.modules.darwin.desktop =
     { config, lib, ... }:
     let
-      sketchybar = lib.getExe config.services.sketchybar.package;
+      sketchybar =
+        lib.getExe
+          config.home-manager.users.${config.system.primaryUser}.programs.sketchybar.package;
       directions = {
         h = "left";
         j = "down";
