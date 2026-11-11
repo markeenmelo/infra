@@ -39,7 +39,10 @@
         peripheralFirmwareDirectory = null;
         avd.vaapi-support = true;
       };
-      networking.networkmanager.wifi.backend = "iwd";
+      networking.networkmanager = {
+        wifi.backend = "iwd";
+        settings.main.iwd-config-path = "auto";
+      };
       boot.kernelParams = [
         "appledrm.show_notch=1"
         "appledrm.hdmi_audio=1"
