@@ -67,6 +67,12 @@ in
     {
       imports = [ caddy ];
       services.caddy = {
+        globalConfig = ''
+          auto_https disable_redirects
+          servers {
+            protocols h1 h2
+          }
+        '';
         logFormat = ''
           level ERROR
           format filter {
@@ -113,13 +119,7 @@ in
       fleet.probes = lib.mapAttrs (name: _: "https://${name}.${domain}") served;
       networking.hosts."127.0.0.1" = map (name: "${name}.${domain}") (lib.attrNames served);
       systemd.services.caddy.serviceConfig.LogsDirectoryMode = "0750";
-      networking.firewall = {
-        allowedTCPPorts = [
-          80
-          443
-        ];
-        allowedUDPPorts = [ 443 ];
-      };
+      networking.firewall.allowedTCPPorts = [ 443 ];
       preservation.preserveAt."/persist".directories = [
         {
           directory = config.services.caddy.logDir;

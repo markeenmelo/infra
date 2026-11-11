@@ -31,39 +31,38 @@ in
       }
     );
 
-    modules.nixos.base =
-      { config, ... }:
-      {
-        users = {
-          users.deploy = {
-            isSystemUser = true;
-            group = "deploy";
-            useDefaultShell = true;
-            openssh.authorizedKeys.keys = map (
-              key: "restrict ${key}"
-            ) config.users.users.marcos.openssh.authorizedKeys.keys;
-          };
-          groups.deploy = { };
+    modules.nixos.base = {
+      users = {
+        users.deploy = {
+          isSystemUser = true;
+          group = "deploy";
+          useDefaultShell = true;
+          # private half held by the operator's Bitwarden SSH agent
+          openssh.authorizedKeys.keys = [
+            "restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGT8qIye6ycv8MsJFQuX05FGRhyhouGszp2SW7Qmbz0D"
+          ];
         };
-        services.openssh.settings.AllowUsers = [ "deploy" ];
-        nix.settings.trusted-users = [ "deploy" ];
-        security.sudo.extraRules = [
-          {
-            users = [ "deploy" ];
-            runAs = "root";
-            commands = [
-              {
-                command = "/nix/store/*/activate-rs *";
-                options = [ "NOPASSWD" ];
-              }
-              {
-                command = "/run/current-system/sw/bin/rm ^/tmp/deploy-rs-canary-[a-z0-9]{32}$";
-                options = [ "NOPASSWD" ];
-              }
-            ];
-          }
-        ];
+        groups.deploy = { };
       };
+      services.openssh.settings.AllowUsers = [ "deploy" ];
+      nix.settings.trusted-users = [ "deploy" ];
+      security.sudo.extraRules = [
+        {
+          users = [ "deploy" ];
+          runAs = "root";
+          commands = [
+            {
+              command = "/nix/store/*/activate-rs *";
+              options = [ "NOPASSWD" ];
+            }
+            {
+              command = "/run/current-system/sw/bin/rm ^/tmp/deploy-rs-canary-[a-z0-9]{32}$";
+              options = [ "NOPASSWD" ];
+            }
+          ];
+        }
+      ];
+    };
   };
 
   perSystem =
