@@ -3,14 +3,7 @@ let
   wired = lib.filterAttrs (_: host: host.lan != null) config.fleet.hosts;
   lan = lib.mapAttrs (_: host: removeAttrs host.lan [ "routes" ]) wired;
   routes = lib.mergeAttrsList (lib.mapAttrsToList (_: host: host.lan.routes) wired);
-  edges = lib.mapAttrsToList (_: host: host.publicAddress) (
-    lib.filterAttrs (_: host: host.publicAddress != null) config.fleet.hosts
-  );
-  edge =
-    assert lib.assertMsg (
-      lib.length edges == 1
-    ) "one fleet.hosts.*.publicAddress must name the edge, found: ${toString edges}";
-    lib.head edges;
+  edge = config.fleet.hosts.racknerd.publicAddress;
   gateways = lib.unique (lib.mapAttrsToList (_: host: host.gateway) lan);
   gateway =
     assert lib.assertMsg (

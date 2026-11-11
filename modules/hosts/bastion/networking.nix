@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 {
   fleet.hosts.bastion.module =
     let
@@ -12,7 +12,7 @@
     {
       services.tailscale = {
         useRoutingFeatures = "server";
-        extraSetFlags = [ "--advertise-routes=${routes.homelab},${routes.iot},${routes.kids}" ];
+        extraSetFlags = [ "--advertise-routes=${lib.concatStringsSep "," (lib.attrValues routes)}" ];
       };
       networking.nftables = {
         enable = true;
