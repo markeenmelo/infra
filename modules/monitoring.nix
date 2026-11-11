@@ -3,6 +3,8 @@ let
   inherit (config.fleet) domain hosts;
   bastion = hosts.bastion.tailnetAddress;
   senders = lib.filterAttrs (_: host: host.telemetry != null) hosts;
+  metricSenders = lib.filterAttrs (_: host: host.telemetry.metrics != null) senders;
+  senderPorts = telemetry: lib.remove null (lib.attrValues telemetry);
   journal = forward: labels: ''
     loki.relabel "journal" {
       forward_to = []
@@ -27,7 +29,7 @@ let
       forward_to    = [${forward}]
     }
   '';
-  inherit (config.flake.modules.nixos) ntfy;
+  inherit (config.flake.modules.nixos) ntfy logs;
   hostname = "grafana.${domain}";
   admins = "grafana-admins";
   ports = {
@@ -75,6 +77,22 @@ in
       };
     };
 
+  flake.modules.nixos.logs =
+    { config, ... }:
+    {
+      services.alloy.enable = true;
+      environment.etc."alloy/config.alloy".text = journal "loki.write.bastion.receiver" "{}" + ''
+        loki.write "bastion" {
+          endpoint {
+            url                 = "http://${bastion}:${
+              toString hosts.${config.networking.hostName}.telemetry.logs
+            }/loki/api/v1/push"
+            max_backoff_retries = 0
+          }
+        }
+      '';
+    };
+
   flake.modules.nixos.telemetry =
     { config, lib, ... }:
     let
@@ -92,14 +110,8 @@ in
       );
     in
     {
-      services.alloy.enable = true;
-      environment.etc."alloy/config.alloy".text = journal "loki.write.bastion.receiver" "{}" + ''
-        loki.write "bastion" {
-          endpoint {
-            url = "http://${bastion}:${toString telemetry.logs}/loki/api/v1/push"
-          }
-        }
-
+      imports = [ logs ];
+      environment.etc."alloy/config.alloy".text = ''
         prometheus.exporter.unix "node" {
           enable_collectors = ["systemd"]
 
@@ -573,7 +585,7 @@ in
                       for = "2m";
                       severity = "critical";
                       summary = "${sender} has sent no metrics to bastion for 10 minutes";
-                    }) senders
+                    }) metricSenders
                     ++ [
                       {
                         title = "Heartbeat";
@@ -752,7 +764,7 @@ in
                   ports.loki
                   ports.lokiGrpc
                 ]
-                ++ lib.concatMap lib.attrValues (lib.mapAttrsToList (_: sender: sender.telemetry) senders)
+                ++ lib.concatMap (sender: senderPorts sender.telemetry) (lib.attrValues senders)
               )
             } } meta skuid != { 0, ${
               lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) ([
@@ -819,33 +831,37 @@ in
           }
         ''
         + lib.concatStrings (
-          lib.mapAttrsToList (sender: telemetry: ''
-            prometheus.receive_http "${sender}" {
-              http {
-                listen_address = "0.0.0.0"
-                listen_port    = ${toString telemetry.metrics}
+          lib.mapAttrsToList (
+            sender: telemetry:
+            lib.optionalString (telemetry.metrics != null) ''
+              prometheus.receive_http "${sender}" {
+                http {
+                  listen_address = "0.0.0.0"
+                  listen_port    = ${toString telemetry.metrics}
+                }
+                forward_to = [prometheus.relabel.${sender}.receiver]
               }
-              forward_to = [prometheus.relabel.${sender}.receiver]
-            }
 
-            prometheus.relabel "${sender}" {
-              forward_to = [prometheus.remote_write.local.receiver]
-              rule {
-                target_label = "host"
-                replacement  = "${sender}"
+              prometheus.relabel "${sender}" {
+                forward_to = [prometheus.remote_write.local.receiver]
+                rule {
+                  target_label = "host"
+                  replacement  = "${sender}"
+                }
               }
-            }
-
-            loki.source.api "${sender}" {
-              http {
-                listen_address = "0.0.0.0"
-                listen_port    = ${toString telemetry.logs}
+            ''
+            + ''
+              loki.source.api "${sender}" {
+                http {
+                  listen_address = "0.0.0.0"
+                  listen_port    = ${toString telemetry.logs}
+                }
+                labels                 = { host = "${sender}" }
+                use_incoming_timestamp = true
+                forward_to             = [loki.write.local.receiver]
               }
-              labels                 = { host = "${sender}" }
-              use_incoming_timestamp = true
-              forward_to             = [loki.write.local.receiver]
-            }
-          '') (lib.mapAttrs (_: host: host.telemetry) senders)
+            ''
+          ) (lib.mapAttrs (_: host: host.telemetry) senders)
         )
         + lib.optionalString (lan != null) ''
           loki.source.syslog "gateway" {
@@ -861,7 +877,9 @@ in
       networking.firewall.extraInputRules =
         lib.concatStrings (
           lib.mapAttrsToList (_: host: ''
-            iifname "${config.services.tailscale.interfaceName}" ip saddr ${host.tailnetAddress} tcp dport { ${toString host.telemetry.metrics}, ${toString host.telemetry.logs} } accept
+            iifname "${config.services.tailscale.interfaceName}" ip saddr ${host.tailnetAddress} tcp dport { ${
+              lib.concatMapStringsSep ", " toString (senderPorts host.telemetry)
+            } } accept
           '') senders
         )
         + lib.optionalString (lan != null) ''

@@ -62,8 +62,8 @@ in
               lib.types.submodule {
                 options = {
                   metrics = lib.mkOption {
-                    type = lib.types.port;
-                    description = "Port on bastion's tailnet address that takes this host's remote-written metrics.";
+                    type = lib.types.nullOr lib.types.port;
+                    description = "Port on bastion's tailnet address that takes this host's remote-written metrics; null for a host that ships only logs, which gets no `Host silent` alert.";
                   };
                   logs = lib.mkOption {
                     type = lib.types.port;
@@ -73,7 +73,7 @@ in
               }
             );
             default = null;
-            description = "Ports a host that imports `telemetry` pushes to; bastion's Alloy listens on each pair, stamps the host label and admits only that host's tailnet address.";
+            description = "Ports a host that imports `telemetry` or `logs` pushes to; bastion's Alloy listens on each, stamps the host label and admits only that host's tailnet address.";
           };
           module = lib.mkOption {
             type = lib.types.deferredModuleWith { staticModules = [ { _class = "nixos"; } ]; };
