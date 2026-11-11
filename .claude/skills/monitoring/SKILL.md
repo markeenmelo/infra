@@ -64,7 +64,8 @@ macOS has no journal and nix-darwin no Alloy module.
 Bastion's own Alloy probes `https://auth.DOMAIN` through the gateway's wildcard record, so the
 LAN proxy's certificate and reachability get the same `Public endpoint down` and `Certificate
 expiring` alerts as the edge's. It also probes `auth.DOMAIN` at each `fleet.hosts.HOST.publicAddress`
-from outside, since racknerd's own probes skip DNS, its firewall, the country check and CrowdSec. The `alloy-HOST`
+from outside, since racknerd's own probes skip its firewall, the country check and CrowdSec; neither probe
+resolves the public record, and a home WAN outage fires this one too. The `alloy-HOST`
 check runs `alloy fmt` on every host's Alloy configuration, which catches syntax errors (a missing
 trailing comma in a multi-line list) but not unknown arguments or wrong component wiring.
 

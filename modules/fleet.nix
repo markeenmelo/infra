@@ -58,7 +58,7 @@ in
                     description = "UDP port on `address` that takes the gateway's syslog.";
                   };
                   routes = lib.mkOption {
-                    type = lib.types.attrsOf (lib.types.strMatching "${octet}(\\.${octet}){3}/[0-9]{1,2}");
+                    type = lib.types.attrsOf (lib.types.strMatching "${octet}(\\.${octet}){3}/(3[0-2]|[12]?[0-9])");
                     description = "LAN subnets, by name, the host advertises to the tailnet as their router; the `tofu` app hands them to `opentofu/tailscale` as `fleet_routes`.";
                   };
                 };
