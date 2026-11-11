@@ -39,6 +39,8 @@
         peripheralFirmwareDirectory = null;
         avd.vaapi-support = true;
       };
+      # shortcut: nixpkgs adds its __u128 tools fix only to its own kernels, drop once linux-asahi reaches 7.3 or nixos-apple-silicon applies it
+      boot.kernelPatches = [ pkgs.linuxKernel.kernelPatches.tools_128bit_types ];
       boot.kernelParams = [
         "appledrm.show_notch=1"
         "appledrm.hdmi_audio=1"
