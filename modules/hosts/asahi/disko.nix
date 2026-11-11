@@ -2,9 +2,9 @@
   fleet.hosts.asahi.module = {
     fleet = {
       encryptState = true;
-      esp = "/dev/disk/by-partuuid/cec80b1e-4de3-438f-a9b4-8ee9d80ac570";
+      esp = "/dev/disk/by-partuuid/786d1f59-e9f5-4ecc-9a28-e3966ff1cca3";
     };
-    disko.devices.disk.os.device = "/dev/disk/by-partuuid/60874c09-34b8-4a8f-907e-ec5e40e3ac04";
+    disko.devices.disk.os.device = "/dev/disk/by-partuuid/ce45e724-dd4c-4823-9a36-89cfdf424f5c";
     boot.loader.limine.maxGenerations = 5;
   };
 }

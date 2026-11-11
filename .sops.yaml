@@ -4,7 +4,7 @@ keys:
   - &bastion age16fyy8678zedgm6nqgqnvmwzlc9cjzsc2nu9u45jaxvuh0sw5wfjst73np2
   - &mac age1jvw4ewqjsv9r5j9lwx8z6r5xc2zxqvg0d2u4lx383geg3gwv2dzquj7fzv
   - &thinkpad age133p0p8m0aecjw92dg8unslruhfhsupq68juht0m5j8p6xwcyp9gse344fz
-  - &asahi age1euv9v32msl3t0fm5e820mk9zhyxwcs8q9qysrmslhpmfytkwhehqv64xre
+  - &asahi age1et80u88r8f33syj202xmn6xaxf4s7t52uez6yj30ev5a7l6h843s9nkdrq
 
 creation_rules:
   - path_regex: ^secrets/hosts/racknerd\.yaml$
