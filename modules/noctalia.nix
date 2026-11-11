@@ -142,6 +142,7 @@
               }
             ];
           };
+          lockscreen.transition = [ ];
           nightlight.enabled = true;
           idle.behavior = {
             lock = {

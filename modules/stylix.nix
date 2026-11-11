@@ -60,6 +60,7 @@ in
           desktop = 0.9;
           popups = 0.9;
         };
+        targets.plymouth.logoAnimated = false;
         cursor = {
           package = pkgs.bibata-cursors;
           name = "Bibata-Modern-Classic";

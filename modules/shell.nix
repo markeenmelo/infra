@@ -13,6 +13,7 @@
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
       defaultKeymap = "emacs";
+      shellAliases.cat = "bat -pp";
       initContent = ''
         note() {
           mkdir -p ~/notes
@@ -33,8 +34,12 @@
       nix-direnv.enable = true;
     };
     fzf.enable = true;
+    vivid.enable = true;
     zoxide.enable = true;
-    eza.enable = true;
+    eza = {
+      enable = true;
+      icons = "auto";
+    };
     bat = {
       enable = true;
       config.theme = "OneHalfDark";

@@ -25,6 +25,13 @@ in
         bluetooth.enable = true;
       };
       zramSwap.enable = true;
+      boot.plymouth.enable = true;
+      boot.consoleLogLevel = 3;
+      boot.kernelParams = [
+        "quiet"
+        "udev.log_level=3"
+        "systemd.show_status=auto"
+      ];
       boot.kernel.sysctl = {
         "vm.swappiness" = 180;
         "vm.page-cluster" = 0;
