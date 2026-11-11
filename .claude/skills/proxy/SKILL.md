@@ -25,7 +25,7 @@ Authelia on bastion can set them, and gets the security headers the old edge sen
 admin paths (Jellyfin's, including password changes, Immich's admin areas, and OpenCloud's user,
 group and role management) are
 denied at the edge as defence in depth, each app's own authorization being the primary control:
-administering those apps happens over the LAN or the tailnet, never through the public hostname. A native login still works there, so rate limiting and bans come from CrowdSec.
+administering those apps happens over the LAN or the tailnet, never through the public hostname. Each app's `denied` list says which logins the public hostname still takes; rate limiting and bans there come from CrowdSec.
 
 Requests from outside `countries` get a 403 before any app sees them; the lookup uses the DB-IP
 country database packaged in nixpkgs, so it updates with the flake lock and needs no account.

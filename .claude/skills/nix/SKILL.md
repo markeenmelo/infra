@@ -51,7 +51,9 @@ Answer each before the module is done; a reviewer will ask otherwise.
   restarts the reader, and where it could leak (logs, query strings, argv, store).
 - Reloads: how the upstream NixOS module applies a config change (reload or restart) and that
   nothing in the config disables it.
-- Exposure: ports opened, on which interface, and what admits or denies traffic.
+- Exposure: ports opened, on which interface, and what admits or denies traffic. A local port
+  that answers without authentication gets a `fleet.loopbackGuards` entry
+  ([loopback-guards.nix](../../../modules/loopback-guards.nix)).
 
 ## Nix rules
 

@@ -45,6 +45,26 @@ variable "fleet_telemetry" {
   type        = map(object({ metrics = number, logs = number }))
 }
 
+variable "fleet_routes" {
+  description = "LAN subnets bastion routes for the tailnet, by name, from fleet.hosts.*.lan.routes; the tofu app sets it."
+  type        = map(string)
+}
+
+variable "fleet_lan" {
+  description = "LAN facts per wired fleet host, from fleet.hosts.*.lan; the tofu app sets it."
+  type        = map(object({ gateway = string }))
+}
+
+variable "fleet_cache_port" {
+  description = "Bastion port of the Harmonia cache, from fleet.cachePort; the tofu app sets it."
+  type        = number
+}
+
+variable "fleet_home_backup_port" {
+  description = "Bastion port of the ThinkPad's restic server, from fleet.homeBackupPort; the tofu app sets it."
+  type        = number
+}
+
 variable "fleet_domain" {
   description = "The fleet's domain, from fleet.domain; the tofu app sets it."
   type        = string
@@ -59,7 +79,6 @@ locals {
     grafite = "100.91.224.11"
   }, var.fleet_hosts)
   admin_clients = ["thinkpad", "asahi", "mac", "grafite"]
-  lans          = ["192.168.2.0/24", "192.168.4.0/24", "192.168.20.0/24"]
   enrollment = {
     thinkpad  = ["tag:admin-client"]
     asahi     = ["tag:admin-client"]
@@ -88,25 +107,25 @@ locals {
     hosts  = local.hosts
     autoApprovers = {
       exitNode = ["tag:proton-exit"]
-      routes   = { for lan in local.lans : lan => ["tag:bastion"] }
+      routes   = { for lan in values(var.fleet_routes) : lan => ["tag:bastion"] }
     }
     grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
-      { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:5005"]) },
-      { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:8010"] },
-      { src = concat(local.admin_clients, ["tag:ci"]), dst = ["bastion"], ip = ["tcp:5005"] },
+      { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:${var.fleet_cache_port}"]) },
+      { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:${var.fleet_home_backup_port}"] },
+      { src = concat(local.admin_clients, ["tag:ci"]), dst = ["bastion"], ip = ["tcp:${var.fleet_cache_port}"] },
       { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443"] },
-      { src = local.admin_clients, dst = ["192.168.2.1"], ip = ["tcp:443"] },
-      { src = local.admin_clients, dst = ["192.168.4.0/24", "192.168.20.0/24"], ip = ["*"] },
+      { src = local.admin_clients, dst = [var.fleet_lan.bastion.gateway], ip = ["tcp:443"] },
+      { src = local.admin_clients, dst = [var.fleet_routes.iot, var.fleet_routes.kids], ip = ["*"] },
       { src = ["tag:admin-client", "tag:server", "group:members"], dst = ["bastion"], ip = ["tcp:53", "udp:53"] },
       { src = ["tag:admin-client", "group:members"], dst = ["autogroup:internet"], ip = ["*"] },
     ])
     tests = concat([for host, ports in local.telemetry : { src = host, proto = "tcp", accept = [for port in ports : "bastion:${port}"], deny = [for port in setsubtract(flatten(values(local.telemetry)), ports) : "bastion:${port}"] }], [
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22"] },
-      { src = "thinkpad", proto = "tcp", accept = ["bastion:5005"] },
+      { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22"] },
-      { src = "tag:ci", proto = "tcp", accept = ["bastion:5005"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22"] },
+      { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22"] },
       { src = "racknerd", proto = "tcp", accept = ["bastion:9091"], deny = ["bastion:443"] },
     ])
   }

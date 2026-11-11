@@ -35,9 +35,14 @@ variable "fleet_domain" {
   type        = string
 }
 
+variable "fleet_edge_address" {
+  description = "The edge's public IPv4 address, from fleet.hosts.*.publicAddress; the tofu app sets it."
+  type        = string
+}
+
 locals {
   domain = var.fleet_domain
-  edge   = "72.11.150.242"
+  edge   = var.fleet_edge_address
   records = {
     edge          = { subdomain = "*", type = "A", content = local.edge }
     caa-issue     = { subdomain = null, type = "CAA", content = "0 issue \"letsencrypt.org\"" }

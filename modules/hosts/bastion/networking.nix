@@ -2,17 +2,17 @@
 {
   fleet.hosts.bastion.module =
     let
-      inherit (config.fleet.hosts.bastion.lan) address gateway mac;
-      lans = {
-        homelab = "192.168.2.0/24";
-        iot = "192.168.4.0/24";
-        kids = "192.168.20.0/24";
-      };
+      inherit (config.fleet.hosts.bastion.lan)
+        address
+        gateway
+        mac
+        routes
+        ;
     in
     {
       services.tailscale = {
         useRoutingFeatures = "server";
-        extraSetFlags = [ "--advertise-routes=${lans.homelab},${lans.iot},${lans.kids}" ];
+        extraSetFlags = [ "--advertise-routes=${routes.homelab},${routes.iot},${routes.kids}" ];
       };
       networking.nftables = {
         enable = true;
@@ -21,11 +21,11 @@
           content = ''
             chain output {
               type filter hook output priority -150; policy accept;
-              ip daddr { ${lans.iot}, ${lans.kids} } ct state new reject
+              ip daddr { ${routes.iot}, ${routes.kids} } ct state new reject
             }
             chain forward {
               type filter hook forward priority -200; policy accept;
-              ip daddr { ${lans.iot}, ${lans.kids} } ct state new iifname != "tailscale0" drop
+              ip daddr { ${routes.iot}, ${routes.kids} } ct state new iifname != "tailscale0" drop
             }
           '';
         };

@@ -1,6 +1,7 @@
 { config, ... }:
 {
   fleet.hosts.racknerd.tailnetAddress = "100.96.133.3";
+  fleet.hosts.racknerd.publicAddress = "72.11.150.242";
   fleet.hosts.racknerd.telemetry = {
     metrics = 9095;
     logs = 3102;

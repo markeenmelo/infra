@@ -7,10 +7,6 @@ in
   flake.modules.nixos.ntfy =
     { config, ... }:
     let
-      topics = [
-        "alerts"
-        "media"
-      ];
       secret = name: { key = "ntfy/${name}"; };
     in
     {
@@ -35,7 +31,10 @@ in
           listen-http = "127.0.0.1:${toString port}";
           behind-proxy = true;
           auth-default-access = "deny-all";
-          auth-access = map (topic: "*:${topic}:ro") topics ++ [ "publisher:*:wo" ];
+          auth-access = [
+            "*:alerts:ro"
+            "publisher:*:wo"
+          ];
         };
         environmentFile = config.sops.templates."ntfy.env".path;
       };
@@ -43,16 +42,13 @@ in
         inherit port;
         tailnetOnly = true;
       };
-      networking.nftables.tables.ntfy = {
-        family = "inet";
-        content = ''
-          chain output {
-            type filter hook output priority -150; policy accept;
-            oifname "lo" tcp dport ${toString port} meta skuid != { 0, ${
-              toString config.users.users.${config.services.caddy.user}.uid
-            }, ${toString config.users.users.grafana.uid} } reject
-          }
-        '';
+      fleet.loopbackGuards.ntfy = {
+        ports = [ port ];
+        users = [
+          "root"
+          config.services.caddy.user
+          "grafana"
+        ];
       };
     };
 

@@ -38,7 +38,9 @@ its LAN proxy, so the tailnet defines no Tailscale services; that is why `group:
 bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, which the `tofu`
 app passes as `TF_VAR_fleet_hosts`; the bastion ports racknerd reaches for the public apps in
 `fleet.web.apps` come the same way as `TF_VAR_fleet_edge_ports`, and each host's
-`fleet.hosts.HOST.telemetry` ports as `TF_VAR_fleet_telemetry`, so a new public app, a new log
+`fleet.hosts.HOST.telemetry` ports as `TF_VAR_fleet_telemetry`, and the cache port, the home
+backup port, the routed LAN subnets and the gateway as `fleet_cache_port`,
+`fleet_home_backup_port`, `fleet_routes` and `fleet_lan`, so a new public app, a new log
 sender or a moved port needs only a plan and an apply. Every project reads the domain
 from `fleet.domain` as `TF_VAR_fleet_domain`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
@@ -63,7 +65,7 @@ read-only for all of these; `acls_externally_managed_on` says so.
 ## Porkbun
 
 [main.tf](../../../opentofu/porkbun/main.tf) owns every record of the domain: one wildcard `A`
-to the edge, since the edge aborts any hostname it does not publish and the wildcard
+to the edge (`fleet.hosts.*.publicAddress`, passed as `fleet_edge_address`), since the edge aborts any hostname it does not publish and the wildcard
 certificate names none ([proxy skill](../proxy/SKILL.md)), so publishing an app needs no DNS
 change; the `CAA` set that confines issuance to Let's Encrypt, wildcard included, and forbids
 S/MIME; and the null-mail set (null `MX` on the apex and on the wildcard, `-all` SPF, reject

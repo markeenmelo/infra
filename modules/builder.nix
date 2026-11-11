@@ -2,7 +2,7 @@
 let
   inherit (config.fleet) hosts;
   bastion = hosts.bastion.tailnetAddress;
-  port = 5005;
+  port = config.fleet.cachePort;
   # public half of harmonia-sign-key in secrets/hosts/bastion.yaml
   cacheKey = "bastion-cache-1:KdPVnZyY7c8KxpwJ4V5xNwuQmfdiu8CN3XJ9g3+ecZQ=";
   # bastion's SSH host key
@@ -67,7 +67,13 @@ let
     };
 in
 {
-  flake.modules.nixos.builder =
+  options.fleet.cachePort = lib.mkOption {
+    type = lib.types.port;
+    description = "Port on bastion's tailnet address where Harmonia serves the binary cache; the `tofu` app hands it to `opentofu/tailscale` as `fleet_cache_port`.";
+  };
+  config.fleet.cachePort = 5005;
+
+  config.flake.modules.nixos.builder =
     { config, ... }:
     {
       sops.secrets.harmonia-sign-key.restartUnits = [ "harmonia.service" ];
@@ -98,11 +104,11 @@ in
       };
     };
 
-  flake.modules.nixos.cache = cacheClient;
+  config.flake.modules.nixos.cache = cacheClient;
 
-  flake.modules.darwin.remote-builds = remoteBuilds;
+  config.flake.modules.darwin.remote-builds = remoteBuilds;
 
-  flake.modules.nixos.remote-builds =
+  config.flake.modules.nixos.remote-builds =
     { lib, pkgs, ... }:
     {
       imports = [ remoteBuilds ];

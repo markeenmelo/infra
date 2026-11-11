@@ -8,7 +8,8 @@ let
   isDarwin = host: lib.hasSuffix "-darwin" host.system;
   nixosHosts = lib.filterAttrs (_: host: !isDarwin host) config.fleet.hosts;
   darwinHosts = lib.filterAttrs (_: host: isDarwin host) config.fleet.hosts;
-  ipv4 = lib.types.strMatching "(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])(\\.(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}";
+  octet = "(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])";
+  ipv4 = lib.types.strMatching "${octet}(\\.${octet}){3}";
 in
 {
   options.fleet.hosts = lib.mkOption {
@@ -28,8 +29,13 @@ in
           };
           tailnetAddress = lib.mkOption {
             # Tailscale's CGNAT range, 100.64.0.0/10
-            type = lib.types.strMatching "100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.[0-9]{1,3}\\.[0-9]{1,3}";
+            type = lib.types.strMatching "100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.${octet}\\.${octet}";
             description = "The host's Tailscale IPv4 address, kept across reinstalls by its carried tailnet identity; the `tofu` app hands it to `opentofu/tailscale` as `fleet_hosts`.";
+          };
+          publicAddress = lib.mkOption {
+            type = lib.types.nullOr ipv4;
+            default = null;
+            description = "The host's public IPv4 address, for a host the internet reaches; the `tofu` app hands the edge's to `opentofu/porkbun` as `fleet_edge_address`, and bastion probes each from outside.";
           };
           lan = lib.mkOption {
             type = lib.types.nullOr (
@@ -50,6 +56,10 @@ in
                   syslogPort = lib.mkOption {
                     type = lib.types.port;
                     description = "UDP port on `address` that takes the gateway's syslog.";
+                  };
+                  routes = lib.mkOption {
+                    type = lib.types.attrsOf (lib.types.strMatching "${octet}(\\.${octet}){3}/[0-9]{1,2}");
+                    description = "LAN subnets, by name, the host advertises to the tailnet as their router; the `tofu` app hands them to `opentofu/tailscale` as `fleet_routes`.";
                   };
                 };
               }

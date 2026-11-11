@@ -30,7 +30,7 @@ just tofu unifi plan  # plan an OpenTofu project
 
 CI builds every x86_64 host on each pull request and on `main`; review bots read every diff.
 `gh workflow run audit.yml` audits the whole tree on demand and writes the report to the run's
-summary. Open work is in [TODO.md](TODO.md).
+summary.
 
 ## Security
 

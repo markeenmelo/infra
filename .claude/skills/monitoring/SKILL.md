@@ -63,7 +63,8 @@ for 45 minutes, which catches a push that retries forever on a batch Loki keeps 
 macOS has no journal and nix-darwin no Alloy module.
 Bastion's own Alloy probes `https://auth.DOMAIN` through the gateway's wildcard record, so the
 LAN proxy's certificate and reachability get the same `Public endpoint down` and `Certificate
-expiring` alerts as the edge's. The `alloy-HOST`
+expiring` alerts as the edge's. It also probes `auth.DOMAIN` at each `fleet.hosts.HOST.publicAddress`
+from outside, since racknerd's own probes skip DNS, its firewall, the country check and CrowdSec. The `alloy-HOST`
 check runs `alloy fmt` on every host's Alloy configuration, which catches syntax errors (a missing
 trailing comma in a multi-line list) but not unknown arguments or wrong component wiring.
 
@@ -87,7 +88,7 @@ deletes the files of removed jobs.
 Provisioning never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
 
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the tailnet only,
-since the `alerts` topic needs no login and describes the fleet. Everything is denied by default; `alerts` and `media` are readable by anyone who reaches
+since the `alerts` topic needs no login and describes the fleet. Everything is denied by default; `alerts` is readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
 a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. Each workstation subscribes
 itself: `ntfy-alerts`, a Home Manager user service (a launchd agent on the mac), shows each alert
