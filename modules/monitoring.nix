@@ -824,15 +824,13 @@ in
           }
         ''
         + blackbox {
-          modules = ", public: ${
-            httpsProbe ", headers: { Host: auth.${domain} }, tls_config: { server_name: auth.${domain} }"
-          }";
+          modules = ", public: ${httpsProbe ", headers: { Host: auth.${domain} }, tls_config: { server_name: auth.${domain} }"}";
           targets =
             target "lan-proxy" "https://auth.${domain}" "https"
             + lib.concatStrings (
-              lib.mapAttrsToList (name: public: target "public-${name}" "https://${public.publicAddress}" "public") (
-                lib.filterAttrs (_: other: other.publicAddress != null) hosts
-              )
+              lib.mapAttrsToList (
+                name: public: target "public-${name}" "https://${public.publicAddress}" "public"
+              ) (lib.filterAttrs (_: other: other.publicAddress != null) hosts)
             );
           rules = ''
             rule {

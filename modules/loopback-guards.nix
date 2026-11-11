@@ -42,9 +42,11 @@
                 lib.mapAttrsToList (
                   _: guard:
                   ''oifname "lo" ${guard.protocol} dport { ${lib.concatMapStringsSep ", " toString guard.ports} } ''
-                  + lib.optionalString (guard.users != [ ]) "meta skuid != { ${
-                    lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) guard.users
-                  } } "
+                  +
+                    lib.optionalString (guard.users != [ ])
+                      "meta skuid != { ${
+                        lib.concatMapStringsSep ", " (user: toString config.users.users.${user}.uid) guard.users
+                      } } "
                   + "reject\n"
                 ) guards
               )}
