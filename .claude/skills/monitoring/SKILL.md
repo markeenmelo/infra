@@ -55,8 +55,11 @@ in its `telemetry` fact: no metrics and no `Host silent` alert, since a laptop t
 or off the tailnet is normal. Every sender retries its log pushes forever, so while bastion is out
 of reach Alloy's queue fills and then stops reading the journal, which holds the backlog until the
 tailnet returns; Loki refuses pushed lines over a week old (its default ingestion window, apart
-from how long it keeps what it stored), and positions are lost on reboot as above, so
-a laptop rebooted after more than 12 h away loses the lines it never sent. The mac ships nothing:
+from how long it keeps what it stored). A sender's Alloy state is under `/persist`, so it resumes
+from its journal position after a reboot instead of shipping the last 12 h again, but still skips
+lines older than 12 h, so a laptop rebooted after more than 12 h away loses the lines it never
+sent. Each metrics sender also gets a `Logs silent HOST` alert once Loki has taken nothing from it
+for 45 minutes, which catches a push that retries forever on a batch Loki keeps refusing. The mac ships nothing:
 macOS has no journal and nix-darwin no Alloy module.
 Bastion's own Alloy probes `https://auth.DOMAIN` through the gateway's wildcard record, so the
 LAN proxy's certificate and reachability get the same `Public endpoint down` and `Certificate
@@ -91,8 +94,7 @@ itself: `ntfy-alerts`, a Home Manager user service (a launchd agent on the mac),
 as a notification, critical from priority 4 on Linux, and only while the tailnet is up, so alerts
 sent while the laptop was off or away reach only the phone.
 
-```sh
-ssh bastion "systemctl status prometheus loki alloy grafana"
-ssh -t bastion "sudo curl -s 127.0.0.1:9090/api/v1/targets" | jq '.data.activeTargets[] | {job: .labels.job, health}'
-ssh -t bastion "sudo curl -s 127.0.0.1:3100/ready"
-```
+Bastion admits no login ([deploy skill](../deploy/SKILL.md)), so debug the stack through Grafana's
+Explore or the Grafana MCP tools: `up` in Prometheus lists every scrape target and its health,
+`node_systemd_unit_state{instance="bastion",name=~"(prometheus|loki|alloy|grafana).service",state="active"}`
+the stack's units, and `{host="bastion",unit="alloy.service"}` in Loki answers only while Loki is ready.

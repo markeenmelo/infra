@@ -5,8 +5,8 @@ description: "The public edge on racknerd: Caddy with a wildcard certificate by 
 
 # Edge proxy
 
-[edge.nix](../../../modules/edge.nix) is racknerd's whole public surface: Caddy on TCP 443 alone,
-with no port-80 redirect and no HTTP/3, so the firewall opens nothing else; one wildcard certificate for the domain obtained through Porkbun DNS-01 with the keys in
+[edge.nix](../../../modules/edge.nix) is racknerd's whole public surface: Caddy on TCP 443, with 80
+only redirecting there and no HTTP/3, so the firewall opens no UDP; one wildcard certificate for the domain obtained through Porkbun DNS-01 with the keys in
 `secrets/porkbun/api.yaml` ([secrets skill](../secrets/SKILL.md)), and one `handle` per published
 hostname forwarding to a bastion port over the tailnet. Anything else on the wildcard is aborted
 without a response, so scanners learn nothing. The published apps authenticate natively, since

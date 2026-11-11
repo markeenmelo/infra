@@ -15,11 +15,7 @@ let
       lib.filterAttrs (_: app: app.public) config.flake.nixosConfigurations.bastion.config.fleet.web.apps
     )
   );
-  telemetry = builtins.toJSON (
-    lib.mapAttrs (_: host: lib.remove null (lib.attrValues host.telemetry)) (
-      lib.filterAttrs (_: host: host.telemetry != null) config.fleet.hosts
-    )
-  );
+  telemetry = builtins.toJSON (lib.mapAttrs (_: host: host.telemetry) config.fleet.hosts);
   settings = ../opentofu/unifi/settings.json;
   program = ../opentofu/unifi/settings.jq;
 in

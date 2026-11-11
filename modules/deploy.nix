@@ -37,7 +37,6 @@ in
           isSystemUser = true;
           group = "deploy";
           useDefaultShell = true;
-          # private half held by the operator's Bitwarden SSH agent
           openssh.authorizedKeys.keys = [
             "restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGT8qIye6ycv8MsJFQuX05FGRhyhouGszp2SW7Qmbz0D"
           ];

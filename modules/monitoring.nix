@@ -91,6 +91,13 @@ in
           }
         }
       '';
+      preservation.preserveAt."/persist".directories = [
+        {
+          directory = "/var/lib/private/alloy";
+          configureParent = true;
+          parent.mode = "0700";
+        }
+      ];
     };
 
   flake.modules.nixos.telemetry =
@@ -585,6 +592,12 @@ in
                       for = "2m";
                       severity = "critical";
                       summary = "${sender} has sent no metrics to bastion for 10 minutes";
+                    }) metricSenders
+                    ++ lib.mapAttrsToList (sender: _: {
+                      title = "Logs silent ${sender}";
+                      datasource = "loki";
+                      expr = "absent_over_time({host=\"${sender}\"}[30m])";
+                      summary = "${sender} has delivered no logs to bastion for 45 minutes";
                     }) metricSenders
                     ++ [
                       {
