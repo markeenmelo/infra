@@ -8,7 +8,8 @@ description: "deploy-rs: how a host's committed configuration is activated over 
 [deploy.nix](../../../modules/deploy.nix) turns every `fleet.hosts` entry into a deploy-rs node
 reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
 Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
-`activate-rs` and remove the rollback canary. Its key is therefore the operator's root key on
+`activate-rs`, remove the rollback canary and reboot, the only way to reboot a server without its
+console. Its key is therefore the operator's root key on
 every host, so it is not the operator's login key: its private half lives only in the operator's
 Bitwarden SSH agent, which asks before each use. The servers have no login account
 ([access.nix](../../../modules/access.nix)), so `deploy` is the only way into them. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
@@ -48,6 +49,8 @@ garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).
 ```sh
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision
 nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
+nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
+nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```
 
 Claude prepares the command and asks first ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
