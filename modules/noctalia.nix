@@ -22,7 +22,12 @@
     };
 
   flake.modules.homeManager.desktop =
-    { lib, osConfig, ... }:
+    {
+      config,
+      lib,
+      osConfig,
+      ...
+    }:
     let
       systemd = osConfig.systemd.package;
     in
@@ -31,10 +36,20 @@
         enable = true;
         systemd.enable = true;
         settings = {
-          shell.clipboard_enabled = false;
+          shell = {
+            clipboard_enabled = false;
+            popup_shadows = false;
+          };
           bar.default = {
             margin_ends = 0;
             margin_edge = 0;
+            thickness = lib.mkDefault 32;
+            font_family = config.stylix.fonts.monospace.name;
+            font_weight = 700;
+            background_opacity = config.stylix.opacity.desktop;
+            radius = 0;
+            capsule_radius = 4;
+            shadow = false;
             start = [
               "session"
               "workspaces"

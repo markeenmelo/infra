@@ -258,7 +258,11 @@ in
             };
             decoration = {
               rounding = 6;
-              blur.enabled = false;
+              blur = {
+                enabled = true;
+                size = 6;
+                passes = 2;
+              };
               shadow.enabled = false;
             };
             input = {
@@ -288,6 +292,15 @@ in
               position = "auto-center-up";
               mode = "3440x1440@59.97";
               scale = 1;
+            }
+          ];
+          layer_rule = [
+            {
+              name = "noctalia-blur";
+              match.namespace = "^noctalia-(bar-.+|notification|panel|attached-panel|osd)$";
+              ignore_alpha = 0.5;
+              blur = true;
+              blur_popups = true;
             }
           ];
           window_rule = [

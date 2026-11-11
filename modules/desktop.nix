@@ -81,11 +81,11 @@ in
         pkgs.telegram-desktop
         pkgs.whatsapp-electron
         pkgs.spotify
-        pkgs.vesktop
         pkgs.bruno
         pkgs.wl-clipboard
       ];
       programs = {
+        vesktop.enable = true;
         ghostty.package = pkgs.ghostty;
         zed-editor.package = pkgs.zed-editor;
       };

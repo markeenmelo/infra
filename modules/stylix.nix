@@ -56,6 +56,10 @@ in
         common
       ];
       stylix = {
+        opacity = {
+          desktop = 0.9;
+          popups = 0.9;
+        };
         cursor = {
           package = pkgs.bibata-cursors;
           name = "Bibata-Modern-Classic";
