@@ -40,6 +40,7 @@ in
         enable = true;
         connectionConfig."ipv4.dhcp-send-hostname" = false;
       };
+      systemd.user.settings.Manager.DefaultTimeoutStopSec = "10s";
       networking.modemmanager.enable = false;
       security.rtkit.enable = true;
       programs.zsh.enable = true;

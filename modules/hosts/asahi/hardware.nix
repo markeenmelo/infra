@@ -39,10 +39,8 @@
         peripheralFirmwareDirectory = null;
         avd.vaapi-support = true;
       };
-      networking.networkmanager = {
-        wifi.backend = "iwd";
-        settings.main.iwd-config-path = "auto";
-      };
+      # shortcut: MN-Home's 6 GHz BSS associates but passes no traffic on this BCM4388 firmware, drop when linux-asahi fixes it
+      networking.networkmanager.ensureProfiles.profiles.MN-Home.wifi.band = "a";
       boot.kernelParams = [
         "appledrm.show_notch=1"
         "appledrm.hdmi_audio=1"
