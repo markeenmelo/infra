@@ -1,33 +1,6 @@
-let
-  exitNode =
-    pkgs: tailscale:
-    pkgs.writeShellApplication {
-      name = "tailnet-exit-node";
-      runtimeInputs = [
-        tailscale
-        pkgs.jq
-      ];
-      text = ''
-        node=$1
-        if [ "$node" = direct ]; then
-          exec tailscale set --exit-node=
-        fi
-        if ! tailscale status --json | jq -e --arg node "$node" '[(.Peer // {})[] | select(.ExitNodeOption and .Online) | .DNSName | split(".")[0]] | index($node)' > /dev/null; then
-          echo "not an online exit node: $node" >&2
-          exit 1
-        fi
-        exec tailscale set --exit-node="$node" --exit-node-allow-lan-access
-      '';
-    };
-in
 {
   flake.modules.nixos.desktop =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+    { lib, ... }:
     {
       options.fleet = {
         internalDisplay = lib.mkOption {
@@ -44,18 +17,6 @@ in
         withUWSM = true;
       };
       config.environment.sessionVariables.NIXOS_OZONE_WL = "1";
-      config.security.sudo.extraRules = [
-        {
-          users = [ "marcos" ];
-          runAs = "root";
-          commands = [
-            {
-              command = "${lib.getExe (exitNode pkgs config.services.tailscale.package)} ^[a-z0-9-]+$";
-              options = [ "NOPASSWD" ];
-            }
-          ];
-        }
-      ];
     };
 
   flake.modules.homeManager.desktop =
@@ -108,7 +69,11 @@ in
           for i in "''${!nodes[@]}"; do
             if [ "''${nodes[$i]}" = "$current" ]; then next=''${nodes[$(((i + 1) % ''${#nodes[@]}))]}; fi
           done
-          ${osConfig.security.wrapperDir}/sudo -n ${lib.getExe (exitNode pkgs osConfig.services.tailscale.package)} "$next"
+          if [ "$next" = direct ]; then
+            tailscale set --exit-node=
+          else
+            tailscale set --exit-node="$next" --exit-node-allow-lan-access
+          fi
           notify-send --app-name=tailscale "Exit node" "$next"
         '';
       };
