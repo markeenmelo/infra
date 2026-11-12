@@ -59,7 +59,6 @@
             widget_spacing = 8;
             start = [
               "taskbar"
-              "active_window"
               "media"
             ];
             center = [ ];
@@ -81,7 +80,6 @@
                 })
                 {
                   work = [
-                    "agenda"
                     "pull_requests"
                     "claude"
                   ];
@@ -96,6 +94,7 @@
                     "notifications"
                   ];
                   time = [
+                    "agenda"
                     "weather"
                     "clock"
                   ];
@@ -103,7 +102,6 @@
           };
           widget = {
             clock.format = "{:%a %d %b %H:%M}";
-            active_window.display = "icon_only";
             taskbar = {
               group_by_workspace = true;
               hide_empty_workspaces = true;
