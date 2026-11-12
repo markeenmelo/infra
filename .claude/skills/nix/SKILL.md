@@ -104,11 +104,15 @@ Renovate ([renovate.json](../../../renovate.json)) opens the update PRs for `fla
 SHA-pinned actions and the OpenTofu providers. The review bots skip PRs opened by bots
 ([review.yml](../../../.github/workflows/review.yml)), so the operator reviews these by hand,
 above all action and `flake.lock` moves, which change what runs with secrets and on every host.
-A pin that carries a hash (a plugin
-`hash`, a source `hash`, the CrowdSec hub commit) is bumped by hand with its hash. Never hand-edit
-`flake.lock`: Nix resolves a locked input by `narHash` before `rev`, so a revision bump without
-its hash keeps the old tree where cached and fails elsewhere; `nix flake update INPUT` instead.
-Each pin keeps its own version literal so only that line is rewritten.
+Every other pin goes through the `update-pins` app ([pins.nix](../../../modules/pins.nix)), which
+`just update` runs after `nix flake update`: nix-update bumps each `NAME.pkg.nix` listed there with
+its hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
+(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit). A source the fleet
+fetches is a `NAME.pkg.nix` added to `pins`, not a `flake = false` input, which a rev in its URL
+freezes. Never hand-edit `flake.lock`: Nix
+resolves a locked input by `narHash` before `rev`, so a revision bump without its hash keeps the
+old tree where cached and fails elsewhere; `nix flake update INPUT` instead. Each pin keeps its
+own version literal so only that line is rewritten.
 
 [vulnix.yml](../../../.github/workflows/vulnix.yml) builds each x86_64 host weekly and matches
 its runtime closure against NIST's CVEs, listing the matches in the run summary; the run fails
