@@ -37,7 +37,15 @@
       hardware.asahi = {
         enable = true;
         peripheralFirmwareDirectory = null;
-        avd.vaapi-support = true;
+        avd = {
+          vaapi-support = true;
+          codecs = [ "all" ];
+        };
+      };
+      nixpkgs.config.allowUnfreePackages = [ "widevine-cdm" ];
+      environment.sessionVariables = {
+        MOZ_DISABLE_RDD_SANDBOX = "1";
+        MOZ_GMP_PATH = "${pkgs.widevine-cdm}/gmp-widevinecdm/system-installed";
       };
       # shortcut: MN-Home's 6 GHz BSS associates but passes no traffic on this BCM4388 firmware, drop when linux-asahi fixes it
       networking.networkmanager.ensureProfiles.profiles.MN-Home.wifi.band = "a";
@@ -79,6 +87,24 @@
         tuned-ppd.restartTriggers = [ config.environment.etc."tuned/ppd.conf".source ];
       };
       home-manager.users.marcos = {
+        home.packages = [
+          pkgs.spotify-player
+          pkgs.muvm
+          pkgs.fex
+        ];
+        programs.zen-browser.policies.Preferences =
+          lib.mapAttrs
+            (_: Value: {
+              inherit Value;
+              Status = "locked";
+            })
+            {
+              "media.eme.enabled" = true;
+              "media.gmp-widevinecdm.enabled" = true;
+              "media.gmp-widevinecdm.visible" = true;
+              "media.gmp-widevinecdm.autoupdate" = false;
+              "media.gmp-widevinecdm.version" = "system-installed";
+            };
         systemd.user.services.hypr-ac-reload = {
           Unit = {
             Description = "Reload Hyprland when AC power changes";
