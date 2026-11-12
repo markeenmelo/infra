@@ -14,7 +14,7 @@
           output = "desc:Samsung Electric Company Odyssey G93SC HCSY300098";
           position = "auto-center-up";
           mode = "5120x1440@120";
-          scale = 1;
+          scale = 1.25;
           vrr = 1;
           bitdepth = 10;
           cm = "hdr";

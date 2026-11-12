@@ -88,13 +88,6 @@
       };
       home-manager.users.marcos = {
         home.packages = [
-          # shortcut: carries aome510/spotify-player#1108 for the login redirect, drop when nixpkgs ships a release past 0.25.1 (the build then fails here)
-          (pkgs.spotify-player.overrideAttrs (old: {
-            postPatch = (old.postPatch or "") + ''
-              substituteInPlace spotify_player/src/auth.rs \
-                --replace-fail 'NCSPOT_REDIRECT_URI: &str = "http://127.0.0.1:8989/login"' 'NCSPOT_REDIRECT_URI: &str = "http://127.0.0.1:8989/ncspot_login"'
-            '';
-          }))
           pkgs.muvm
           pkgs.fex
         ];
@@ -175,7 +168,7 @@
                   inherit output;
                   position = "auto-center-up";
                   mode = "5120x1440@120";
-                  scale = 1;
+                  scale = 1.25;
                   bitdepth = 8;
                   cm = "srgb";
                   vrr = 0;
