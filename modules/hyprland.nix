@@ -190,6 +190,52 @@ in
           dsp = noctalia "screenshot-annotate";
         };
       };
+      media = {
+        "XF86AudioRaiseVolume" = {
+          desc = "Volume up";
+          dsp = noctalia "volume-up";
+          repeating = true;
+        };
+        "XF86AudioLowerVolume" = {
+          desc = "Volume down";
+          dsp = noctalia "volume-down";
+          repeating = true;
+        };
+        "XF86AudioMute" = {
+          desc = "Mute";
+          dsp = noctalia "volume-mute";
+        };
+        "XF86AudioMicMute" = {
+          desc = "Mute microphone";
+          dsp = noctalia "mic-mute";
+        };
+        "XF86MonBrightnessUp" = {
+          desc = "Brightness up";
+          dsp = noctalia "brightness-up";
+          repeating = true;
+        };
+        "XF86MonBrightnessDown" = {
+          desc = "Brightness down";
+          dsp = noctalia "brightness-down";
+          repeating = true;
+        };
+        "XF86AudioPlay" = {
+          desc = "Play or pause";
+          dsp = noctalia "media toggle";
+        };
+        "XF86AudioPause" = {
+          desc = "Play or pause";
+          dsp = noctalia "media toggle";
+        };
+        "XF86AudioNext" = {
+          desc = "Next track";
+          dsp = noctalia "media next";
+        };
+        "XF86AudioPrev" = {
+          desc = "Previous track";
+          dsp = noctalia "media previous";
+        };
+      };
       moves = lib.listToAttrs (
         map
           (
@@ -208,10 +254,6 @@ in
       );
     in
     {
-      home.packages = [
-        pkgs.brightnessctl
-        pkgs.playerctl
-      ];
       wayland.windowManager.hyprland = {
         enable = true;
         package = null;
@@ -361,11 +403,14 @@ in
               center = true;
             }
           ];
-          unbind = map (key: { _args = [ key ]; }) [
-            "SUPER + Q"
-            "SUPER + R"
-            "SUPER + E"
-          ];
+          unbind = map (key: { _args = [ key ]; }) (
+            [
+              "SUPER + Q"
+              "SUPER + R"
+              "SUPER + E"
+            ]
+            ++ lib.attrNames media
+          );
           bind =
             lib.concatMap
               (lib.mapAttrsToList (
@@ -373,13 +418,18 @@ in
                   _args = [
                     key
                     bind.dsp
-                    { description = bind.desc; }
+                    {
+                      description = bind.desc;
+                      locked = lib.hasPrefix "XF86" key;
+                      repeating = bind.repeating or false;
+                    }
                   ];
                 }
               ))
               [
                 binds
                 moves
+                media
               ];
         };
       };
