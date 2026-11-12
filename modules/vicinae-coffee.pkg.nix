@@ -19,7 +19,7 @@ buildNpmPackage (finalAttrs: {
   '';
   installPhase = ''
     runHook preInstall
-    cp -r "$(find "$HOME" -path '*/node_modules' -prune -o -type d -path '*/extensions/coffee' -print -quit)" "$out"
+    cp -r "$(find "$HOME" -path "$PWD" -prune -o -path '*/node_modules' -prune -o -type d -path '*/extensions/coffee' -print -quit)" "$out"
     runHook postInstall
   '';
 })

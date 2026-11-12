@@ -3,11 +3,13 @@ modules=$(grep -o 'github\.com/[^@"]*' "$caddy")
 while read -r module; do
   latest=$(curl -fsS "https://proxy.golang.org/$module/@latest" | jq -er .Version)
   sed -i "s|\"$module@[^\"]*\"|\"$module@$latest\"|" "$caddy"
+  grep -qF "\"$module@$latest\"" "$caddy"
 done <<< "$modules"
 
 hub=$(git ls-remote https://github.com/crowdsecurity/hub HEAD | cut -f1)
 [[ $hub =~ ^[0-9a-f]{40}$ ]]
 sed -i "s/hub_branch = \"[0-9a-f]*\"/hub_branch = \"$hub\"/" modules/crowdsec.nix
+grep -qF "hub_branch = \"$hub\"" modules/crowdsec.nix
 
 dashboards=modules/grafana-dashboards.json
 names=$(jq -er 'keys[]' "$dashboards")
