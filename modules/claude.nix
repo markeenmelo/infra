@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   ...
 }:
@@ -138,9 +137,9 @@ in
             env = {
               RTK_SUPPRESS_HOOK_WARNING = "1";
               CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" [
-                "${inputs.cache-tax}"
-                "${inputs.ponytail}"
-                "${inputs.caveman}"
+                "${(pkgs.callPackage ./cache-tax.pkg.nix { }).src}"
+                "${(pkgs.callPackage ./ponytail.pkg.nix { }).src}"
+                "${(pkgs.callPackage ./caveman.pkg.nix { }).src}"
               ];
             };
             hooks.PreToolUse = [

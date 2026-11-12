@@ -4,6 +4,7 @@
   writeShellApplication,
 }:
 let
+  version = "0-unstable-2026-05-10";
   src = fetchFromGitHub {
     owner = "Sanket9225";
     repo = "Easynews_as_indexer";
@@ -18,5 +19,6 @@ let
 in
 writeShellApplication {
   name = "easynews-indexer";
+  passthru = { inherit version src; };
   text = ''exec ${python}/bin/gunicorn --chdir ${src} --no-control-socket "$@" server:APP'';
 }

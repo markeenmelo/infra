@@ -285,46 +285,17 @@ in
           annotations.summary = summary;
         };
       # grafana.com dashboards by id: Node Exporter Full, SMARTctl Exporter Dashboard, APC UPS Dashboard (apcupsd), CrowdSec Metrics, Caddy
-      dashboards =
-        lib.mapAttrs
-          (
-            name: pin:
-            pkgs.runCommand "${name}.json" { } ''
-              sed 's/''${DS_PROMETHEUS}/prometheus/g' ${
-                pkgs.fetchurl {
-                  url = "https://grafana.com/api/dashboards/${toString pin.id}/revisions/${toString pin.revision}/download";
-                  inherit (pin) hash;
-                }
-              } > $out
-            ''
-          )
-          {
-            node-exporter-full = {
-              id = 1860;
-              revision = 46;
-              hash = "sha256-5Y3cXcU11MkB+U2pZIvD49Wue2946Y4YW86LKJlhzqM=";
-            };
-            smartctl = {
-              id = 22604;
-              revision = 4;
-              hash = "sha256-ah36BdFIcaprUz39hRzuYVzfp3diEBckmalMaOls5kY=";
-            };
-            apcupsd = {
-              id = 21119;
-              revision = 1;
-              hash = "sha256-ghzogIn98S41t1swJ0E0Fo4Wxmv7Vk4YfJ1wGmcnaQg=";
-            };
-            crowdsec = {
-              id = 21419;
-              revision = 6;
-              hash = "sha256-4fbSv6UwYaEEwV0WH4U63ulu9/diQR72nIrlKPr+77U=";
-            };
-            caddy = {
-              id = 22870;
-              revision = 3;
-              hash = "sha256-T/oImuRQrEGWLlaaMnBVNFNeAoKR1j1IiDoAlGmYnPU=";
-            };
-          };
+      dashboards = lib.mapAttrs (
+        name: pin:
+        pkgs.runCommand "${name}.json" { } ''
+          sed 's/''${DS_PROMETHEUS}/prometheus/g' ${
+            pkgs.fetchurl {
+              url = "https://grafana.com/api/dashboards/${toString pin.id}/revisions/${toString pin.revision}/download";
+              inherit (pin) hash;
+            }
+          } > $out
+        ''
+      ) (lib.importJSON ./grafana-dashboards.json);
     in
     {
       imports = [ ntfy ];

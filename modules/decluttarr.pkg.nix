@@ -23,5 +23,6 @@ let
 in
 writeShellApplication {
   name = "decluttarr";
+  passthru = { inherit version src; };
   text = ''exec ${python}/bin/python ${src}/main.py "$@"'';
 }
