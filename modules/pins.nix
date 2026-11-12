@@ -7,12 +7,11 @@
         decluttarr = [ ];
         easynews-indexer = [ "--version=branch" ];
         jellyfin-sso = [ ];
-        noctalia-plugins = [ "--version=branch" ];
         vicinae-coffee = [ "--version=branch" ];
       };
       # shortcut: nix 2.35 no longer copies the flake on `nix flake metadata`, the store path nix-update evaluates; drop the override once nix-update copies it itself
       nix-update = pkgs.nix-update.override { nix = pkgs.nixVersions.nix_2_34; };
-      plugins = lib.genAttrs [ "cache-tax" "caveman" "ponytail" ] (_: [ "--version=branch" ]);
+      plugins = lib.genAttrs [ "cache-tax" "caveman" "noctalia-plugins" "ponytail" ] (_: [ "--version=branch" ]);
       nixUpdate =
         name: flags:
         lib.escapeShellArgs (
@@ -34,7 +33,7 @@
         ]
       );
       apps.update-pins = {
-        meta.description = "update-pins: bump every NAME.pkg.nix pin except the Claude Code plugins, every Caddy plugin, Grafana dashboard and the CrowdSec hub commit to the latest upstream, with their hashes";
+        meta.description = "update-pins: bump every NAME.pkg.nix pin except the plugins, every Caddy plugin, Grafana dashboard and the CrowdSec hub commit to the latest upstream, with their hashes";
         program = pkgs.writeShellApplication {
           name = "update-pins";
           runtimeInputs = [
@@ -50,7 +49,7 @@
         };
       };
       apps.update-plugin = {
-        meta.description = "update-plugin NAME: bump one Claude Code plugin (${lib.concatStringsSep ", " (lib.attrNames plugins)}) to its default branch";
+        meta.description = "update-plugin NAME: bump one Claude Code or Noctalia plugin pin (${lib.concatStringsSep ", " (lib.attrNames plugins)}) to its default branch";
         program = pkgs.writeShellApplication {
           name = "update-plugin";
           runtimeInputs = [ nix-update ];

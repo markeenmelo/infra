@@ -106,7 +106,7 @@ SHA-pinned actions and the OpenTofu providers. The review bots skip PRs opened b
 above all action and `flake.lock` moves, which change what runs with secrets and on every host.
 Every other pin goes through the `update-pins` app ([pins.nix](../../../modules/pins.nix)), which
 `just update` runs after `nix flake update`: nix-update bumps each `NAME.pkg.nix` in `pins` with
-its hashes (the Claude Code plugins only through `update-plugin`, darwin skill), and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
+its hashes (the Claude Code plugins, darwin skill, and the Noctalia plugins, whose code runs as `marcos` with the Tailscale operator, only through `update-plugin` after reading their diff), and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
 (Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit). A source the fleet
 fetches is a `NAME.pkg.nix` added to `pins`, not a `flake = false` input, which a rev in its URL
 freezes. Never hand-edit `flake.lock`: Nix

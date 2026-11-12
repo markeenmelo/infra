@@ -411,7 +411,7 @@
                 name = "zen-extension-popout";
                 match = {
                   class = "^zen-beta$";
-                  title = "^Extension: \\(";
+                  title = "^Extension: \\(.*";
                 };
                 float = true;
                 center = true;

@@ -47,8 +47,9 @@ Terminals and desktop chrome stay on Stylix.
 - **Bar items:** on the left the workspaces, each a pill of its apps' monochrome icons, and media;
   on the right the tray, then work (pull requests, Claude usage), connectivity (tailnet, network,
   bluetooth), system (volume, battery, notifications) and time (agenda, weather, the clock last, as
-  `%a %d %b %H:%M`). Noctalia holds them ([noctalia.nix](../../../modules/noctalia.nix)); the mac's
-  SketchyBar still has the earlier set. An item that holds more opens a `base01` popup next to
+  `%a %d %b %H:%M`). Noctalia holds them ([noctalia.nix](../../../modules/noctalia.nix)), and the
+  mac's SketchyBar its own ([sketchybar.lua](../../../modules/sketchybar.lua)). An item that holds
+  more opens a `base01` popup next to
   it on click: the clock lists today's events, volume has a slider, and tailnet lists the exit
   nodes to switch to.
 - **Notifications:** top right, `base01` background, 4 px rounding, a 2 px `base0D` border, or
