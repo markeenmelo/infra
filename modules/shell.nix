@@ -4,6 +4,8 @@
     promptInit = "";
   };
 
+  flake.modules.homeManager.base.stylix.targets.bat.enable = false;
+
   flake.modules.homeManager.base.programs = {
     zsh = {
       enable = true;
@@ -11,6 +13,7 @@
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
       defaultKeymap = "emacs";
+      shellAliases.cat = "bat -pp";
       initContent = ''
         note() {
           mkdir -p ~/notes
@@ -31,9 +34,16 @@
       nix-direnv.enable = true;
     };
     fzf.enable = true;
+    vivid.enable = true;
     zoxide.enable = true;
-    eza.enable = true;
-    bat.enable = true;
+    eza = {
+      enable = true;
+      icons = "auto";
+    };
+    bat = {
+      enable = true;
+      config.theme = "OneHalfDark";
+    };
     fd.enable = true;
     ripgrep.enable = true;
   };

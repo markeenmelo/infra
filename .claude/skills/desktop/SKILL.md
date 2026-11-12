@@ -17,6 +17,14 @@ hand-tuned in its own module to the rules below, reading `config.lib.stylix.colo
 and `config.stylix.fonts`, never a hex or font literal, so a scheme or font change reaches it. An
 app Stylix cannot theme gets the same treatment by hand.
 
+An app that ships its own One Dark uses it for syntax instead of Stylix's base16 colors, while its
+fonts still come from Stylix: its target's `colors.enable` is false (or the whole target when it
+only sets colors) and the native theme is selected. This holds where the native theme is clearly
+richer, as in editors (Zed's `One Dark`, Neovim's `onedark-nvim`) and bat (`OneHalfDark`). The
+native theme's background and surfaces are overridden from `base00`–`base02` so it sits on the same
+black as the rest, since `onedark-dark` is darker than the classic One Dark these themes ship.
+Terminals and desktop chrome stay on Stylix.
+
 ## Rules
 
 - **Surfaces:** app windows, terminal included, are solid. The desktop's own chrome (bar,
@@ -33,6 +41,13 @@ app Stylix cannot theme gets the same treatment by hand.
 - **Bar:** top, 32 px tall, `base00`, monospace bold at 13. Workspaces are plain numbers;
   the active one sits on a `base0D` pill with `base00` text. Status items are text or one
   monochrome Nerd Font glyph each, no colored icons, no graphs.
+- **Bar items,** the same on both bars: workspaces, the active app and media on the left; on the
+  right agenda, alerts, cpu, memory, tailnet, network, volume, battery and the clock last, as
+  `%a %d %b %H:%M`. An item one platform lacks is left out, and a platform's own items (tray,
+  bluetooth, brightness, notifications, control center, session) sit beside the related ones.
+  An item that holds more opens a `base01` popup on click: the clock lists today's events, volume
+  has a slider, and on the mac tailnet lists the exit nodes to switch to (Linux shows the exit node
+  only: switching there would need a Tailscale operator).
 - **Notifications:** top right, `base01` background, 4 px rounding, a 2 px `base0D` border, or
   `base08` for critical ones.
 - **Icons:** Nerd Font glyphs in the text color; color only where it carries state.
@@ -59,10 +74,10 @@ All set in Stylix, so every target agrees:
 
 | Use | Font | Size |
 |---|---|---|
-| Terminals, editors, code | JetBrainsMono Nerd Font | 12 |
-| Application UI, desktop, popups | Inter | 11 |
-| Bar | JetBrainsMono Nerd Font, bold | 13 |
-| Serif slots | Inter (no serif face) | as the app asks |
+| Terminals, editors, code | JetBrainsMono Nerd Font Mono | 12 |
+| Application UI, desktop, popups | NotoSans Nerd Font Propo | 11 |
+| Bar | JetBrainsMono Nerd Font Mono, bold | 13 |
+| Serif slots | NotoSans Nerd Font Propo (no serif face) | as the app asks |
 | Emoji | Noto Color Emoji | as the text |
 
 No other families. Glyph icons come from the Nerd Font, never from a second icon font.
@@ -77,7 +92,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
   every machine shows the same one: Stylix applies it on Linux, and on the mac a Home Manager
   activation step sets it with `desktoppr`. It is the only image in the look; nothing else is
   derived from it, since the colors come from One Dark, not from the picture.
-- **Lock screen:** the wallpaper, blurred, with the clock in Inter and the password field on a
+- **Lock screen:** the wallpaper, blurred, with the clock in NotoSans Nerd Font Propo and the password field on a
   `base01` 4 px rounded surface.
 
 ## Toolkits and sound

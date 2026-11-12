@@ -25,6 +25,13 @@ in
         bluetooth.enable = true;
       };
       zramSwap.enable = true;
+      boot.plymouth.enable = true;
+      boot.consoleLogLevel = 3;
+      boot.kernelParams = [
+        "quiet"
+        "udev.log_level=3"
+        "systemd.show_status=auto"
+      ];
       boot.kernel.sysctl = {
         "vm.swappiness" = 180;
         "vm.page-cluster" = 0;
@@ -36,6 +43,7 @@ in
       networking.modemmanager.enable = false;
       security.rtkit.enable = true;
       programs.zsh.enable = true;
+      programs.nix-ld.enable = true;
       users.users.marcos.shell = pkgs.zsh;
       services = {
         resolved.enable = true;
@@ -81,11 +89,11 @@ in
         pkgs.telegram-desktop
         pkgs.whatsapp-electron
         pkgs.spotify
-        pkgs.vesktop
         pkgs.bruno
         pkgs.wl-clipboard
       ];
       programs = {
+        vesktop.enable = true;
         ghostty.package = pkgs.ghostty;
         zed-editor.package = pkgs.zed-editor;
       };
