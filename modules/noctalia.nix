@@ -63,7 +63,7 @@
             ];
             center = [ ];
             end = [
-              "tray"
+              "group:tray"
               "group:work"
               "group:connectivity"
               "group:system"
@@ -79,6 +79,7 @@
                   widget_spacing = 4;
                 })
                 {
+                  tray = [ "tray" ];
                   work = [
                     "pull_requests"
                     "claude"
