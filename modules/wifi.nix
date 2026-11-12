@@ -19,28 +19,14 @@
         };
         templates."wifi.env".content = ''
           SENECA_IDENTITY=${config.sops.placeholder.seneca-identity}
+          SENECA_PASSWORD='${config.sops.placeholder.seneca-password}'
+          WIFI_PSK='${config.sops.placeholder.wifi-psk}'
         '';
       };
       networking.networkmanager = {
         wifi.macAddress = "stable-ssid";
         ensureProfiles = {
           environmentFiles = [ config.sops.templates."wifi.env".path ];
-          secrets.entries = [
-            {
-              matchId = "MN-Home";
-              matchSetting = "802-11-wireless-security";
-              key = "psk";
-              file = config.sops.secrets.wifi-psk.path;
-              trim = false;
-            }
-            {
-              matchId = "SenecaNET";
-              matchSetting = "802-1x";
-              key = "password";
-              file = config.sops.secrets.seneca-password.path;
-              trim = false;
-            }
-          ];
           profiles = {
             MN-Home = {
               connection = {
@@ -54,7 +40,7 @@
               ipv6.method = "disabled";
               wifi-security = {
                 key-mgmt = "sae";
-                psk-flags = 1;
+                psk = "$WIFI_PSK";
               };
             };
             SenecaNET = {
@@ -72,7 +58,7 @@
                 domain-suffix-match = "senecapolytechnic.ca";
                 anonymous-identity = "anonymous@senecapolytechnic.ca";
                 identity = "$SENECA_IDENTITY";
-                password-flags = 1;
+                password = "$SENECA_PASSWORD";
               };
             };
           };
