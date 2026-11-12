@@ -41,6 +41,10 @@
           shell = {
             clipboard_enabled = false;
             popup_shadows = false;
+            panel = {
+              open_near_click_control_center = true;
+              open_near_click_session = true;
+            };
           };
           bar.default = {
             margin_ends = 0;
@@ -52,40 +56,76 @@
             radius = 0;
             capsule_radius = 4;
             shadow = false;
+            widget_spacing = 8;
             start = [
-              "workspaces"
+              "taskbar"
               "active_window"
               "media"
             ];
             center = [ ];
             end = [
               "tray"
-              "agenda"
-              "pull_requests"
-              "claude"
-              "tailnet"
-              "network"
-              "bluetooth"
-              "volume"
-              "battery"
-              "notifications"
-              "session"
-              "weather"
-              "clock"
+              "group:work"
+              "group:connectivity"
+              "group:system"
+              "group:time"
             ];
+            capsule_group =
+              lib.mapAttrsToList
+                (id: members: {
+                  inherit id members;
+                  fill = "surface_container";
+                  radius = 4;
+                  padding = 8;
+                  widget_spacing = 4;
+                })
+                {
+                  work = [
+                    "agenda"
+                    "pull_requests"
+                    "claude"
+                  ];
+                  connectivity = [
+                    "tailnet"
+                    "network"
+                    "bluetooth"
+                  ];
+                  system = [
+                    "volume"
+                    "battery"
+                    "notifications"
+                  ];
+                  time = [
+                    "weather"
+                    "clock"
+                  ];
+                };
           };
           widget = {
             clock.format = "{:%a %d %b %H:%M}";
-            active_window.max_length = 200;
+            active_window.display = "icon_only";
+            taskbar = {
+              group_by_workspace = true;
+              hide_empty_workspaces = true;
+              group_single_icon_per_app = true;
+              prefer_symbolic_icons = true;
+              workspace_label_placement = "inside";
+            };
             media = {
               hide_when_no_media = true;
               max_length = 160;
             };
             weather.show_condition = false;
             network.show_label = false;
-            tailnet.type = "rylos/tailnet:bar";
+            tailnet = {
+              type = "rylos/tailnet:bar";
+              show_count = false;
+            };
             agenda.type = "yuta/meeting-bar:bar";
-            pull_requests.type = "raycursive/github-prs:bar";
+            pull_requests = {
+              type = "raycursive/github-prs:bar";
+              hide_when_zero = true;
+            };
             claude.type = "jrohland/claudecode:pill";
           };
           weather = {
@@ -100,7 +140,11 @@
               name = "Google";
             };
           };
-          plugin_settings."yuta/meeting-bar".title_length = 16;
+          plugin_settings."yuta/meeting-bar" = {
+            title_length = 16;
+            hide_empty = true;
+            preview_minutes = 120;
+          };
           plugins = {
             enabled = [
               "jrohland/claudecode"

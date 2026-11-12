@@ -310,64 +310,78 @@
               blur_popups = true;
             }
           ];
-          window_rule = [
-            {
-              name = "file-picker";
-              match.class = "^xdg-desktop-portal-gtk$";
-              float = true;
-              center = true;
-              size = [
-                1100
-                700
-              ];
-            }
-            {
-              name = "picture-in-picture";
-              match.title = "^Picture-in-Picture$";
-              float = true;
-              pin = true;
-              keep_aspect_ratio = true;
-              size = [
-                640
-                360
-              ];
-              move = [
-                "monitor_w-window_w-24"
-                "monitor_h-window_h-24"
-              ];
-            }
-            {
-              name = "utilities";
-              match.class = "^(org\\.gnome\\.FileRoller|org\\.gnome\\.Loupe)$";
-              float = true;
-              center = true;
-            }
-            {
-              name = "keybinds";
-              match.class = "^hypr\\.keybinds$";
-              float = true;
-              center = true;
-              size = [
-                900
-                700
-              ];
-            }
-            {
-              name = "bitwarden";
-              match.class = "^bitwarden$";
-              float = true;
-              center = true;
-            }
-            {
-              name = "telegram-media";
-              match = {
-                class = "^org\\.telegram\\.desktop$";
-                title = "^Media viewer$";
-              };
-              float = true;
-              center = true;
-            }
-          ];
+          window_rule =
+            lib.mapAttrsToList
+              (class: workspace: {
+                name = "workspace-${class}";
+                match.class = "^${lib.escapeRegex class}$";
+                inherit workspace;
+              })
+              {
+                "zen-beta" = "1";
+                "com.mitchellh.ghostty" = "2";
+                "dev.zed.Zed" = "2";
+                "org.telegram.desktop" = "4";
+                "com.github.dagmoller.whatsapp-electron" = "4";
+              }
+            ++ [
+              {
+                name = "file-picker";
+                match.class = "^xdg-desktop-portal-gtk$";
+                float = true;
+                center = true;
+                size = [
+                  1100
+                  700
+                ];
+              }
+              {
+                name = "picture-in-picture";
+                match.title = "^Picture-in-Picture$";
+                float = true;
+                pin = true;
+                keep_aspect_ratio = true;
+                size = [
+                  640
+                  360
+                ];
+                move = [
+                  "monitor_w-window_w-24"
+                  "monitor_h-window_h-24"
+                ];
+              }
+              {
+                name = "utilities";
+                match.class = "^(org\\.gnome\\.FileRoller|org\\.gnome\\.Loupe)$";
+                float = true;
+                center = true;
+              }
+              {
+                name = "keybinds";
+                match.class = "^hypr\\.keybinds$";
+                float = true;
+                center = true;
+                size = [
+                  900
+                  700
+                ];
+              }
+              {
+                name = "bitwarden";
+                match.class = "^bitwarden$";
+                float = true;
+                center = true;
+              }
+              {
+                name = "telegram-media";
+                match = {
+                  class = "^org\\.telegram\\.desktop$";
+                  title = "^Media viewer$";
+                };
+                float = true;
+                center = true;
+              }
+            ];
           unbind = map (key: { _args = [ key ]; }) (
             [
               "SUPER + Q"
