@@ -42,6 +42,10 @@ under `/persist`. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tun
 whose handshake is older than five minutes, and starts its exit node again each time it comes up. Choosing
 an exit node is done on the client: clicking the mac's tailnet item in SketchyBar or `SUPER + T` on
 the thinkpad steps through direct and every online peer offering an exit node, by MagicDNS name,
-keeping LAN access. The thinkpad has no Tailscale operator, which would hand every process of
-`marcos` the whole LocalAPI: a passwordless sudo rule in [hyprland.nix](../../../modules/hyprland.nix)
-runs one root script that accepts only `direct` or an online exit node's name.
+keeping LAN access; the Linux bar's tailnet panel also picks one. On the Linux laptops `marcos`
+is the Tailscale operator ([noctalia.nix](../../../modules/noctalia.nix)), an accepted risk: every
+process of `marcos`, the Noctalia plugins included, holds the whole LocalAPI (`up`, `down`, `set`,
+`serve`, `logout`) without a password, so a bump of those plugins needs their code read, not just
+the hash. The laptops' auto-connect `tailscale up` carries `--reset`
+([desktop.nix](../../../modules/desktop.nix)), since `up` refuses stored non-default settings it is
+not given again; `tailscaled-set` re-applies the declared ones after it.

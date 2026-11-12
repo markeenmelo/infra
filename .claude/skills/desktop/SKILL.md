@@ -38,16 +38,19 @@ Terminals and desktop chrome stay on Stylix.
   mac, JankyBorders draws them beside AeroSpace ([aerospace.nix](../../../modules/aerospace.nix)).
 - **Rounding:** 6 px on windows where the window manager controls it, 4 px on small elements
   (bar items, buttons, notifications). The mac's own window corners stay as macOS draws them.
-- **Bar:** top, 32 px tall, `base00`, monospace bold at 13. Workspaces are plain numbers;
-  the active one sits on a `base0D` pill with `base00` text. Status items are text or one
-  monochrome Nerd Font glyph each, no colored icons, no graphs.
-- **Bar items,** the same on both bars: workspaces, the active app and media on the left; on the
-  right agenda, alerts, cpu, memory, tailnet, network, volume, battery and the clock last, as
-  `%a %d %b %H:%M`. An item one platform lacks is left out, and a platform's own items (tray,
-  bluetooth, brightness, notifications, control center, session) sit beside the related ones.
-  An item that holds more opens a `base01` popup on click: the clock lists today's events, volume
-  has a slider, and on the mac tailnet lists the exit nodes to switch to (Linux shows the exit node
-  only: switching there would need a Tailscale operator).
+- **Bar:** top, 32 px tall, `base00`, monospace bold at 13. Status items are text or one
+  monochrome Nerd Font glyph each, no colored icons, no graphs; a third-party item that colors
+  its text for no state is patched to the text color.
+- **Grouping:** related items share a `base01`-like pill (4 px rounding, no border), 8 px apart,
+  4 px between items inside one. An item shows only while it carries news (open pull requests, an
+  event within two hours); a steady "all fine" state stays out of the bar and in its tooltip.
+- **Bar items:** on the left the workspaces, each a pill of its apps' monochrome icons, and media;
+  on the right the tray, then work (pull requests, Claude usage), connectivity (tailnet, network,
+  bluetooth), system (volume, battery, notifications) and time (agenda, weather, the clock last, as
+  `%a %d %b %H:%M`). Noctalia holds them ([noctalia.nix](../../../modules/noctalia.nix)); the mac's
+  SketchyBar still has the earlier set. An item that holds more opens a `base01` popup next to
+  it on click: the clock lists today's events, volume has a slider, and tailnet lists the exit
+  nodes to switch to.
 - **Notifications:** top right, `base01` background, 4 px rounding, a 2 px `base0D` border, or
   `base08` for critical ones.
 - **Icons:** Nerd Font glyphs in the text color; color only where it carries state.

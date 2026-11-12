@@ -49,6 +49,7 @@ in
         resolved.enable = true;
         tailscale = {
           useRoutingFeatures = "client";
+          extraUpFlags = [ "--reset" ];
           extraSetFlags = [ "--accept-routes" ];
         };
         pipewire = {
