@@ -44,3 +44,7 @@ install host target root:
 update:
     nix flake update
     nix run .#update-pins
+
+[doc("Bump one Claude Code plugin to its default branch; read its hook changes before committing")]
+update-plugin name:
+    nix run .#update-plugin -- {{ name }}

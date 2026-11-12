@@ -40,6 +40,8 @@ activation, app data included, so preview a switch that drops a cask with
 `brew bundle cleanup --file=<(nix eval --raw .#darwinConfigurations.mac.config.homebrew.brewfile)`. Claude Code ([claude.nix](../../../modules/claude.nix)) is the HM package with the
 operator's settings; the sandbox and bypass lock live in the managed settings file that
 activation installs under `/Library/Application Support/ClaudeCode`, which no user setting
-overrides. The plugins it loads (cache-tax, ponytail, caveman) are flake inputs pinned to a
+overrides. The plugins it loads (cache-tax, ponytail, caveman) are `NAME.pkg.nix` pins on a
 commit, never a tag their authors could move: their hooks run outside the sandbox with the
-operator's rights, so a bump means reading what changed in their hooks first.
+operator's rights, so `just update` leaves them alone and `just update-plugin NAME` bumps one at a
+time, committed on its own after reading what changed in its hooks. The ponytail pin also feeds
+[audit.yml](../../../.github/workflows/audit.yml), where it runs with the Claude OAuth token.
