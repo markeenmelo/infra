@@ -16,9 +16,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Fetch ponytail at the commit flake.lock pins
+      - name: Fetch ponytail at the commit modules/ponytail.pkg.nix pins
         run: |
-          rev=$(jq -r .nodes.ponytail.locked.rev flake.lock)
+          rev=$(sed -n 's/^ *rev = "\([0-9a-f]*\)";/\1/p' modules/ponytail.pkg.nix)
           git init -q "$RUNNER_TEMP/ponytail"
           git -C "$RUNNER_TEMP/ponytail" fetch -q --depth 1 https://github.com/DietrichGebert/ponytail "$rev"
           git -C "$RUNNER_TEMP/ponytail" checkout -q FETCH_HEAD

@@ -40,6 +40,7 @@ unifi-settings action:
 install host target root:
     nix run .#install -- "$@"
 
-[doc("Update every flake input")]
+[doc("Update every flake input and every NAME.pkg.nix pin")]
 update:
     nix flake update
+    nix run .#update-pins

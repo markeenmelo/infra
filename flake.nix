@@ -41,18 +41,6 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
-    cache-tax = {
-      url = "github:karanb192/cache-tax/b05ec14e8d327021ade8c4969003547be8076812";
-      flake = false;
-    };
-    ponytail = {
-      url = "github:DietrichGebert/ponytail/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846";
-      flake = false;
-    };
-    caveman = {
-      url = "github:JuliusBrussee/caveman/3dc497a7f858c774d6e15b25e8c6120ef3a0eda8";
-      flake = false;
-    };
     stylix = {
       url = "github:nix-community/stylix";
       inputs = {
