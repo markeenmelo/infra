@@ -19,6 +19,7 @@ jobs:
       - name: Fetch ponytail at the commit modules/ponytail.pkg.nix pins
         run: |
           rev=$(sed -n 's/^ *rev = "\([0-9a-f]*\)";/\1/p' modules/ponytail.pkg.nix)
+          [[ $rev =~ ^[0-9a-f]{40}$ ]]
           git init -q "$RUNNER_TEMP/ponytail"
           git -C "$RUNNER_TEMP/ponytail" fetch -q --depth 1 https://github.com/DietrichGebert/ponytail "$rev"
           git -C "$RUNNER_TEMP/ponytail" checkout -q FETCH_HEAD
