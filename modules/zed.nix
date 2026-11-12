@@ -28,6 +28,7 @@
           "lua"
           "marksman"
           "basher"
+          "just"
           "material-icon-theme"
         ];
         userSettings = {
@@ -91,6 +92,7 @@
             terraform-ls = server pkgs.terraform-ls [ "serve" ];
             lua-language-server = server pkgs.lua-language-server [ ];
             marksman = server pkgs.marksman [ "server" ];
+            just-lsp = server pkgs.just-lsp [ ];
           };
           languages.Nix.language_servers = [
             "nixd"
