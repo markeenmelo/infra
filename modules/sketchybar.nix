@@ -28,6 +28,7 @@ in
           base0D
           ;
         font = config.stylix.fonts.monospace.name;
+        alpha = lib.toLower (lib.toHexString (builtins.floor (config.stylix.opacity.desktop * 255 + 0.5)));
         workspaces = lib.concatMapStringsSep ", " (n: ''"${n}"'') workspaces;
         icalbuddy = "${config.homebrew.prefix}/bin/icalBuddy";
         grafana = "https://grafana.${domain}";

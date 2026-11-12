@@ -46,7 +46,8 @@ Terminals and desktop chrome stay on Stylix.
   `%a %d %b %H:%M`. An item one platform lacks is left out, and a platform's own items (tray,
   bluetooth, brightness, notifications, control center, session) sit beside the related ones.
   An item that holds more opens a `base01` popup on click: the clock lists today's events, volume
-  has a slider, tailnet lists the exit nodes.
+  has a slider, and on the mac tailnet lists the exit nodes to switch to (Linux shows the exit node
+  only: switching there would need a Tailscale operator).
 - **Notifications:** top right, `base01` background, 4 px rounding, a 2 px `base0D` border, or
   `base08` for critical ones.
 - **Icons:** Nerd Font glyphs in the text color; color only where it carries state.

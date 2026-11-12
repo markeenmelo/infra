@@ -9,6 +9,10 @@ let
         polarity = "dark";
         image = ./wallpaper.jpg;
         overlays.enable = false;
+        opacity = {
+          desktop = 0.9;
+          popups = 0.9;
+        };
         fonts = {
           sizes = {
             terminal = 12;
@@ -56,10 +60,6 @@ in
         common
       ];
       stylix = {
-        opacity = {
-          desktop = 0.9;
-          popups = 0.9;
-        };
         targets.plymouth.logoAnimated = false;
         cursor = {
           package = pkgs.bibata-cursors;

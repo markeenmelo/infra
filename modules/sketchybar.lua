@@ -5,9 +5,9 @@ local function color(alpha, hex)
 end
 
 local colors = {
-  bar = color("e6", "@base00@"),
+  bar = color("@alpha@", "@base00@"),
   bg = color("ff", "@base00@"),
-  surface = color("e6", "@base01@"),
+  surface = color("@alpha@", "@base01@"),
   selection = color("ff", "@base02@"),
   muted = color("ff", "@base03@"),
   fg = color("ff", "@base05@"),
@@ -25,22 +25,20 @@ local function trim(s)
   return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
-local function popup_rows(parent, count)
-  local rows = {}
-  for i = 1, count do
-    rows[i] = sbar.add("item", parent.name .. ".row." .. i, {
-      position = "popup." .. parent.name,
-      drawing = "off",
-      icon = { drawing = "off" },
-      label = { padding_left = 8, padding_right = 8 },
-    })
-  end
-  return rows
+local function popup_rows(parent)
+  return { parent = parent }
 end
 
 local function fill_rows(rows, lines, empty)
   if #lines == 0 then
     lines = { empty }
+  end
+  for i = #rows + 1, #lines do
+    rows[i] = sbar.add("item", rows.parent.name .. ".row." .. i, {
+      position = "popup." .. rows.parent.name,
+      icon = { drawing = "off" },
+      label = { padding_left = 8, padding_right = 8 },
+    })
   end
   for i, row in ipairs(rows) do
     local line = lines[i]
@@ -147,7 +145,7 @@ local clock = sbar.add("item", "clock", {
 clock:subscribe({ "routine", "forced", "system_woke" }, function()
   clock:set({ label = { string = os.date("%a %d %b %H:%M") } })
 end)
-local events = popup_rows(clock, 8)
+local events = popup_rows(clock)
 local function toggle_agenda()
   sbar.exec(agenda_command, function(out)
     local lines = {}
@@ -229,7 +227,7 @@ local tailnet = sbar.add("item", "tailnet", {
   icon = { string = "󰦝" },
   popup = { align = "right" },
 })
-local exit_nodes = popup_rows(tailnet, 8)
+local exit_nodes = popup_rows(tailnet)
 local function short_name(peer)
   return (peer.DNSName or ""):match("^[^.]+")
 end
