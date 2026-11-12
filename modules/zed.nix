@@ -73,6 +73,10 @@
           minimap.show = "never";
           tab_bar.show_nav_history_buttons = false;
           collaboration_panel.button = false;
+          project_panel.dock = "right";
+          git_panel.dock = "right";
+          agent.dock = "right";
+          terminal.dock = "right";
           node = {
             path = lib.getExe pkgs.nodejs;
             npm_path = lib.getExe' pkgs.nodejs "npm";
