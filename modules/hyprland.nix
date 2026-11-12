@@ -134,6 +134,26 @@
           desc = "Fullscreen";
           dsp = lua "hl.dsp.window.fullscreen()";
         };
+        "SUPER + Tab" = {
+          desc = "Previous workspace";
+          dsp = lua ''hl.dsp.focus({ workspace = "previous" })'';
+        };
+        "SUPER + bracketleft" = {
+          desc = "Focus previous monitor";
+          dsp = lua ''hl.dsp.focus({ monitor = "-1" })'';
+        };
+        "SUPER + bracketright" = {
+          desc = "Focus next monitor";
+          dsp = lua ''hl.dsp.focus({ monitor = "+1" })'';
+        };
+        "SUPER + P" = {
+          desc = "Pin floating window";
+          dsp = lua "hl.dsp.window.pin()";
+        };
+        "SUPER + SHIFT + Return" = {
+          desc = "Swap with master";
+          dsp = lua ''hl.dsp.layout("swapwithmaster")'';
+        };
         "ALT + Tab" = {
           desc = "Window switcher";
           dsp = noctalia "window-switcher hold";
@@ -201,22 +221,37 @@
           dsp = noctalia "media previous";
         };
       };
-      moves = lib.listToAttrs (
-        map
-          (
-            direction:
-            lib.nameValuePair "SUPER + SHIFT + ${direction}" {
+      windowKeys =
+        lib.concatMapAttrs
+          (direction: step: {
+            "SUPER + SHIFT + ${direction}" = {
               desc = "Move window ${direction}";
               dsp = lua "hl.dsp.window.move({ direction = ${lib.generators.toLua { } direction} })";
-            }
-          )
-          [
-            "left"
-            "right"
-            "up"
-            "down"
-          ]
-      );
+            };
+            "SUPER + CTRL + ${direction}" = {
+              desc = "Resize window ${direction}";
+              dsp = lua "hl.dsp.window.resize({ x = ${toString step.x}, y = ${toString step.y}, relative = true })";
+              repeating = true;
+            };
+          })
+          {
+            left = {
+              x = -50;
+              y = 0;
+            };
+            right = {
+              x = 50;
+              y = 0;
+            };
+            up = {
+              x = 0;
+              y = -50;
+            };
+            down = {
+              x = 0;
+              y = 50;
+            };
+          };
     in
     {
       wayland.windowManager.hyprland = {
@@ -396,6 +431,7 @@
               "SUPER + Q"
               "SUPER + R"
               "SUPER + E"
+              "SUPER + P"
             ]
             ++ lib.attrNames media
           );
@@ -416,7 +452,7 @@
               ))
               [
                 binds
-                moves
+                windowKeys
                 media
               ];
         };
