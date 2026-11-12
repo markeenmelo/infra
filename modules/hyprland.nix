@@ -373,6 +373,15 @@
                 center = true;
               }
               {
+                name = "zen-extension-popout";
+                match = {
+                  class = "^zen-beta$";
+                  title = "^Extension: \\(";
+                };
+                float = true;
+                center = true;
+              }
+              {
                 name = "telegram-media";
                 match = {
                   class = "^org\\.telegram\\.desktop$";
