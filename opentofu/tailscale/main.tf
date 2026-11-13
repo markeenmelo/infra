@@ -138,6 +138,11 @@ locals {
   }
 }
 
+import {
+  to = tailscale_acl.fleet
+  id = "acl"
+}
+
 resource "tailscale_acl" "fleet" {
   acl = jsonencode(local.policy)
 }
