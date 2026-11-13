@@ -41,12 +41,16 @@
                 if [ -e "$connector/ddc" ] && grep -qa ${lib.escapeShellArg monitor} "$connector/edid" 2>/dev/null; then
                   bus=$(basename "$(readlink "$connector/ddc")")
                   bus=''${bus#i2c-}
-                  previous=$(ddcutil --bus "$bus" --terse getvcp 60 | awk '{ print "0" $NF }' || true)
-                  inputs+="$bus ''${previous:-${displayPort}}"$'\n'
-                  ddcutil --bus "$bus" --noverify setvcp 60 ${displayPort} || true
+                  previous=$(ddcutil --bus "$bus" --terse getvcp 60 | awk '$3 == "SNC" { print "0" $NF }' || true)
+                  inputs+="$bus $previous"$'\n'
                 fi
               done
               printf %s "$inputs" > ${flag}
+              while read -r bus _; do
+                if [ -n "$bus" ]; then
+                  ddcutil --bus "$bus" --noverify setvcp 60 ${displayPort} || true
+                fi
+              done <<< "$inputs"
               ;;
             off)
               if [ -e ${flag} ]; then inputs=$(cat ${flag}); fi
@@ -61,6 +65,7 @@
           done
           if [ "$1" = off ] && [ -n "$inputs" ]; then
             while read -r bus previous; do
+              if [ -z "$previous" ]; then continue; fi
               for _ in 1 2 3 4 5; do
                 if ddcutil --bus "$bus" --noverify setvcp 60 "$previous"; then break; fi
                 sleep 1
@@ -81,10 +86,19 @@
       };
       gaming = pkgs.writeShellApplication {
         name = "gaming";
-        runtimeInputs = [ pkgs.libnotify ];
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.libnotify
+          pkgs.procps
+        ];
         text = ''
           if ${systemctl} is-active --quiet gaming.service; then
-            ${systemctl} stop gaming.service
+            if pgrep -x steam > /dev/null; then steam -shutdown || true; fi
+            for _ in $(seq 60); do
+              if ! pgrep -x steam > /dev/null; then break; fi
+              sleep 0.5
+            done
+            ${systemctl} stop --no-block gaming.service
           elif ! ${systemctl} start gaming.service; then
             notify-send --app-name=gaming "Gaming" "eGPU not connected"
           fi
@@ -116,7 +130,7 @@
           extraCompatPackages = [ pkgs.proton-ge-bin ];
           extraPackages = [
             pkgs.mangohud
-            (pkgs.writeShellScriptBin "steamos-session-select" "exec ${systemctl} stop --no-block gaming.service")
+            (pkgs.writeShellScriptBin "steamos-session-select" "exec ${lib.getExe gaming}")
           ];
         };
       };
@@ -135,6 +149,7 @@
           after = [ "systemd-user-sessions.service" ];
           wants = [
             "gaming-awake.service"
+            "gaming-performance.service"
             "gaming-scheduler.service"
           ];
           environment = {
@@ -161,10 +176,16 @@
           serviceConfig.ExecStart = "${lib.getExe' pkgs.scx.rustscheds "scx_lavd"} --performance";
         };
         gaming-awake = {
-          description = "Keep the laptop awake and in the performance profile while gaming";
+          description = "Keep the laptop awake while gaming";
           bindsTo = [ "gaming.service" ];
           after = [ "gaming.service" ];
-          serviceConfig.ExecStart = "${lib.getExe config.services.power-profiles-daemon.package} launch --profile performance --reason Gaming --appid gaming -- ${lib.getExe' config.systemd.package "systemd-inhibit"} --what=sleep --who=gaming --why=\"Steam on the eGPU\" ${lib.getExe' pkgs.coreutils "sleep"} infinity";
+          serviceConfig.ExecStart = "${lib.getExe' config.systemd.package "systemd-inhibit"} --what=sleep --who=gaming --why=\"Steam on the eGPU\" ${lib.getExe' pkgs.coreutils "sleep"} infinity";
+        };
+        gaming-performance = {
+          description = "Hold the performance power profile while gaming";
+          bindsTo = [ "gaming.service" ];
+          after = [ "gaming.service" ];
+          serviceConfig.ExecStart = "${lib.getExe' config.services.power-profiles-daemon.package "powerprofilesctl"} launch --profile performance --reason Gaming --appid gaming -- ${lib.getExe' pkgs.coreutils "sleep"} infinity";
         };
       };
       security.polkit.extraConfig = ''

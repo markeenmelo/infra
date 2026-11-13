@@ -69,7 +69,9 @@ is connected.
 card in a Thunderbolt enclosure, beside the Hyprland session instead of in it. The card, and while
 gaming the Keychron receivers, belong to a second logind seat, so Hyprland never opens the card and
 keeps the built-in panel, keyboard and trackpad. `gaming.service` is that session; `gaming`,
-`SUPER + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it.
+`SUPER + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it;
+stopping asks Steam to shut down and waits for it before the unit goes, so a running game is not
+cut off mid-save.
 Its handover moves the monitor to DisplayPort over DDC and back to whatever input was active,
 holds the performance profile and a sleep inhibitor, and runs `scx_lavd`.
 
@@ -92,13 +94,17 @@ own output is filed under the session scope, not the unit: read a start with
 `mangohud %command%` per game; gamescope's mangoapp overlay did not draw on this card.
 
 bastion builds Steam's 32-bit closure, so it is advertised as an `i686-linux` builder
-([builder.nix](../../../modules/builder.nix)), and the Steam library stays out of the home backup.
+([builder.nix](../../../modules/builder.nix)). The NVIDIA module is built against the laptop's
+kernel, the newest nixpkgs has, so a kernel the driver does not build against yet blocks every
+thinkpad build until the kernel is held back.
 
 ## Backups
 
 `restic-backups-home` sends `/home/marcos` every 6 hours to the append-only server on bastion
 ([backups skill](../backups/SKILL.md)) with `backups/thinkpad-password`, never the household key;
 only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh), the keyring,
-caches and the Bitwarden socket stay out. App data stays in, browser and messenger sessions
-included, so a restore brings back a signed-in desktop; bastion holds the password too, so
-whoever controls bastion can read those sessions.
+caches and the Bitwarden socket stay out, and so do Steam's installed games, shader caches and
+downloads, which Steam fetches again. App data stays in, browser and messenger sessions
+included, so a restore brings back a signed-in desktop, and Steam's Proton prefixes, where games
+without Steam Cloud keep their saves; bastion holds the password too, so whoever controls bastion
+can read those sessions.

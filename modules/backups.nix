@@ -394,7 +394,10 @@ in
               ".cache"
               ".gvfs"
               ".local/share/Trash"
-              ".local/share/Steam/steamapps"
+              ".local/share/Steam/steamapps/common"
+              ".local/share/Steam/steamapps/shadercache"
+              ".local/share/Steam/steamapps/downloading"
+              ".local/share/Steam/steamapps/temp"
             ]
           )
           ++ [ "**/node_modules" ];
