@@ -29,6 +29,14 @@ let
   };
 in
 {
+  flake.modules.darwin.desktop.homebrew.casks = [ "opencloud" ];
+
+  flake.modules.homeManager.desktop =
+    { pkgs, ... }:
+    {
+      home.packages = [ pkgs.opencloud-desktop ];
+    };
+
   flake.modules.nixos.opencloud =
     { pkgs, ... }:
     {
