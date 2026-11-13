@@ -1,6 +1,6 @@
 ---
 name: thinkpad
-description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Hyprland, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, hyprland.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, or reinstalling the laptop."
+description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Hyprland, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), the eGPU gaming session (Steam in gamescope on a second seat), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, hyprland.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, gaming.nix, or reinstalling the laptop, and when the gaming session, the eGPU or the NVIDIA driver misbehaves."
 ---
 
 # ThinkPad
@@ -62,6 +62,37 @@ Idle locks at 5 min, turns the screen off at 5.5, suspends after 10 on battery a
 battery `power-profile-ac` switches to power-saver and restores the previous profile on AC; the
 battery charges to 90% and resumes at 85%. The lid hides the built-in panel while another display
 is connected.
+
+## Gaming
+
+[gaming.nix](../../../modules/gaming.nix) runs Steam's Deck interface in gamescope on an NVIDIA
+card in a Thunderbolt enclosure, beside the Hyprland session instead of in it. The card, and while
+gaming the Keychron receivers, belong to a second logind seat, so Hyprland never opens the card and
+keeps the built-in panel, keyboard and trackpad. `gaming.service` is that session; `gaming`,
+`SUPER + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it.
+Its handover moves the monitor to DisplayPort over DDC and back to whatever input was active,
+holds the performance profile and a sleep inhibitor, and runs `scx_lavd`.
+
+It starts only from an unlocked session, never on plug: the unit runs as `marcos` without a login,
+so starting on plug would hand an unlocked session to whoever holds the enclosure.
+
+The NVIDIA driver freezes the kernel when the card leaves while it is bound, even idle, and a
+frozen removal blocks every rescan and the next shutdown; only a forced reboot clears it. So the
+card sits on the PCI bus only while the session runs: a udev rule removes it whenever it appears
+otherwise, the handover rescans on start, and on stop it detaches the card and unloads the NVIDIA
+modules. The cable is safe to pull whenever no session runs, and never during one. For the same
+reason the Hyprland session loads Mesa only: a desktop program that opens the NVIDIA device nodes
+keeps the old card alive and the next start fails with `Failed to allocate NvKmsKapiDevice`.
+
+gamescope gets the card and the mode by argument, since it otherwise picks the Intel Vulkan device
+and a lower mode; adaptive sync is off because it glitched on this card, HDR stays on. gamescope's
+own output is filed under the session scope, not the unit: read a start with
+`journalctl -b --since -1min`, not `-u gaming.service`. The proprietary NVIDIA module and the
+`SIGKILL` on stop are `shortcut:` entries in the module. A frame counter is Steam's own, or
+`mangohud %command%` per game; gamescope's mangoapp overlay did not draw on this card.
+
+bastion builds Steam's 32-bit closure, so it is advertised as an `i686-linux` builder
+([builder.nix](../../../modules/builder.nix)), and the Steam library stays out of the home backup.
 
 ## Backups
 
