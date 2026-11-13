@@ -11,7 +11,9 @@
       };
       # shortcut: nix 2.35 no longer copies the flake on `nix flake metadata`, the store path nix-update evaluates; drop the override once nix-update copies it itself
       nix-update = pkgs.nix-update.override { nix = pkgs.nixVersions.nix_2_34; };
-      plugins = lib.genAttrs [ "cache-tax" "caveman" "noctalia-plugins" "ponytail" ] (_: [ "--version=branch" ]);
+      plugins = lib.genAttrs [ "cache-tax" "caveman" "noctalia-plugins" "ponytail" ] (_: [
+        "--version=branch"
+      ]);
       nixUpdate =
         name: flags:
         lib.escapeShellArgs (
