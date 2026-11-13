@@ -13,8 +13,11 @@ state in schema `PROJECT` of the `tofu` database on bastion's PostgreSQL, which 
 operator laptops reach over the tailnet, locked per run and encrypted with
 `TF_VAR_state_passphrase` from the same file. State is never in Git; a lost state is recovery,
 not a routine apply: adopt the live objects with `import` blocks, plan until nothing is created,
-apply, then drop the blocks. The `opentofu` check only runs `tofu fmt`; validation needs the
-providers.
+apply, then drop the blocks. The tailscale project's own state sits behind the grant that
+project applies, and bastion's sshd forwards no ports, so a policy that loses the operator
+laptops' grant to the state port is repaired in the admin console (lifting
+`acls_externally_managed_on` first if it blocks the edit), then planned and applied again. The
+`opentofu` check only runs `tofu fmt`; validation needs the providers.
 
 ```sh
 nix run .#tofu -- tailscale providers lock -platform=linux_amd64 -platform=darwin_arm64  # provider change

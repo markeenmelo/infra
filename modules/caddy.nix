@@ -50,7 +50,7 @@ in
               denied = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
                 default = [ ];
-                description = "Caddy matcher bodies the edge answers with 403, for admin paths that only the LAN and the tailnet reach.";
+                description = "Caddy matcher bodies the edge answers with 404, for admin paths that only the LAN and the tailnet reach.";
               };
             };
           }

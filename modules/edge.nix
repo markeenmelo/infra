@@ -167,6 +167,10 @@ in
               -X-Powered-By
             }
             @crawler header_regexp User-Agent "(?i)(${lib.concatStringsSep "|" crawlers})"
+            @robots {
+              path /robots.txt
+              host ${lib.concatMapStringsSep " " (name: "${name}.${domain}") (lib.attrNames served)}
+            }
             @abroad {
               not remote_ip 127.0.0.0/8 ::1
               not {
@@ -187,13 +191,13 @@ in
             }
             import identity
             route {
-              log_append @abroad edge_denied abroad
+              log_append @abroad <edge_denied abroad
               abort @abroad
-              log_append @hosting edge_denied hosting
+              log_append @hosting <edge_denied hosting
               abort @hosting
-              log_append @crawler edge_denied crawler
+              log_append @crawler <edge_denied crawler
               abort @crawler
-              respond /robots.txt <<TXT
+              respond @robots <<TXT
                 User-agent: *
                 Disallow: /
                 TXT 200
