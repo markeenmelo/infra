@@ -43,8 +43,8 @@
           scenarios = [
             {
               name = "fleet/edge-denied";
-              description = "Repeated denials by the edge itself: abroad or an admin path";
-              filter = "evt.Meta.log_type == 'http_access-log' && evt.Meta.http_status == '403' && evt.Line.Raw contains 'Edge-Denied'";
+              description = "Repeated denials by the edge itself: abroad, a crawler or an admin path";
+              filter = "evt.Meta.log_type == 'http_access-log' && evt.Line.Raw contains '\"edge_denied\":'";
               type = "leaky";
               groupby = "evt.Meta.source_ip";
               capacity = 5;
