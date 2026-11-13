@@ -9,10 +9,12 @@ description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, devi
 ([opentofu.nix](../../../modules/opentofu.nix)) runs any OpenTofu command inside a project with the
 credentials from `secrets/PROJECT/operator.yaml`, plus `secrets/PROJECT/api.yaml` when the
 project shares a credential with a host ([secrets skill](../secrets/SKILL.md)), and the
-state at `$XDG_STATE_HOME/infra/PROJECT/terraform.tfstate`, encrypted with
+state in schema `PROJECT` of the `tofu` database on bastion's PostgreSQL, which only the
+operator laptops reach over the tailnet, locked per run and encrypted with
 `TF_VAR_state_passphrase` from the same file. State is never in Git; a lost state is recovery,
-not a routine apply, and a moved `XDG_STATE_HOME` is a changed backend that needs an approved
-`init -migrate-state`. The `opentofu` check only runs `tofu fmt`; validation needs the providers.
+not a routine apply: adopt the live objects with `import` blocks, plan until nothing is created,
+apply, then drop the blocks. The `opentofu` check only runs `tofu fmt`; validation needs the
+providers.
 
 ```sh
 nix run .#tofu -- tailscale providers lock -platform=linux_amd64 -platform=darwin_arm64  # provider change

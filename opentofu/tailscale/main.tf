@@ -5,7 +5,7 @@ terraform {
       version = "~> 0.29.3"
     }
   }
-  backend "local" {}
+  backend "pg" {}
   encryption {
     key_provider "pbkdf2" "operator" {
       passphrase = var.state_passphrase
@@ -136,11 +136,6 @@ locals {
       { src = "racknerd", proto = "tcp", accept = ["bastion:9091"], deny = ["bastion:443", "bastion:${var.fleet_state_port}"] },
     ])
   }
-}
-
-import {
-  to = tailscale_acl.fleet
-  id = "acl"
 }
 
 resource "tailscale_acl" "fleet" {
