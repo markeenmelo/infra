@@ -8,12 +8,10 @@
     }:
     let
       nvidia = "0x10de";
+      rtx3070 = "10de:2488";
       keychron = "3434";
       monitor = "Odyssey G93SC";
-      input = {
-        on = "0x0f";
-        off = "0x12";
-      };
+      displayPort = "0x0f";
       seat = "seat1";
       flag = "/run/gaming";
       card = "/dev/dri/egpu";
@@ -21,11 +19,30 @@
       systemctl = lib.getExe' config.systemd.package "systemctl";
       handover = pkgs.writeShellApplication {
         name = "gaming-handover";
-        runtimeInputs = [ pkgs.ddcutil ];
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.ddcutil
+          pkgs.gawk
+        ];
         text = ''
+          inputs=
           case $1 in
-            on) touch ${flag} ;;
-            off) rm -f ${flag} ;;
+            on)
+              for connector in /sys/class/drm/card*-*; do
+                if [ -e "$connector/ddc" ] && grep -qa ${lib.escapeShellArg monitor} "$connector/edid" 2>/dev/null; then
+                  bus=$(basename "$(readlink "$connector/ddc")")
+                  bus=''${bus#i2c-}
+                  previous=$(ddcutil --bus "$bus" --terse getvcp 60 | awk '{ print "0" $NF }' || true)
+                  inputs+="$bus ''${previous:-${displayPort}}"$'\n'
+                  ddcutil --bus "$bus" --noverify setvcp 60 ${displayPort} || true
+                fi
+              done
+              printf %s "$inputs" > ${flag}
+              ;;
+            off)
+              if [ -e ${flag} ]; then inputs=$(cat ${flag}); fi
+              rm -f ${flag}
+              ;;
           esac
           for device in /sys/bus/usb/devices/*; do
             if [ -f "$device/idVendor" ] && [ "$(cat "$device/idVendor")" = ${keychron} ]; then
@@ -33,11 +50,14 @@
               echo 1 > "$device/authorized"
             fi
           done
-          case $1 in
-            on) value=${input.on} ;;
-            off) value=${input.off} ;;
-          esac
-          ddcutil --model ${lib.escapeShellArg monitor} --noverify setvcp 60 "$value" || true
+          if [ "$1" = off ] && [ -n "$inputs" ]; then
+            while read -r bus previous; do
+              for _ in 1 2 3 4 5; do
+                if ddcutil --bus "$bus" --noverify setvcp 60 "$previous"; then break; fi
+                sleep 1
+              done
+            done <<< "$inputs"
+          fi
         '';
       };
       gaming = pkgs.writeShellApplication {
@@ -76,7 +96,7 @@
         steam = {
           enable = true;
           extraPackages = [
-            (pkgs.writeShellScriptBin "steamos-session-select" "exec steam -shutdown")
+            (pkgs.writeShellScriptBin "steamos-session-select" "exec ${systemctl} stop --no-block gaming.service")
           ];
         };
       };
@@ -106,8 +126,10 @@
             User = "marcos";
             PAMName = "login";
             ExecStartPre = "+${lib.getExe handover} on";
-            ExecStart = "${lib.getExe config.programs.gamescope.package} --steam --adaptive-sync --hdr-enabled -- ${lib.getExe config.programs.steam.package} -gamepadui -steamos3 -pipewire-dmabuf";
+            ExecStart = "${lib.getExe config.programs.gamescope.package} --steam --prefer-vk-device ${rtx3070} --adaptive-sync --hdr-enabled -- ${lib.getExe config.programs.steam.package} -gamepadui -steamos3 -pipewire-dmabuf";
             ExecStopPost = "+${lib.getExe handover} off";
+            # shortcut: gamescope 3.17 hangs 25 s releasing the card through logind and then crashes, so stop kills it outright; drop when it exits cleanly
+            KillSignal = "SIGKILL";
           };
         };
         gaming-awake = {
