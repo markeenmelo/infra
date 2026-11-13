@@ -20,6 +20,7 @@
       handover = pkgs.writeShellApplication {
         name = "gaming-handover";
         runtimeInputs = [
+          config.services.scx-loader.package
           pkgs.coreutils
           pkgs.ddcutil
           pkgs.gawk
@@ -38,10 +39,12 @@
                 fi
               done
               printf %s "$inputs" > ${flag}
+              scxctl start --sched lavd --mode gaming || true
               ;;
             off)
               if [ -e ${flag} ]; then inputs=$(cat ${flag}); fi
               rm -f ${flag}
+              scxctl stop || true
               ;;
           esac
           for device in /sys/bus/usb/devices/*; do
@@ -81,6 +84,8 @@
         "steam"
         "steam-unwrapped"
       ];
+      boot.kernelModules = [ "ntsync" ];
+      services.scx-loader.enable = true;
       services.xserver.videoDrivers = [ "nvidia" ];
       hardware.nvidia = {
         # shortcut: proprietary module, nixpkgs loads the open one's nvidia_uvm at every boot and that fails without the card, switch once it loads lazily
@@ -95,6 +100,7 @@
         };
         steam = {
           enable = true;
+          extraCompatPackages = [ pkgs.proton-ge-bin ];
           extraPackages = [
             (pkgs.writeShellScriptBin "steamos-session-select" "exec ${systemctl} stop --no-block gaming.service")
           ];
@@ -121,22 +127,33 @@
             XDG_SEAT = seat;
             XDG_SESSION_TYPE = "wayland";
             XDG_SESSION_CLASS = "user";
+            MANGOHUD_CONFIGFILE = "%t/gaming-session/mangohud.conf";
+            STEAM_USE_MANGOAPP = "1";
+            STEAM_MANGOAPP_PRESETS_SUPPORTED = "1";
+            STEAM_MANGOAPP_HORIZONTAL_SUPPORTED = "1";
           };
+          path = [ pkgs.mangohud ];
+          enableStrictShellChecks = true;
+          script = ''
+            echo no_display > "$MANGOHUD_CONFIGFILE"
+            exec ${lib.getExe config.programs.gamescope.package} --steam --mangoapp --prefer-vk-device ${rtx3070} --adaptive-sync --hdr-enabled -- ${lib.getExe config.programs.steam.package} -gamepadui -steamos3 -pipewire-dmabuf
+          '';
           serviceConfig = {
             User = "marcos";
             PAMName = "login";
+            Nice = -10;
+            RuntimeDirectory = "gaming-session";
             ExecStartPre = "+${lib.getExe handover} on";
-            ExecStart = "${lib.getExe config.programs.gamescope.package} --steam --prefer-vk-device ${rtx3070} --adaptive-sync --hdr-enabled -- ${lib.getExe config.programs.steam.package} -gamepadui -steamos3 -pipewire-dmabuf";
             ExecStopPost = "+${lib.getExe handover} off";
             # shortcut: gamescope 3.17 hangs 25 s releasing the card through logind and then crashes, so stop kills it outright; drop when it exits cleanly
             KillSignal = "SIGKILL";
           };
         };
         gaming-awake = {
-          description = "Keep the laptop awake while gaming";
+          description = "Keep the laptop awake and in the performance profile while gaming";
           bindsTo = [ "gaming.service" ];
           after = [ "gaming.service" ];
-          serviceConfig.ExecStart = "${lib.getExe' config.systemd.package "systemd-inhibit"} --what=sleep --who=gaming --why=\"Steam on the eGPU\" ${lib.getExe' pkgs.coreutils "sleep"} infinity";
+          serviceConfig.ExecStart = "${lib.getExe config.services.power-profiles-daemon.package} launch --profile performance --reason Gaming --appid gaming -- ${lib.getExe' config.systemd.package "systemd-inhibit"} --what=sleep --who=gaming --why=\"Steam on the eGPU\" ${lib.getExe' pkgs.coreutils "sleep"} infinity";
         };
       };
       security.polkit.extraConfig = ''
