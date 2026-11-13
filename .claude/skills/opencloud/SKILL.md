@@ -20,3 +20,8 @@ that mount. That includes `config/opencloud.yaml`, which the first start generat
 holds the inter-service secrets and ids: it is not in Git or sops, so losing the dataset loses
 the installation, and copying it is how a restore works. A production release is upgraded only
 forward; moving to the rolling line and back is a downgrade OpenCloud does not support.
+
+The desktop client is installed on every workstation (the `opencloud` cask on the mac). Sign-in
+and the folder pairs are set in the client, whose token lives in the system keychain, so they are
+not declared. On Linux it starts with the Fusion style, because Stylix's Kvantum has no QML
+style and the client aborts under it.
