@@ -168,7 +168,7 @@
                   inherit output;
                   position = "auto-center-up";
                   mode = "5120x1440@120";
-                  scale = 1.25;
+                  scale = 1;
                   bitdepth = 8;
                   cm = "srgb";
                   vrr = 0;
