@@ -394,6 +394,7 @@ in
               ".cache"
               ".gvfs"
               ".local/share/Trash"
+              ".local/share/Steam/steamapps"
             ]
           )
           ++ [ "**/node_modules" ];
