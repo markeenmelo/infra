@@ -16,6 +16,71 @@ in
     }:
     let
       countries = [ "CA" ];
+      hosting = {
+        amazon = [
+          16509
+          14618
+        ];
+        google = [
+          15169
+          396982
+        ];
+        microsoft = [ 8075 ];
+        digitalocean = [ 14061 ];
+        ovh = [ 16276 ];
+        linode = [ 63949 ];
+        vultr = [ 20473 ];
+        hetzner = [ 24940 ];
+        oracle = [ 31898 ];
+        alibaba = [
+          45102
+          37963
+        ];
+        tencent = [
+          132203
+          45090
+        ];
+        contabo = [ 51167 ];
+        scaleway = [ 12876 ];
+        m247 = [ 9009 ];
+        leaseweb = [ 60781 ];
+        datacamp = [ 60068 ];
+      };
+      crawlers = [
+        "GPTBot"
+        "ChatGPT-User"
+        "OAI-SearchBot"
+        "ClaudeBot"
+        "Claude-Web"
+        "anthropic-ai"
+        "CCBot"
+        "Bytespider"
+        "Amazonbot"
+        "PerplexityBot"
+        "Applebot"
+        "meta-externalagent"
+        "FacebookBot"
+        "Diffbot"
+        "ImagesiftBot"
+        "Omgilibot"
+        "cohere-ai"
+        "YouBot"
+        "Googlebot"
+        "bingbot"
+        "YandexBot"
+        "Baiduspider"
+        "DuckDuckBot"
+        "AhrefsBot"
+        "SemrushBot"
+        "MJ12bot"
+        "DotBot"
+        "PetalBot"
+        "DataForSeoBot"
+        "BLEXBot"
+        "Scrapy"
+        "HeadlessChrome"
+        "PhantomJS"
+      ];
       logFilter = ''
         fields {
           request>headers>Authorization delete
@@ -49,15 +114,13 @@ in
         ''
           @${name} host ${name}.${domain}
           handle @${name} {
-            header @abroad Edge-Denied 1
-            respond @abroad 403
         ''
         + lib.concatImapStrings (i: matcher: ''
           @${name}-denied-${toString i} {
             ${matcher}
           }
-          header @${name}-denied-${toString i} Edge-Denied 1
-          respond @${name}-denied-${toString i} 403
+          log_append @${name}-denied-${toString i} edge_denied path
+          respond @${name}-denied-${toString i} 404
         '') denied
         + ''
             reverse_proxy ${bastion}:${toString port}
@@ -92,11 +155,21 @@ in
           extraConfig = ''
             import porkbun
             header {
-              Strict-Transport-Security "max-age=31536000"
+              Strict-Transport-Security "max-age=63072000; includeSubDomains"
               X-Content-Type-Options nosniff
               Referrer-Policy no-referrer
               X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
+              ?X-Frame-Options SAMEORIGIN
+              ?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
+              ?Cross-Origin-Opener-Policy same-origin-allow-popups
               -Server
+              -Via
+              -X-Powered-By
+            }
+            @crawler header_regexp User-Agent "(?i)(${lib.concatStringsSep "|" crawlers})"
+            @robots {
+              path /robots.txt
+              host ${lib.concatMapStringsSep " " (name: "${name}.${domain}") (lib.attrNames served)}
             }
             @abroad {
               not remote_ip 127.0.0.0/8 ::1
@@ -107,10 +180,38 @@ in
                 }
               }
             }
+            @hosting {
+              not remote_ip 127.0.0.0/8 ::1
+              not {
+                maxmind_geolocation {
+                  db_path ${pkgs.dbip-asn-lite.mmdb}
+                  deny_asn ${lib.concatMapStringsSep " " toString (lib.concatLists (lib.attrValues hosting))}
+                }
+              }
+            }
             import identity
-            ${lib.concatStrings (lib.mapAttrsToList site served)}
-            handle {
-              abort
+            route {
+              log_append @abroad <edge_denied abroad
+              abort @abroad
+              log_append @hosting <edge_denied hosting
+              abort @hosting
+              log_append @crawler <edge_denied crawler
+              abort @crawler
+              respond @robots <<TXT
+                User-agent: *
+                Disallow: /
+                TXT 200
+              rate_limit {
+                zone address {
+                  key {remote_host}
+                  events 3000
+                  window 1m
+                }
+              }
+              ${lib.concatStrings (lib.mapAttrsToList site served)}
+              handle {
+                abort
+              }
             }
           '';
         };

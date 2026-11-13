@@ -19,13 +19,41 @@ let
   telemetry = builtins.toJSON (lib.mapAttrs (_: host: host.telemetry) config.fleet.hosts);
   settings = ../opentofu/unifi/settings.json;
   program = ../opentofu/unifi/settings.jq;
+  inherit (config.flake.modules.nixos) postgresql;
+  statePort = config.flake.nixosConfigurations.bastion.config.services.postgresql.settings.port;
+  operators = map (name: config.fleet.hosts.${name}.tailnetAddress) [
+    "thinkpad"
+    "asahi"
+    "mac"
+  ];
 in
 {
+  flake.modules.nixos.opentofu-state =
+    { config, lib, ... }:
+    {
+      imports = [ postgresql ];
+      services.postgresql = {
+        enableTCPIP = true;
+        ensureDatabases = [ "tofu" ];
+        ensureUsers = [
+          {
+            name = "tofu";
+            ensureDBOwnership = true;
+          }
+        ];
+        # shortcut: trusts the operator laptops' tailnet addresses, so any process on one can rewrite the encrypted state, move to scram with a sops password once a laptop has other users
+        authentication = lib.concatMapStrings (address: "host tofu tofu ${address}/32 trust\n") operators;
+      };
+      networking.firewall.extraInputRules = ''
+        iifname "${config.services.tailscale.interfaceName}" ip saddr { ${lib.concatStringsSep ", " operators} } tcp dport ${toString config.services.postgresql.settings.port} accept
+      '';
+    };
+
   perSystem =
     { lib, pkgs, ... }:
     {
       apps.tofu = {
-        meta.description = "tofu PROJECT ARGS: run OpenTofu in opentofu/PROJECT with the operator credentials and the project's host-shared api.yaml when it has one, state under XDG_STATE_HOME";
+        meta.description = "tofu PROJECT ARGS: run OpenTofu in opentofu/PROJECT with the operator credentials and the project's host-shared api.yaml when it has one, state in schema PROJECT of bastion's tofu database";
         program = pkgs.writeShellApplication {
           name = "tofu";
           runtimeInputs = [
@@ -37,8 +65,8 @@ in
             project=$1
             shift
             cd "$(git rev-parse --show-toplevel)"
-            state="''${XDG_STATE_HOME:-$HOME/.local/state}/infra/$project"
-            mkdir -p "$state"
+            export PG_CONN_STR=${lib.escapeShellArg "postgres://tofu@${config.fleet.hosts.bastion.tailnetAddress}:${toString statePort}/tofu?sslmode=disable"}
+            export PG_SCHEMA_NAME=$project
             export TF_VAR_fleet_domain=${lib.escapeShellArg config.fleet.domain}
             export TF_VAR_fleet_hosts=${lib.escapeShellArg hosts}
             export TF_VAR_fleet_edge_ports=${lib.escapeShellArg edgePorts}
@@ -48,7 +76,8 @@ in
             export TF_VAR_fleet_edge_address=${lib.escapeShellArg edge}
             export TF_VAR_fleet_cache_port=${toString config.fleet.cachePort}
             export TF_VAR_fleet_home_backup_port=${toString config.fleet.homeBackupPort}
-            export TF_CLI_ARGS_init="-input=false -lockfile=readonly -backend-config=path=$state/terraform.tfstate"
+            export TF_VAR_fleet_state_port=${toString statePort}
+            export TF_CLI_ARGS_init="-input=false -lockfile=readonly"
             command=$(printf '%q ' tofu -chdir="opentofu/$project" "$@")
             if [ -e "secrets/$project/api.yaml" ]; then
               command="sops exec-env $(printf '%q %q' "secrets/$project/api.yaml" "$command")"

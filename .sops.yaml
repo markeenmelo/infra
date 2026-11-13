@@ -57,7 +57,6 @@ creation_rules:
     key_groups:
       - age:
           - *operator
-          - *racknerd
           - *bastion
   - path_regex: ^secrets/porkbun/operator\.yaml$
     key_groups:

@@ -50,7 +50,7 @@ in
               denied = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
                 default = [ ];
-                description = "Caddy matcher bodies the edge answers with 403, for admin paths that only the LAN and the tailnet reach.";
+                description = "Caddy matcher bodies the edge answers with 404, for admin paths that only the LAN and the tailnet reach.";
               };
             };
           }
@@ -85,9 +85,9 @@ in
             ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
           ${caddy.package}/bin/caddy adapt --config Caddyfile --adapter caddyfile > config.json
           ${lib.getExe nixos.pkgs.jq} -e --argjson expected '${builtins.toJSON identityHeaders}' '
-            [ .apps.http.servers[].routes[] | .handle[]? | select(.handler == "subroute") | .routes[] ] as $site
-            | ($site | to_entries | map(select(.value | tojson | test("reverse_proxy"))) | map(.key) | min // ($site | length)) as $proxy
-            | $expected - [ $site[:$proxy][] | select(has("match") | not) | .handle[]
+            [ .apps.http.servers[].routes[] | .handle[]? | select(.handler == "subroute") | .routes[] | has("match") as $matched | .handle[] | { $matched, handler: . } ] as $steps
+            | ($steps | to_entries | map(select(.value.handler | tojson | test("reverse_proxy"))) | map(.key) | min // ($steps | length)) as $proxy
+            | $expected - [ $steps[:$proxy][] | select(.matched | not) | .handler
                             | select(.handler == "headers") | .request.delete // [] | .[] ]
               | length == 0' config.json > /dev/null
           touch $out
@@ -102,18 +102,6 @@ in
       ...
     }:
     {
-      sops = {
-        secrets = lib.genAttrs [ "PORKBUN_API_KEY" "PORKBUN_SECRET_KEY" ] (key: {
-          sopsFile = ../secrets/porkbun/api.yaml;
-        });
-        templates.caddy-env = {
-          content = ''
-            PORKBUN_API_KEY=${config.sops.placeholder.PORKBUN_API_KEY}
-            PORKBUN_SECRET_KEY=${config.sops.placeholder.PORKBUN_SECRET_KEY}
-          '';
-          restartUnits = [ "caddy.service" ];
-        };
-      };
       fleet.scrapeTargets.caddy = 19290;
       fleet.loopbackGuards.caddy-admin = {
         ports = [ 2019 ];
@@ -122,11 +110,22 @@ in
           config.services.caddy.user
         ];
       };
+      sops = {
+        secrets = lib.genAttrs [ "PORKBUN_API_KEY" "PORKBUN_SECRET_KEY" ] (_: { });
+        templates.caddy-env = {
+          content = ''
+            PORKBUN_API_KEY=${config.sops.placeholder.PORKBUN_API_KEY}
+            PORKBUN_SECRET_KEY=${config.sops.placeholder.PORKBUN_SECRET_KEY}
+          '';
+          restartUnits = [ "caddy.service" ];
+        };
+      };
       services.caddy = {
         enable = true;
         package = pkgs.callPackage ./caddy.pkg.nix { };
         environmentFile = config.sops.templates.caddy-env.path;
         globalConfig = ''
+          acme_ca https://acme-v02.api.letsencrypt.org/directory
           grace_period 10s
           metrics
         '';

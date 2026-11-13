@@ -29,7 +29,7 @@
             };
             api.server.online_client.credentials_path = "/var/lib/crowdsec/online_api_credentials.yaml";
             cscli = {
-              hub_branch = "172d08a91b352e04cc9c6012a0f7256a850e9af0";
+              hub_branch = "081a06759c2f0e45931dac63fc54096d68e2968b";
               __hub_url_template__ = "https://raw.githubusercontent.com/crowdsecurity/hub/%s/%s";
             };
           };
@@ -43,8 +43,8 @@
           scenarios = [
             {
               name = "fleet/edge-denied";
-              description = "Repeated denials by the edge itself: abroad or an admin path";
-              filter = "evt.Meta.log_type == 'http_access-log' && evt.Meta.http_status == '403' && evt.Line.Raw contains 'Edge-Denied'";
+              description = "Repeated denials by the edge itself: abroad, a crawler or an admin path";
+              filter = "evt.Meta.log_type == 'http_access-log' && evt.Line.Raw contains '\"edge_denied\":'";
               type = "leaky";
               groupby = "evt.Meta.source_ip";
               capacity = 5;

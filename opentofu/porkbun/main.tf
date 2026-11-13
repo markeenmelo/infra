@@ -5,7 +5,7 @@ terraform {
       version = "~> 0.3.4"
     }
   }
-  backend "local" {}
+  backend "pg" {}
   encryption {
     key_provider "pbkdf2" "operator" {
       passphrase = var.state_passphrase

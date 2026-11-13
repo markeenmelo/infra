@@ -24,6 +24,7 @@
       arr
       backups
       builder
+      opentofu-state
       proton-exit
       monitoring
     ];

@@ -9,10 +9,15 @@ description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, devi
 ([opentofu.nix](../../../modules/opentofu.nix)) runs any OpenTofu command inside a project with the
 credentials from `secrets/PROJECT/operator.yaml`, plus `secrets/PROJECT/api.yaml` when the
 project shares a credential with a host ([secrets skill](../secrets/SKILL.md)), and the
-state at `$XDG_STATE_HOME/infra/PROJECT/terraform.tfstate`, encrypted with
+state in schema `PROJECT` of the `tofu` database on bastion's PostgreSQL, which only the
+operator laptops reach over the tailnet, locked per run and encrypted with
 `TF_VAR_state_passphrase` from the same file. State is never in Git; a lost state is recovery,
-not a routine apply, and a moved `XDG_STATE_HOME` is a changed backend that needs an approved
-`init -migrate-state`. The `opentofu` check only runs `tofu fmt`; validation needs the providers.
+not a routine apply: adopt the live objects with `import` blocks, plan until nothing is created,
+apply, then drop the blocks. The tailscale project's own state sits behind the grant that
+project applies, and bastion's sshd forwards no ports, so a policy that loses the operator
+laptops' grant to the state port is repaired in the admin console (lifting
+`acls_externally_managed_on` first if it blocks the edit), then planned and applied again. The
+`opentofu` check only runs `tofu fmt`; validation needs the providers.
 
 ```sh
 nix run .#tofu -- tailscale providers lock -platform=linux_amd64 -platform=darwin_arm64  # provider change
@@ -39,8 +44,8 @@ bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, 
 app passes as `TF_VAR_fleet_hosts`; the bastion ports racknerd reaches for the public apps in
 `fleet.web.apps` come the same way as `TF_VAR_fleet_edge_ports`, and each host's
 `fleet.hosts.HOST.telemetry` ports as `TF_VAR_fleet_telemetry`, and the cache port, the home
-backup port, the routed LAN subnets and the gateway as `fleet_cache_port`,
-`fleet_home_backup_port`, `fleet_routes` and `fleet_lan`, so a new public app, a new log
+backup port, the state database's port, the routed LAN subnets and the gateway as `fleet_cache_port`,
+`fleet_home_backup_port`, `fleet_state_port`, `fleet_routes` and `fleet_lan`, so a new public app, a new log
 sender or a moved port needs only a plan and an apply. Every project reads the domain
 from `fleet.domain` as `TF_VAR_fleet_domain`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
@@ -69,8 +74,8 @@ to the edge (`fleet.hosts.*.publicAddress`, passed as `fleet_edge_address`), sin
 certificate names none ([proxy skill](../proxy/SKILL.md)), so publishing an app needs no DNS
 change; the `CAA` set that confines issuance to Let's Encrypt, wildcard included, and forbids
 S/MIME; and the null-mail set (null `MX` on the apex and on the wildcard, `-all` SPF, reject
-DMARC covering subdomains, empty DKIM) that lets no one send as the domain or any name under it. The API keys in `secrets/porkbun/api.yaml` are the
-edge's DNS-01 keys and are full-authority, so a plan already carries risk. A record that exists before its block is
+DMARC covering subdomains, empty DKIM) that lets no one send as the domain or any name under it. The API keys in `secrets/porkbun/api.yaml` are
+bastion's DNS-01 keys and are full-authority, so a plan already carries risk. A record that exists before its block is
 adopted with an `import` block (`<record_id>_<domain>_<type>`, ids from the operator's
 private listing), never duplicated.
 

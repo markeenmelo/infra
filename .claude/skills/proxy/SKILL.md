@@ -6,8 +6,8 @@ description: "The public edge on racknerd: Caddy with a wildcard certificate by 
 # Edge proxy
 
 [edge.nix](../../../modules/edge.nix) is racknerd's whole public surface: Caddy on TCP 443, with 80
-only redirecting there and no HTTP/3, so the firewall opens no UDP; one wildcard certificate for the domain obtained through Porkbun DNS-01 with the keys in
-`secrets/porkbun/api.yaml` ([secrets skill](../secrets/SKILL.md)), and one `handle` per published
+only redirecting there and no HTTP/3, so the firewall opens no UDP; one wildcard certificate for the domain obtained from Let's Encrypt alone through Porkbun DNS-01 with racknerd's own keys in
+`secrets/hosts/racknerd.yaml` ([secrets skill](../secrets/SKILL.md)), a key Porkbun limits to DNS changes from racknerd's address, and one `handle` per published
 hostname forwarding to a bastion port over the tailnet. Anything else on the wildcard is aborted
 without a response, so scanners learn nothing. The published apps authenticate natively, since
 their mobile clients cannot pass a forward-auth portal, and so do the apps only bastion's LAN
@@ -21,14 +21,14 @@ it is `tailnetOnly`.
 The tailnet policy must let racknerd reach each backend port ([opentofu skill](../opentofu/SKILL.md)).
 
 Every forwarded request loses the `Remote-*` and `X-Forwarded-*` identity headers, so only
-Authelia on bastion can set them, and gets the security headers the old edge sent. Each app's
+Authelia on bastion can set them, and every response gets the security headers in the site's `header` block: the ones marked `?` are defaults an app's own value replaces, and there is no Content-Security-Policy, since one policy cannot fit every app. Each app's
 admin paths (Jellyfin's, including password changes, Immich's admin areas, and OpenCloud's user,
 group and role management) are
-denied at the edge as defence in depth, each app's own authorization being the primary control:
-administering those apps happens over the LAN or the tailnet, never through the public hostname. Each app's `denied` list says which logins the public hostname still takes; rate limiting and bans there come from CrowdSec.
+answered 404 at the edge as defence in depth, each app's own authorization being the primary control:
+administering those apps happens over the LAN or the tailnet, never through the public hostname. Each app's `denied` list says which logins the public hostname still takes; bans there come from CrowdSec, and a per-address `rate_limit` zone answers 429 past a ceiling set above an Immich thumbnail burst.
 
-Requests from outside `countries` get a 403 before any app sees them; the lookup uses the DB-IP
-country database packaged in nixpkgs, so it updates with the flake lock and needs no account.
+Requests from outside `countries`, from the `hosting` networks (clouds and server hosts, where scanners run, Canadian addresses included) and from the `crawlers` user agents are aborted without a response before any app sees them, the answer an unpublished name gets, so a refusal reveals nothing; `/robots.txt` disallows everything. A household member abroad, or on a VPN that exits through a hosting network, uses the tailnet. The lookups use the DB-IP
+country and ASN databases packaged in nixpkgs, so they update with the flake lock and need no account.
 Tailnet clients never need the edge, even behind a foreign exit node: the split DNS sends the
 domain to bastion directly.
 An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, denied paths,
@@ -53,7 +53,7 @@ depends on the tailnet or bastion.
 [crowdsec.nix](../../../modules/crowdsec.nix) bans at the firewall, not in Caddy: the engine
 tails the access log as a member of the `caddy` group, the hub `caddy` collection parses it and
 supplies the generic HTTP scenarios, and one local scenario bans an address after repeated
-denials by the edge itself, which marks them with a response header so backend 403s never
+denials by the edge itself, which marks them with an `edge_denied` field in the access log and nothing in the response, so backend errors never
 count; the community blocklist comes from the central API the setup unit registers with
 on first boot. The firewall bouncer registers itself with the local API and drops banned
 addresses in nftables, which is why the server uses the nftables backend. Ban length grows

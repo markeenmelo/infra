@@ -5,7 +5,7 @@ terraform {
       version = "~> 0.29.3"
     }
   }
-  backend "local" {}
+  backend "pg" {}
   encryption {
     key_provider "pbkdf2" "operator" {
       passphrase = var.state_passphrase
@@ -60,6 +60,11 @@ variable "fleet_cache_port" {
   type        = number
 }
 
+variable "fleet_state_port" {
+  description = "Bastion port of the PostgreSQL that holds OpenTofu state; the tofu app sets it."
+  type        = number
+}
+
 variable "fleet_home_backup_port" {
   description = "Bastion port of the ThinkPad's restic server, from fleet.homeBackupPort; the tofu app sets it."
   type        = number
@@ -79,6 +84,7 @@ locals {
     grafite = "100.91.224.11"
   }, var.fleet_hosts)
   admin_clients = ["thinkpad", "asahi", "mac", "grafite"]
+  operators     = ["thinkpad", "asahi", "mac"]
   enrollment = {
     thinkpad  = ["tag:admin-client"]
     asahi     = ["tag:admin-client"]
@@ -113,6 +119,7 @@ locals {
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
       { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:${var.fleet_cache_port}"]) },
       { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:${var.fleet_home_backup_port}"] },
+      { src = local.operators, dst = ["bastion"], ip = ["tcp:${var.fleet_state_port}"] },
       { src = concat(local.admin_clients, ["tag:ci"]), dst = ["bastion"], ip = ["tcp:${var.fleet_cache_port}"] },
       { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = [var.fleet_lan.bastion.gateway], ip = ["tcp:443"] },
@@ -122,11 +129,11 @@ locals {
     ])
     tests = concat([for host, ports in local.telemetry : { src = host, proto = "tcp", accept = [for port in ports : "bastion:${port}"], deny = [for port in setsubtract(flatten(values(local.telemetry)), ports) : "bastion:${port}"] }], [
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22"] },
-      { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"] },
+      { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
-      { src = "group:members", proto = "tcp", deny = ["tag:server:22"] },
-      { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22"] },
-      { src = "racknerd", proto = "tcp", accept = ["bastion:9091"], deny = ["bastion:443"] },
+      { src = "group:members", proto = "tcp", deny = ["tag:server:22", "bastion:${var.fleet_state_port}"] },
+      { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}"] },
+      { src = "racknerd", proto = "tcp", accept = ["bastion:9091"], deny = ["bastion:443", "bastion:${var.fleet_state_port}"] },
     ])
   }
 }

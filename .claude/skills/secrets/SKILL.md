@@ -34,7 +34,7 @@ rotating every value its files held.
 | `hosts/asahi.yaml` | operator, asahi | `tailscale-auth-key`, `wifi-psk` (MN-Home), `nix-build-ssh-key` ([asahi skill](../asahi/SKILL.md)) |
 | `shared/mcp.yaml` | operator, mac, thinkpad, asahi | `github-mcp-token`, `grafana-mcp-token` (below) |
 | `tailscale/operator.yaml` | operator | Tailscale OAuth client, tailnet name, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
-| `porkbun/api.yaml` | operator, racknerd, bastion | `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` for DNS-01 ([proxy skill](../proxy/SKILL.md)) |
+| `porkbun/api.yaml` | operator, bastion | `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` for bastion's DNS-01 and the `tofu` app; racknerd keeps its own pair under the same names in `hosts/racknerd.yaml`, which Porkbun limits to DNS changes from its address ([proxy skill](../proxy/SKILL.md)) |
 | `porkbun/operator.yaml` | operator | state passphrase for the DNS records; the app adds `api.yaml` ([opentofu skill](../opentofu/SKILL.md)) |
 | `unifi/operator.yaml` | operator | `UNIFI_API_KEY` for the gateway, the Wi-Fi passphrases by SSID, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
 
