@@ -1,33 +1,6 @@
-let
-  exitNode =
-    pkgs: tailscale:
-    pkgs.writeShellApplication {
-      name = "tailnet-exit-node";
-      runtimeInputs = [
-        tailscale
-        pkgs.jq
-      ];
-      text = ''
-        node=$1
-        if [ "$node" = direct ]; then
-          exec tailscale set --exit-node=
-        fi
-        if ! tailscale status --json | jq -e --arg node "$node" '[(.Peer // {})[] | select(.ExitNodeOption and .Online) | .DNSName | split(".")[0]] | index($node)' > /dev/null; then
-          echo "not an online exit node: $node" >&2
-          exit 1
-        fi
-        exec tailscale set --exit-node="$node" --exit-node-allow-lan-access
-      '';
-    };
-in
 {
   flake.modules.nixos.desktop =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+    { lib, ... }:
     {
       options.fleet = {
         internalDisplay = lib.mkOption {
@@ -44,18 +17,6 @@ in
         withUWSM = true;
       };
       config.environment.sessionVariables.NIXOS_OZONE_WL = "1";
-      config.security.sudo.extraRules = [
-        {
-          users = [ "marcos" ];
-          runAs = "root";
-          commands = [
-            {
-              command = "${lib.getExe (exitNode pkgs config.services.tailscale.package)} ^[a-z0-9-]+$";
-              options = [ "NOPASSWD" ];
-            }
-          ];
-        }
-      ];
     };
 
   flake.modules.homeManager.desktop =
@@ -108,7 +69,11 @@ in
           for i in "''${!nodes[@]}"; do
             if [ "''${nodes[$i]}" = "$current" ]; then next=''${nodes[$(((i + 1) % ''${#nodes[@]}))]}; fi
           done
-          ${osConfig.security.wrapperDir}/sudo -n ${lib.getExe (exitNode pkgs osConfig.services.tailscale.package)} "$next"
+          if [ "$next" = direct ]; then
+            tailscale set --exit-node=
+          else
+            tailscale set --exit-node="$next" --exit-node-allow-lan-access
+          fi
           notify-send --app-name=tailscale "Exit node" "$next"
         '';
       };
@@ -169,6 +134,26 @@ in
           desc = "Fullscreen";
           dsp = lua "hl.dsp.window.fullscreen()";
         };
+        "SUPER + Tab" = {
+          desc = "Previous workspace";
+          dsp = lua ''hl.dsp.focus({ workspace = "previous" })'';
+        };
+        "SUPER + bracketleft" = {
+          desc = "Focus previous monitor";
+          dsp = lua ''hl.dsp.focus({ monitor = "-1" })'';
+        };
+        "SUPER + bracketright" = {
+          desc = "Focus next monitor";
+          dsp = lua ''hl.dsp.focus({ monitor = "+1" })'';
+        };
+        "SUPER + P" = {
+          desc = "Pin floating window";
+          dsp = lua "hl.dsp.window.pin()";
+        };
+        "SUPER + SHIFT + Return" = {
+          desc = "Swap with master";
+          dsp = lua ''hl.dsp.layout("swapwithmaster")'';
+        };
         "ALT + Tab" = {
           desc = "Window switcher";
           dsp = noctalia "window-switcher hold";
@@ -190,28 +175,85 @@ in
           dsp = noctalia "screenshot-annotate";
         };
       };
-      moves = lib.listToAttrs (
-        map
-          (
-            direction:
-            lib.nameValuePair "SUPER + SHIFT + ${direction}" {
+      media = {
+        "XF86AudioRaiseVolume" = {
+          desc = "Volume up";
+          dsp = noctalia "volume-up";
+          repeating = true;
+        };
+        "XF86AudioLowerVolume" = {
+          desc = "Volume down";
+          dsp = noctalia "volume-down";
+          repeating = true;
+        };
+        "XF86AudioMute" = {
+          desc = "Mute";
+          dsp = noctalia "volume-mute";
+        };
+        "XF86AudioMicMute" = {
+          desc = "Mute microphone";
+          dsp = noctalia "mic-mute";
+        };
+        "XF86MonBrightnessUp" = {
+          desc = "Brightness up";
+          dsp = noctalia "brightness-up";
+          repeating = true;
+        };
+        "XF86MonBrightnessDown" = {
+          desc = "Brightness down";
+          dsp = noctalia "brightness-down";
+          repeating = true;
+        };
+        "XF86AudioPlay" = {
+          desc = "Play or pause";
+          dsp = noctalia "media toggle";
+        };
+        "XF86AudioPause" = {
+          desc = "Play or pause";
+          dsp = noctalia "media toggle";
+        };
+        "XF86AudioNext" = {
+          desc = "Next track";
+          dsp = noctalia "media next";
+        };
+        "XF86AudioPrev" = {
+          desc = "Previous track";
+          dsp = noctalia "media previous";
+        };
+      };
+      windowKeys =
+        lib.concatMapAttrs
+          (direction: step: {
+            "SUPER + SHIFT + ${direction}" = {
               desc = "Move window ${direction}";
               dsp = lua "hl.dsp.window.move({ direction = ${lib.generators.toLua { } direction} })";
-            }
-          )
-          [
-            "left"
-            "right"
-            "up"
-            "down"
-          ]
-      );
+            };
+            "SUPER + CTRL + ${direction}" = {
+              desc = "Resize window ${direction}";
+              dsp = lua "hl.dsp.window.resize({ x = ${toString step.x}, y = ${toString step.y}, relative = true })";
+              repeating = true;
+            };
+          })
+          {
+            left = {
+              x = -50;
+              y = 0;
+            };
+            right = {
+              x = 50;
+              y = 0;
+            };
+            up = {
+              x = 0;
+              y = -50;
+            };
+            down = {
+              x = 0;
+              y = 50;
+            };
+          };
     in
     {
-      home.packages = [
-        pkgs.brightnessctl
-        pkgs.playerctl
-      ];
       wayland.windowManager.hyprland = {
         enable = true;
         package = null;
@@ -303,69 +345,96 @@ in
               blur_popups = true;
             }
           ];
-          window_rule = [
-            {
-              name = "file-picker";
-              match.class = "^xdg-desktop-portal-gtk$";
-              float = true;
-              center = true;
-              size = [
-                1100
-                700
-              ];
-            }
-            {
-              name = "picture-in-picture";
-              match.title = "^Picture-in-Picture$";
-              float = true;
-              pin = true;
-              keep_aspect_ratio = true;
-              size = [
-                640
-                360
-              ];
-              move = [
-                "monitor_w-window_w-24"
-                "monitor_h-window_h-24"
-              ];
-            }
-            {
-              name = "utilities";
-              match.class = "^(org\\.gnome\\.FileRoller|org\\.gnome\\.Loupe)$";
-              float = true;
-              center = true;
-            }
-            {
-              name = "keybinds";
-              match.class = "^hypr\\.keybinds$";
-              float = true;
-              center = true;
-              size = [
-                900
-                700
-              ];
-            }
-            {
-              name = "bitwarden";
-              match.class = "^bitwarden$";
-              float = true;
-              center = true;
-            }
-            {
-              name = "telegram-media";
-              match = {
-                class = "^org\\.telegram\\.desktop$";
-                title = "^Media viewer$";
-              };
-              float = true;
-              center = true;
-            }
-          ];
-          unbind = map (key: { _args = [ key ]; }) [
-            "SUPER + Q"
-            "SUPER + R"
-            "SUPER + E"
-          ];
+          window_rule =
+            lib.mapAttrsToList
+              (class: workspace: {
+                name = "workspace-${class}";
+                match.class = "^${lib.escapeRegex class}$";
+                inherit workspace;
+              })
+              {
+                "zen-beta" = "1";
+                "com.mitchellh.ghostty" = "2";
+                "dev.zed.Zed" = "2";
+                "org.telegram.desktop" = "4";
+                "com.github.dagmoller.whatsapp-electron" = "4";
+              }
+            ++ [
+              {
+                name = "file-picker";
+                match.class = "^xdg-desktop-portal-gtk$";
+                float = true;
+                center = true;
+                size = [
+                  1100
+                  700
+                ];
+              }
+              {
+                name = "picture-in-picture";
+                match.title = "^Picture-in-Picture$";
+                float = true;
+                pin = true;
+                keep_aspect_ratio = true;
+                size = [
+                  640
+                  360
+                ];
+                move = [
+                  "monitor_w-window_w-24"
+                  "monitor_h-window_h-24"
+                ];
+              }
+              {
+                name = "utilities";
+                match.class = "^(org\\.gnome\\.FileRoller|org\\.gnome\\.Loupe)$";
+                float = true;
+                center = true;
+              }
+              {
+                name = "keybinds";
+                match.class = "^hypr\\.keybinds$";
+                float = true;
+                center = true;
+                size = [
+                  900
+                  700
+                ];
+              }
+              {
+                name = "bitwarden";
+                match.class = "^bitwarden$";
+                float = true;
+                center = true;
+              }
+              {
+                name = "zen-extension-popout";
+                match = {
+                  class = "^zen-beta$";
+                  title = "^Extension: \\(.*";
+                };
+                float = true;
+                center = true;
+              }
+              {
+                name = "telegram-media";
+                match = {
+                  class = "^org\\.telegram\\.desktop$";
+                  title = "^Media viewer$";
+                };
+                float = true;
+                center = true;
+              }
+            ];
+          unbind = map (key: { _args = [ key ]; }) (
+            [
+              "SUPER + Q"
+              "SUPER + R"
+              "SUPER + E"
+              "SUPER + P"
+            ]
+            ++ lib.attrNames media
+          );
           bind =
             lib.concatMap
               (lib.mapAttrsToList (
@@ -373,13 +442,18 @@ in
                   _args = [
                     key
                     bind.dsp
-                    { description = bind.desc; }
+                    {
+                      description = bind.desc;
+                      locked = lib.hasPrefix "XF86" key;
+                      repeating = bind.repeating or false;
+                    }
                   ];
                 }
               ))
               [
                 binds
-                moves
+                windowKeys
+                media
               ];
         };
       };

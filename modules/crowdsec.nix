@@ -29,7 +29,7 @@
             };
             api.server.online_client.credentials_path = "/var/lib/crowdsec/online_api_credentials.yaml";
             cscli = {
-              hub_branch = "e5bba29c9a9a9e3a78bff1be31c7ad9719fab11f";
+              hub_branch = "172d08a91b352e04cc9c6012a0f7256a850e9af0";
               __hub_url_template__ = "https://raw.githubusercontent.com/crowdsecurity/hub/%s/%s";
             };
           };

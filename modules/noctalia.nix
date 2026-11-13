@@ -10,6 +10,7 @@
           passwordlessSyncUsers = [ "marcos" ];
         };
         gnome.gnome-keyring.enable = true;
+        tailscale.extraSetFlags = [ "--operator=marcos" ];
       };
       systemd.services.accounts-daemon.serviceConfig.StateDirectoryMode = "0700";
       preservation.preserveAt."/persist".directories = [
@@ -31,49 +32,6 @@
     }:
     let
       systemd = osConfig.systemd.package;
-      exitNode = "${lib.getExe osConfig.services.tailscale.package} status --json | ${lib.getExe pkgs.jq} -r ${lib.escapeShellArg ''if .BackendState != "Running" then "off" else ([(.Peer // {})[] | select(.ExitNode) | .DNSName | split(".")[0]][0] // "direct") end''}";
-      plugins = pkgs.linkFarm "noctalia-plugins" {
-        "tailnet/plugin.toml" = pkgs.writeText "plugin.toml" ''
-          id = "infra/tailnet"
-          name = "Tailnet"
-          version = "1.0.0"
-          plugin_api = 43
-          author = "infra"
-          description = "Tailscale state and the exit node in use."
-
-          [[widget]]
-          id = "tailnet"
-          entry = "widget.luau"
-        '';
-        "tailnet/widget.luau" = pkgs.writeText "widget.luau" ''
-          --!nonstrict
-          local state = "…"
-
-          local function render()
-            barWidget.render(ui.row({ gap = 4, align = "center" }, {
-              ui.glyph({ name = "world" }),
-              ui.label({ text = state, maxLines = 1 }),
-            }))
-          end
-
-          function update()
-            noctalia.runAsync(${lib.generators.toLua { } exitNode}, function(result)
-              local text = string.gsub(result.stdout or "", "%s+$", "")
-              if result.exitCode ~= 0 or text == "" then
-                text = "?"
-              end
-              if text ~= state then
-                state = text
-                render()
-              end
-            end)
-          end
-
-          noctalia.setUpdateInterval(30000)
-          render()
-          update()
-        '';
-      };
     in
     {
       programs.noctalia = {
@@ -83,6 +41,10 @@
           shell = {
             clipboard_enabled = false;
             popup_shadows = false;
+            panel = {
+              open_near_click_control_center = true;
+              open_near_click_session = true;
+            };
           };
           bar.default = {
             margin_ends = 0;
@@ -94,50 +56,106 @@
             radius = 0;
             capsule_radius = 4;
             shadow = false;
+            widget_spacing = 8;
             start = [
-              "workspaces"
-              "active_window"
+              "taskbar"
               "media"
             ];
             center = [ ];
             end = [
-              "tray"
-              "cpu"
-              "memory"
-              "tailnet"
-              "network"
-              "bluetooth"
-              "volume"
-              "brightness"
-              "battery"
-              "notifications"
-              "control-center"
-              "session"
-              "clock"
+              "group:tray"
+              "group:work"
+              "group:connectivity"
+              "group:system"
+              "group:time"
             ];
+            capsule_group =
+              lib.mapAttrsToList
+                (id: members: {
+                  inherit id members;
+                  fill = "surface_container";
+                  radius = 4;
+                  padding = 8;
+                  widget_spacing = 4;
+                })
+                {
+                  tray = [ "tray" ];
+                  work = [
+                    "pull_requests"
+                    "claude"
+                  ];
+                  connectivity = [
+                    "tailnet"
+                    "network"
+                    "bluetooth"
+                  ];
+                  system = [
+                    "volume"
+                    "battery"
+                    "notifications"
+                  ];
+                  time = [
+                    "agenda"
+                    "weather"
+                    "clock"
+                  ];
+                };
           };
           widget = {
             clock.format = "{:%a %d %b %H:%M}";
-            cpu = {
-              type = "sysmon";
-              stat = "cpu_usage";
-              visualization = "none";
+            taskbar = {
+              group_by_workspace = true;
+              hide_empty_workspaces = true;
+              group_single_icon_per_app = true;
+              prefer_symbolic_icons = true;
+              workspace_label_placement = "inside";
             };
-            memory = {
-              type = "sysmon";
-              stat = "ram_used";
-              visualization = "none";
+            media = {
+              hide_when_no_media = true;
+              max_length = 160;
             };
-            media.hide_when_no_media = true;
-            tailnet.type = "infra/tailnet:tailnet";
+            weather.show_condition = false;
+            network.show_label = false;
+            tailnet = {
+              type = "rylos/tailnet:bar";
+              show_count = false;
+            };
+            agenda.type = "yuta/meeting-bar:bar";
+            pull_requests = {
+              type = "raycursive/github-prs:bar";
+              hide_when_zero = true;
+            };
+            claude.type = "jrohland/claudecode:pill";
+          };
+          weather = {
+            enabled = true;
+            unit = "metric";
+          };
+          location.auto_locate = true;
+          calendar = {
+            enabled = true;
+            account.google = {
+              type = "google";
+              name = "Google";
+            };
+          };
+          plugin_settings."yuta/meeting-bar" = {
+            title_length = 16;
+            hide_empty = true;
+            preview_minutes = 120;
           };
           plugins = {
-            enabled = [ "infra/tailnet" ];
+            enabled = [
+              "jrohland/claudecode"
+              "raycursive/github-prs"
+              "rylos/tailnet"
+              "yuta/meeting-bar"
+            ];
             source = [
               {
-                name = "infra";
+                name = "pinned";
                 kind = "path";
-                location = "${plugins}";
+                location = "${pkgs.callPackage ./noctalia-plugins.pkg.nix { }}";
                 enabled = true;
               }
             ];

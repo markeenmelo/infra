@@ -55,12 +55,7 @@
             dark = "Material Icon Theme";
             light = "Material Icon Theme";
           };
-          edit_predictions.provider = "copilot";
-          agent.commit_message_model = {
-            provider = "copilot_chat";
-            model = "gpt-4.1";
-          };
-          agent_servers.claude-acp.type = "registry";
+          disable_ai = true;
           telemetry = {
             diagnostics = false;
             metrics = false;
@@ -73,6 +68,10 @@
           minimap.show = "never";
           tab_bar.show_nav_history_buttons = false;
           collaboration_panel.button = false;
+          project_panel.dock = "left";
+          git_panel.dock = "left";
+          outline_panel.dock = "left";
+          terminal.dock = "right";
           node = {
             path = lib.getExe pkgs.nodejs;
             npm_path = lib.getExe' pkgs.nodejs "npm";
