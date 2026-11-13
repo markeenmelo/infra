@@ -34,7 +34,15 @@ in
   flake.modules.homeManager.desktop =
     { pkgs, ... }:
     {
-      home.packages = [ pkgs.opencloud-desktop ];
+      home.packages = [
+        (pkgs.symlinkJoin {
+          inherit (pkgs.opencloud-desktop) name meta;
+          paths = [ pkgs.opencloud-desktop ];
+          nativeBuildInputs = [ pkgs.makeWrapper ];
+          # shortcut: Fusion instead of Stylix's Kvantum, whose missing QML style aborts the client; drop when either ships one
+          postBuild = "wrapProgram $out/bin/opencloud --set QT_STYLE_OVERRIDE Fusion";
+        })
+      ];
     };
 
   flake.modules.nixos.opencloud =
