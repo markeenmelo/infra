@@ -53,6 +53,7 @@
               done <<< "$inputs"
               ;;
             off)
+              set +o errexit
               if [ -e ${flag} ]; then inputs=$(cat ${flag}); fi
               rm -f ${flag}
               ;;
@@ -146,6 +147,7 @@
       systemd.services = {
         gaming = {
           description = "Steam Big Picture on the eGPU";
+          restartIfChanged = false;
           after = [ "systemd-user-sessions.service" ];
           wants = [
             "gaming-awake.service"
