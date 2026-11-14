@@ -150,7 +150,7 @@ resource "tailscale_tailnet_settings" "fleet" {
   devices_key_duration_days                   = 180
   users_approval_on                           = true
   users_role_allowed_to_join_external_tailnet = "admin"
-  regional_routing_on                         = false
+  route_selection                             = "active-passive-failover"
   posture_identity_collection_on              = false
   depends_on                                  = [tailscale_acl.fleet]
 }
