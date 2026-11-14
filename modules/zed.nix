@@ -61,10 +61,13 @@
             dark = "Material Icon Theme";
             light = "Material Icon Theme";
           };
-          agent.sidebar_side = "right";
-          agent.commit_message_model = {
-            provider = "openai_subscribed";
-            model = "gpt-5.4-nano";
+          agent = {
+            dock = "right";
+            threads_sidebar.auto_open = false;
+            commit_message_model = {
+              provider = "openai_subscribed";
+              model = "gpt-5.4-nano";
+            };
           };
           edit_predictions.provider = "none";
           telemetry = {
