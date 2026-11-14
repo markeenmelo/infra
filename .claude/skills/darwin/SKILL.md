@@ -42,6 +42,6 @@ operator's settings; the sandbox and bypass lock live in the managed settings fi
 activation installs under `/Library/Application Support/ClaudeCode`, which no user setting
 overrides. The plugins it loads (cache-tax, ponytail, caveman) are `NAME.pkg.nix` pins on a
 commit, never a tag their authors could move: their hooks run outside the sandbox with the
-operator's rights, so `just update` leaves them alone and `just update-plugin NAME` bumps one at a
-time, committed on its own after reading what changed in its hooks. The ponytail pin also feeds
+operator's rights, so after `just update` read what changed in their hooks before committing
+([nix skill](../nix/SKILL.md)). The ponytail pin also feeds
 [audit.yml](../../../.github/workflows/audit.yml), where it runs with the Claude OAuth token.
