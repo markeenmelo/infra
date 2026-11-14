@@ -34,3 +34,5 @@ for project in opentofu/*/; do
   rm -f "${project}.terraform.lock.hcl"
   tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=darwin_arm64
 done
+
+pinact run --update

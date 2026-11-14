@@ -17,7 +17,10 @@
         enable = true;
         taps = lib.attrNames config.nix-homebrew.taps;
         global.autoUpdate = false;
-        onActivation.cleanup = "zap";
+        onActivation = {
+          cleanup = "zap";
+          upgrade = true;
+        };
         casks = [
           "zen"
           "ghostty"

@@ -32,7 +32,7 @@
     {
       legacyPackages = lib.mapAttrs (name: _: pkgs.callPackage ./${name}.pkg.nix { }) pins;
       apps.update-pins = {
-        meta.description = "update-pins: bump every NAME.pkg.nix pin, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit and the OpenTofu providers to the latest upstream, with their hashes";
+        meta.description = "update-pins: bump every NAME.pkg.nix pin, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit, the GitHub Actions and the OpenTofu providers to the latest upstream, with their hashes";
         program = pkgs.writeShellApplication {
           name = "update-pins";
           runtimeInputs = [
@@ -41,6 +41,7 @@
             pkgs.gnused
             pkgs.jq
             pkgs.opentofu
+            pkgs.pinact
             nix-update
           ];
           text = lib.concatLines (
