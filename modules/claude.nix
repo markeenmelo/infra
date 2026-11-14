@@ -86,6 +86,7 @@ in
       {
         home = {
           packages = [
+            pkgs.entire
             pkgs.nodejs
             pkgs.rtk
           ];
