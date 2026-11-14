@@ -44,7 +44,7 @@ unifi-settings action:
 install host target root:
     nix run .#install -- "$@"
 
-[doc("Update every flake input and every NAME.pkg.nix pin")]
+[doc("Update every flake input, NAME.pkg.nix pin and OpenTofu provider")]
 update:
     nix flake update
     nix run .#update-pins

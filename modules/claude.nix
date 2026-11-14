@@ -87,6 +87,7 @@ in
         home = {
           packages = [
             pkgs.entire
+            (pkgs.callPackage ./greptile.pkg.nix { })
             pkgs.nodejs
             pkgs.rtk
           ];
