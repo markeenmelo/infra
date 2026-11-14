@@ -1,3 +1,6 @@
+GITHUB_TOKEN=${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}
+export GITHUB_TOKEN
+
 caddy=modules/caddy.pkg.nix
 modules=$(grep -o 'github\.com/[^@"]*' "$caddy")
 while read -r module; do

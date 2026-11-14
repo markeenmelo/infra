@@ -7,6 +7,10 @@
         caddy = [ "--version=skip" ];
         caveman = [ "--version=branch" ];
         decluttarr = [ ];
+        claude-plugins-official = [ "--version=branch" ];
+        trailofbits-skills = [ "--version=branch" ];
+        entire-graph = [ ];
+        entire-skills = [ "--version=branch" ];
         easynews-indexer = [ "--version=branch" ];
         greptile = [ ];
         jellyfin-sso = [ ];
@@ -38,6 +42,7 @@
           runtimeInputs = [
             pkgs.curl
             pkgs.git
+            pkgs.gh
             pkgs.gnused
             pkgs.jq
             pkgs.opentofu

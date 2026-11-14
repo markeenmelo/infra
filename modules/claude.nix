@@ -87,6 +87,7 @@ in
         home = {
           packages = [
             pkgs.entire
+            (pkgs.callPackage ./entire-graph.pkg.nix { })
             (pkgs.callPackage ./greptile.pkg.nix { })
             pkgs.nodejs
             pkgs.rtk
@@ -126,9 +127,61 @@ in
         programs.claude-code = {
           enable = true;
           enableMcpIntegration = true;
-          lspServers.nix = {
-            command = lib.getExe pkgs.nixd;
-            extensionToLanguage.".nix" = "nix";
+          lspServers = {
+            nix = {
+              command = lib.getExe pkgs.nixd;
+              extensionToLanguage.".nix" = "nix";
+            };
+            clangd = {
+              command = lib.getExe' pkgs.clang-tools "clangd";
+              extensionToLanguage = {
+                ".c" = "c";
+                ".h" = "c";
+                ".cpp" = "cpp";
+                ".cc" = "cpp";
+                ".hpp" = "cpp";
+              };
+            };
+            python = {
+              command = lib.getExe' pkgs.basedpyright "basedpyright-langserver";
+              args = [ "--stdio" ];
+              extensionToLanguage.".py" = "python";
+            };
+            typescript = {
+              command = lib.getExe pkgs.typescript-language-server;
+              args = [ "--stdio" ];
+              extensionToLanguage = {
+                ".ts" = "typescript";
+                ".tsx" = "typescriptreact";
+                ".js" = "javascript";
+                ".jsx" = "javascriptreact";
+                ".mjs" = "javascript";
+              };
+            };
+            lua = {
+              command = lib.getExe pkgs.lua-language-server;
+              extensionToLanguage.".lua" = "lua";
+            };
+            terraform = {
+              command = lib.getExe pkgs.terraform-ls;
+              args = [ "serve" ];
+              extensionToLanguage = {
+                ".tf" = "terraform";
+                ".tofu" = "terraform";
+              };
+            };
+            bash = {
+              command = lib.getExe pkgs.bash-language-server;
+              args = [ "start" ];
+              extensionToLanguage = {
+                ".sh" = "shellscript";
+                ".bash" = "shellscript";
+              };
+            };
+            rust = {
+              command = lib.getExe pkgs.rust-analyzer;
+              extensionToLanguage.".rs" = "rust";
+            };
           };
           settings = {
             theme = "dark-ansi";
@@ -138,11 +191,30 @@ in
             };
             env = {
               RTK_SUPPRESS_HOOK_WARNING = "1";
-              CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" [
-                "${(pkgs.callPackage ./cache-tax.pkg.nix { }).src}"
-                "${(pkgs.callPackage ./ponytail.pkg.nix { }).src}"
-                "${(pkgs.callPackage ./caveman.pkg.nix { }).src}"
-              ];
+              CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" (
+                [
+                  "${(pkgs.callPackage ./cache-tax.pkg.nix { }).src}"
+                  "${(pkgs.callPackage ./ponytail.pkg.nix { }).src}"
+                  "${(pkgs.callPackage ./caveman.pkg.nix { }).src}"
+                  "${(pkgs.callPackage ./entire-skills.pkg.nix { }).src}"
+                ]
+                ++ map (plugin: "${(pkgs.callPackage ./trailofbits-skills.pkg.nix { }).src}/plugins/${plugin}") [
+                  "agentic-actions-auditor"
+                  "c-review"
+                  "modern-cpp"
+                  "modern-python"
+                  "rust-review"
+                  "insecure-defaults"
+                  "sharp-edges"
+                  "supply-chain-risk-auditor"
+                ]
+                ++
+                  map (plugin: "${(pkgs.callPackage ./claude-plugins-official.pkg.nix { }).src}/plugins/${plugin}")
+                    [
+                      "skill-creator"
+                      "claude-md-management"
+                    ]
+              );
             };
             hooks.PreToolUse = [
               {
