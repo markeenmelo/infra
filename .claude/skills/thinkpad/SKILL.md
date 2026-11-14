@@ -1,6 +1,6 @@
 ---
 name: thinkpad
-description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Hyprland, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, hyprland.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, or reinstalling the laptop."
+description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Hyprland, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), the eGPU gaming session (Steam in gamescope on a second seat), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, hyprland.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, gaming.nix, or reinstalling the laptop, and when the gaming session, the eGPU or the NVIDIA driver misbehaves."
 ---
 
 # ThinkPad
@@ -63,11 +63,51 @@ battery `power-profile-ac` switches to power-saver and restores the previous pro
 battery charges to 90% and resumes at 85%. The lid hides the built-in panel while another display
 is connected.
 
+## Gaming
+
+[gaming.nix](../../../modules/gaming.nix) runs Steam's Deck interface in gamescope on an NVIDIA
+card in a Thunderbolt enclosure, beside the Hyprland session instead of in it. The card, and while
+gaming the Keychron receivers, belong to a second logind seat, so Hyprland never opens the card and
+keeps the built-in panel, keyboard and trackpad. `gaming.service` is that session; `gaming`,
+`SUPER + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it;
+the unit's own stop asks Steam to shut down and waits for it, so a running game is not cut off
+mid-save. A reboot or poweroff is the exception: logind stops the session's processes at the same
+time as the unit, so leave the session first.
+Its handover moves the monitor to DisplayPort over DDC and back to whatever input was active,
+holds the performance profile and a sleep inhibitor, and runs `scx_lavd`.
+
+It starts only from an unlocked session, never on plug: the unit runs as `marcos` without a login,
+so starting on plug would hand an unlocked session to whoever holds the enclosure. For the same
+reason a running session is unlocked: the idle lock covers the Hyprland seat only, and it fires
+during play because that seat sees no input. Leaving the desk means leaving the session first.
+
+The NVIDIA driver freezes the kernel when the card leaves while it is bound, even idle, and a
+frozen removal blocks every rescan and the next shutdown; only a forced reboot clears it. So the
+card sits on the PCI bus only while the session runs: a udev rule removes it whenever it appears
+otherwise, the handover rescans on start, and on stop it detaches the card and unloads the NVIDIA
+modules. The cable is safe to pull whenever no session runs, and never during one. For the same
+reason the Hyprland session loads Mesa only: a desktop program that opens the NVIDIA device nodes
+keeps the old card alive and the next start fails with `Failed to allocate NvKmsKapiDevice`.
+
+gamescope gets the card and the mode by argument, since it otherwise picks the Intel Vulkan device
+and a lower mode; adaptive sync is off because it glitched on this card, HDR stays on. gamescope's
+own output is filed under the session scope, not the unit: read a start with
+`journalctl -b --since -1min`, not `-u gaming.service`. The proprietary NVIDIA module and the
+`SIGKILL` on stop are `shortcut:` entries in the module. A frame counter is Steam's own, or
+`mangohud %command%` per game; gamescope's mangoapp overlay did not draw on this card.
+
+bastion builds Steam's 32-bit closure, so it is advertised as an `i686-linux` builder
+([builder.nix](../../../modules/builder.nix)). The NVIDIA module is built against the laptop's
+kernel, the newest nixpkgs has, so a kernel the driver does not build against yet blocks every
+thinkpad build until the kernel is held back.
+
 ## Backups
 
 `restic-backups-home` sends `/home/marcos` every 6 hours to the append-only server on bastion
 ([backups skill](../backups/SKILL.md)) with `backups/thinkpad-password`, never the household key;
 only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh), the keyring,
-caches and the Bitwarden socket stay out. App data stays in, browser and messenger sessions
-included, so a restore brings back a signed-in desktop; bastion holds the password too, so
-whoever controls bastion can read those sessions.
+caches and the Bitwarden socket stay out, and so do Steam's installed games, shader caches and
+downloads, which Steam fetches again. App data stays in, browser and messenger sessions
+included, so a restore brings back a signed-in desktop, and Steam's Proton prefixes, where games
+without Steam Cloud keep their saves; bastion holds the password too, so whoever controls bastion
+can read those sessions.

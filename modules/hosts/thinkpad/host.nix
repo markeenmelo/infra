@@ -10,6 +10,7 @@
       desktop
       remote-builds
       backup-home
+      gaming
       logs
     ];
     system.stateVersion = "26.11";

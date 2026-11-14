@@ -39,6 +39,19 @@
         systemd.enable = true;
         settings = {
           shell = {
+            session.actions =
+              lib.imap1
+                (index: action: {
+                  inherit action;
+                  shortcut = toString index;
+                })
+                [
+                  "lock"
+                  "logout"
+                  "lock_and_suspend"
+                  "reboot"
+                  "shutdown"
+                ];
             clipboard_enabled = false;
             popup_shadows = false;
             panel = {
