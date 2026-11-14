@@ -75,7 +75,10 @@
           fi
           if [ "$1" = off ]; then
             loginctl terminate-seat ${seat} || true
-            sleep 1
+            for _ in $(seq 20); do
+              if ! loginctl list-sessions --no-legend | grep -qw ${seat}; then break; fi
+              sleep 0.5
+            done
             for device in /sys/bus/pci/devices/*; do
               if [ -e "$device/remove" ] && [ "$(cat "$device/vendor")" = ${nvidia} ]; then
                 echo 1 > "$device/remove"
@@ -85,20 +88,28 @@
           fi
         '';
       };
-      gaming = pkgs.writeShellApplication {
-        name = "gaming";
+      quit = pkgs.writeShellApplication {
+        name = "gaming-quit";
         runtimeInputs = [
           pkgs.coreutils
-          pkgs.libnotify
           pkgs.procps
+          pkgs.util-linux
         ];
         text = ''
+          if pgrep -x steam > /dev/null; then
+            timeout 10 runuser -u marcos -- env HOME=${config.users.users.marcos.home} ${lib.getExe config.programs.steam.package} -shutdown || true
+          fi
+          for _ in $(seq 60); do
+            if ! pgrep -x steam > /dev/null; then break; fi
+            sleep 0.5
+          done
+        '';
+      };
+      gaming = pkgs.writeShellApplication {
+        name = "gaming";
+        runtimeInputs = [ pkgs.libnotify ];
+        text = ''
           if ${systemctl} is-active --quiet gaming.service; then
-            if pgrep -x steam > /dev/null; then steam -shutdown || true; fi
-            for _ in $(seq 60); do
-              if ! pgrep -x steam > /dev/null; then break; fi
-              sleep 0.5
-            done
             ${systemctl} stop --no-block gaming.service
           elif ! ${systemctl} start gaming.service; then
             notify-send --app-name=gaming "Gaming" "eGPU not connected"
@@ -166,6 +177,7 @@
             Nice = -10;
             ExecStartPre = "+${lib.getExe handover} on";
             ExecStart = "${lib.getExe config.programs.gamescope.package} --steam --prefer-vk-device ${rtx3070} -W 5120 -H 1440 -w 5120 -h 1440 -r 120 --hdr-enabled -- ${lib.getExe config.programs.steam.package} -gamepadui -steamos3 -pipewire-dmabuf";
+            ExecStop = "+${lib.getExe quit}";
             ExecStopPost = "+${lib.getExe handover} off";
             # shortcut: gamescope 3.17 hangs 25 s releasing the card through logind and then crashes, so stop kills it outright; drop when it exits cleanly
             KillSignal = "SIGKILL";

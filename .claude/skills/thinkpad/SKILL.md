@@ -70,13 +70,15 @@ card in a Thunderbolt enclosure, beside the Hyprland session instead of in it. T
 gaming the Keychron receivers, belong to a second logind seat, so Hyprland never opens the card and
 keeps the built-in panel, keyboard and trackpad. `gaming.service` is that session; `gaming`,
 `SUPER + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it;
-stopping asks Steam to shut down and waits for it before the unit goes, so a running game is not
-cut off mid-save.
+the unit's own stop asks Steam to shut down and waits for it, so a running game is not cut off
+mid-save on any stop, a reboot included.
 Its handover moves the monitor to DisplayPort over DDC and back to whatever input was active,
 holds the performance profile and a sleep inhibitor, and runs `scx_lavd`.
 
 It starts only from an unlocked session, never on plug: the unit runs as `marcos` without a login,
-so starting on plug would hand an unlocked session to whoever holds the enclosure.
+so starting on plug would hand an unlocked session to whoever holds the enclosure. For the same
+reason a running session is unlocked: the idle lock covers the Hyprland seat only, and it fires
+during play because that seat sees no input. Leaving the desk means leaving the session first.
 
 The NVIDIA driver freezes the kernel when the card leaves while it is bound, even idle, and a
 frozen removal blocks every rescan and the next shutdown; only a forced reboot clears it. So the
