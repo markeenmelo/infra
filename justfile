@@ -44,7 +44,3 @@ install host target root:
 update:
     nix flake update
     nix run .#update-pins
-
-[doc("Bump one Claude Code or Noctalia plugin pin to its default branch; read its code changes before committing")]
-update-plugin name:
-    nix run .#update-plugin -- {{ name }}
