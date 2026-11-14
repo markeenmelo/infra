@@ -71,7 +71,8 @@ gaming the Keychron receivers, belong to a second logind seat, so Hyprland never
 keeps the built-in panel, keyboard and trackpad. `gaming.service` is that session; `gaming`,
 `SUPER + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it;
 the unit's own stop asks Steam to shut down and waits for it, so a running game is not cut off
-mid-save on any stop, a reboot included.
+mid-save. A reboot or poweroff is the exception: logind stops the session's processes at the same
+time as the unit, so leave the session first.
 Its handover moves the monitor to DisplayPort over DDC and back to whatever input was active,
 holds the performance profile and a sleep inhibitor, and runs `scx_lavd`.
 
