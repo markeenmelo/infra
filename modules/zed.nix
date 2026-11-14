@@ -31,6 +31,12 @@
           "just"
           "material-icon-theme"
         ];
+        userKeymaps = [
+          {
+            context = "AgentPanel";
+            bindings.secondary-n = "agent::NewTerminalThread";
+          }
+        ];
         userSettings = {
           theme = "One Dark";
           theme_overrides."One Dark" = {
@@ -55,7 +61,12 @@
             dark = "Material Icon Theme";
             light = "Material Icon Theme";
           };
-          disable_ai = true;
+          agent.sidebar_side = "right";
+          agent.commit_message_model = {
+            provider = "openai_subscribed";
+            model = "gpt-5.4-nano";
+          };
+          edit_predictions.provider = "none";
           telemetry = {
             diagnostics = false;
             metrics = false;
@@ -71,7 +82,8 @@
           project_panel.dock = "left";
           git_panel.dock = "left";
           outline_panel.dock = "left";
-          terminal.dock = "right";
+          terminal.dock = "bottom";
+          title_bar.show_sign_in = false;
           node = {
             path = lib.getExe pkgs.nodejs;
             npm_path = lib.getExe' pkgs.nodejs "npm";
