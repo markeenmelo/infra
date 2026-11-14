@@ -7,6 +7,7 @@
 let
   hosts = lib.filterAttrs (_: host: !lib.hasSuffix "-darwin" host.system) config.fleet.hosts;
   systems = lib.unique (lib.mapAttrsToList (_: host: host.system) hosts);
+  clean = "/run/current-system/sw/bin/nh clean all --optimise";
 in
 {
   flake = {
@@ -62,6 +63,10 @@ in
               command = "/run/current-system/sw/bin/systemctl reboot";
               options = [ "NOPASSWD" ];
             }
+            {
+              command = clean;
+              options = [ "NOPASSWD" ];
+            }
           ];
         }
       ];
@@ -92,6 +97,22 @@ in
             }  *) echo "reboot: no NixOS host named ''${1-}" >&2; exit 1 ;;
             esac
             ssh "deploy@$1" sudo /run/current-system/sw/bin/systemctl reboot
+          '';
+        };
+      };
+      apps.clean = {
+        meta.description = "clean [HOST]: delete every generation but the current one and optimise the store on HOST over the tailnet as the deploy account, or on this machine without HOST";
+        program = pkgs.writeShellApplication {
+          name = "clean";
+          runtimeInputs = [ pkgs.openssh ];
+          text = ''
+            [ $# -eq 0 ] && exec ${lib.getExe pkgs.nh} clean all --optimise
+            case $1 in
+            ${
+              lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts)
+            }  *) echo "clean: no NixOS host named $1" >&2; exit 1 ;;
+            esac
+            ssh "deploy@$1" sudo ${clean}
           '';
         };
       };

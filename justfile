@@ -21,6 +21,10 @@ deploy-many +hosts:
 reboot host:
     nix run .#reboot -- {{ host }}
 
+[doc("Delete every generation but the current one and optimise the store on HOST over the tailnet, or on this machine without HOST")]
+clean host="":
+    nix run .#clean -- {{ host }}
+
 [doc("Switch the machine you are on to this checkout: the mac, the thinkpad or asahi")]
 switch:
     nh {{ if os() == "macos" { "darwin" } else { "os" } }} switch .
