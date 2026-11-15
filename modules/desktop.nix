@@ -61,6 +61,7 @@ in
           enable = true;
           criticalPowerAction = "PowerOff";
         };
+        logind.settings.Login.HandleLidSwitchExternalPower = "ignore";
         gvfs.enable = true;
         speechd.enable = false;
       };
