@@ -88,8 +88,8 @@ the current time for a job with no file yet, so one that never succeeds still go
 deletes the files of removed jobs.
 Provisioning never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
 
-[ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the tailnet only,
-since the `alerts` topic needs no login and describes the fleet. Everything is denied by default; `alerts` is readable by anyone who reaches
+[ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the tailnet;
+the `alerts` topic needs no login and describes the fleet, an accepted exposure to the LAN. Everything is denied by default; `alerts` is readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
 a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. Each workstation subscribes
 itself: `ntfy-alerts`, a Home Manager user service (a launchd agent on the mac), shows each alert

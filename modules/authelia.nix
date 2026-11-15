@@ -106,7 +106,6 @@ in
       people = {
         marcos = {
           displayname = "Marcos Melo";
-          email = "marcosmelo@proton.me";
           groups = [
             "opencloudAdmin"
             "jellyfin"
@@ -116,7 +115,6 @@ in
         };
         nara = {
           displayname = "Nara";
-          email = "naralidy@hotmail.com";
           groups = [
             "opencloudUser"
             "jellyfin"
@@ -140,14 +138,18 @@ in
               "oidc-hmac"
               "oidc-signing-key"
             ]
-            ++ map (user: "${user}-password-hash") (lib.attrNames people)
+            ++ lib.concatMap (user: [
+              "${user}-password-hash"
+              "${user}-email"
+            ]) (lib.attrNames people)
             ++ hashes config.fleet.oidc.clients
           )
         );
         templates.authelia-users = {
           content = builtins.toJSON {
             users = lib.mapAttrs (user: person: {
-              inherit (person) displayname email groups;
+              inherit (person) displayname groups;
+              email = config.sops.placeholder."authelia-${user}-email";
               password = config.sops.placeholder."authelia-${user}-password-hash";
             }) people;
           };

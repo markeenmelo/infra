@@ -1,16 +1,10 @@
 { config, lib, ... }:
 let
   inherit (config.fleet) hosts;
-  laptopPort = config.fleet.homeBackupPort;
+  laptops = lib.filterAttrs (_: host: host.homeBackup != null) hosts;
 in
 {
-  options.fleet.homeBackupPort = lib.mkOption {
-    type = lib.types.port;
-    description = "Port on bastion's tailnet address where the append-only restic server takes the ThinkPad's home backups; the `tofu` app hands it to `opentofu/tailscale` as `fleet_home_backup_port`.";
-  };
-  config.fleet.homeBackupPort = 8010;
-
-  config.flake.modules.nixos.backups =
+  flake.modules.nixos.backups =
     {
       config,
       lib,
@@ -41,8 +35,11 @@ in
         "/srv/immich"
         "/srv/opencloud"
         "/srv/nixflix-state"
-        "/srv/backup-thinkpad"
-      ];
+      ]
+      ++ map laptopRepo (lib.attrNames laptops);
+      laptopRepo = name: "/srv/backup-${name}";
+      perLaptop = f: lib.mkMerge (lib.mapAttrsToList f laptops);
+      listen = hosts.${config.networking.hostName}.tailnetAddress;
       datasets = map (root: config.fileSystems.${root}.device) roots;
       inSnapshot =
         name: root: path:
@@ -54,10 +51,7 @@ in
             > ${config.fleet.metricsDir}/restic-${name}.prom.tmp
           ${lib.getExe' pkgs.coreutils "mv"} ${config.fleet.metricsDir}/restic-${name}.prom.tmp ${config.fleet.metricsDir}/restic-${name}.prom
         '';
-      recorded = lib.attrNames jobs ++ [
-        "drill-usb"
-        "thinkpad"
-      ];
+      recorded = lib.attrNames jobs ++ [ "drill-usb" ] ++ lib.attrNames laptops;
       dumps = config.services.postgresqlBackup;
       dumpDir = dumps.location;
       databases = lib.filter (db: !lib.hasSuffix "-logs" db) config.services.postgresql.ensureDatabases;
@@ -84,22 +78,18 @@ in
         done
         if [ -d /persist/.${snapOf name} ]; then btrfs subvolume delete /persist/.${snapOf name}; fi
       '';
-      thinkpad = {
-        repo = "/srv/backup-thinkpad";
-        port = laptopPort;
-        listen = hosts.${config.networking.hostName}.tailnetAddress;
-        client = hosts.thinkpad.tailnetAddress;
-      };
       restic = lib.getExe pkgs.restic;
     in
     {
       sops.secrets =
         lib.genAttrs
-          [
-            "backups-restic-password"
-            "backups-thinkpad-password"
-            "backups-rclone-pcloud"
-          ]
+          (
+            [
+              "backups-restic-password"
+              "backups-rclone-pcloud"
+            ]
+            ++ map (name: "backups-${name}-password") (lib.attrNames laptops)
+          )
           (name: {
             key = lib.replaceStrings [ "backups-" ] [ "backups/" ] name;
           });
@@ -206,7 +196,7 @@ in
                     echo "The latest snapshot has no fresh dump of $db; testing the previous one."
                     dump=$dump.prev
                   fi
-                  ${restic} dump latest "$dump.sql.gz" | gzip -t
+                  ${restic} dump latest "$dump.sql.gz" | gzip -dc | tail -n 5 | grep -q 'PostgreSQL database dump complete'
                 done
               '';
             };
@@ -236,94 +226,104 @@ in
                 done
               '';
             };
-            backup-thinkpad = {
-              description = "Append-only restic server for the ThinkPad's home backups";
-              after = [ "tailscaled.service" ];
-              wantedBy = [ "multi-user.target" ];
-              unitConfig.RequiresMountsFor = [ thinkpad.repo ];
-              serviceConfig = {
-                User = "backup-thinkpad";
-                Group = "backup-thinkpad";
-                ExecStart = "${lib.getExe pkgs.rclone} serve restic --append-only --addr ${thinkpad.listen}:${toString thinkpad.port} ${thinkpad.repo}";
-                Restart = "on-failure";
-                RestartSec = "10s";
-                ProtectSystem = "strict";
-                ProtectHome = true;
-                ReadWritePaths = [ thinkpad.repo ];
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-              };
-            };
-            backup-thinkpad-freshness = {
-              description = "Record when the ThinkPad last uploaded a snapshot";
-              startAt = "hourly";
-              unitConfig.RequiresMountsFor = [
-                thinkpad.repo
-                config.fleet.metricsDir
-              ];
-              enableStrictShellChecks = true;
-              path = [
-                pkgs.coreutils
-                pkgs.findutils
-              ];
-              serviceConfig = {
-                Type = "oneshot";
-                ProtectSystem = "strict";
-                ProtectHome = true;
-                ReadWritePaths = [ config.fleet.metricsDir ];
-              };
-              script = ''
-                newest=$(find ${thinkpad.repo}/snapshots -type f -printf '%T@\n' 2> /dev/null | sort -n | tail -n 1)
-                [ -n "$newest" ] || exit 0
-                printf 'restic_last_success_timestamp_seconds{backup="thinkpad"} %s\n' "''${newest%.*}" \
-                  > ${config.fleet.metricsDir}/restic-thinkpad.prom.tmp
-                mv ${config.fleet.metricsDir}/restic-thinkpad.prom.tmp ${config.fleet.metricsDir}/restic-thinkpad.prom
-              '';
-            };
-            backup-thinkpad-retention = {
-              description = "Prune and check the ThinkPad's backups unless a snapshot carries a forged date";
-              conflicts = [ "backup-thinkpad.service" ];
-              after = [ "backup-thinkpad.service" ];
-              unitConfig.RequiresMountsFor = [ thinkpad.repo ];
-              startAt = "Sun 05:00";
-              enableStrictShellChecks = true;
-              path = [
-                pkgs.jq
-                pkgs.coreutils
-              ];
-              environment = {
-                RESTIC_REPOSITORY = thinkpad.repo;
-                RESTIC_PASSWORD_FILE = "%d/password";
-              };
-              serviceConfig = {
-                Type = "oneshot";
-                User = "backup-thinkpad";
-                Group = "backup-thinkpad";
-                LoadCredential = [ "password:${config.sops.secrets.backups-thinkpad-password.path}" ];
-                CacheDirectory = "backup-thinkpad";
-                Environment = "RESTIC_CACHE_DIR=%C/backup-thinkpad";
-                ExecStopPost = "+${pkgs.systemd}/bin/systemctl start --no-block backup-thinkpad.service";
-                ProtectSystem = "strict";
-                ProtectHome = true;
-                ReadWritePaths = [ thinkpad.repo ];
-              };
-              script = ''
-                set -o pipefail
-                now=$(date +%s)
-                ${restic} snapshots --json --retry-lock 30m | jq -r '.[] | "\(.id) \(.time)"' |
-                  while read -r id time; do
-                    claimed=$(date -d "$time" +%s)
-                    uploaded=$(stat -c %Y "$RESTIC_REPOSITORY/snapshots/$id")
-                    if [ "$claimed" -gt $((now + 3600)) ] || [ "$uploaded" -gt $((claimed + 8 * 86400)) ]; then
-                      echo "Snapshot $id claims $time but was uploaded $(date -d "@$uploaded"); not pruning."
-                      exit 1
-                    fi
-                  done
-                ${restic} forget --prune --retry-lock 30m --keep-within 14d --keep-daily 7 --keep-weekly 5 --keep-monthly 12
-                ${restic} check --retry-lock 30m --read-data-subset=5%
-              '';
-            };
           }
+          (perLaptop (
+            name: laptop:
+            let
+              repo = laptopRepo name;
+              account = "backup-${name}";
+            in
+            {
+              ${account} = {
+                description = "Append-only restic server for ${name}'s home backups";
+                after = [ "tailscaled.service" ];
+                wantedBy = [ "multi-user.target" ];
+                unitConfig.RequiresMountsFor = [ repo ];
+                serviceConfig = {
+                  User = account;
+                  Group = account;
+                  ExecStartPre = "+${lib.getExe' pkgs.coreutils "install"} -d -o ${account} -g ${account} -m 0700 ${repo}";
+                  ExecStart = "${lib.getExe pkgs.rclone} serve restic --append-only --addr ${listen}:${toString laptop.homeBackup.port} ${repo}";
+                  Restart = "on-failure";
+                  RestartSec = "10s";
+                  ProtectSystem = "strict";
+                  ProtectHome = true;
+                  ReadWritePaths = [ repo ];
+                  NoNewPrivileges = true;
+                  PrivateTmp = true;
+                };
+              };
+              "${account}-freshness" = {
+                description = "Record when ${name} last uploaded a snapshot";
+                startAt = "hourly";
+                unitConfig.RequiresMountsFor = [
+                  repo
+                  config.fleet.metricsDir
+                ];
+                enableStrictShellChecks = true;
+                path = [
+                  pkgs.coreutils
+                  pkgs.findutils
+                ];
+                serviceConfig = {
+                  Type = "oneshot";
+                  ProtectSystem = "strict";
+                  ProtectHome = true;
+                  ReadWritePaths = [ config.fleet.metricsDir ];
+                };
+                script = ''
+                  newest=$(find ${repo}/snapshots -type f -printf '%T@\n' 2> /dev/null | sort -n | tail -n 1 || true)
+                  [ -n "$newest" ] || exit 0
+                  printf 'restic_last_success_timestamp_seconds{backup="${name}"} %s\n' "''${newest%.*}" \
+                    > ${config.fleet.metricsDir}/restic-${name}.prom.tmp
+                  mv ${config.fleet.metricsDir}/restic-${name}.prom.tmp ${config.fleet.metricsDir}/restic-${name}.prom
+                '';
+              };
+              "${account}-retention" = {
+                description = "Prune and check ${name}'s backups unless a snapshot carries a forged date";
+                conflicts = [ "${account}.service" ];
+                after = [ "${account}.service" ];
+                unitConfig.RequiresMountsFor = [ repo ];
+                startAt = "Sun 05:00";
+                enableStrictShellChecks = true;
+                path = [
+                  pkgs.jq
+                  pkgs.coreutils
+                ];
+                environment = {
+                  RESTIC_REPOSITORY = repo;
+                  RESTIC_PASSWORD_FILE = "%d/password";
+                };
+                serviceConfig = {
+                  Type = "oneshot";
+                  User = account;
+                  Group = account;
+                  LoadCredential = [ "password:${config.sops.secrets."backups-${name}-password".path}" ];
+                  CacheDirectory = account;
+                  Environment = "RESTIC_CACHE_DIR=%C/${account}";
+                  ExecStopPost = "+${pkgs.systemd}/bin/systemctl start --no-block ${account}.service";
+                  ProtectSystem = "strict";
+                  ProtectHome = true;
+                  ReadWritePaths = [ repo ];
+                };
+                script = ''
+                  set -o pipefail
+                  now=$(date +%s)
+                  ${restic} snapshots --json --retry-lock 30m | jq -r '.[] | "\(.id) \(.time)"' |
+                    while read -r id time; do
+                      claimed=$(date -d "$time" +%s)
+                      uploaded=$(stat -c %Y "$RESTIC_REPOSITORY/snapshots/$id")
+                      if [ "$claimed" -gt $((now + 3600)) ] || [ "$uploaded" -gt $((claimed + 8 * 86400)) ]; then
+                        echo "Snapshot $id claims $time but was uploaded $(date -d "@$uploaded"); not pruning."
+                        exit 1
+                      fi
+                    done
+                  ${restic} forget --prune --retry-lock 30m --keep-within 14d --keep-daily 7 --keep-weekly 5 --keep-monthly 12
+                  ${restic} check --retry-lock 30m --read-data-subset=5%
+                '';
+              };
+            }
+          ))
           (lib.genAttrs (map (db: "postgresqlBackup-${db}") databases) (_: {
             unitConfig.RequiresMountsFor = [
               "/srv"
@@ -331,21 +331,27 @@ in
             ];
           }))
         ];
-        timers.restic-drill-usb.timerConfig = {
-          RandomizedDelaySec = "2h";
-          Persistent = true;
-        };
-        timers.backup-thinkpad-retention.timerConfig.Persistent = true;
-        tmpfiles.rules = [ "d ${thinkpad.repo} 0700 backup-thinkpad backup-thinkpad -" ];
+        timers = lib.mkMerge [
+          {
+            restic-drill-usb.timerConfig = {
+              RandomizedDelaySec = "2h";
+              Persistent = true;
+            };
+          }
+          (perLaptop (name: _: { "backup-${name}-retention".timerConfig.Persistent = true; }))
+        ];
       };
 
-      # the uid that owns the ThinkPad's repository, allocated by the old generation
-      users.users.backup-thinkpad = {
-        isSystemUser = true;
-        uid = 355;
-        group = "backup-thinkpad";
-      };
-      users.groups.backup-thinkpad.gid = 355;
+      users = perLaptop (
+        name: laptop: {
+          users."backup-${name}" = {
+            isSystemUser = true;
+            inherit (laptop.homeBackup) uid;
+            group = "backup-${name}";
+          };
+          groups."backup-${name}".gid = laptop.homeBackup.uid;
+        }
+      );
       preservation.preserveAt."/persist".directories =
         map
           (directory: {
@@ -356,35 +362,41 @@ in
             map (name: "/var/cache/restic-backups-${name}") (lib.attrNames jobs)
             ++ [ "/var/cache/restic-drill-usb" ]
           )
-        ++ [
-          {
-            directory = "/var/cache/backup-thinkpad";
-            user = "backup-thinkpad";
-            group = "backup-thinkpad";
-            mode = "0700";
-          }
-        ];
+        ++ map (name: {
+          directory = "/var/cache/backup-${name}";
+          user = "backup-${name}";
+          group = "backup-${name}";
+          mode = "0700";
+        }) (lib.attrNames laptops);
 
-      networking.firewall.extraInputRules = ''
-        iifname "${config.services.tailscale.interfaceName}" ip saddr ${thinkpad.client} tcp dport ${toString thinkpad.port} accept
-      '';
-      fleet.loopbackGuards.backup-thinkpad = {
-        ports = [ thinkpad.port ];
-        users = [ ];
-      };
+      networking.firewall.extraInputRules = lib.concatStrings (
+        lib.mapAttrsToList (_: laptop: ''
+          iifname "${config.services.tailscale.interfaceName}" ip saddr ${laptop.tailnetAddress} tcp dport ${toString laptop.homeBackup.port} accept
+        '') laptops
+      );
+      fleet.loopbackGuards = perLaptop (
+        name: laptop: {
+          "backup-${name}" = {
+            ports = [ laptop.homeBackup.port ];
+            users = [ ];
+          };
+        }
+      );
     };
 
-  config.flake.modules.nixos.backup-home =
+  flake.modules.nixos.backup-home =
     { config, ... }:
     let
-      server = "${hosts.bastion.tailnetAddress}:${toString laptopPort}";
+      host = config.networking.hostName;
+      inherit (hosts.${host}.homeBackup) port;
+      password = "backups-${host}-password";
       home = config.users.users.marcos.home;
     in
     {
-      sops.secrets.backups-thinkpad-password.key = "backups/thinkpad-password";
+      sops.secrets.${password}.key = "backups/${host}-password";
       services.restic.backups.home = {
-        repository = "rest:http://${server}/";
-        passwordFile = config.sops.secrets.backups-thinkpad-password.path;
+        repository = "rest:http://${hosts.bastion.tailnetAddress}:${toString port}/";
+        passwordFile = config.sops.secrets.${password}.path;
         initialize = true;
         paths = [ home ];
         exclude =
@@ -425,7 +437,7 @@ in
         content = ''
           chain output {
             type filter hook output priority -150; policy accept;
-            ip daddr ${hosts.bastion.tailnetAddress} tcp dport ${toString laptopPort} meta skuid != 0 reject
+            ip daddr ${hosts.bastion.tailnetAddress} tcp dport ${toString port} meta skuid != 0 reject
           }
         '';
       };

@@ -30,7 +30,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          settings: '{"permissions":{"deny":["Read(//proc/**)","Read(~/.claude/**)"],"blockReadsOutsideWorkingDirectories":true}}'
+          settings: '{"permissions":{"deny":["Read(//proc/**)","Read(~/.claude/**)","Read(.git/**)"],"blockReadsOutsideWorkingDirectories":true}}'
           prompt: |
             REPO: ${{ github.repository }}
             REF: ${{ github.ref_name }} at ${{ github.sha }}
@@ -47,8 +47,9 @@ jobs:
             --model claude-fable-5-2
             --effort high
             --max-turns 200
+            --permission-mode default
             --allowedTools "Read,Glob,Grep,Skill"
-            --disallowedTools "Agent,Task,Bash"
+            --disallowedTools "Agent,Task,Bash,Write,Edit,NotebookEdit,WebFetch,WebSearch"
             --json-schema '{"type":"object","properties":{"report":{"type":"string"}},"required":["report"]}'
       - if: steps.claude.outputs.structured_output != ''
         run: |

@@ -7,10 +7,15 @@
       metrics = null;
       logs = 3104;
     };
+    homeBackup = {
+      port = 8011;
+      uid = 358;
+    };
     module = {
       imports = with config.flake.modules.nixos; [
         desktop
         remote-builds
+        backup-home
         logs
       ];
       system.stateVersion = "26.11";

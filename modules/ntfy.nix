@@ -38,10 +38,7 @@ in
         };
         environmentFile = config.sops.templates."ntfy.env".path;
       };
-      fleet.web.apps.ntfy = {
-        inherit port;
-        tailnetOnly = true;
-      };
+      fleet.web.apps.ntfy.port = port;
       fleet.loopbackGuards.ntfy = {
         ports = [ port ];
         users = [

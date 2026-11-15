@@ -21,11 +21,15 @@ let
   program = ../opentofu/unifi/settings.jq;
   inherit (config.flake.modules.nixos) postgresql;
   statePort = config.flake.nixosConfigurations.bastion.config.services.postgresql.settings.port;
-  operators = map (name: config.fleet.hosts.${name}.tailnetAddress) [
+  operatorNames = [
     "thinkpad"
     "asahi"
     "mac"
   ];
+  operators = map (name: config.fleet.hosts.${name}.tailnetAddress) operatorNames;
+  homeBackups = lib.mapAttrs (_: host: host.homeBackup.port) (
+    lib.filterAttrs (_: host: host.homeBackup != null) config.fleet.hosts
+  );
 in
 {
   flake.modules.nixos.opentofu-state =
@@ -64,6 +68,14 @@ in
           text = ''
             project=$1
             shift
+            for arg in "$@"; do
+              case $arg in
+                -force-copy | -lock=false | -reconfigure)
+                  echo "tofu: $arg is not allowed" >&2
+                  exit 1
+                  ;;
+              esac
+            done
             cd "$(git rev-parse --show-toplevel)"
             export PG_CONN_STR=${lib.escapeShellArg "postgres://tofu@${config.fleet.hosts.bastion.tailnetAddress}:${toString statePort}/tofu?sslmode=disable"}
             export PG_SCHEMA_NAME=$project
@@ -75,7 +87,8 @@ in
             export TF_VAR_fleet_routes=${lib.escapeShellArg (builtins.toJSON routes)}
             export TF_VAR_fleet_edge_address=${lib.escapeShellArg edge}
             export TF_VAR_fleet_cache_port=${toString config.fleet.cachePort}
-            export TF_VAR_fleet_home_backup_port=${toString config.fleet.homeBackupPort}
+            export TF_VAR_fleet_home_backups=${lib.escapeShellArg (builtins.toJSON homeBackups)}
+            export TF_VAR_fleet_operators=${lib.escapeShellArg (builtins.toJSON operatorNames)}
             export TF_VAR_fleet_state_port=${toString statePort}
             export TF_CLI_ARGS_init="-input=false -lockfile=readonly"
             command=$(printf '%q ' tofu -chdir="opentofu/$project" "$@")

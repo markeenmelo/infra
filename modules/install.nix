@@ -33,6 +33,7 @@ in
             }  *) echo "install: no NixOS host named $host" >&2; exit 1 ;;
             esac
             extra=$(mktemp -d)
+            echo "install: identity staged in $extra" >&2
             trap 'rm -rf "$extra"' EXIT
             mkdir -p "$extra/persist"
             ssh "$target" tar -C "$root" -chf - "''${paths[@]}" | tar -C "$extra/persist" -xf -

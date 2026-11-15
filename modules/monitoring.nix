@@ -5,6 +5,9 @@ let
   senders = lib.filterAttrs (_: host: host.telemetry != null) hosts;
   metricSenders = lib.filterAttrs (_: host: host.telemetry.metrics != null) senders;
   senderPorts = telemetry: lib.remove null (lib.attrValues telemetry);
+  laptops = lib.concatStringsSep "|" (
+    lib.attrNames (lib.filterAttrs (_: host: host.homeBackup != null) hosts)
+  );
   journal = forward: labels: ''
     loki.relabel "journal" {
       forward_to = []
@@ -154,6 +157,12 @@ in
     in
     {
       imports = [ logs ];
+      assertions = [
+        {
+          assertion = telemetry.metrics != null;
+          message = "fleet.hosts.${host}.telemetry.metrics is null: a host that imports `telemetry` pushes metrics; import `logs` to ship only the journal.";
+        }
+      ];
       environment.etc."alloy/config.alloy".text = ''
         prometheus.exporter.unix "node" {
           enable_collectors = ["systemd"]
@@ -219,7 +228,7 @@ in
       host = config.networking.hostName;
       inherit (hosts.${host}) lan;
       smtp = config.services.authelia.instances.main.settings.notifier.smtp;
-      adminEmails = lib.mapAttrsToList (_: person: person.email) (
+      adminUsers = lib.attrNames (
         lib.filterAttrs (
           _: person: lib.elem admins person.groups
         ) (builtins.fromJSON config.sops.templates.authelia-users.content).users
@@ -308,9 +317,17 @@ in
           })
         ]
       ) grafanaSecrets;
-      systemd.services.grafana.serviceConfig.LoadCredential = lib.mapAttrsToList (
-        name: credential: "${credential}:${config.sops.secrets.${name}.path}"
-      ) grafanaSecrets;
+      sops.templates.grafana-admin-emails = {
+        content = lib.concatMapStringsSep ";" (
+          user: config.sops.placeholder."authelia-${user}-email"
+        ) adminUsers;
+        restartUnits = [ "grafana.service" ];
+      };
+      systemd.services.grafana.serviceConfig.LoadCredential =
+        lib.mapAttrsToList (
+          name: credential: "${credential}:${config.sops.secrets.${name}.path}"
+        ) grafanaSecrets
+        ++ [ "admin-emails:${config.sops.templates.grafana-admin-emails.path}" ];
 
       services = {
         udev.extraRules = ''
@@ -514,7 +531,7 @@ in
                     {
                       uid = "email";
                       type = "email";
-                      settings.addresses = lib.concatStringsSep ";" adminEmails;
+                      settings.addresses = "$__file{${credentials}/admin-emails}";
                     }
                     {
                       uid = "heartbeat";
@@ -654,15 +671,15 @@ in
                       }
                       {
                         title = "Backup stale";
-                        expr = "time() - restic_last_success_timestamp_seconds{backup!~\"drill-usb|thinkpad\"}";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup!~\"drill-usb|${laptops}\"}";
                         threshold = 30 * 3600;
                         summary = "The {{ $labels.backup }} backup on {{ $labels.instance }} has not succeeded for over 30 hours";
                       }
                       {
                         title = "Laptop backup stale";
-                        expr = "time() - restic_last_success_timestamp_seconds{backup=\"thinkpad\"}";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup=~\"${laptops}\"}";
                         threshold = 3 * 86400;
-                        summary = "The ThinkPad has not uploaded a home backup to {{ $labels.instance }} for over 3 days";
+                        summary = "{{ $labels.backup }} has not uploaded a home backup to {{ $labels.instance }} for over 3 days";
                       }
                       {
                         title = "Restore drill stale";

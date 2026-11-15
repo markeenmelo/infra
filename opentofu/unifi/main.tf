@@ -331,6 +331,12 @@ resource "unifi_firewall_zone_policy" "this" {
     port          = try(each.value.port, null)
     port_group_id = can(each.value.ports) ? unifi_firewall_group.ports[each.value.ports].id : null
   }
+  lifecycle {
+    precondition {
+      condition     = length(setsubtract(keys(each.value), ["from", "to", "from_ips", "to_ips", "protocol", "port", "ports", "block", "schedule"])) == 0 && startswith(each.key, "Block ") == try(each.value.block, false)
+      error_message = "Policy \"${each.key}\" has a key the resource does not read, or its name and `block` disagree."
+    }
+  }
 }
 
 resource "unifi_firewall_zone_policy_order" "this" {

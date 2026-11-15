@@ -27,16 +27,18 @@ let
     "/tmp/.X11-unix"
     "/persist"
   ];
-  managedSettings = builtins.toJSON {
-    permissions.disableBypassPermissionsMode = "disable";
-    sandbox = {
-      enabled = true;
-      failIfUnavailable = true;
-      allowUnsandboxedCommands = false;
-      network.strictAllowlist = true;
-      filesystem.denyRead = deniedDirs ++ [ "/home/marcos/.bitwarden-ssh-agent.sock" ];
+  managedSettings =
+    home:
+    builtins.toJSON {
+      permissions.disableBypassPermissionsMode = "disable";
+      sandbox = {
+        enabled = true;
+        failIfUnavailable = true;
+        allowUnsandboxedCommands = false;
+        network.strictAllowlist = true;
+        filesystem.denyRead = deniedDirs ++ [ "${home}/.bitwarden-ssh-agent.sock" ];
+      };
     };
-  };
 in
 {
   flake.modules = {
@@ -53,12 +55,16 @@ in
         ];
         system.activationScripts.postActivation.text = ''
           install -d -m 0755 "/Library/Application Support/ClaudeCode"
-          ln -sfn ${pkgs.writeText "claude-managed-settings.json" managedSettings} "/Library/Application Support/ClaudeCode/managed-settings.json"
+          ln -sfn ${
+            pkgs.writeText "claude-managed-settings.json" (
+              managedSettings config.users.users.${config.system.primaryUser}.home
+            )
+          } "/Library/Application Support/ClaudeCode/managed-settings.json"
         '';
       };
 
     nixos.desktop =
-      { pkgs, ... }:
+      { config, pkgs, ... }:
       {
         home-manager.users.marcos.imports = [ claude ];
         sops.secrets = tokens "marcos";
@@ -71,7 +77,7 @@ in
             pkgs.bubblewrap
             pkgs.socat
           ];
-          etc."claude-code/managed-settings.json".text = managedSettings;
+          etc."claude-code/managed-settings.json".text = managedSettings config.users.users.marcos.home;
         };
       };
 

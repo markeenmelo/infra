@@ -9,7 +9,7 @@ description: "The asahi host: the operator's Apple Silicon MacBook running NixOS
 role as the thinkpad ([thinkpad skill](../thinkpad/SKILL.md#desktop)) and `remote-builds`, which on
 aarch64 only sends x86_64 builds to bastion: nothing else builds `aarch64-linux` and
 nixos-apple-silicon publishes no binary cache, so it builds itself, kernel included, and CI only
-evaluates it. Switch it from its own checkout with `just switch`. It has no home backup. The
+evaluates it. Switch it from its own checkout with `just switch`. It imports `backup-home`, so its home goes to its own append-only repository on bastion with `backups/asahi-password` ([backups skill](../backups/SKILL.md)). The
 desktop's apps that nixpkgs does not build for `aarch64-linux`, Spotify among them, are left out.
 
 ## Disk and boot
