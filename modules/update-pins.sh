@@ -24,20 +24,28 @@ while read -r name; do
   mv "$dashboards.new" "$dashboards"
 done <<< "$names"
 
-for project in opentofu/*/; do
-  main=${project}main.tf
-  before=$(cat "$main")
-  sources=$(grep -oP '^\s*source\s*=\s*"\K[^"]+' "$main")
-  while read -r source; do
-    latest=$(curl -fsS "https://registry.opentofu.org/v1/providers/$source/versions" |
-      jq -er '[.versions[].version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))] | sort_by(split(".") | map(tonumber)) | last')
-    sed -i "\|source *= \"$source\"|{n;s|version *= \"~> [^\"]*\"|version = \"~> $latest\"|}" "$main"
-    grep -qF "version = \"~> $latest\"" "$main"
-  done <<< "$sources"
-  [ "$(cat "$main")" = "$before" ] || rm -f "${project}.terraform.lock.hcl"
-  tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64
-  tofu -chdir="$project" init -backend=false -input=false -lockfile=readonly
-  tofu -chdir="$project" validate
-done
-
 GITHUB_TOKEN=$github_token pinact run --update
+
+update_providers() {
+  local failed=0 project main before sources source latest
+  for project in opentofu/*/; do
+    main=${project}main.tf
+    before=$(cat "$main")
+    sources=$(grep -oP '^\s*source\s*=\s*"\K[^"]+' "$main")
+    while read -r source; do
+      latest=$(curl -fsS "https://registry.opentofu.org/v1/providers/$source/versions" |
+        jq -er '[.versions[].version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))] | sort_by(split(".") | map(tonumber)) | last')
+      sed -i "\|source *= \"$source\"|{n;s|version *= \"~> [^\"]*\"|version = \"~> $latest\"|}" "$main"
+      grep -qF "version = \"~> $latest\"" "$main"
+    done <<< "$sources"
+    [ "$(cat "$main")" = "$before" ] || rm -f "${project}.terraform.lock.hcl"
+    if ! tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64 ||
+      ! tofu -chdir="$project" init -backend=false -input=false -lockfile=readonly ||
+      ! tofu -chdir="$project" validate; then
+      git checkout -- "$main" "${project}.terraform.lock.hcl"
+      echo "update-pins: ${project} does not validate after the provider bump; reverted it, edit main.tf by hand" >&2
+      failed=1
+    fi
+  done
+  return "$failed"
+}

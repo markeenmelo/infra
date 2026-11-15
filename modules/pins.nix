@@ -52,7 +52,9 @@
             nix-update
           ];
           text = lib.concatLines (
-            [ (builtins.readFile ./update-pins.sh) ] ++ lib.mapAttrsToList nixUpdate pins
+            [ (builtins.readFile ./update-pins.sh) ]
+            ++ lib.mapAttrsToList nixUpdate pins
+            ++ [ "update_providers" ]
           );
         };
       };
