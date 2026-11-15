@@ -179,7 +179,14 @@
                 ]
           );
         };
-        programs.noctalia.settings.bar.default.thickness = 56;
+        programs.noctalia.settings = {
+          bar.default.thickness = 56;
+          idle.behavior.suspend = {
+            action = "command";
+            # shortcut: linux-asahi wakes from s2idle on the lid and power button only, so on AC with a USB device attached idle never suspends; drop when a USB key press wakes it
+            command = "${lib.getExe' config.systemd.package "systemd-ac-power"} && [ -e /sys/bus/usb/devices/usb1 ] || ${lib.getExe' config.systemd.package "systemctl"} suspend";
+          };
+        };
       };
     };
 }

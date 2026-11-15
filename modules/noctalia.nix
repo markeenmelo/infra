@@ -183,7 +183,7 @@
             };
             suspend = {
               timeout = 300;
-              action = "lock_and_suspend";
+              action = lib.mkDefault "lock_and_suspend";
             };
           };
         };
