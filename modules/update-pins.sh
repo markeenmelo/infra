@@ -1,3 +1,5 @@
+github_token=${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}
+
 caddy=modules/caddy.pkg.nix
 modules=$(grep -o 'github\.com/[^@"]*' "$caddy")
 while read -r module; do
@@ -21,3 +23,36 @@ while read -r name; do
   jq --arg n "$name" --argjson r "$revision" --arg h "$hash" '.[$n] += { revision: $r, hash: $h }' "$dashboards" > "$dashboards.new"
   mv "$dashboards.new" "$dashboards"
 done <<< "$names"
+
+GITHUB_TOKEN=$github_token pinact run --update
+
+update_providers() {
+  local failed=0 project main lock before saved sources source latest
+  for project in opentofu/*/; do
+    main=${project}main.tf
+    lock=${project}.terraform.lock.hcl
+    before=$(cat "$main")
+    saved=$(mktemp -d)
+    cp "$main" "$saved/main.tf"
+    [ ! -e "$lock" ] || cp "$lock" "$saved/lock"
+    sources=$(grep -oP '^\s*source\s*=\s*"\K[^"]+' "$main")
+    while read -r source; do
+      latest=$(curl -fsS "https://registry.opentofu.org/v1/providers/$source/versions" |
+        jq -er '[.versions[].version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))] | sort_by(split(".") | map(tonumber)) | last')
+      sed -i "\|source *= \"$source\"|{n;s|version *= \"~> [^\"]*\"|version = \"~> $latest\"|}" "$main"
+      grep -qF "version = \"~> $latest\"" "$main"
+    done <<< "$sources"
+    [ "$(cat "$main")" = "$before" ] || rm -f "$lock"
+    if ! tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64 ||
+      ! tofu -chdir="$project" init -backend=false -input=false -lockfile=readonly ||
+      ! tofu -chdir="$project" validate; then
+      cp "$saved/main.tf" "$main"
+      rm -f "$lock"
+      [ ! -e "$saved/lock" ] || cp "$saved/lock" "$lock"
+      echo "update-pins: ${project} does not validate after the provider bump; reverted it, edit main.tf by hand" >&2
+      failed=1
+    fi
+    rm -rf "$saved"
+  done
+  return "$failed"
+}

@@ -21,6 +21,10 @@ deploy-many +hosts:
 reboot host:
     nix run .#reboot -- {{ host }}
 
+[doc("Delete every generation but the current one, garbage-collect and optimise the store on HOST over the tailnet, or on this machine without HOST; on bastion this empties the build cache")]
+clean host="":
+    nix run .#clean -- {{ host }}
+
 [doc("Switch the machine you are on to this checkout: the mac, the thinkpad or asahi")]
 switch:
     nh {{ if os() == "macos" { "darwin" } else { "os" } }} switch .
@@ -40,11 +44,7 @@ unifi-settings action:
 install host target root:
     nix run .#install -- "$@"
 
-[doc("Update every flake input and every NAME.pkg.nix pin")]
+[doc("Update every flake input, NAME.pkg.nix pin, GitHub Action and OpenTofu provider")]
 update:
     nix flake update
     nix run .#update-pins
-
-[doc("Bump one Claude Code or Noctalia plugin pin to its default branch; read its code changes before committing")]
-update-plugin name:
-    nix run .#update-plugin -- {{ name }}

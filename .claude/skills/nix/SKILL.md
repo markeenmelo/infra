@@ -100,14 +100,15 @@ repository's. Comments follow [CLAUDE.md](../../../CLAUDE.md).
 
 ## Package updates
 
-Renovate ([renovate.json](../../../renovate.json)) opens the update PRs for `flake.lock`, the
-SHA-pinned actions and the OpenTofu providers. The review bots skip PRs opened by bots
-([review.yml](../../../.github/workflows/review.yml)), so the operator reviews these by hand,
-above all action and `flake.lock` moves, which change what runs with secrets and on every host.
-Every other pin goes through the `update-pins` app ([pins.nix](../../../modules/pins.nix)), which
-`just update` runs after `nix flake update`: nix-update bumps each `NAME.pkg.nix` in `pins` with
-its hashes (the Claude Code plugins, darwin skill, and the Noctalia plugins, whose code runs as `marcos` with the Tailscale operator, only through `update-plugin` after reading their diff), and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
-(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit). A source the fleet
+`just update` is the only updater: it runs `nix flake update`, then the `update-pins` app
+([pins.nix](../../../modules/pins.nix)). nix-update bumps each `NAME.pkg.nix` in `pins` with its
+hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
+(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, each OpenTofu
+provider's constraint and lock, the SHA-pinned actions through pinact). The operator reads the
+diff before committing, above all action, `flake.lock` and plugin moves: actions run with secrets,
+the inputs on every host, and the Claude Code and Noctalia plugins as `marcos` with the Tailscale
+operator; a provider move needs a `tofu plan` with no changes. Updates take the newest release
+at once, with no release-age cool-down: that read is the only gate. A source the fleet
 fetches is a `NAME.pkg.nix` added to `pins`, not a `flake = false` input, which a rev in its URL
 freezes. Never hand-edit `flake.lock`: Nix
 resolves a locked input by `narHash` before `rev`, so a revision bump without its hash keeps the
