@@ -8,8 +8,8 @@ description: "deploy-rs: how a host's committed configuration is activated over 
 [deploy.nix](../../../modules/deploy.nix) turns every `fleet.hosts` entry into a deploy-rs node
 reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
 Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
-`activate-rs`, remove the rollback canary and reboot, the only way to reboot a server without its
-console. Its key is therefore the operator's root key on
+`activate-rs`, remove the rollback canary, reboot and power off, the only way to reboot or power
+off a server without its console. Its key is therefore the operator's root key on
 every host, so it is not the operator's login key: its private half lives only in the operator's
 Bitwarden SSH agent, which asks before each use. The servers have no login account
 ([access.nix](../../../modules/access.nix)), so `deploy` is the only way into them. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
@@ -50,6 +50,8 @@ garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision
 nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
 nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
+nix run .#shutdown -- HOST          # power off as deploy
+nix run .#wake -- HOST              # bastion by Wake-on-LAN, from its LAN only; racknerd through the RackNerd API
 nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```
 
