@@ -1,11 +1,6 @@
 {
   fleet.hosts.bastion.module =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+    { lib, pkgs, ... }:
     let
       serials = map (id: lib.last (lib.splitString "_" id)) (lib.attrValues (import ./_disks.nix));
       datasets = {
@@ -68,32 +63,9 @@
           "d /persist/zfs 0700 root root -"
           "z /persist/zfs/*.key 0400 root root -"
         ];
-        services = lib.mkMerge [
-          (lib.genAttrs (map (pool: "zfs-import-${pool}") pools) (_: {
-            restartIfChanged = false;
-          }))
-          {
-            # shortcut: one-off that creates asahi's repository dataset since bastion has no shell, delete once a deploy has run it
-            backup-asahi-dataset = {
-              description = "Create the dataset of asahi's backup repository";
-              requiredBy = [ "srv-backup\\x2dasahi.mount" ];
-              before = [ "srv-backup\\x2dasahi.mount" ];
-              requires = [ "zfs-import-apps.service" ];
-              after = [ "zfs-import-apps.service" ];
-              unitConfig.DefaultDependencies = false;
-              path = [ config.boot.zfs.package ];
-              enableStrictShellChecks = true;
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
-              script = ''
-                zfs list -H -o name apps/backup-asahi > /dev/null 2>&1 ||
-                  zfs create -o mountpoint=legacy apps/backup-asahi
-              '';
-            };
-          }
-        ];
+        services = lib.genAttrs (map (pool: "zfs-import-${pool}") pools) (_: {
+          restartIfChanged = false;
+        });
         timers.sanoid.timerConfig.Persistent = true;
       };
       services = {
