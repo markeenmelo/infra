@@ -22,7 +22,8 @@
       nix-update = pkgs.nix-update.override { nix = pkgs.nixVersions.nix_2_34; };
       nixUpdate =
         name: flags:
-        lib.escapeShellArgs (
+        "GITHUB_TOKEN=\"$github_token\" "
+        + lib.escapeShellArgs (
           [
             "nix-update"
             "--flake"
@@ -43,6 +44,7 @@
             pkgs.curl
             pkgs.git
             pkgs.gh
+            pkgs.gnugrep
             pkgs.gnused
             pkgs.jq
             pkgs.opentofu

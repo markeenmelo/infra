@@ -1,5 +1,4 @@
-GITHUB_TOKEN=${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}
-export GITHUB_TOKEN
+github_token=${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}
 
 caddy=modules/caddy.pkg.nix
 modules=$(grep -o 'github\.com/[^@"]*' "$caddy")
@@ -27,6 +26,7 @@ done <<< "$names"
 
 for project in opentofu/*/; do
   main=${project}main.tf
+  before=$(cat "$main")
   sources=$(grep -oP '^\s*source\s*=\s*"\K[^"]+' "$main")
   while read -r source; do
     latest=$(curl -fsS "https://registry.opentofu.org/v1/providers/$source/versions" |
@@ -34,8 +34,8 @@ for project in opentofu/*/; do
     sed -i "\|source *= \"$source\"|{n;s|version *= \"~> [^\"]*\"|version = \"~> $latest\"|}" "$main"
     grep -qF "version = \"~> $latest\"" "$main"
   done <<< "$sources"
-  rm -f "${project}.terraform.lock.hcl"
-  tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=darwin_arm64
+  [ "$(cat "$main")" = "$before" ] || rm -f "${project}.terraform.lock.hcl"
+  tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64
 done
 
-pinact run --update
+GITHUB_TOKEN=$github_token pinact run --update
