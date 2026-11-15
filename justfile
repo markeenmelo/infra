@@ -21,7 +21,7 @@ deploy-many +hosts:
 reboot host:
     nix run .#reboot -- {{ host }}
 
-[doc("Delete every generation but the current one and optimise the store on HOST over the tailnet, or on this machine without HOST")]
+[doc("Delete every generation but the current one, garbage-collect and optimise the store on HOST over the tailnet, or on this machine without HOST; on bastion this empties the build cache")]
 clean host="":
     nix run .#clean -- {{ host }}
 
