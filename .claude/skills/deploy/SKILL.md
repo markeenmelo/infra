@@ -54,7 +54,7 @@ nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activatio
 ```
 
 The `deploy` app refuses a run that names no `.#HOST`, has uncommitted tracked changes, or passes
-a flag that skips the checks or turns a rollback off; `clean` keeps the newest two generations, so
+a flag that skips the checks, turns a rollback off or sets SSH options; `clean` keeps the newest two generations, so
 the previous one stays in the Limine menu.
 
 Claude prepares the command and asks first ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy

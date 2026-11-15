@@ -95,7 +95,7 @@ in
             for arg in "$@"; do
               case $arg in
                 .#*) targets=1 ;;
-                --skip-checks | --magic-rollback* | --auto-rollback* | --rollback-succeeded*) refuse "$arg" ;;
+                --skip-checks | --magic-rollback* | --auto-rollback* | --rollback-succeeded* | --ssh-opts*) refuse "$arg" ;;
                 -[!-]*) [[ ! $arg =~ ^-[a-zA-Z]*s ]] || refuse "$arg" ;;
               esac
             done

@@ -69,12 +69,10 @@ in
             project=$1
             shift
             for arg in "$@"; do
-              case $arg in
-                -force-copy | -lock=false | -reconfigure)
-                  echo "tofu: $arg is not allowed" >&2
-                  exit 1
-                  ;;
-              esac
+              if [[ $arg =~ ^--?(force-copy|reconfigure)(=.*)?$|^--?lock= ]]; then
+                echo "tofu: $arg is not allowed" >&2
+                exit 1
+              fi
             done
             cd "$(git rev-parse --show-toplevel)"
             export PG_CONN_STR=${lib.escapeShellArg "postgres://tofu@${config.fleet.hosts.bastion.tailnetAddress}:${toString statePort}/tofu?sslmode=disable"}
