@@ -87,14 +87,16 @@ in
           name = "deploy";
           runtimeInputs = [ pkgs.git ];
           text = ''
+            refuse() {
+              echo "deploy: $1 is not allowed" >&2
+              exit 1
+            }
             targets=0
             for arg in "$@"; do
               case $arg in
                 .#*) targets=1 ;;
-                -s | --skip-checks | --magic-rollback* | --auto-rollback*)
-                  echo "deploy: $arg is not allowed" >&2
-                  exit 1
-                  ;;
+                --skip-checks | --magic-rollback* | --auto-rollback* | --rollback-succeeded*) refuse "$arg" ;;
+                -[!-]*) [[ ! $arg =~ ^-[a-zA-Z]*s ]] || refuse "$arg" ;;
               esac
             done
             [ "$targets" -eq 1 ] || { echo "deploy: name a target, e.g. .#HOST" >&2; exit 1; }

@@ -196,7 +196,7 @@ in
                     echo "The latest snapshot has no fresh dump of $db; testing the previous one."
                     dump=$dump.prev
                   fi
-                  ${restic} dump latest "$dump.sql.gz" | gzip -dc | tail -n 5 | grep -q 'PostgreSQL database dump complete'
+                  ${restic} dump latest "$dump.sql.gz" | gzip -dc | tail -n 20 | grep -q 'PostgreSQL database dump complete'
                 done
               '';
             };
