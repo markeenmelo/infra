@@ -58,10 +58,13 @@ list, so a daemon added later needs its socket added there. `/persist` is hidden
 holds a second path to the whole home. As on the mac, `nix` commands that need the daemon run
 outside Claude's sandbox.
 
-Idle locks at 5 min, turns the screen off at 5.5, suspends after 10 on battery and 30 on AC. On
-battery `power-profile-ac` switches to power-saver and restores the previous profile on AC; the
-battery charges to 90% and resumes at 85%. The lid hides the built-in panel while another display
-is connected.
+Idle locks, turns the screen off and suspends on the timers in
+[noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
+does while a video plays. On battery `power-profile-ac` switches to
+power-saver and restores the previous profile on AC; the battery charges to 90% and resumes at
+85%. The lid hides the built-in panel while another display is connected. Shutting it suspends on
+battery only: on AC the idle timer does, since a monitor that sleeps drops off DRM and logind would
+read that as an undock.
 
 ## Gaming
 

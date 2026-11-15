@@ -1,6 +1,6 @@
 { fetchFromGitHub }:
 let
-  version = "0-unstable-2026-11-06";
+  version = "0-unstable-2026-11-15";
 in
 {
   name = "entire-skills-${version}";
@@ -8,7 +8,7 @@ in
   src = fetchFromGitHub {
     owner = "entireio";
     repo = "skills";
-    rev = "11902e22deddf7b867ea1cf958c0220288be4d63";
-    hash = "sha256-s/Yod1Xa5V6wifixQ1IFo2zlrOqRwTq0920Y7aGryuY=";
+    rev = "af6cd3fce1852a7214c43bbf64315900196ad4ee";
+    hash = "sha256-EnAGg7p/wHSUiLYsw6oUWBzEd2C1OxY8M0AX/yzI3x0=";
   };
 }

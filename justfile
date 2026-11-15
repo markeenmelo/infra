@@ -21,6 +21,14 @@ deploy-many +hosts:
 reboot host:
     nix run .#reboot -- {{ host }}
 
+[doc("Power off HOST over the tailnet as the deploy account")]
+shutdown host:
+    nix run .#shutdown -- {{ host }}
+
+[doc("Power on bastion by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), or racknerd through the RackNerd API")]
+wake host:
+    nix run .#wake -- {{ host }}
+
 [doc("Delete every generation but the newest two, garbage-collect and optimise the store on HOST over the tailnet, or on this machine without HOST; on bastion this empties the build cache")]
 clean host="":
     nix run .#clean -- {{ host }}

@@ -26,13 +26,9 @@
     {
       config,
       lib,
-      osConfig,
       pkgs,
       ...
     }:
-    let
-      systemd = osConfig.systemd.package;
-    in
     {
       programs.noctalia = {
         enable = true;
@@ -177,22 +173,17 @@
           nightlight.enabled = true;
           idle.behavior = {
             lock = {
-              timeout = 300;
+              timeout = 60;
               action = "lock";
             };
             screen-off = {
-              timeout = 330;
-              locked_timeout = 30;
+              timeout = 120;
+              locked_timeout = 60;
               action = "screen_off";
             };
-            suspend-battery = {
-              timeout = 600;
-              action = "command";
-              command = "${lib.getExe' systemd "systemd-ac-power"} || ${lib.getExe' systemd "systemctl"} suspend";
-            };
             suspend = {
-              timeout = 1800;
-              action = "lock_and_suspend";
+              timeout = 300;
+              action = lib.mkDefault "lock_and_suspend";
             };
           };
         };
