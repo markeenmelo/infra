@@ -48,4 +48,5 @@ process of `marcos`, the Noctalia plugins included, holds the whole LocalAPI (`u
 `serve`, `logout`) without a password, so a bump of those plugins needs their code read, not just
 the hash. Every host's auto-connect `tailscale up` carries `--reset`
 ([desktop.nix](../../../modules/desktop.nix), [server.nix](../../../modules/server.nix)), since `up` refuses stored non-default settings it is
-not given again; `tailscaled-set` re-applies the declared ones after it.
+not given again; `tailscaled-set` re-applies the declared ones after it, on every run of the auto-connect unit
+([tailscale.nix](../../../modules/tailscale.nix)), since upstream starts it only with `tailscaled`.
