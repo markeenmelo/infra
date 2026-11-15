@@ -64,6 +64,10 @@ in
               options = [ "NOPASSWD" ];
             }
             {
+              command = "/run/current-system/sw/bin/systemctl poweroff";
+              options = [ "NOPASSWD" ];
+            }
+            {
               command = clean;
               options = [ "NOPASSWD" ];
             }
@@ -80,6 +84,23 @@ in
       inputs',
       ...
     }:
+    let
+      systemctl = name: verb: description: {
+        meta = { inherit description; };
+        program = pkgs.writeShellApplication {
+          inherit name;
+          runtimeInputs = [ pkgs.openssh ];
+          text = ''
+            case ''${1-} in
+            ${
+              lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts)
+            }  *) echo "${name}: no NixOS host named ''${1-}" >&2; exit 1 ;;
+            esac
+            ssh "deploy@$1" sudo /run/current-system/sw/bin/systemctl ${verb}
+          '';
+        };
+      };
+    in
     {
       apps.deploy = {
         meta.description = "deploy .#HOST: activate the host's committed configuration over the tailnet with magic rollback";
@@ -105,21 +126,12 @@ in
           '';
         };
       };
-      apps.reboot = {
-        meta.description = "reboot HOST: reboot a NixOS host over the tailnet as the deploy account, e.g. after deploy --boot";
-        program = pkgs.writeShellApplication {
-          name = "reboot";
-          runtimeInputs = [ pkgs.openssh ];
-          text = ''
-            case ''${1-} in
-            ${
-              lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts)
-            }  *) echo "reboot: no NixOS host named ''${1-}" >&2; exit 1 ;;
-            esac
-            ssh "deploy@$1" sudo /run/current-system/sw/bin/systemctl reboot
-          '';
-        };
-      };
+      apps.reboot =
+        systemctl "reboot" "reboot"
+          "reboot HOST: reboot a NixOS host over the tailnet as the deploy account, e.g. after deploy --boot";
+      apps.shutdown =
+        systemctl "shutdown" "poweroff"
+          "shutdown HOST: power off a NixOS host over the tailnet as the deploy account; wake brings bastion and racknerd back";
       apps.clean = {
         meta.description = "clean [HOST]: delete every generation but the newest two and optimise the store on HOST over the tailnet as the deploy account, or on this machine without HOST";
         program = pkgs.writeShellApplication {
