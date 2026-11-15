@@ -41,6 +41,9 @@ in
         connectionConfig."ipv4.dhcp-send-hostname" = false;
       };
       systemd.user.settings.Manager.DefaultTimeoutStopSec = "10s";
+      systemd.services.systemd-logind.restartTriggers = [
+        config.environment.etc."systemd/logind.conf".source
+      ];
       networking.modemmanager.enable = false;
       security.rtkit.enable = true;
       programs.zsh.enable = true;
