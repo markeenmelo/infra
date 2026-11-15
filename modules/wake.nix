@@ -15,7 +15,7 @@
     in
     {
       apps.wake = {
-        meta.description = "wake HOST: power on bastion by Wake-on-LAN from its LAN, or racknerd through the RackNerd SolusVM client API";
+        meta.description = "wake HOST: power on bastion by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), or racknerd through the RackNerd SolusVM client API";
         program = pkgs.writeShellApplication {
           name = "wake";
           runtimeInputs = [

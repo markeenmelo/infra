@@ -25,7 +25,7 @@ reboot host:
 shutdown host:
     nix run .#shutdown -- {{ host }}
 
-[doc("Power on bastion by Wake-on-LAN from a machine on its LAN, or racknerd through the RackNerd API")]
+[doc("Power on bastion by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), or racknerd through the RackNerd API")]
 wake host:
     nix run .#wake -- {{ host }}
 

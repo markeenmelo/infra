@@ -51,7 +51,7 @@ nix run .#deploy -- .#HOST          # after checks pass on the committed revisio
 nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
 nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
 nix run .#shutdown -- HOST          # power off as deploy
-nix run .#wake -- HOST              # bastion by Wake-on-LAN, from its LAN only; racknerd through the RackNerd API
+nix run .#wake -- HOST              # bastion by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); racknerd through the RackNerd API
 nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```
 
