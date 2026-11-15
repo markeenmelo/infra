@@ -21,8 +21,8 @@ PKCE, or redirects anywhere but https, a native app's loopback (`http://127.0.0.
 `http://localhost`) or an app's own scheme. A person's groups in the module become the `groups`
 claim, which is how apps such as OpenCloud and Jellyfin assign roles.
 
-People live in the module with their name and email; their argon2 hashes are
-`authelia/USER-password-hash` in `secrets/hosts/bastion.yaml`, rendered with them into the users
+People live in the module with their name and groups; their email and argon2 hash are
+`authelia/USER-email` and `authelia/USER-password-hash` in `secrets/hosts/bastion.yaml`, rendered with them into the users
 file Authelia reads read-only. So the portal offers no password reset or change: a person types
 a new password into the hash command in the operator's private terminal, and the operator
 deploys.

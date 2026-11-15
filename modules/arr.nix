@@ -616,8 +616,8 @@ in
                   curl -fsS -b "$cookies" --data hashes=all "$api/torrents/reannounce"
               }
               while true; do
-                port=$(ip netns exec ${vpn} natpmpc -a 1 0 udp 60 -g ${protonGateway} | awk '/Mapped public port/ { print $4 }')
-                ip netns exec ${vpn} natpmpc -a 1 0 tcp 60 -g ${protonGateway} > /dev/null
+                port=$(ip netns exec ${vpn} natpmpc -a 1 0 udp 60 -g ${protonGateway} | awk '/Mapped public port/ { print $4 }' || true)
+                ip netns exec ${vpn} natpmpc -a 1 0 tcp 60 -g ${protonGateway} > /dev/null || true
                 if [ -z "$port" ]; then
                   echo "No port from ${protonGateway}; is the tunnel up?"
                   sleep 5

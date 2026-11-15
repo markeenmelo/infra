@@ -14,6 +14,7 @@
         };
         resolved.enable = true;
       };
+      systemd.services.tailscaled-autoconnect.wants = [ "tailscaled-set.service" ];
       fleet.carry = [ "var/lib/tailscale" ];
       preservation.preserveAt."/persist".directories = [
         {

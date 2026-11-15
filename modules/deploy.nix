@@ -7,7 +7,7 @@
 let
   hosts = lib.filterAttrs (_: host: !lib.hasSuffix "-darwin" host.system) config.fleet.hosts;
   systems = lib.unique (lib.mapAttrsToList (_: host: host.system) hosts);
-  clean = "/run/current-system/sw/bin/nh clean all --optimise";
+  clean = "/run/current-system/sw/bin/nh clean all --keep 2 --optimise";
 in
 {
   flake = {
@@ -83,7 +83,27 @@ in
     {
       apps.deploy = {
         meta.description = "deploy .#HOST: activate the host's committed configuration over the tailnet with magic rollback";
-        program = lib.getExe inputs'.deploy-rs.packages.deploy-rs;
+        program = pkgs.writeShellApplication {
+          name = "deploy";
+          runtimeInputs = [ pkgs.git ];
+          text = ''
+            refuse() {
+              echo "deploy: $1 is not allowed" >&2
+              exit 1
+            }
+            targets=0
+            for arg in "$@"; do
+              case $arg in
+                .#*) targets=1 ;;
+                --skip-checks | --magic-rollback* | --auto-rollback* | --rollback-succeeded* | --ssh-opts*) refuse "$arg" ;;
+                -[!-]*) [[ ! $arg =~ ^-[a-zA-Z]*s ]] || refuse "$arg" ;;
+              esac
+            done
+            [ "$targets" -eq 1 ] || { echo "deploy: name a target, e.g. .#HOST" >&2; exit 1; }
+            git diff --quiet HEAD || { echo "deploy: commit the tracked changes first" >&2; exit 1; }
+            exec ${lib.getExe inputs'.deploy-rs.packages.deploy-rs} "$@"
+          '';
+        };
       };
       apps.reboot = {
         meta.description = "reboot HOST: reboot a NixOS host over the tailnet as the deploy account, e.g. after deploy --boot";
@@ -101,12 +121,12 @@ in
         };
       };
       apps.clean = {
-        meta.description = "clean [HOST]: delete every generation but the current one and optimise the store on HOST over the tailnet as the deploy account, or on this machine without HOST";
+        meta.description = "clean [HOST]: delete every generation but the newest two and optimise the store on HOST over the tailnet as the deploy account, or on this machine without HOST";
         program = pkgs.writeShellApplication {
           name = "clean";
           runtimeInputs = [ pkgs.openssh ];
           text = ''
-            [ $# -eq 0 ] && exec ${lib.getExe pkgs.nh} clean all --optimise
+            [ $# -eq 0 ] && exec ${lib.getExe pkgs.nh} clean all --keep 2 --optimise
             case $1 in
             ${
               lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts)

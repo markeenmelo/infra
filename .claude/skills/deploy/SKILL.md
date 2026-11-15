@@ -53,6 +53,10 @@ nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
 nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```
 
+The `deploy` app refuses a run that names no `.#HOST`, has uncommitted tracked changes, or passes
+a flag that skips the checks, turns a rollback off or sets SSH options; `clean` keeps the newest two generations, so
+the previous one stays in the Limine menu.
+
 Claude prepares the command and asks first ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
 that changes SSH, firewall, Tailscale, users, sudo or this module is an access change. The first
 activation of a host is a nixos-anywhere install, not a deploy. The installed generation has no

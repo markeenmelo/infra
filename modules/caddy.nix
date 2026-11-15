@@ -37,11 +37,6 @@ in
                 default = "127.0.0.1";
                 description = "Address the LAN proxy reaches the app at, for apps confined to another network namespace.";
               };
-              tailnetOnly = lib.mkOption {
-                type = lib.types.bool;
-                default = false;
-                description = "Whether the LAN proxy refuses clients outside the tailnet and bastion's own tailnet address, which local processes would otherwise borrow.";
-              };
               public = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
@@ -57,8 +52,8 @@ in
         );
       };
       config.assertions = lib.mapAttrsToList (name: app: {
-        assertion = app.public -> !app.tailnetOnly && app.address == "127.0.0.1";
-        message = "fleet.web.apps.${name}: the edge reaches a public app on the host's port, bypassing the LAN proxy, so it cannot be tailnetOnly or live at another address.";
+        assertion = app.public -> app.address == "127.0.0.1";
+        message = "fleet.web.apps.${name}: the edge reaches a public app on the host's port, bypassing the LAN proxy, so it cannot live at another address.";
       }) config.fleet.web.apps;
       config.networking.firewall.extraInputRules =
         let
@@ -85,11 +80,16 @@ in
             ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
           ${caddy.package}/bin/caddy adapt --config Caddyfile --adapter caddyfile > config.json
           ${lib.getExe nixos.pkgs.jq} -e --argjson expected '${builtins.toJSON identityHeaders}' '
-            [ .apps.http.servers[].routes[] | .handle[]? | select(.handler == "subroute") | .routes[] | has("match") as $matched | .handle[] | { $matched, handler: . } ] as $steps
-            | ($steps | to_entries | map(select(.value.handler | tojson | test("reverse_proxy"))) | map(.key) | min // ($steps | length)) as $proxy
-            | $expected - [ $steps[:$proxy][] | select(.matched | not) | .handler
-                            | select(.handler == "headers") | .request.delete // [] | .[] ]
-              | length == 0' config.json > /dev/null
+            [ .apps.http.servers[].routes[]
+              | [ .handle[]? | if .handler == "subroute"
+                    then .routes[] | has("match") as $matched | .handle[] | { $matched, handler: . }
+                    else { matched: false, handler: . } end ] as $steps
+              | ($steps | to_entries | map(select(.value.handler | tojson | test("reverse_proxy"))) | map(.key) | min) as $proxy
+              | select($proxy != null)
+              | $expected - [ $steps[:$proxy][] | select(.matched | not) | .handler
+                              | select(.handler == "headers") | .request.delete // [] | .[] ]
+              | length == 0 ]
+            | length > 0 and all' config.json > /dev/null
           touch $out
         ''
       );

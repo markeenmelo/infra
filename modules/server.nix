@@ -14,7 +14,10 @@
       services = {
         logrotate.enable = true;
         tailscale = {
-          extraUpFlags = [ "--accept-dns=false" ];
+          extraUpFlags = [
+            "--reset"
+            "--accept-dns=false"
+          ];
           extraSetFlags = [ "--accept-dns=false" ];
         };
       };

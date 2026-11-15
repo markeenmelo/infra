@@ -46,6 +46,7 @@ keeping LAN access; the Linux bar's tailnet panel also picks one. On the Linux l
 is the Tailscale operator ([noctalia.nix](../../../modules/noctalia.nix)), an accepted risk: every
 process of `marcos`, the Noctalia plugins included, holds the whole LocalAPI (`up`, `down`, `set`,
 `serve`, `logout`) without a password, so a bump of those plugins needs their code read, not just
-the hash. The laptops' auto-connect `tailscale up` carries `--reset`
-([desktop.nix](../../../modules/desktop.nix)), since `up` refuses stored non-default settings it is
-not given again; `tailscaled-set` re-applies the declared ones after it.
+the hash. Every host's auto-connect `tailscale up` carries `--reset`
+([desktop.nix](../../../modules/desktop.nix), [server.nix](../../../modules/server.nix)), since `up` refuses stored non-default settings it is
+not given again; `tailscaled-set` re-applies the declared ones after it, on every run of the auto-connect unit
+([tailscale.nix](../../../modules/tailscale.nix)), since upstream starts it only with `tailscaled`.

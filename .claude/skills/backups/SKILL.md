@@ -17,16 +17,16 @@ consistent and no app stops. The dumps finish before the snapshots, so an app wr
 reconcile that after a restore. A failed dump keeps the previous one as `DB.prev.sql.gz`, which
 the drill then tests. The roots are `/srv`,
 Immich, OpenCloud, the arr state and
-the ThinkPad's repository; an assertion fails the build when
+each laptop's repository; an assertion fails the build when
 Immich's or OpenCloud's data falls outside them. Media, Frigate recordings, PostgreSQL's live files,
 Immich's thumbnails and transcodes, logs, caches and every identity (host and SSH keys,
 `/persist/zfs`, sbctl, tailscale, machine-id) stay out. Each repository keeps 7 daily, 4 weekly and 6
 monthly snapshots, grouped by host only, so snapshots from older backup paths age out too. Each pCloud run checks a random 1% of its data, which bounds the download. On
 the 15th the drill reads a twelfth of the USB repository, a different twelfth
-each month, and tests that every dump in the latest snapshot decompresses.
+each month, and tests that every dump in the latest snapshot decompresses and ends with pg_dump's completion line.
 
-The ThinkPad backs its home up to `backup-thinkpad`, an append-only `rclone serve restic` on
-bastion's tailnet address, port 8010, reachable from the ThinkPad's address only (the tailnet
+A laptop with a `fleet.hosts.HOST.homeBackup` fact (the ThinkPad, asahi) backs its home up to `backup-HOST`, an append-only `rclone serve restic` on
+bastion's tailnet address, on the fact's port, reachable from that laptop's address only (the tailnet
 grant in the [OpenTofu project](../opentofu/SKILL.md) and an nftables rule); it has no login, so
 an nftables output rule also refuses connections to it from bastion's own processes. Append-only means a
 compromised laptop cannot delete its history. On Sundays the retention job stops the server,
@@ -34,13 +34,13 @@ refuses to prune if any snapshot claims a date more than an hour ahead or was up
 8 days after its claimed date, then keeps everything from the last 14 days, so a forged snapshot
 cannot displace a genuine recent one, plus 7 daily, 5 weekly and 12 monthly, and checks 5% of the
 data. The repository is also a backup root, so it reaches the USB disk too. The laptop sends no
-metrics, so every hour `backup-thinkpad-freshness` records the upload time of the newest snapshot
-file, which the laptop cannot forge, as the `thinkpad` success clock, alerted on after 3 days
+metrics, so every hour `backup-HOST-freshness` records the upload time of the newest snapshot
+file, which the laptop cannot forge, as the `HOST` success clock, alerted on after 3 days
 rather than 30 hours since the laptop is often off.
 
-The household repository opens with `backups/restic-password`, the ThinkPad's with
-`backups/thinkpad-password` ([secrets skill](../secrets/SKILL.md)), so the household key can
-change without the laptop ever learning it. bastion reaches pCloud directly with
+The household repository opens with `backups/restic-password`, each laptop's with
+`backups/HOST-password` ([secrets skill](../secrets/SKILL.md)), so the household key can
+change without a laptop ever learning it. Each repository is its own dataset, `apps/backup-HOST`, created by hand before the deploy that declares it ([bastion skill](../bastion/SKILL.md)). bastion reaches pCloud directly with
 `backups/rclone-pcloud`, a full rclone config, so a compromised bastion can delete the off-site
 copies too; the operator accepted that over an append-only proxy on racknerd. Restore with
 `restic -r /mnt/backup/restic snapshots` and `restic restore`, run as root on bastion; for

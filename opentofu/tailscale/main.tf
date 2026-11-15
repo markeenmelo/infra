@@ -65,9 +65,14 @@ variable "fleet_state_port" {
   type        = number
 }
 
-variable "fleet_home_backup_port" {
-  description = "Bastion port of the ThinkPad's restic server, from fleet.homeBackupPort; the tofu app sets it."
-  type        = number
+variable "fleet_home_backups" {
+  description = "Bastion port of each laptop's restic server, by host, from fleet.hosts.*.homeBackup; the tofu app sets it."
+  type        = map(number)
+}
+
+variable "fleet_operators" {
+  description = "Fleet hosts the operator runs OpenTofu from, which reach the state database; the tofu app sets it."
+  type        = list(string)
 }
 
 variable "fleet_domain" {
@@ -83,8 +88,8 @@ locals {
   hosts = merge({
     grafite = "100.91.224.11"
   }, var.fleet_hosts)
-  admin_clients = ["thinkpad", "asahi", "mac", "grafite"]
-  operators     = ["thinkpad", "asahi", "mac"]
+  admin_clients = concat(var.fleet_operators, ["grafite"])
+  operators     = var.fleet_operators
   enrollment = {
     thinkpad  = ["tag:admin-client"]
     asahi     = ["tag:admin-client"]
@@ -115,13 +120,12 @@ locals {
       exitNode = ["tag:proton-exit"]
       routes   = { for lan in values(var.fleet_routes) : lan => ["tag:bastion"] }
     }
-    grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [
+    grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [for host, port in var.fleet_home_backups : { src = [host], dst = ["bastion"], ip = ["tcp:${port}"] }], [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
       { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:${var.fleet_cache_port}"]) },
-      { src = ["thinkpad"], dst = ["bastion"], ip = ["tcp:${var.fleet_home_backup_port}"] },
       { src = local.operators, dst = ["bastion"], ip = ["tcp:${var.fleet_state_port}"] },
       { src = concat(local.admin_clients, ["tag:ci"]), dst = ["bastion"], ip = ["tcp:${var.fleet_cache_port}"] },
-      { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443"] },
+      { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443", "udp:443"] },
       { src = local.admin_clients, dst = [var.fleet_lan.bastion.gateway], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = [var.fleet_routes.iot, var.fleet_routes.kids], ip = ["*"] },
       { src = ["tag:admin-client", "tag:server", "group:members"], dst = ["bastion"], ip = ["tcp:53", "udp:53"] },
@@ -133,7 +137,7 @@ locals {
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22", "bastion:${var.fleet_state_port}"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}"] },
-      { src = "racknerd", proto = "tcp", accept = ["bastion:9091"], deny = ["bastion:443", "bastion:${var.fleet_state_port}"] },
+      { src = "racknerd", proto = "tcp", accept = [for port in var.fleet_edge_ports : "bastion:${port}"], deny = ["bastion:443", "bastion:${var.fleet_state_port}"] },
     ])
   }
 }

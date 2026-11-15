@@ -15,9 +15,9 @@ proxy serves (Grafana through Authelia's OIDC, the arr apps with `arr/password`,
 nothing sits behind forward-auth. Authelia's portal is still published, because the apps' single
 sign-on redirects there from wherever the user is.
 
-Every app is reachable on the LAN and the tailnet, and a `public` one on the WAN as well. The one
-exception is ntfy, whose `alerts` topic describes the fleet and is readable without a login, so
-it is `tailnetOnly`.
+Every app is reachable on the LAN and the tailnet, and a `public` one on the WAN as well; there
+is no third tier. That includes ntfy, whose `alerts` topic describes the fleet and is readable
+without a login.
 The tailnet policy must let racknerd reach each backend port ([opentofu skill](../opentofu/SKILL.md)).
 
 Every forwarded request loses the `Remote-*` and `X-Forwarded-*` identity headers, so only
@@ -33,8 +33,7 @@ Tailnet clients never need the edge, even behind a foreign exit node: the split 
 domain to bastion directly.
 An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, denied paths,
 [caddy.nix](../../../modules/caddy.nix)): the LAN proxy routes every app to loopback, or to its
-`address` when the app lives in another network namespace, refuses non-tailnet clients and
-bastion's own tailnet address (which any local process could borrow) for a `tailnetOnly` app, and
+`address` when the app lives in another network namespace, and
 only a `public` one is forwarded by the edge and gets its port opened on the tailnet interface,
 to racknerd's address alone, so a tailnet grant mistake cannot let a client skip the edge's
 denied paths and country check. The wildcard record already
