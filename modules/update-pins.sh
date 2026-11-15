@@ -36,10 +36,8 @@ for project in opentofu/*/; do
   done <<< "$sources"
   [ "$(cat "$main")" = "$before" ] || rm -f "${project}.terraform.lock.hcl"
   tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64
-  if [ "$(cat "$main")" != "$before" ]; then
-    tofu -chdir="$project" init -backend=false -input=false -lockfile=readonly
-    tofu -chdir="$project" validate
-  fi
+  tofu -chdir="$project" init -backend=false -input=false -lockfile=readonly
+  tofu -chdir="$project" validate
 done
 
 GITHUB_TOKEN=$github_token pinact run --update
