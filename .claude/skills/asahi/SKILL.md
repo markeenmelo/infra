@@ -39,9 +39,9 @@ battery: `on_ac()` picks the mode when Hyprland loads its config and `hypr-ac-re
 AC changes. wluma sets the panel brightness from the light sensor.
 
 Sleep is s2idle, and only the lid and the power button wake it: USB drops during sleep, so a key on
-the dock's keyboard does not, even with the controller's wakeup armed. So on AC with a USB device
-attached idle locks and blanks but never suspends. The HDMI monitor drops off DRM seconds after the
-screen turns off, which is why the test is USB and not the display.
+the dock's keyboard does not, even with the controller's wakeup armed. The idle suspend in
+[hardware.nix](../../../modules/hosts/asahi/hardware.nix) works around that. The HDMI monitor drops
+off DRM seconds after the screen turns off, which is why its test is USB and not the display.
 
 ## Reinstall
 

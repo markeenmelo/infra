@@ -19,10 +19,12 @@
         program = pkgs.writeShellApplication {
           name = "wake";
           runtimeInputs = [
+            pkgs.git
             pkgs.sops
             pkgs.wakeonlan
           ];
           text = ''
+            cd "$(git rev-parse --show-toplevel)"
             case ''${1-} in
               bastion) wakeonlan ${config.fleet.hosts.bastion.lan.mac} ;;
               racknerd) sops exec-env secrets/racknerd/operator.yaml ${lib.getExe racknerd-boot} ;;
