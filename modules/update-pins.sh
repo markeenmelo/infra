@@ -27,10 +27,14 @@ done <<< "$names"
 GITHUB_TOKEN=$github_token pinact run --update
 
 update_providers() {
-  local failed=0 project main before sources source latest
+  local failed=0 project main lock before saved sources source latest
   for project in opentofu/*/; do
     main=${project}main.tf
+    lock=${project}.terraform.lock.hcl
     before=$(cat "$main")
+    saved=$(mktemp -d)
+    cp "$main" "$saved/main.tf"
+    [ ! -e "$lock" ] || cp "$lock" "$saved/lock"
     sources=$(grep -oP '^\s*source\s*=\s*"\K[^"]+' "$main")
     while read -r source; do
       latest=$(curl -fsS "https://registry.opentofu.org/v1/providers/$source/versions" |
@@ -38,14 +42,17 @@ update_providers() {
       sed -i "\|source *= \"$source\"|{n;s|version *= \"~> [^\"]*\"|version = \"~> $latest\"|}" "$main"
       grep -qF "version = \"~> $latest\"" "$main"
     done <<< "$sources"
-    [ "$(cat "$main")" = "$before" ] || rm -f "${project}.terraform.lock.hcl"
+    [ "$(cat "$main")" = "$before" ] || rm -f "$lock"
     if ! tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64 ||
       ! tofu -chdir="$project" init -backend=false -input=false -lockfile=readonly ||
       ! tofu -chdir="$project" validate; then
-      git checkout -- "$main" "${project}.terraform.lock.hcl"
+      cp "$saved/main.tf" "$main"
+      rm -f "$lock"
+      [ ! -e "$saved/lock" ] || cp "$saved/lock" "$lock"
       echo "update-pins: ${project} does not validate after the provider bump; reverted it, edit main.tf by hand" >&2
       failed=1
     fi
+    rm -rf "$saved"
   done
   return "$failed"
 }
