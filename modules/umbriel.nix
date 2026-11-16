@@ -93,7 +93,15 @@
               };
               touchpad.click_method = "clickfinger";
             };
-            layout.struts = lib.genAttrs [ "top" "bottom" "left" "right" ] (_: -2);
+            layout = {
+              extent_presets = [
+                0.25
+                0.333
+                0.5
+                0.667
+              ];
+              struts = lib.genAttrs [ "top" "bottom" "left" "right" ] (_: -2);
+            };
             window_rule = [
               { blur = false; }
               {
