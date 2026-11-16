@@ -64,6 +64,13 @@
               focused = color "base0D";
               unfocused = color "base02";
             };
+            input = {
+              keyboard = {
+                repeat_rate = 40;
+                repeat_delay = 300;
+              };
+              touchpad.click_method = "clickfinger";
+            };
             layout.struts = lib.genAttrs [ "top" "bottom" "left" "right" ] (_: -2);
             window_rule = [ { blur = false; } ];
           }
