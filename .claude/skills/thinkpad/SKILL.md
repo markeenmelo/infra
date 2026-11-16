@@ -99,11 +99,16 @@ reason the Umbriel session loads Mesa only: a desktop program that opens the NVI
 keeps the old card alive and the next start fails with `Failed to allocate NvKmsKapiDevice`.
 
 gamescope gets the card and the mode by argument, since it otherwise picks the Intel Vulkan device
-and a lower mode; adaptive sync is off because it glitched on this card, HDR stays on. gamescope's
+and a lower mode; adaptive sync is off because it glitched on this card, and HDR is off because the driver
+flickers with it above 2560x1440@120 and 10-bit at this mode does not fit the DisplayPort link
+uncompressed. Every Proton game inherits the unit's DLSS settings: the game's DLSS is replaced
+by the current one and pinned to the transformer preset the card affords, since the newer
+presets cost a 30-series card far more. gamescope's
 own output is filed under the session scope, not the unit: read a start with
 `journalctl -b --since -1min`, not `-u gaming.service`. The proprietary NVIDIA module and the
-`SIGKILL` on stop are `shortcut:` entries in the module. A frame counter is Steam's own, or
-`mangohud %command%` per game; gamescope's mangoapp overlay did not draw on this card.
+`SIGKILL` on stop are `shortcut:` entries in the module. MangoHud draws a frame
+counter on every game through the unit's environment; gamescope's mangoapp overlay did not draw
+on this card.
 
 bastion builds Steam's 32-bit closure, so it is advertised as an `i686-linux` builder
 ([builder.nix](../../../modules/builder.nix)). The NVIDIA module is built against the laptop's
