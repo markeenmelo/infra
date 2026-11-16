@@ -30,9 +30,10 @@ is the installer's "Rebuild vendor firmware package" from macOS.
 ## Kernel, display and power
 
 The stock `linux-asahi` from the input has no DisplayPort alt mode, so external displays use the
-HDMI port only. Asahi reads no EDID there, so Umbriel cannot match the Odyssey by its identity and
-the `HDMI-A-1` connector section in [hardware.nix](../../../modules/hosts/asahi/hardware.nix)
-repeats its mode; it runs SDR without VRR, Umbriel's defaults. `appledrm.show_notch` puts the bar over the
+HDMI port only. Asahi reads no EDID there, so Umbriel matches no display by identity: the
+`HDMI-A-1` connector section in [hardware.nix](../../../modules/hosts/asahi/hardware.nix) is the
+Odyssey's, repeating its mode and column width, and any other HDMI display gets the same. It runs
+SDR without VRR, Umbriel's defaults. `appledrm.show_notch` puts the bar over the
 notch, at a scale that divides the panel; `appledrm.hdmi_audio` is a driver option its authors mark
 unstable. There is no `platform_profile`, so TuneD's PPD bridge replaces power-profiles-daemon for
 Noctalia's power widget and picks power-saver on battery. The panel runs its preferred mode at

@@ -108,10 +108,6 @@
           let
             scale = 4.0 / 3;
             panelWidth = builtins.floor (3024 / scale);
-            above = width: [
-              ((panelWidth - width) / 2)
-              (-1440)
-            ];
           in
           {
             eDP-1 = {
@@ -123,12 +119,11 @@
             };
             HDMI-A-1 = {
               mode = "5120x1440@120";
-              position = above 5120;
-            };
-            "Samsung Electric Company Odyssey G93SC HCSY300098".position = above 5120;
-            "Dell Inc. DELL U3423WE 4TSGMP3" = {
-              mode = "3440x1440@59.97";
-              position = above 3440;
+              position = [
+                ((panelWidth - 5120) / 2)
+                (-1440)
+              ];
+              layout.scrolling.default_extent_fraction = 1.0 / 3;
             };
           };
         programs.noctalia.settings = {
