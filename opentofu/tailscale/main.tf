@@ -163,7 +163,7 @@ resource "tailscale_tailnet_settings" "fleet" {
 resource "tailscale_dns_configuration" "fleet" {
   override_local_dns = true
   nameservers {
-    address            = "194.242.2.3"
+    address            = "9.9.9.9"
     use_with_exit_node = true
   }
   split_dns {
