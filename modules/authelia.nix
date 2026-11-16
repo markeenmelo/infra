@@ -199,6 +199,7 @@ in
               ];
             };
             identity_providers.oidc = {
+              lifespans.custom.sync.refresh_token = "6M";
               cors = {
                 endpoints = [
                   "authorization"

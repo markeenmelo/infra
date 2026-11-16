@@ -109,18 +109,24 @@ in
             "path /api/v0/settings/assignments-add /api/v0/settings/assignments-remove /admin-settings /admin-settings/*"
           ];
         };
-        oidc.clients = lib.mapAttrs (_: redirect_uris: {
-          public = true;
-          client_name = "OpenCloud";
-          inherit redirect_uris scopes;
-          response_types = [ "code" ];
-          grant_types = [
-            "authorization_code"
-            "refresh_token"
-          ];
-          access_token_signed_response_alg = "RS256";
-          userinfo_signed_response_alg = "none";
-        }) clients;
+        oidc.clients = lib.mapAttrs (
+          id: redirect_uris:
+          lib.mkMerge [
+            {
+              public = true;
+              client_name = "OpenCloud";
+              inherit redirect_uris scopes;
+              response_types = [ "code" ];
+              grant_types = [
+                "authorization_code"
+                "refresh_token"
+              ];
+              access_token_signed_response_alg = "RS256";
+              userinfo_signed_response_alg = "none";
+            }
+            (lib.mkIf (id != "web") { lifespan = "sync"; })
+          ]
+        ) clients;
       };
       systemd.services = {
         opencloud-init-config = {
