@@ -51,6 +51,10 @@ sender or a moved port needs only a plan and an apply. Every project reads the d
 from `fleet.domain` as `TF_VAR_fleet_domain`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
 
+- `grafite` is the operator's phone, an admin client outside the fleet. Admin clients reach each
+  other on KDE Connect's ports, and the operator laptops reach the phone on every unprivileged TCP
+  port, since Android's Wireless debugging listens on a random one
+  ([thinkpad skill](../thinkpad/SKILL.md#phone)); `tests` keep servers, members and CI out of both.
 - Auth keys recreate on apply once invalid; the [tailnet skill](../tailnet/SKILL.md) moves one
   into `secrets/hosts/HOST.yaml`.
 - A host enrolled by key carries the key's tag; retagging it is a re-enrollment.
