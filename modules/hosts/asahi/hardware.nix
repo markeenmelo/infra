@@ -7,33 +7,8 @@
       pkgs,
       ...
     }:
-    let
-      acOnline = "/sys/class/power_supply/macsmc-ac/online";
-      internal = config.fleet.internalDisplay;
-      acReload = pkgs.writeShellApplication {
-        name = "hypr-ac-reload";
-        runtimeInputs = [
-          config.programs.hyprland.package
-          config.systemd.package
-        ];
-        text = ''
-          last=$(cat ${acOnline})
-          udevadm monitor --udev --subsystem-match=power_supply | while read -r _; do
-            now=$(cat ${acOnline})
-            if [ "$now" != "$last" ]; then
-              last=$now
-              hyprctl reload
-            fi
-          done
-        '';
-      };
-    in
     {
       imports = [ inputs.nixos-apple-silicon.nixosModules.apple-silicon-support ];
-      fleet = {
-        internalDisplay = "eDP-1";
-        lidSwitch = "Apple SMC power/lid events";
-      };
       hardware.asahi = {
         enable = true;
         peripheralFirmwareDirectory = null;
@@ -104,18 +79,6 @@
               "media.gmp-widevinecdm.autoupdate" = false;
               "media.gmp-widevinecdm.version" = "system-installed";
             };
-        systemd.user.services.hypr-ac-reload = {
-          Unit = {
-            Description = "Reload Hyprland when AC power changes";
-            PartOf = [ "graphical-session.target" ];
-            After = [ "graphical-session.target" ];
-          };
-          Service = {
-            ExecStart = lib.getExe acReload;
-            Restart = "on-failure";
-          };
-          Install.WantedBy = [ "graphical-session.target" ];
-        };
         services.wluma = {
           enable = true;
           systemd.target = "graphical-session.target";
@@ -134,51 +97,35 @@
             };
             output.backlight = [
               {
-                name = internal;
+                name = "eDP-1";
                 path = "/sys/class/backlight/apple-panel-bl";
                 capturer = "wayland";
               }
             ];
           };
         };
-        wayland.windowManager.hyprland = {
-          extraLuaFiles.power = ''
-            function on_ac()
-              local f = io.open("${acOnline}")
-              if not f then return true end
-              local online = f:read("l") == "1"
-              f:close()
-              return online
-            end
-          '';
-          settings.monitor = lib.mkAfter (
-            [
-              {
-                output = internal;
-                position = "0x0";
-                mode = lib.generators.mkLuaInline ''on_ac() and "3024x1964@120" or "3024x1964@60"'';
-                scale = 4.0 / 3;
-                vrr = 2;
-                disabled = lib.generators.mkLuaInline "lid_shut_docked()";
-              }
-            ]
-            ++
-              map
-                (output: {
-                  inherit output;
-                  position = "auto-center-up";
-                  mode = "5120x1440@120";
-                  scale = 1;
-                  bitdepth = 8;
-                  cm = "srgb";
-                  vrr = 0;
-                })
-                [
-                  "HDMI-A-1"
-                  "desc:Samsung Electric Company Odyssey G93SC HCSY300098"
-                ]
-          );
-        };
+        programs.umbriel.settings.output =
+          let
+            scale = 4.0 / 3;
+            panelWidth = builtins.floor (3024 / scale);
+          in
+          {
+            eDP-1 = {
+              inherit scale;
+              position = [
+                0
+                0
+              ];
+            };
+            HDMI-A-1 = {
+              mode = "5120x1440@120";
+              position = [
+                ((panelWidth - 5120) / 2)
+                (-1440)
+              ];
+              layout.scrolling.default_extent_fraction = 1.0 / 3;
+            };
+          };
         programs.noctalia.settings = {
           bar.default.thickness = 56;
           idle.behavior.suspend = {

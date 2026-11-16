@@ -1,6 +1,6 @@
 ---
 name: thinkpad
-description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Hyprland, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), the eGPU gaming session (Steam in gamescope on a second seat), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, hyprland.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, gaming.nix, or reinstalling the laptop, and when the gaming session, the eGPU or the NVIDIA driver misbehaves."
+description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Umbriel, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), the eGPU gaming session (Steam in gamescope on a second seat), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, umbriel.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, gaming.nix, or reinstalling the laptop, and when the gaming session, the eGPU or the NVIDIA driver misbehaves."
 ---
 
 # ThinkPad
@@ -35,9 +35,12 @@ first; wiping it destroys the old LUKS header and with it everything the old ins
 
 The role is one file per concern, each setting its NixOS and Home Manager halves: the base in
 [desktop.nix](../../../modules/desktop.nix) (Home Manager as a NixOS module, NetworkManager,
-Bluetooth, PipeWire, UPower, power profiles, the apps), [hyprland.nix](../../../modules/hyprland.nix)
-(UWSM session, Lua config over the stock one, keybinds; `SUPER + /` lists them),
-[noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the greeter),
+Bluetooth, PipeWire, UPower, power profiles, the apps), [umbriel.nix](../../../modules/umbriel.nix)
+(the compositor session from nixpkgs' module, and `programs.umbriel.settings`, a config layered
+over Umbriel's packaged `config.toml`: tables merge by key and the last file wins, so only changes
+to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists the keybinds),
+[noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the greeter,
+whose output layout is derived from Umbriel's positions),
 [wifi.nix](../../../modules/wifi.nix), [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Looks
 follow the [desktop skill](../desktop/SKILL.md). The tailnet client accepts bastion's subnet routes
@@ -62,17 +65,20 @@ Idle locks, turns the screen off and suspends on the timers in
 [noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
 does while a video plays. On battery `power-profile-ac` switches to
 power-saver and restores the previous profile on AC; the battery charges to 90% and resumes at
-85%. The lid hides the built-in panel while another display is connected. Shutting it suspends on
+85%. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move
+to another display until it opens; undocked on AC that leaves no display until the lid opens or the
+idle timer suspends, and the idle lock still engages with no output, so opening the lid shows the
+lock screen. Shutting it suspends on
 battery only: on AC the idle timer does, since a monitor that sleeps drops off DRM and logind would
 read that as an undock.
 
 ## Gaming
 
 [gaming.nix](../../../modules/gaming.nix) runs Steam's Deck interface in gamescope on an NVIDIA
-card in a Thunderbolt enclosure, beside the Hyprland session instead of in it. The card, and while
-gaming the Keychron receivers, belong to a second logind seat, so Hyprland never opens the card and
+card in a Thunderbolt enclosure, beside the Umbriel session instead of in it. The card, and while
+gaming the Keychron receivers, belong to a second logind seat, so Umbriel never opens the card and
 keeps the built-in panel, keyboard and trackpad. `gaming.service` is that session; `gaming`,
-`SUPER + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it;
+`Mod + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it;
 the unit's own stop asks Steam to shut down and waits for it, so a running game is not cut off
 mid-save. A reboot or poweroff is the exception: logind stops the session's processes at the same
 time as the unit, so leave the session first.
@@ -81,7 +87,7 @@ holds the performance profile and a sleep inhibitor, and runs `scx_lavd`.
 
 It starts only from an unlocked session, never on plug: the unit runs as `marcos` without a login,
 so starting on plug would hand an unlocked session to whoever holds the enclosure. For the same
-reason a running session is unlocked: the idle lock covers the Hyprland seat only, and it fires
+reason a running session is unlocked: the idle lock covers the Umbriel seat only, and it fires
 during play because that seat sees no input. Leaving the desk means leaving the session first.
 
 The NVIDIA driver freezes the kernel when the card leaves while it is bound, even idle, and a
@@ -89,7 +95,7 @@ frozen removal blocks every rescan and the next shutdown; only a forced reboot c
 card sits on the PCI bus only while the session runs: a udev rule removes it whenever it appears
 otherwise, the handover rescans on start, and on stop it detaches the card and unloads the NVIDIA
 modules. The cable is safe to pull whenever no session runs, and never during one. For the same
-reason the Hyprland session loads Mesa only: a desktop program that opens the NVIDIA device nodes
+reason the Umbriel session loads Mesa only: a desktop program that opens the NVIDIA device nodes
 keeps the old card alive and the next start fails with `Failed to allocate NvKmsKapiDevice`.
 
 gamescope gets the card and the mode by argument, since it otherwise picks the Intel Vulkan device

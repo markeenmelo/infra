@@ -40,9 +40,9 @@ members to the internet through them. Each joins once with its own key, `proton-
 moved like a host's from the `enrollment_keys` output, and keeps `/var/lib/tailscale-COUNTRY`
 under `/persist`. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tunnel that fails or
 whose handshake is older than five minutes, and starts its exit node again each time it comes up. Choosing
-an exit node is done on the client: clicking the mac's tailnet item in SketchyBar or `SUPER + T` on
-the thinkpad steps through direct and every online peer offering an exit node, by MagicDNS name,
-keeping LAN access; the Linux bar's tailnet panel also picks one. On the Linux laptops `marcos`
+an exit node is done on the client: clicking the mac's tailnet item in SketchyBar steps through
+direct and every online peer offering an exit node, by MagicDNS name, keeping LAN access; on the
+Linux laptops the bar's tailnet panel picks one. On the Linux laptops `marcos`
 is the Tailscale operator ([noctalia.nix](../../../modules/noctalia.nix)), an accepted risk: every
 process of `marcos`, the Noctalia plugins included, holds the whole LocalAPI (`up`, `down`, `set`,
 `serve`, `logout`) without a password, so a bump of those plugins needs their code read, not just
