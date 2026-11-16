@@ -74,6 +74,14 @@
             };
             layout.struts = lib.genAttrs [ "top" "bottom" "left" "right" ] (_: -2);
             window_rule = [ { blur = false; } ];
+            layer_rule = [
+              {
+                match.namespace = "^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$";
+                blur = true;
+                blur_ignore_alpha = 0.6;
+                blur_optimized = false;
+              }
+            ];
           }
           {
             include.files = [ "${osConfig.programs.umbriel.package}/share/umbriel/config.toml" ];
@@ -91,6 +99,10 @@
               "Mod+Escape" = noctalia "panel-toggle session";
               "Mod+Slash" = "cheatsheet-toggle";
               "Mod+Z" = spawn config.programs.zed-editor.package;
+              "Alt+Tab" = noctalia "window-switcher hold";
+              "Alt+Shift+Tab" = noctalia "window-switcher hold reverse";
+              "Mod+Shift+A" = noctalia "screenshot-annotate";
+              "Mod+Ctrl+A" = noctalia "annotate";
               "Mod+N" = noctalia "panel-toggle control-center";
               "Mod+Shift+L" = noctalia "session lock";
               "Print" = noctalia "screenshot-region";

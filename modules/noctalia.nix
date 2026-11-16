@@ -86,6 +86,8 @@
                   "shutdown"
                 ];
             clipboard_enabled = false;
+            umbriel_overview_type_to_launch_enabled = true;
+            umbriel_overview_close_on_launch_enabled = true;
             popup_shadows = false;
             panel = {
               open_near_click_control_center = true;
