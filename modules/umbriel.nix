@@ -56,6 +56,7 @@
               windows_in.style = "fade";
               windows_out.style = "fade";
             };
+            general.show_cheatsheet = false;
             appearance = {
               corner_radius = 6;
               shadow.enabled = false;
@@ -87,6 +88,9 @@
               };
               "Mod+B" = spawn config.programs.zen-browser.package;
               "Mod+E" = spawn pkgs.nautilus;
+              "Mod+Escape" = noctalia "panel-toggle session";
+              "Mod+Slash" = "cheatsheet-toggle";
+              "Mod+Z" = spawn config.programs.zed-editor.package;
               "Mod+N" = noctalia "panel-toggle control-center";
               "Mod+Shift+L" = noctalia "session lock";
               "Print" = noctalia "screenshot-region";
