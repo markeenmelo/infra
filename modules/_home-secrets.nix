@@ -4,7 +4,6 @@
   ".local/share/keyrings"
   ".config/sops"
   ".config/gh"
-  ".greptile/auth.json"
   ".claude/.credentials.json"
   ".bitwarden-ssh-agent.sock"
 ]

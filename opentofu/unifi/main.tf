@@ -1,4 +1,5 @@
 terraform {
+  required_version = ">= 1.10"
   required_providers {
     unifi = {
       source  = "filipowm/unifi"
@@ -52,8 +53,9 @@ variable "fleet_lan" {
 
 # shortcut: the gateway's certificate is self-signed, verify it once it serves one for the domain
 provider "unifi" {
-  api_url        = "https://${local.bastion.gateway}"
-  allow_insecure = true
+  api_url          = "https://${local.bastion.gateway}"
+  allow_insecure   = true
+  http_max_retries = 3
 }
 
 variable "fleet_domain" {

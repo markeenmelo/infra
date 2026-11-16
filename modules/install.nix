@@ -36,11 +36,11 @@ in
             echo "install: identity staged in $extra" >&2
             trap 'rm -rf "$extra"' EXIT
             mkdir -p "$extra/persist"
-            ssh "$target" tar -C "$root" -chf - "''${paths[@]}" | tar -C "$extra/persist" -xf -
+            ssh "$target" tar -C "''${root@Q}" -chf - "''${paths[@]@Q}" | tar -C "$extra/persist" -xf -
             cp -a "$extra/persist/." "$extra/"
-            mount=$(ssh "$target" findmnt -n -o TARGET -T "$root")
+            mount=$(ssh "$target" findmnt -n -o TARGET -T "''${root@Q}")
             [ "$mount" != / ] || { echo "install: $root is on the installer's root, not a mounted old disk" >&2; exit 1; }
-            ssh "$target" umount -R "$mount"
+            ssh "$target" umount -R "''${mount@Q}"
             trap - EXIT
             nixos-anywhere --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
               echo "install: failed after the old disk was unmounted; identity kept in $extra, rerun nixos-anywhere with --extra-files $extra" >&2

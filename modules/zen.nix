@@ -25,10 +25,12 @@ let
       "sponsorBlocker@ajay.app" = {
         installation_mode = "force_installed";
         install_url = "https://addons.mozilla.org/firefox/downloads/latest/sponsorblock/latest.xpi";
+        default_area = "menupanel";
       };
       "addon@simplelogin" = {
         installation_mode = "force_installed";
         install_url = "https://addons.mozilla.org/firefox/downloads/latest/simplelogin/latest.xpi";
+        default_area = "navbar";
       };
     };
     AutofillAddressEnabled = false;

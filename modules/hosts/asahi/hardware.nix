@@ -11,7 +11,6 @@
       imports = [ inputs.nixos-apple-silicon.nixosModules.apple-silicon-support ];
       hardware.asahi = {
         enable = true;
-        peripheralFirmwareDirectory = null;
         avd = {
           vaapi-support = true;
           codecs = [ "all" ];
@@ -127,7 +126,12 @@
             };
           };
         programs.noctalia.settings = {
-          bar.default.thickness = 56;
+          bar.default = {
+            thickness = 56;
+            margin_ends = 0;
+            margin_edge = 0;
+            radius = 0;
+          };
           idle.behavior.suspend = {
             action = "command";
             # shortcut: linux-asahi wakes from s2idle on the lid and power button only, so on AC with a USB device attached idle never suspends; drop when a USB key press wakes it

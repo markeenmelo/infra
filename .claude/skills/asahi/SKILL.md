@@ -23,8 +23,8 @@ chain (m1n1, U-Boot, Limine) has no Secure Boot. The ESP is small, so Limine kee
 `switch-os` reboots once into macOS.
 
 Apple's peripheral firmware is non-redistributable and this repository is public, so it never
-enters the repository or the store: with `peripheralFirmwareDirectory = null` the initrd unpacks
-`vendorfw/firmware.cpio` from the ESP, which upstream calls experimental. An Asahi firmware update
+enters the repository or the store: by nixos-apple-silicon's default the initrd unpacks
+`vendorfw/firmware.cpio` from the ESP. An Asahi firmware update
 is the installer's "Rebuild vendor firmware package" from macOS.
 
 ## Kernel, display and power

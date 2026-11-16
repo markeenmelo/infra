@@ -170,13 +170,17 @@
             XDG_SESSION_TYPE = "wayland";
             XDG_SESSION_CLASS = "user";
             WLR_LIBINPUT_NO_DEVICES = "1";
+            MANGOHUD = "1";
+            MANGOHUD_CONFIG = "fps,frame_timing,gpu_stats,gpu_temp,vram,cpu_stats,cpu_temp,ram";
+            PROTON_DLSS_UPGRADE = "1";
+            DXVK_NVAPI_DRS_NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION = "render_preset_k";
           };
           serviceConfig = {
             User = "marcos";
             PAMName = "login";
             Nice = -10;
             ExecStartPre = "+${lib.getExe handover} on";
-            ExecStart = "${lib.getExe config.programs.gamescope.package} --steam --prefer-vk-device ${rtx3070} -W 5120 -H 1440 -w 5120 -h 1440 -r 120 --hdr-enabled -- ${lib.getExe config.programs.steam.package} -gamepadui -steamos3 -pipewire-dmabuf";
+            ExecStart = "${lib.getExe config.programs.gamescope.package} --steam --prefer-vk-device ${rtx3070} -W 5120 -H 1440 -w 5120 -h 1440 -r 120 -- ${lib.getExe config.programs.steam.package} -gamepadui -steamos3 -pipewire-dmabuf";
             ExecStop = "+${lib.getExe quit}";
             ExecStopPost = "+${lib.getExe handover} off";
             # shortcut: gamescope 3.17 hangs 25 s releasing the card through logind and then crashes, so stop kills it outright; drop when it exits cleanly

@@ -92,9 +92,6 @@ in
       {
         home = {
           packages = [
-            pkgs.entire
-            (pkgs.callPackage ./entire-graph.pkg.nix { })
-            (pkgs.callPackage ./greptile.pkg.nix { })
             pkgs.nodejs
             pkgs.rtk
           ];
@@ -202,7 +199,6 @@ in
                   "${(pkgs.callPackage ./cache-tax.pkg.nix { }).src}"
                   "${(pkgs.callPackage ./ponytail.pkg.nix { }).src}"
                   "${(pkgs.callPackage ./caveman.pkg.nix { }).src}"
-                  "${(pkgs.callPackage ./entire-skills.pkg.nix { }).src}"
                 ]
                 ++ map (plugin: "${(pkgs.callPackage ./trailofbits-skills.pkg.nix { }).src}/plugins/${plugin}") [
                   "agentic-actions-auditor"

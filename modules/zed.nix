@@ -63,6 +63,7 @@
           };
           agent = {
             dock = "right";
+            sidebar_side = "right";
             threads_sidebar.auto_open = false;
             commit_message_model = {
               provider = "openai_subscribed";

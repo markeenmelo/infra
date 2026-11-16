@@ -23,5 +23,8 @@ forward; moving to the rolling line and back is a downgrade OpenCloud does not s
 
 The desktop client is installed on every workstation (the `opencloud` cask on the mac). Sign-in
 and the folder pairs are set in the client, whose token lives in the system keychain, so they are
-not declared. On Linux it starts with the Fusion style, because Stylix's Kvantum has no QML
+not declared. The desktop and mobile clients take Authelia's `sync` lifespan
+([identity skill](../identity/SKILL.md)), so a machine that sleeps past Authelia's default refresh
+window stays signed in; the price is a lost device that keeps file access, without a second
+factor, until that token expires. The web app keeps the default. On Linux it starts with the Fusion style, because Stylix's Kvantum has no QML
 style and the client aborts under it.

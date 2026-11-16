@@ -25,10 +25,7 @@ in
       media = dirOf config.nixflix.mediaDir;
       secret = name: { _secret = config.sops.secrets."jellyfin-${name}".path; };
       sso = pkgs.callPackage ./jellyfin-sso.pkg.nix { };
-      autheliaUsers = map lib.toLower (
-        lib.attrNames
-          (builtins.fromJSON (config.sops.templates.authelia-users.content or ''{"users":{}}'')).users
-      );
+      autheliaUsers = map lib.toLower (lib.attrNames config.fleet.people);
     in
     {
       imports = [ nixflix ];

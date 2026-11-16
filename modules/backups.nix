@@ -431,7 +431,6 @@ in
         };
       };
       preservation.preserveAt."/persist".directories = [ "/var/cache/restic-backups-home" ];
-      networking.nftables.enable = true;
       networking.nftables.tables.backup-home = {
         family = "inet";
         content = ''

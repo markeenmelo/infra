@@ -17,8 +17,10 @@ off: it would make sudo unexecutable for it and break every deploy. IPv6 stays o
 same reason: MagicDNS answers with each node's tailnet IPv6 address, and a peer that tries it first
 against a host with IPv6 off waits out a connect timeout that can outlast the rollback confirm;
 the uplinks refuse IPv6 per link instead. Magic rollback and auto rollback stay on: a profile
-that breaks the SSH path reverts after the confirm timeout. `nix flake check` carries the
-deploy-rs schema and activation checks per system.
+that breaks the SSH path reverts after the confirm timeout. `--boot` is the exception: deploy-rs
+activates it without the confirm step, so a boot that fails is recovered from the Limine menu. `nix flake check` carries the
+deploy-rs schema and activation checks per system. The `deploy` binary and the activator are
+nixpkgs' package, taken from the binary cache; the input supplies only its library.
 
 A host that runs the builder ([builder.nix](../../../modules/builder.nix)), or has another
 system than bastion, builds itself; every other host is built on the deploying machine, which
@@ -56,7 +58,7 @@ nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activatio
 ```
 
 The `deploy` app refuses a run that names no `.#HOST`, has uncommitted tracked changes, or passes
-a flag that skips the checks, turns a rollback off or sets SSH options; `clean` keeps the newest two generations, so
+any flag outside its allow list, so none can skip the checks, turn a rollback off, stretch the confirm timeout or set SSH options; `clean` keeps the newest two generations, so
 the previous one stays in the Limine menu.
 
 Claude prepares the command and asks first ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy

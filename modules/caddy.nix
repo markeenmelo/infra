@@ -55,6 +55,7 @@ in
         assertion = app.public -> app.address == "127.0.0.1";
         message = "fleet.web.apps.${name}: the edge reaches a public app on the host's port, bypassing the LAN proxy, so it cannot live at another address.";
       }) config.fleet.web.apps;
+      config.networking.nftables.enable = true;
       config.networking.firewall.extraInputRules =
         let
           ports = lib.mapAttrsToList (_: app: toString app.port) (
@@ -102,6 +103,7 @@ in
       ...
     }:
     {
+      key = "fleet-caddy";
       fleet.scrapeTargets.caddy = 19290;
       fleet.loopbackGuards.caddy-admin = {
         ports = [ 2019 ];

@@ -39,8 +39,10 @@ Bluetooth, PipeWire, UPower, power profiles, the apps), [umbriel.nix](../../../m
 (the compositor session from nixpkgs' module, and `programs.umbriel.settings`, a config layered
 over Umbriel's packaged `config.toml`: tables merge by key and the last file wins, so only changes
 to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists the keybinds),
-[noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the greeter,
-whose output layout is derived from Umbriel's positions),
+[noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the polkit agent, the greeter,
+whose output layout is derived from Umbriel's positions; apps it launches run as their own systemd
+units, so a shell restart does not take them down; the `desktop-config-HOST` check fails on any
+key either program's validator rejects or warns about),
 [wifi.nix](../../../modules/wifi.nix), [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Looks
 follow the [desktop skill](../desktop/SKILL.md). The tailnet client accepts bastion's subnet routes
@@ -99,11 +101,16 @@ reason the Umbriel session loads Mesa only: a desktop program that opens the NVI
 keeps the old card alive and the next start fails with `Failed to allocate NvKmsKapiDevice`.
 
 gamescope gets the card and the mode by argument, since it otherwise picks the Intel Vulkan device
-and a lower mode; adaptive sync is off because it glitched on this card, HDR stays on. gamescope's
+and a lower mode; adaptive sync is off because it glitched on this card, and HDR is off because the driver
+flickers with it above 2560x1440@120 and 10-bit at this mode does not fit the DisplayPort link
+uncompressed. Every Proton game inherits the unit's DLSS settings: the game's DLSS is replaced
+by the current one and pinned to the transformer preset the card affords, since the newer
+presets cost a 30-series card far more. gamescope's
 own output is filed under the session scope, not the unit: read a start with
 `journalctl -b --since -1min`, not `-u gaming.service`. The proprietary NVIDIA module and the
-`SIGKILL` on stop are `shortcut:` entries in the module. A frame counter is Steam's own, or
-`mangohud %command%` per game; gamescope's mangoapp overlay did not draw on this card.
+`SIGKILL` on stop are `shortcut:` entries in the module. MangoHud draws frame rate,
+frame times, load, temperatures and memory on every game through the unit's environment; gamescope's mangoapp overlay did not draw
+on this card.
 
 bastion builds Steam's 32-bit closure, so it is advertised as an `i686-linux` builder
 ([builder.nix](../../../modules/builder.nix)). The NVIDIA module is built against the laptop's

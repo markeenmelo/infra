@@ -1,7 +1,7 @@
 { inputs, ... }:
 let
   common =
-    { config, pkgs, ... }:
+    { pkgs, ... }:
     {
       stylix = {
         enable = true;
@@ -28,7 +28,10 @@ let
             package = pkgs.nerd-fonts.noto;
             name = "NotoSans Nerd Font Propo";
           };
-          serif = config.stylix.fonts.sansSerif;
+          serif = {
+            package = pkgs.noto-fonts;
+            name = "Noto Serif";
+          };
         };
       };
     };

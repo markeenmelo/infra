@@ -5,7 +5,6 @@
       cfg = config.services.crowdsec;
     in
     {
-      networking.nftables.enable = true;
       services.crowdsec = {
         enable = true;
         extraGroups = [ config.services.caddy.group ];
@@ -29,7 +28,7 @@
             };
             api.server.online_client.credentials_path = "/var/lib/crowdsec/online_api_credentials.yaml";
             cscli = {
-              hub_branch = "6068c4464f630cc650909e0a2b7f3fe2d950bfb2";
+              hub_branch = "69b0ee3b9ea1e49d945b446f69ba375e33757239";
               __hub_url_template__ = "https://raw.githubusercontent.com/crowdsecurity/hub/%s/%s";
             };
           };

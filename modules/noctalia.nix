@@ -85,6 +85,8 @@
                   "reboot"
                   "shutdown"
                 ];
+            polkit_agent = true;
+            launch_apps_as_systemd_services = true;
             clipboard_enabled = false;
             umbriel_overview_type_to_launch_enabled = true;
             umbriel_overview_close_on_launch_enabled = true;
@@ -95,13 +97,13 @@
             };
           };
           bar.default = {
-            margin_ends = 0;
-            margin_edge = 0;
+            margin_ends = lib.mkDefault 6;
+            margin_edge = lib.mkDefault 6;
             thickness = lib.mkDefault 32;
             font_family = config.stylix.fonts.monospace.name;
-            font_weight = 700;
+            font_weight = 600;
             background_opacity = config.stylix.opacity.desktop;
-            radius = 0;
+            radius = lib.mkDefault 6;
             capsule_radius = 4;
             shadow = false;
             widget_spacing = 8;
@@ -213,16 +215,16 @@
           nightlight.enabled = true;
           idle.behavior = {
             lock = {
-              timeout = 60;
+              timeout = 300;
               action = "lock";
             };
             screen-off = {
-              timeout = 120;
+              timeout = 600;
               locked_timeout = 60;
               action = "screen_off";
             };
             suspend = {
-              timeout = 300;
+              timeout = 900;
               action = lib.mkDefault "lock_and_suspend";
             };
           };

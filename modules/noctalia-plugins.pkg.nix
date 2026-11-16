@@ -12,8 +12,8 @@ stdenvNoCC.mkDerivation {
   version = "0-unstable-2026-11-16";
   src = fetchgit {
     url = "https://github.com/noctalia-dev/community-plugins";
-    rev = "5413d9c1a390c9c5900c836f482d45d108840b80";
-    hash = "sha256-Zxg3ARcSchCNmdnXdqnbfyVtIpTqf3+RkhjWuQFPk4o=";
+    rev = "29a0756b71f19a38ace074d195be3a14cd6700f6";
+    hash = "sha256-ZaPzm+MNH1cq5GfBwjzzGueYV/CCaurZMrEwBtamgqg=";
     sparseCheckout = map (plugin: "/${plugin}") plugins;
   };
   postPatch = ''

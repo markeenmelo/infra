@@ -15,7 +15,6 @@
         extraSetFlags = [ "--advertise-routes=${lib.concatStringsSep "," (lib.attrValues routes)}" ];
       };
       networking.nftables = {
-        enable = true;
         tables.tailnet-routes = {
           family = "inet";
           content = ''
