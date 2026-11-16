@@ -1,11 +1,48 @@
 {
   flake.modules.nixos.desktop =
-    { config, ... }:
+    { config, lib, ... }:
+    let
+      outputs = config.home-manager.users.marcos.programs.umbriel.settings.output;
+      placed = lib.filterAttrs (_: output: output ? position) outputs;
+      scaled = lib.filterAttrs (_: output: output ? scale) outputs;
+      shift =
+        axis: -(lib.foldl' lib.min 0 (lib.mapAttrsToList (_: o: lib.elemAt o.position axis) placed));
+      entries =
+        attrs: f:
+        lib.concatStringsSep "; " (lib.mapAttrsToList (name: output: "${name}:${f output}") attrs);
+    in
     {
       services = {
         displayManager.noctalia-greeter = {
           enable = true;
-          settings.session.default = "Umbriel";
+          settings = {
+            session.default = "Umbriel";
+            user.default = "marcos";
+            appearance = {
+              wallpaper = {
+                path = "${config.stylix.image}";
+                fill_mode = "crop";
+              };
+              font_family = config.stylix.fonts.sansSerif.name;
+              hide_logo = true;
+              scheme_selector_position = "hidden";
+            };
+            clock = {
+              time_format = "{:%H:%M}";
+              date_format = "%a %d %b";
+            };
+            output = {
+              layout = entries placed (
+                output:
+                "${toString (lib.elemAt output.position 0 + shift 0)},${
+                  toString (lib.elemAt output.position 1 + shift 1)
+                }"
+              );
+              scales = lib.mkIf (scaled != { }) (entries scaled (output: toString output.scale));
+            };
+            idle.timeout = 60;
+            keyboard.numlock = true;
+          };
           cursorTheme = { inherit (config.stylix.cursor) package name; };
           passwordlessSyncUsers = [ "marcos" ];
         };
