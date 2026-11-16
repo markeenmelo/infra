@@ -105,7 +105,11 @@
             mode = "3440x1440@59.97";
             position = above 3440;
           };
-          "Samsung Electric Company Odyssey G93SC HCSY300098".position = above 5120;
+          "Samsung Electric Company Odyssey G93SC HCSY300098" = {
+            position = above 5120;
+            hdr = "on";
+            vrr = "always";
+          };
         };
     };
 }
