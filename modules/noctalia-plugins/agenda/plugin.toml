@@ -5,7 +5,7 @@ plugin_api = 37
 author = "marcos"
 license = "MIT"
 icon = "calendar-event"
-description = "The next calendar event in the bar, shown only while one starts within two hours."
+description = "The next calendar event in the bar, shown only while one is in progress or starts within two hours."
 
 [[widget]]
 id = "bar"

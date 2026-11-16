@@ -24,15 +24,15 @@ function update()
 			end
 		end
 	end
-	local next = upcoming or current
-	barWidget.setVisible(next ~= nil)
-	if not next then
+	local shown = upcoming or current
+	barWidget.setVisible(shown ~= nil)
+	if not shown then
 		return
 	end
-	local minutes = math.ceil((next.startMs - now) / 60000)
+	local minutes = math.ceil((shown.startMs - now) / 60000)
 	barWidget.setGlyph("calendar-event")
 	barWidget.setColor("on_surface")
-	barWidget.setText(shorten(next.title or "") .. " · " .. (minutes > 0 and minutes .. "m" or "now"))
+	barWidget.setText(shorten(shown.title or "") .. " · " .. (minutes > 0 and minutes .. "m" or "now"))
 end
 
 function onClick()

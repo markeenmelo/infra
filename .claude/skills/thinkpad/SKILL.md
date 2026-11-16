@@ -125,7 +125,8 @@ laptop's tailnet name: its broadcast discovery does not cross the tailnet. adb r
 Wireless debugging over the tailnet through the grant in the
 [OpenTofu project](../opentofu/SKILL.md); the port is new each time Wireless debugging is switched
 on, so `adb connect` is repeated, while `adb pair` is once per laptop. While Wireless debugging is
-on, the laptop's adb key is a shell on the phone from anywhere on the tailnet: an accepted risk.
+on, the laptop's adb key is a shell on the phone from anywhere on the tailnet, and the grant
+reaches every other unprivileged listener on the phone too: both accepted risks.
 
 Two v4l2loopback devices exist: one feeds the AndroidConnect panel's embedded preview, the other
 is the webcam `phone-camera` fills from the phone's camera with scrcpy, for as long as it runs.
