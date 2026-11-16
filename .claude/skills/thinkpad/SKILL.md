@@ -67,7 +67,8 @@ does while a video plays. On battery `power-profile-ac` switches to
 power-saver and restores the previous profile on AC; the battery charges to 90% and resumes at
 85%. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move
 to another display until it opens; undocked on AC that leaves no display until the lid opens or the
-idle timer suspends. Shutting it suspends on
+idle timer suspends, and the idle lock still engages with no output, so opening the lid shows the
+lock screen. Shutting it suspends on
 battery only: on AC the idle timer does, since a monitor that sleeps drops off DRM and logind would
 read that as an undock.
 
