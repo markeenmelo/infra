@@ -157,6 +157,7 @@
               group_single_icon_per_app = true;
               prefer_symbolic_icons = true;
               workspace_label_placement = "inside";
+              focused_output_only = true;
             };
             media = {
               hide_when_no_media = true;
