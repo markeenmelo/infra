@@ -138,6 +138,7 @@
                     "tailnet"
                     "network"
                     "bluetooth"
+                    "phone"
                   ];
                   system = [
                     "volume"
@@ -171,7 +172,7 @@
               type = "rylos/tailnet:bar";
               show_count = false;
             };
-            agenda.type = "yuta/meeting-bar:bar";
+            agenda.type = "marcos/agenda:bar";
             pull_requests = {
               type = "raycursive/github-prs:bar";
               hide_when_zero = true;
@@ -190,19 +191,20 @@
               name = "Google";
             };
           };
-          plugin_settings."yuta/meeting-bar" = {
-            title_length = 16;
-            hide_empty = true;
-            preview_minutes = 120;
-          };
           plugins = {
             enabled = [
               "jrohland/claudecode"
               "raycursive/github-prs"
               "rylos/tailnet"
-              "yuta/meeting-bar"
+              "marcos/agenda"
             ];
             source = [
+              {
+                name = "local";
+                kind = "path";
+                location = "${./noctalia-plugins}";
+                enabled = true;
+              }
               {
                 name = "pinned";
                 kind = "path";

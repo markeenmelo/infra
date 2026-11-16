@@ -4,6 +4,8 @@
   ".local/share/keyrings"
   ".config/sops"
   ".config/gh"
+  ".android/adbkey"
+  ".config/kdeconnect"
   ".claude/.credentials.json"
   ".bitwarden-ssh-agent.sock"
 ]

@@ -1,9 +1,9 @@
 { fetchgit, stdenvNoCC }:
 let
   plugins = [
+    "androidconnect"
     "claudecode"
     "github-prs"
-    "meeting-bar"
     "tailnet"
   ];
 in
@@ -12,15 +12,13 @@ stdenvNoCC.mkDerivation {
   version = "0-unstable-2026-11-16";
   src = fetchgit {
     url = "https://github.com/noctalia-dev/community-plugins";
-    rev = "29a0756b71f19a38ace074d195be3a14cd6700f6";
-    hash = "sha256-ZaPzm+MNH1cq5GfBwjzzGueYV/CCaurZMrEwBtamgqg=";
+    rev = "1970ee8bb43ae98db854fa8516e38694d7c56be3";
+    hash = "sha256-NvnIgIGuqfpJk8d4rQ3kP3J8Tyjx8ZIjSwfzO0t9mjw=";
     sparseCheckout = map (plugin: "/${plugin}") plugins;
   };
   postPatch = ''
     substituteInPlace tailnet/bar.luau \
       --replace-fail '["running"] = "primary"' '["running"] = "on_surface"'
-    substituteInPlace meeting-bar/widget.luau \
-      --replace-fail 'barWidget.setColor(event and event.startMs <= now and "primary" or "on_surface")' 'barWidget.setColor("on_surface")'
   '';
   installPhase = ''
     mkdir "$out"

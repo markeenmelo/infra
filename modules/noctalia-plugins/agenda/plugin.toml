@@ -1,0 +1,12 @@
+id = "marcos/agenda"
+name = "Agenda"
+version = "0.1.0"
+plugin_api = 37
+author = "marcos"
+license = "MIT"
+icon = "calendar-event"
+description = "The next calendar event in the bar, shown only while one is in progress or starts within two hours."
+
+[[widget]]
+id = "bar"
+entry = "widget.luau"

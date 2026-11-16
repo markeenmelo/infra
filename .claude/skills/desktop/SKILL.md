@@ -54,8 +54,10 @@ Terminals and desktop chrome stay on Stylix.
   event within two hours); a steady "all fine" state stays out of the bar and in its tooltip.
 - **Bar items:** on the left the workspaces, each a pill of its apps' monochrome icons, and media;
   on the right the tray, then work (pull requests, Claude usage), connectivity (tailnet, network,
-  bluetooth), system (volume, battery, notifications) and time (agenda, weather, the clock last, as
-  `%a %d %b %H:%M`). Noctalia holds them ([noctalia.nix](../../../modules/noctalia.nix)), and the
+  bluetooth, the phone while it is reachable), system (volume, battery, notifications) and time
+  (agenda, weather, the clock last, as `%a %d %b %H:%M`). Noctalia holds them
+  ([noctalia.nix](../../../modules/noctalia.nix)), the agenda through this repository's own plugin
+  ([agenda](../../../modules/noctalia-plugins/agenda/widget.luau)), and the
   mac's SketchyBar its own ([sketchybar.lua](../../../modules/sketchybar.lua)). An item that holds
   more opens a `base01` popup next to
   it on click: the clock lists today's events, volume has a slider, and tailnet lists the exit
