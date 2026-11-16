@@ -138,8 +138,8 @@ locals {
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "tag:admin-client:1716"] },
       { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}", "grafite:40000"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22", "tag:admin-client:1716", "grafite:40000"] },
-      { src = "group:members", proto = "tcp", deny = ["tag:server:22", "bastion:${var.fleet_state_port}"] },
-      { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}"] },
+      { src = "group:members", proto = "tcp", deny = ["tag:server:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
+      { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
       { src = "racknerd", proto = "tcp", accept = [for port in var.fleet_edge_ports : "bastion:${port}"], deny = ["bastion:443", "bastion:${var.fleet_state_port}"] },
     ])
   }
