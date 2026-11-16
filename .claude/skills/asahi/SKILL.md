@@ -30,13 +30,13 @@ is the installer's "Rebuild vendor firmware package" from macOS.
 ## Kernel, display and power
 
 The stock `linux-asahi` from the input has no DisplayPort alt mode, so external displays use the
-HDMI port only. Asahi reads no EDID there, so the Odyssey runs 8-bit sRGB without VRR, every field
-set since a later rule changes only the fields it names. `appledrm.show_notch` puts the bar over the
+HDMI port only. Asahi reads no EDID there, so Umbriel cannot match the Odyssey by its identity and
+the `HDMI-A-1` connector section in [hardware.nix](../../../modules/hosts/asahi/hardware.nix)
+repeats its mode; it runs SDR without VRR, Umbriel's defaults. `appledrm.show_notch` puts the bar over the
 notch, at a scale that divides the panel; `appledrm.hdmi_audio` is a driver option its authors mark
 unstable. There is no `platform_profile`, so TuneD's PPD bridge replaces power-profiles-daemon for
-Noctalia's power widget and picks power-saver on battery. The panel runs 120 Hz on AC and 60 Hz on
-battery: `on_ac()` picks the mode when Hyprland loads its config and `hypr-ac-reload` reloads it when
-AC changes. wluma sets the panel brightness from the light sensor.
+Noctalia's power widget and picks power-saver on battery. The panel runs its preferred mode at
+scale 4/3 on AC and battery alike. wluma sets the panel brightness from the light sensor.
 
 Sleep is s2idle, and only the lid and the power button wake it: USB drops during sleep, so a key on
 the dock's keyboard does not, even with the controller's wakeup armed. The idle suspend in

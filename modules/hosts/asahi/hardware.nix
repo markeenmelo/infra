@@ -121,7 +121,10 @@
                 0
               ];
             };
-            HDMI-A-1.position = above 5120;
+            HDMI-A-1 = {
+              mode = "5120x1440@120";
+              position = above 5120;
+            };
             "Samsung Electric Company Odyssey G93SC HCSY300098".position = above 5120;
             "Dell Inc. DELL U3423WE 4TSGMP3" = {
               mode = "3440x1440@59.97";
