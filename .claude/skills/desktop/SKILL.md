@@ -27,11 +27,16 @@ Terminals and desktop chrome stay on Stylix.
 
 ## Rules
 
-- **Surfaces:** app windows, terminal included, are solid. The desktop's own chrome (bar,
+- **Surfaces:** the focused app window, terminal included, is solid; on Umbriel the unfocused ones
+  drop slightly in opacity, with no blur, so focus reads at a glance. The desktop's own chrome (bar,
   launcher, notifications, popups, the quick terminal) may be lightly translucent: its color at
   90% opacity over a soft blur (Umbriel's layer rules on Noctalia's surfaces, 2 passes; SketchyBar
   `blur_radius` 20), so
-  text stays fully readable. No drop shadows anywhere.
+  text stays fully readable. A drop shadow marks a floating window only (Umbriel's window rules);
+  tiled windows, the bar and popups have none.
+- **Quick terminal:** one key drops a terminal over the work and hides it again: Ghostty's quick
+  terminal on the mac, Umbriel's `terminal` scratchpad on the Linux laptops, since Umbriel has no
+  global-shortcuts portal for Ghostty's own.
 - **Motion:** none, or a fade or slide of at most 150 ms; nothing bounces or zooms.
 - **Spacing:** multiples of 2 px. Windows: 8 px between them, 6 px to the screen edge (the bar's
   edge counts as the screen's). Terminal padding 10 px across, 8 px down.
@@ -39,7 +44,9 @@ Terminals and desktop chrome stay on Stylix.
   mac, JankyBorders draws them beside AeroSpace ([aerospace.nix](../../../modules/aerospace.nix)).
 - **Rounding:** 6 px on windows where the window manager controls it, 4 px on small elements
   (bar items, buttons, notifications). The mac's own window corners stay as macOS draws them.
-- **Bar:** top, 32 px tall, `base00`, monospace bold at 13. Status items are text or one
+- **Bar:** top, 32 px tall, `base00`, monospace semibold at 13. Noctalia's floats 6 px from the
+  screen edges with 6 px rounding, matching the windows; asahi's stays flush and square under the
+  notch, as does SketchyBar. Status items are text or one
   monochrome Nerd Font glyph each, no colored icons, no graphs; a third-party item that colors
   its text for no state is patched to the text color.
 - **Grouping:** related items share a `base01`-like pill (4 px rounding, no border), 8 px apart,
@@ -81,8 +88,8 @@ All set in Stylix, so every target agrees:
 |---|---|---|
 | Terminals, editors, code | JetBrainsMono Nerd Font Mono | 12 |
 | Application UI, desktop, popups | NotoSans Nerd Font Propo | 11 |
-| Bar | JetBrainsMono Nerd Font Mono, bold | 13 |
-| Serif slots | NotoSans Nerd Font Propo (no serif face) | as the app asks |
+| Bar | JetBrainsMono Nerd Font Mono, semibold | 13 |
+| Serif slots | Noto Serif | as the app asks |
 | Emoji | Noto Color Emoji | as the text |
 
 No other families. Glyph icons come from the Nerd Font, never from a second icon font.
