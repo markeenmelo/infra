@@ -1,6 +1,11 @@
 {
   perSystem =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       formatter = pkgs.nixfmt-tree;
       devShells.default = pkgs.mkShellNoCC {
@@ -10,6 +15,25 @@
           pkgs.sops
         ];
       };
-      checks.dev-shell = config.devShells.default;
+      checks = {
+        dev-shell = config.devShells.default;
+        apps = pkgs.runCommand "apps" {
+          programs = lib.mapAttrsToList (_: app: app.program) config.apps;
+        } "touch $out";
+        format =
+          pkgs.runCommand "format"
+            {
+              nativeBuildInputs = [
+                config.formatter
+                pkgs.just
+              ];
+            }
+            ''
+              cd ${../.}
+              treefmt --ci --tree-root .
+              just --fmt --check
+              touch $out
+            '';
+      };
     };
 }

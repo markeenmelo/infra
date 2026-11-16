@@ -8,6 +8,17 @@ let
   hosts = lib.filterAttrs (_: host: !lib.hasSuffix "-darwin" host.system) config.fleet.hosts;
   systems = lib.unique (lib.mapAttrsToList (_: host: host.system) hosts);
   clean = "/run/current-system/sw/bin/nh clean all --keep 2 --optimise";
+  deployLib =
+    system:
+    (inputs.nixpkgs.legacyPackages.${system}.appendOverlays [
+      inputs.deploy-rs.overlays.default
+      (_: prev: {
+        deploy-rs = {
+          inherit (inputs.nixpkgs.legacyPackages.${system}) deploy-rs;
+          inherit (prev.deploy-rs) lib;
+        };
+      })
+    ]).deploy-rs.lib;
 in
 {
   flake = {
@@ -19,13 +30,13 @@ in
         || config.flake.nixosConfigurations.${name}.config.nix.sshServe.enable;
       profiles.system = {
         user = "root";
-        path = inputs.deploy-rs.lib.${host.system}.activate.nixos config.flake.nixosConfigurations.${name};
+        path = (deployLib host.system).activate.nixos config.flake.nixosConfigurations.${name};
       };
     }) hosts;
 
     checks = lib.genAttrs systems (
       system:
-      inputs.deploy-rs.lib.${system}.deployChecks {
+      (deployLib system).deployChecks {
         nodes = lib.filterAttrs (
           name: _: config.fleet.hosts.${name}.system == system
         ) config.flake.deploy.nodes;
@@ -81,7 +92,6 @@ in
     {
       lib,
       pkgs,
-      inputs',
       ...
     }:
     let
@@ -103,7 +113,7 @@ in
     in
     {
       apps.deploy = {
-        meta.description = "deploy .#HOST: activate the host's committed configuration over the tailnet with magic rollback";
+        meta.description = "deploy .#HOST: activate the host's committed configuration over the tailnet with magic rollback; --boot sets the boot default only and has no rollback";
         program = pkgs.writeShellApplication {
           name = "deploy";
           runtimeInputs = [ pkgs.git ];
@@ -116,13 +126,13 @@ in
             for arg in "$@"; do
               case $arg in
                 .#*) targets=1 ;;
-                --skip-checks | --magic-rollback* | --auto-rollback* | --rollback-succeeded* | --ssh-opts*) refuse "$arg" ;;
-                -[!-]*) [[ ! $arg =~ ^-[a-zA-Z]*s ]] || refuse "$arg" ;;
+                --targets | --boot | --dry-activate | --remote-build | --debug-logs | -d) ;;
+                *) refuse "$arg" ;;
               esac
             done
             [ "$targets" -eq 1 ] || { echo "deploy: name a target, e.g. .#HOST" >&2; exit 1; }
             git diff --quiet HEAD || { echo "deploy: commit the tracked changes first" >&2; exit 1; }
-            exec ${lib.getExe inputs'.deploy-rs.packages.deploy-rs} "$@"
+            exec ${lib.getExe pkgs.deploy-rs} "$@"
           '';
         };
       };

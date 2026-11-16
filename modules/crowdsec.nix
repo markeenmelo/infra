@@ -5,7 +5,6 @@
       cfg = config.services.crowdsec;
     in
     {
-      networking.nftables.enable = true;
       services.crowdsec = {
         enable = true;
         extraGroups = [ config.services.caddy.group ];

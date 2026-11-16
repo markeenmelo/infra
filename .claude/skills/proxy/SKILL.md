@@ -55,7 +55,7 @@ supplies the generic HTTP scenarios, and one local scenario bans an address afte
 denials by the edge itself, which marks them with an `edge_denied` field in the access log and nothing in the response, so backend errors never
 count; the community blocklist comes from the central API the setup unit registers with
 on first boot. The firewall bouncer registers itself with the local API and drops banned
-addresses in nftables, which is why the server uses the nftables backend. Ban length grows
+addresses in nftables, the firewall backend of every host ([caddy.nix](../../../modules/caddy.nix)). Ban length grows
 with each repeat. A home browser resolving over DNS-over-HTTPS reaches the apps through the edge
 instead of the LAN proxy, and a few admin pages there would ban the household's own address, so
 Zen's enforced policies ([zen.nix](../../../modules/zen.nix)) turn DNS-over-HTTPS off. The hub is pinned to a commit so `cscli hub update` cannot change what the

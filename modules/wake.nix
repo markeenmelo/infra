@@ -7,8 +7,9 @@
         name = "racknerd-boot";
         runtimeInputs = [ pkgs.curl ];
         text = ''
-          response=$(printf 'key=%s&hash=%s&action=boot' "$RACKNERD_API_KEY" "$RACKNERD_API_HASH" |
-            curl -fsS --data @- https://ctrl.racknerd.com/api/client/command.php)
+          response=$(curl -fsS --data-urlencode key@<(printf %s "$RACKNERD_API_KEY") \
+            --data-urlencode hash@<(printf %s "$RACKNERD_API_HASH") --data action=boot \
+            https://ctrl.racknerd.com/api/client/command.php)
           [[ $response == *"<status>success</status>"* ]] || { echo "wake: RackNerd answered: $response" >&2; exit 1; }
         '';
       };

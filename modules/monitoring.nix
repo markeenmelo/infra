@@ -124,6 +124,7 @@ in
   flake.modules.nixos.logs =
     { config, ... }:
     {
+      key = "fleet-logs";
       services.alloy.enable = true;
       environment.etc."alloy/config.alloy".text = journal "loki.write.bastion.receiver" "{}" + ''
         loki.write "bastion" {
@@ -229,9 +230,7 @@ in
       inherit (hosts.${host}) lan;
       smtp = config.services.authelia.instances.main.settings.notifier.smtp;
       adminUsers = lib.attrNames (
-        lib.filterAttrs (
-          _: person: lib.elem admins person.groups
-        ) (builtins.fromJSON config.sops.templates.authelia-users.content).users
+        lib.filterAttrs (_: person: lib.elem admins person.groups) config.fleet.people
       );
       grafanaSecrets = {
         grafana-oidc-client-secret = "oidc-client-secret";

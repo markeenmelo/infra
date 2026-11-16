@@ -13,15 +13,38 @@ let
         {
           nixpkgs.hostPlatform = system;
           system.stateVersion = "26.05";
-          fleet.encryptState = false;
           disko.devices.disk.os.device = "/dev/vda";
           preservation.preserveAt."/persist".directories = [ "/var/lib/probe" ];
         }
         extra
       ];
     };
-  probe = probeWith { };
-  probeEsp = probeWith { fleet.esp = "/dev/vdb"; };
+  probe = probeWith { fleet.encryptState = false; };
+  probeEsp = probeWith {
+    fleet.encryptState = false;
+    fleet.esp = "/dev/vdb";
+  };
+  probeLuks = probeWith (
+    { pkgs, ... }:
+    {
+      fleet.encryptState = true;
+      disko.devices.disk.os.content.partitions.state.content.settings.keyFile = "/tmp/secret.key";
+      boot.initrd.secrets."/tmp/secret.key" = pkgs.writeText "secret.key" "secretsecret";
+    }
+  );
+  survivesReboot = ''
+    machine.wait_for_unit("multi-user.target")
+    machine.succeed("touch /stray /var/lib/probe/kept")
+    machine_id = machine.succeed("cat /etc/machine-id")
+    root_id = machine.succeed("btrfs inspect-internal rootid /")
+    machine.shutdown()
+    machine.start()
+    machine.wait_for_unit("multi-user.target")
+    machine.fail("test -e /stray")
+    machine.succeed("test -e /var/lib/probe/kept")
+    assert machine.succeed("cat /etc/machine-id") == machine_id, "machine-id changed across a reboot"
+    assert machine.succeed("btrfs inspect-internal rootid /") != root_id, "root subvolume was not recreated"
+  '';
 in
 {
   flake.modules.nixos.base.imports = [ config.flake.modules.nixos.storage ];
@@ -32,19 +55,17 @@ in
       name = "storage";
       disko-config.disko.devices = probe.config.disko.devices;
       inherit (probe) extendModules;
+      extraTestScript = survivesReboot;
+    };
+    storage-luks = inputs.disko.lib.testLib.makeDiskoTest {
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      name = "storage-luks";
+      disko-config.disko.devices = probeLuks.config.disko.devices;
+      inherit (probeLuks) extendModules;
       extraTestScript = ''
-        machine.wait_for_unit("multi-user.target")
-        machine.succeed("touch /stray /var/lib/probe/kept")
-        machine_id = machine.succeed("cat /etc/machine-id")
-        root_id = machine.succeed("btrfs inspect-internal rootid /")
-        machine.shutdown()
-        machine.start()
-        machine.wait_for_unit("multi-user.target")
-        machine.fail("test -e /stray")
-        machine.succeed("test -e /var/lib/probe/kept")
-        assert machine.succeed("cat /etc/machine-id") == machine_id, "machine-id changed across a reboot"
-        assert machine.succeed("btrfs inspect-internal rootid /") != root_id, "root subvolume was not recreated"
-      '';
+        machine.succeed("cryptsetup status state")
+      ''
+      + survivesReboot;
     };
     storage-esp = inputs.disko.lib.testLib.makeDiskoTest {
       pkgs = inputs.nixpkgs.legacyPackages.${system};

@@ -80,7 +80,10 @@ one that needs only tools stays in `perSystem`. A check made for every NixOS hos
 service goes through [_host-checks.nix](../../../modules/_host-checks.nix) (name, enabled predicate, derivation). Prefer `runCommand` assertions on generated config
 over `nixosTest`; one VM test, `storage` in [storage.nix](../../../modules/storage.nix), installs
 the disk layout with disko's test library, reboots, and asserts the root subvolume was recreated
-while preserved paths and the machine id survived; it needs KVM, which the linux CI job enables.
+while preserved paths and the machine id survived, and `storage-luks` repeats it on the encrypted
+layout with a key file; they need KVM, which the linux CI job enables. The `apps` check builds
+every flake app, which is what runs shellcheck on them, and `format` fails on unformatted Nix or
+`justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)).
 [check.yml](../../../.github/workflows/check.yml) evaluates every system and builds the x86_64
 ones (`linux`) and the mac (`darwin`, on a macOS runner) on each PR push and on `main`. Assertions guard
 independently contributed policy, never a value against the expression that produced it.

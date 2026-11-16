@@ -85,6 +85,8 @@
                   "reboot"
                   "shutdown"
                 ];
+            polkit_agent = true;
+            launch_apps_as_systemd_services = true;
             clipboard_enabled = false;
             umbriel_overview_type_to_launch_enabled = true;
             umbriel_overview_close_on_launch_enabled = true;

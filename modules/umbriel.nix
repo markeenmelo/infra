@@ -1,4 +1,25 @@
+{ config, lib, ... }:
 {
+  flake.checks =
+    import ./_host-checks.nix { inherit config lib; } "desktop-config"
+      (nixos: nixos.config.programs.umbriel.enable)
+      (
+        host: nixos:
+        let
+          home = nixos.config.home-manager.users.marcos;
+        in
+        nixos.pkgs.runCommand "desktop-config-${host}" { } ''
+          ${lib.getExe nixos.config.programs.umbriel.package} config validate -c ${
+            home.xdg.configFile."umbriel/config.toml".source
+          }
+          ${lib.getExe home.programs.noctalia.package} config validate ${
+            home.xdg.configFile."noctalia/config.toml".source
+          } 2>&1 | tee log
+          [ -z "$(grep WARN log)" ]
+          touch $out
+        ''
+      );
+
   flake.modules.nixos.desktop = {
     programs.umbriel.enable = true;
     environment.sessionVariables.NIXOS_OZONE_WL = "1";

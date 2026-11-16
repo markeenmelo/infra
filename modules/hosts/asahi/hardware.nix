@@ -11,7 +11,6 @@
       imports = [ inputs.nixos-apple-silicon.nixosModules.apple-silicon-support ];
       hardware.asahi = {
         enable = true;
-        peripheralFirmwareDirectory = null;
         avd = {
           vaapi-support = true;
           codecs = [ "all" ];

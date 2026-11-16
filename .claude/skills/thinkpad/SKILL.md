@@ -39,8 +39,10 @@ Bluetooth, PipeWire, UPower, power profiles, the apps), [umbriel.nix](../../../m
 (the compositor session from nixpkgs' module, and `programs.umbriel.settings`, a config layered
 over Umbriel's packaged `config.toml`: tables merge by key and the last file wins, so only changes
 to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists the keybinds),
-[noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the greeter,
-whose output layout is derived from Umbriel's positions),
+[noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the polkit agent, the greeter,
+whose output layout is derived from Umbriel's positions; apps it launches run as their own systemd
+units, so a shell restart does not take them down; the `desktop-config-HOST` check fails on any
+key either program's validator rejects or warns about),
 [wifi.nix](../../../modules/wifi.nix), [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Looks
 follow the [desktop skill](../desktop/SKILL.md). The tailnet client accepts bastion's subnet routes

@@ -32,7 +32,6 @@
         );
       };
       config = lib.mkIf (guards != { }) {
-        networking.nftables.enable = true;
         networking.nftables.tables.loopback-guards = {
           family = "inet";
           content = ''

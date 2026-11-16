@@ -40,7 +40,7 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Editing secrets, decrypting beyond read-only plan and show, generating or rotating keys, enrolling devices.
 - State-changing remote commands: `sudo`, service restarts, `tailscale serve`, file changes.
 - Deploys that change remote access (SSH, firewall, Tailscale, users, sudo, deploy config) or
-  data storage and persistence. In CI these wait for manual approval.
+  data storage and persistence.
 
 **Never**
 - Put plaintext secrets, password hashes or private keys in Git, Nix, logs or chat.

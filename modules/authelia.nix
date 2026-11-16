@@ -84,6 +84,24 @@ in
   flake.modules.nixos.base =
     { lib, ... }:
     {
+      options.fleet.people = lib.mkOption {
+        default = { };
+        description = "The people Authelia signs in, by user name; the apps read their groups to decide roles.";
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              displayname = lib.mkOption {
+                type = lib.types.str;
+                description = "Name shown in the portal and passed to the apps.";
+              };
+              groups = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                description = "Authelia groups, which the apps map to roles.";
+              };
+            };
+          }
+        );
+      };
       options.fleet.oidc.clients = lib.mkOption {
         default = { };
         description = "Authelia OIDC clients keyed by client_id, in Authelia's client schema. A client without `public = true` reads its secret digest from the sops key authelia/ID-client-secret-hash.";
@@ -103,7 +121,15 @@ in
   flake.modules.nixos.authelia =
     { config, lib, ... }:
     let
-      people = {
+      inherit (config.fleet) people;
+      secret = key: {
+        key = "authelia/${key}";
+        restartUnits = [ "${name}.service" ];
+      };
+    in
+    {
+      imports = [ postgresql ];
+      fleet.people = {
         marcos = {
           displayname = "Marcos Melo";
           groups = [
@@ -121,13 +147,6 @@ in
           ];
         };
       };
-      secret = key: {
-        key = "authelia/${key}";
-        restartUnits = [ "${name}.service" ];
-      };
-    in
-    {
-      imports = [ postgresql ];
       sops = {
         secrets = lib.listToAttrs (
           map (key: lib.nameValuePair "authelia-${key}" (secret key)) (

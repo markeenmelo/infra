@@ -9,6 +9,7 @@ in
       imports = [ inputs.home-manager.nixosModules.home-manager ];
       home-manager = {
         backupFileExtension = "backup";
+        overwriteBackup = true;
         useGlobalPkgs = true;
         useUserPackages = true;
         users.marcos = {
