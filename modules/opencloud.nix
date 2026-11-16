@@ -33,16 +33,24 @@ in
 
   flake.modules.homeManager.desktop =
     { pkgs, ... }:
+    let
+      client = pkgs.symlinkJoin {
+        inherit (pkgs.opencloud-desktop) name meta;
+        paths = [ pkgs.opencloud-desktop ];
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        # shortcut: Fusion instead of Stylix's Kvantum, whose missing QML style aborts the client; drop when either ships one
+        postBuild = "wrapProgram $out/bin/opencloud --set QT_STYLE_OVERRIDE Fusion";
+      };
+    in
     {
-      home.packages = [
-        (pkgs.symlinkJoin {
-          inherit (pkgs.opencloud-desktop) name meta;
-          paths = [ pkgs.opencloud-desktop ];
-          nativeBuildInputs = [ pkgs.makeWrapper ];
-          # shortcut: Fusion instead of Stylix's Kvantum, whose missing QML style aborts the client; drop when either ships one
-          postBuild = "wrapProgram $out/bin/opencloud --set QT_STYLE_OVERRIDE Fusion";
-        })
-      ];
+      home.packages = [ client ];
+      # shortcut: owns the entry the client's own start-on-login writes with its unwrapped binary, which finds no QML modules; drop when nixpkgs patches that path
+      xdg.configFile."autostart/OpenCloud.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=OpenCloud
+        Exec=${client}/bin/opencloud
+      '';
     };
 
   flake.modules.nixos.opencloud =
