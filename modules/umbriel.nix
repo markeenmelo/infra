@@ -110,7 +110,6 @@
             };
           }
         ];
-        systemd.user.sessionVariables = config.home.sessionVariables;
         xdg.configFile."umbriel/config.toml".source =
           toml.generate "umbriel.toml" config.programs.umbriel.settings;
       };
