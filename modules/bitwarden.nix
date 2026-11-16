@@ -6,6 +6,7 @@ let
       installation_mode = "force_installed";
       install_url = "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi";
       private_browsing = true;
+      default_area = "navbar";
     };
     "3rdparty".Extensions.${extension}.environment.base = "${server}/";
   };
