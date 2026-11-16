@@ -16,6 +16,7 @@
       toml = pkgs.formats.toml { };
       spawn = package: "spawn ${lib.getExe package}";
       noctalia = args: "${spawn config.programs.noctalia.package} msg ${args}";
+      panel = action: "${lib.getExe osConfig.programs.umbriel.package} msg output-${action} eDP-1";
     in
     {
       options.programs.umbriel.settings = lib.mkOption {
@@ -25,6 +26,10 @@
       config = {
         programs.umbriel.settings = {
           include.files = [ "${osConfig.programs.umbriel.package}/share/umbriel/config.toml" ];
+          events = {
+            lid_close = panel "disable";
+            lid_open = panel "enable";
+          };
           keybinds = {
             "Mod+Return" = {
               action = spawn config.programs.ghostty.package;
