@@ -171,7 +171,7 @@
             XDG_SESSION_CLASS = "user";
             WLR_LIBINPUT_NO_DEVICES = "1";
             MANGOHUD = "1";
-            MANGOHUD_CONFIG = "fps_only";
+            MANGOHUD_CONFIG = "fps,frame_timing,gpu_stats,gpu_temp,vram,cpu_stats,cpu_temp,ram";
             PROTON_DLSS_UPGRADE = "1";
             DXVK_NVAPI_DRS_NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION = "render_preset_k";
           };

@@ -106,8 +106,8 @@ by the current one and pinned to the transformer preset the card affords, since 
 presets cost a 30-series card far more. gamescope's
 own output is filed under the session scope, not the unit: read a start with
 `journalctl -b --since -1min`, not `-u gaming.service`. The proprietary NVIDIA module and the
-`SIGKILL` on stop are `shortcut:` entries in the module. MangoHud draws a frame
-counter on every game through the unit's environment; gamescope's mangoapp overlay did not draw
+`SIGKILL` on stop are `shortcut:` entries in the module. MangoHud draws frame rate,
+frame times, load, temperatures and memory on every game through the unit's environment; gamescope's mangoapp overlay did not draw
 on this card.
 
 bastion builds Steam's 32-bit closure, so it is advertised as an `i686-linux` builder
