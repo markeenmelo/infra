@@ -59,7 +59,7 @@
             general.show_cheatsheet = false;
             appearance = {
               corner_radius = 6;
-              shadow.enabled = false;
+              shadow.enabled = true;
             };
             colors.border = {
               focused = color "base0D";
@@ -73,7 +73,23 @@
               touchpad.click_method = "clickfinger";
             };
             layout.struts = lib.genAttrs [ "top" "bottom" "left" "right" ] (_: -2);
-            window_rule = [ { blur = false; } ];
+            window_rule = [
+              { blur = false; }
+              {
+                match.is_floating = false;
+                shadow = false;
+              }
+              {
+                match.is_focused = false;
+                opacity = 0.92;
+              }
+            ];
+            scratchpad = [
+              {
+                name = "terminal";
+                spawn_when_empty = lib.getExe config.programs.ghostty.package;
+              }
+            ];
             layer_rule = [
               {
                 match.namespace = "^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$";
@@ -98,6 +114,16 @@
               "Mod+E" = spawn pkgs.nautilus;
               "Mod+Escape" = noctalia "panel-toggle session";
               "Mod+Slash" = "cheatsheet-toggle";
+              "Mod+Space" = "scratchpad-toggle terminal";
+              "Mod+Shift+Space" = {
+                action = "window-move-to-scratchpad terminal";
+                repeat = false;
+              };
+              "Mod+Ctrl+Space" = {
+                action = "window-restore-from-scratchpad terminal";
+                repeat = false;
+              };
+              "Mod+Tab" = "scratchpad-focus-next terminal";
               "Mod+Z" = spawn config.programs.zed-editor.package;
               "Alt+Tab" = noctalia "window-switcher hold";
               "Alt+Shift+Tab" = noctalia "window-switcher hold reverse";

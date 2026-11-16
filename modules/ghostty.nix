@@ -1,4 +1,6 @@
 {
+  flake.modules.homeManager.desktop.programs.ghostty.settings.window-decoration = "none";
+
   flake.modules.homeManager.base =
     { config, lib, ... }:
     {
@@ -12,7 +14,7 @@
           window-padding-x = 10;
           window-padding-y = 8;
           window-padding-balance = true;
-          cursor-style = "bar";
+          cursor-style = "block";
           mouse-hide-while-typing = true;
         };
       };
