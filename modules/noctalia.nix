@@ -5,7 +5,7 @@
       services = {
         displayManager.noctalia-greeter = {
           enable = true;
-          settings.session.default = "Hyprland (uwsm-managed)";
+          settings.session.default = "Umbriel";
           cursorTheme = { inherit (config.stylix.cursor) package name; };
           passwordlessSyncUsers = [ "marcos" ];
         };

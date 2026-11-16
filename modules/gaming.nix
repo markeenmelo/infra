@@ -218,15 +218,6 @@
           __EGL_VENDOR_LIBRARY_FILENAMES = "${pkgs.addDriverRunpath.driverLink}/share/glvnd/egl_vendor.d/50_mesa.json";
           __GLX_VENDOR_LIBRARY_NAME = "mesa";
         };
-        wayland.windowManager.hyprland.settings.bind = [
-          {
-            _args = [
-              "SUPER + G"
-              (lib.generators.mkLuaInline "hl.dsp.exec_cmd(${lib.generators.toLua { } (lib.getExe gaming)})")
-              { description = "Gaming mode"; }
-            ];
-          }
-        ];
         programs.noctalia.settings.shell.session.actions = lib.mkAfter [
           {
             action = "command";

@@ -7,10 +7,6 @@
       ...
     }:
     {
-      fleet = {
-        internalDisplay = "eDP-1";
-        lidSwitch = "Lid Switch";
-      };
       hardware = {
         firmware = [ pkgs.sof-firmware ];
         cpu.intel.updateMicrocode = true;
@@ -92,19 +88,5 @@
         "/var/lib/power-profiles-daemon"
         "/var/lib/power-profile-ac"
       ];
-      home-manager.users.marcos = {
-        wayland.windowManager.hyprland = {
-          settings.monitor = [
-            {
-              output = config.fleet.internalDisplay;
-              position = "0x0";
-              mode = "highres";
-              scale = 1;
-              vrr = 1;
-              disabled = lib.generators.mkLuaInline "lid_shut_docked()";
-            }
-          ];
-        };
-      };
     };
 }
