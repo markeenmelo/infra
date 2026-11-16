@@ -9,5 +9,7 @@
     {
       home.packages = [ pkgs.ddcutil ];
       programs.noctalia.settings.brightness.enable_ddcutil = true;
+      programs.umbriel.settings.output."Samsung Electric Company Odyssey G93SC HCSY300098".mode =
+        "5120x1440@120";
     };
 }

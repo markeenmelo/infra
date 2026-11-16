@@ -104,6 +104,30 @@
             ];
           };
         };
+        programs.umbriel.settings.output =
+          let
+            scale = 4.0 / 3;
+            panelWidth = builtins.floor (3024 / scale);
+            above = width: [
+              ((panelWidth - width) / 2)
+              (-1440)
+            ];
+          in
+          {
+            eDP-1 = {
+              inherit scale;
+              position = [
+                0
+                0
+              ];
+            };
+            HDMI-A-1.position = above 5120;
+            "Samsung Electric Company Odyssey G93SC HCSY300098".position = above 5120;
+            "Dell Inc. DELL U3423WE 4TSGMP3" = {
+              mode = "3440x1440@59.97";
+              position = above 3440;
+            };
+          };
         programs.noctalia.settings = {
           bar.default.thickness = 56;
           idle.behavior.suspend = {

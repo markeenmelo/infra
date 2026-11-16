@@ -88,5 +88,24 @@
         "/var/lib/power-profiles-daemon"
         "/var/lib/power-profile-ac"
       ];
+      home-manager.users.marcos.programs.umbriel.settings.output =
+        let
+          panelWidth = 1920;
+          above = width: [
+            ((panelWidth - width) / 2)
+            (-1440)
+          ];
+        in
+        {
+          eDP-1.position = [
+            0
+            0
+          ];
+          "Dell Inc. DELL U3423WE 4TSGMP3" = {
+            mode = "3440x1440@59.97";
+            position = above 3440;
+          };
+          "Samsung Electric Company Odyssey G93SC HCSY300098".position = above 5120;
+        };
     };
 }

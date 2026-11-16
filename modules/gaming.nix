@@ -218,6 +218,7 @@
           __EGL_VENDOR_LIBRARY_FILENAMES = "${pkgs.addDriverRunpath.driverLink}/share/glvnd/egl_vendor.d/50_mesa.json";
           __GLX_VENDOR_LIBRARY_NAME = "mesa";
         };
+        programs.umbriel.settings.keybinds."Mod+G" = "spawn ${lib.getExe gaming}";
         programs.noctalia.settings.shell.session.actions = lib.mkAfter [
           {
             action = "command";
