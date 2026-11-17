@@ -260,7 +260,7 @@ in
           vpn = {
             enable = true;
             wgConfFile = config.sops.secrets.arr-proton-wireguard.path;
-            accessibleFrom = [ ];
+            allowedIngress = [ ];
           };
           torrentClients.qbittorrent = {
             enable = true;
