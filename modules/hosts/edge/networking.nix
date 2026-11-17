@@ -8,7 +8,7 @@
       DNSOverTLS = "yes";
     };
     systemd.network.networks."10-uplink" = {
-      matchConfig.MACAddress = "02:00:17:03:ce:c4";
+      matchConfig.Type = "ether";
       networkConfig = {
         DHCP = "ipv4";
         IPv6AcceptRA = false;
