@@ -199,15 +199,18 @@ in
       hardware.ksm.enable = false;
       security.wrappers.qemu-bridge-helper.enable = false;
 
-      sops.secrets = lib.listToAttrs (
-        map (
-          name:
-          lib.nameValuePair "agents-${name}" {
-            key = "agents/${name}";
-            restartUnits = [ "microvm@agents.service" ];
-          }
-        ) ([ "tailscale-auth-key" ] ++ tokens)
-      );
+      sops.secrets = lib.mkMerge [
+        { agents-tailscale-auth-key.key = "agents/tailscale-auth-key"; }
+        (lib.listToAttrs (
+          map (
+            name:
+            lib.nameValuePair "agents-${name}" {
+              key = "agents/${name}";
+              restartUnits = [ "microvm@agents.service" ];
+            }
+          ) tokens
+        ))
+      ];
 
       boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = lib.mkDefault true;
       systemd.network.networks."20-agents" = {

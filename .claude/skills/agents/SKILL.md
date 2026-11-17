@@ -40,7 +40,16 @@ The guest joins the tailnet as `tag:agent`
 ([main.tf](../../../opentofu/tailscale/main.tf)): admin clients reach its port 22 and the tag is
 the source of no grant. Its key is `agents/tailscale-auth-key` in `secrets/hosts/bastion.yaml`,
 moved from the `enrollment_keys` output like a host's ([tailnet skill](../tailnet/SKILL.md)) and
-read once, when `state.img` holds no login.
+read once, when `state.img` holds no login, so a refreshed key does not restart the guest.
+
+Two limits of filtering by destination address:
+
+- The home gateway's own WAN address is public, so the guest reaches the gateway there,
+  masqueraded as bastion: its DNS, NTP and the sign-in page of its HTTPS interface, which the
+  LAN firewall ([opentofu skill](../opentofu/SKILL.md)) admits from bastion for the tailnet's
+  admin clients. Accepted: the guest holds no gateway credential.
+- A tailnet peer on a home LAN cannot reach the guest directly, so its SSH and Zed sessions go
+  through a relay.
 
 ## Access
 
@@ -72,7 +81,9 @@ and every shell in the guest exports them; a changed token restarts the guest:
 - `agents/github-token`: a fine-grained token, exported as `GH_TOKEN` and handed to Git by `gh`,
   limited to Contents and Pull requests writes and Actions read on the repositories the agents
   work on, with the default branch protected. Never the Workflows permission, which would let a
-  push change what CI runs with its secrets.
+  push rewrite the workflows themselves. Contents write alone still lets a pushed branch change
+  the code a pull-request workflow runs, so the token covers only repositories whose
+  pull-request workflows hold no secret that such code can reach.
 
 The share holds nothing else of bastion's. No sops identity, deploy key, build key or cache write
 access goes in.
