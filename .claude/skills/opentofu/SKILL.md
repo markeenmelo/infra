@@ -106,7 +106,7 @@ service are caught after the fact by the `spend` budget, which Oracle evaluates 
 which mails `alert_email` on any spend at all. A paid resource is a deliberate edit of the quota.
 
 The border is the network's default security list, taken over so Oracle's own rule admitting
-port 22 is gone. It admits the web ports, `local.unlock_port` for a host that takes its disk
+port 22 is gone. It admits the web ports, `fleet_unlock_ports` for a host that takes its disk
 passphrase over SSH from the initrd, where no host firewall runs yet, Tailscale's port
 (`fleet_tailscale_port`) so traffic to bastion connects directly instead of through a relay, and
 the ICMP message path MTU discovery needs. Port 22 opens only with `-var install=true`, for the

@@ -3,6 +3,10 @@ let
   inherit (config.fleet) domain hosts;
   bastion = hosts.bastion.tailnetAddress;
   senders = lib.filterAttrs (_: host: host.telemetry != null) hosts;
+  publishers = lib.filterAttrs (
+    name: host:
+    host.publicAddress != null && config.flake.nixosConfigurations.${name}.config.fleet.probes != { }
+  ) hosts;
   metricSenders = lib.filterAttrs (_: host: host.telemetry.metrics != null) senders;
   senderPorts = telemetry: lib.remove null (lib.attrValues telemetry);
   laptops = lib.concatStringsSep "|" (
@@ -817,7 +821,7 @@ in
             + lib.concatStrings (
               lib.mapAttrsToList (
                 name: public: target "public-${name}" "https://${public.publicAddress}" "public"
-              ) (lib.filterAttrs (_: other: other.publicAddress != null) hosts)
+              ) publishers
             );
           rules = ''
             rule {

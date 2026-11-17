@@ -53,7 +53,8 @@ nix run .#deploy -- .#HOST          # after checks pass on the committed revisio
 nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
 nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
 nix run .#shutdown -- HOST          # power off as deploy
-nix run .#wake -- HOST              # bastion by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); racknerd through the RackNerd API
+nix run .#wake -- HOST              # bastion by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); racknerd through the RackNerd API; edge through the Oracle API
+nix run .#unlock -- HOST            # send the disk passphrase to a host waiting in its initrd (edge skill)
 nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```
 
@@ -101,6 +102,7 @@ and host key never touch the provider's stock image; it is deleted after the ins
 nix run .#enroll -- HOST            # after the tailscale project minted HOST's enrollment key
 ssh root@ADDRESS 'mkdir -p /mnt/old && mount -o ro /dev/DISK-PART /mnt/old'
 nix run .#install -- HOST root@ADDRESS /mnt/old/persist
+nix run .#install -- HOST USER@ADDRESS IDENTITY   # a new host, with the directory enroll named
 ```
 
 An encrypted old disk is opened first, with `cryptsetup open /dev/DISK-PART old` and

@@ -61,7 +61,7 @@ in
         };
       };
       apps.install = {
-        meta.description = "install HOST TARGET ROOT: from an installer image on TARGET, carry HOST's identity paths out of the old persist tree mounted at ROOT, unmount it, then partition with disko and install HOST's configuration";
+        meta.description = "install HOST TARGET ROOT: partition TARGET with disko and install HOST's configuration with its identity, either carried out of the old persist tree mounted at ROOT on an installer image, which is unmounted first, or, for a new host, taken from the local directory ROOT that enroll made";
         program = pkgs.writeShellApplication {
           name = "install";
           runtimeInputs = [
@@ -79,18 +79,25 @@ in
               )
             }  *) echo "install: no NixOS host named $host" >&2; exit 1 ;;
             esac
-            extra=$(mktemp -d)
-            echo "install: identity staged in $extra" >&2
-            trap 'rm -rf "$extra"' EXIT
-            mkdir -p "$extra/persist"
-            ssh "$target" tar -C "''${root@Q}" -chf - "''${paths[@]@Q}" | tar -C "$extra/persist" -xf -
-            cp -a "$extra/persist/." "$extra/"
-            mount=$(ssh "$target" findmnt -n -o TARGET -T "''${root@Q}")
-            [ "$mount" != / ] || { echo "install: $root is on the installer's root, not a mounted old disk" >&2; exit 1; }
-            ssh "$target" umount -R "''${mount@Q}"
-            trap - EXIT
+            if [ -d "$root/persist" ]; then
+              extra=$root
+              for path in "''${paths[@]}"; do
+                [ -e "$extra/persist/$path" ] || { echo "install: the identity in $extra lacks $path" >&2; exit 1; }
+              done
+            else
+              extra=$(mktemp -d)
+              echo "install: identity staged in $extra" >&2
+              trap 'rm -rf "$extra"' EXIT
+              mkdir -p "$extra/persist"
+              ssh "$target" tar -C "''${root@Q}" -chf - "''${paths[@]@Q}" | tar -C "$extra/persist" -xf -
+              cp -a "$extra/persist/." "$extra/"
+              mount=$(ssh "$target" findmnt -n -o TARGET -T "''${root@Q}")
+              [ "$mount" != / ] || { echo "install: $root is on the installer's root, not a mounted old disk" >&2; exit 1; }
+              ssh "$target" umount -R "''${mount@Q}"
+              trap - EXIT
+            fi
             nixos-anywhere --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
-              echo "install: failed after the old disk was unmounted; identity kept in $extra, rerun nixos-anywhere with --extra-files $extra" >&2
+              echo "install: failed with the target's disk no longer usable; identity kept in $extra, rerun nixos-anywhere with --extra-files $extra" >&2
               exit 1
             }
             rm -rf "$extra"
