@@ -24,7 +24,7 @@ let
       ...
     }:
     let
-      zedServer = "zed-remote-server-stable-${pkgs.zed-editor.version}";
+      zedServer = pkgs.zed-editor.remoteServerExecutableName;
     in
     {
       imports = [ claude-agent ];
