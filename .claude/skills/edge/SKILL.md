@@ -33,6 +33,8 @@ boot partition is not encrypted, so its private half is readable there, and whoe
 impersonate the prompt and capture the passphrase. `unlock.hostKey` pins its public half for the
 `unlock` app, which refuses any other key. A reboot the operator did not start (a crash,
 provider maintenance) leaves the host down until someone unlocks it; nothing on the host can.
+Bastion's `Host silent` alert is the signal for that
+([monitoring skill](../monitoring/SKILL.md)).
 
 ```sh
 nix run .#unlock -- edge            # type the passphrase; the session closes when it is taken
@@ -52,7 +54,9 @@ A new instance starts from the provider's stock image. `enroll` makes its identi
 `install` takes that directory as ROOT ([deploy skill](../deploy/SKILL.md#install)); the border
 admits the installer's port 22 only for that apply. disko asks for the passphrase on the
 terminal, and the host then waits in its initrd for `unlock`. A reinstall of a live host goes
-the usual way, carrying the identity off the old disk.
+the usual way, carrying the identity off the old disk. Bastion is deployed with a new host's
+`telemetry` fact only after that host's first boot: the silence alerts fire for a sender that
+has never sent.
 
 ```sh
 nix run .#tofu -- oracle apply -var install=true

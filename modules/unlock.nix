@@ -11,6 +11,12 @@ in
       inherit (hosts.${config.networking.hostName}) unlock;
     in
     {
+      assertions = [
+        {
+          assertion = config.boot.initrd.systemd.services ? sshd;
+          message = "unlock: these options no longer start sshd in the initrd, so the host would wait for its passphrase with nothing listening.";
+        }
+      ];
       boot.initrd = {
         systemd = {
           network = {
@@ -50,6 +56,9 @@ in
                       [${host.publicAddress}]:${toString host.unlock.port} ${host.unlock.hostKey}
                     '';
                   in
+                  assert lib.assertMsg (
+                    host.publicAddress != null
+                  ) "fleet.hosts.${name}.unlock needs fleet.hosts.${name}.publicAddress, where the initrd is reached";
                   "  ${name}) exec ssh -t -p ${toString host.unlock.port} -o UserKnownHostsFile=${known} -o GlobalKnownHostsFile=/dev/null -o StrictHostKeyChecking=yes root@${host.publicAddress} ;;\n"
                 ) unlocked
               )
