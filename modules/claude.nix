@@ -97,6 +97,7 @@ in
         home = config.home.homeDirectory;
         inherit (config.programs.claude-code) configDir;
         dns = "169.254.1.1";
+        ponytailLedger = "${config.xdg.configHome}/ponytail/band";
         readOnly = lib.concatMapStringsSep " " (path: "--ro-bind ${path} ${path}") (
           [
             builtins.storeDir
@@ -129,7 +130,7 @@ in
               echo "claude: $PWD holds the home directory, which the jail would expose" >&2
               exit 1
             fi
-            mkdir -p "${configDir}"
+            mkdir -p "${configDir}" "${ponytailLedger}"
             [[ -e "${home}/.claude.json" ]] || echo '{}' >"${home}/.claude.json"
             exec ${lib.getExe' pkgs.passt "pasta"} --config-net --quiet \
               --tcp-ports none --udp-ports none --tcp-ns none --udp-ns none \
@@ -144,6 +145,7 @@ in
               --bind "${configDir}" "${configDir}" \
               --bind "${home}/.claude.json" "${home}/.claude.json" \
               ${readOnlyIfPresent} \
+              --bind "${ponytailLedger}" "${ponytailLedger}" \
               --bind "$PWD" "$PWD" --chdir "$PWD" \
               ${hiddenEnv} \
               -- ${lib.getExe pkgs.claude-code} "$@"
