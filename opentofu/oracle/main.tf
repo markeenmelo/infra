@@ -230,9 +230,11 @@ resource "oci_limits_quota" "free" {
   statements = [
     "zero compute-core quotas in tenancy",
     "set compute-core quota standard-a1-core-count to ${local.free.ocpus} in tenancy",
+    "set compute-core quota standard-a1-core-regional-count to ${local.free.ocpus} in tenancy",
     "set compute-core quota standard-e2-micro-core-count to ${local.free.micros} in tenancy",
     "zero compute-memory quotas in tenancy",
     "set compute-memory quota standard-a1-memory-count to ${local.free.memory} in tenancy",
+    "set compute-memory quota standard-a1-memory-regional-count to ${local.free.memory} in tenancy",
     "set block-storage quota total-storage-gb to ${local.free.storage} in tenancy",
     "set block-storage quota backup-count to ${local.free.backups} in tenancy",
   ]
