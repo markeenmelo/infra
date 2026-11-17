@@ -98,7 +98,10 @@ with its user's authority over the tenancy.
 
 The account is Pay As You Go, so use past the allowance is billed instead of refused. The `free`
 quota refuses it first: every compute shape but A1 and the Always Free micro, A1 and block
-storage beyond `local.free`. It names only those two services; outbound data and every other
+storage beyond `local.free`, and both anywhere but the home region, where nothing is free.
+Oracle's quota reference omits names a tenancy has (the regional A1 ones), and a name the
+blanket `zero` leaves unset refuses every launch, so after changing a statement read the result
+back with `oci limits resource-availability get`. It names only those two services; outbound data and every other
 service are caught after the fact by the `spend` budget, which Oracle evaluates once a day and
 which mails `alert_email` on any spend at all. A paid resource is a deliberate edit of the quota.
 

@@ -92,6 +92,7 @@ locals {
     edge = { ocpus = 1, memory = 2 }
   }
   free                 = { ocpus = 2, memory = 12, micros = 2, storage = 200, backups = 5 }
+  home                 = "in tenancy where request.region = '${var.region}'"
   shape                = "VM.Standard.A1.Flex"
   boot_volume          = 50
   network              = "10.80.0.0/24"
@@ -229,14 +230,16 @@ resource "oci_limits_quota" "free" {
   description    = "Refuses compute and block storage beyond the Always Free allowance."
   statements = [
     "zero compute-core quotas in tenancy",
-    "set compute-core quota standard-a1-core-count to ${local.free.ocpus} in tenancy",
-    "set compute-core quota standard-a1-core-regional-count to ${local.free.ocpus} in tenancy",
-    "set compute-core quota standard-e2-micro-core-count to ${local.free.micros} in tenancy",
+    "set compute-core quota standard-a1-core-count to ${local.free.ocpus} ${local.home}",
+    "set compute-core quota standard-a1-core-regional-count to ${local.free.ocpus} ${local.home}",
+    "set compute-core quota standard-e2-micro-core-count to ${local.free.micros} ${local.home}",
     "zero compute-memory quotas in tenancy",
-    "set compute-memory quota standard-a1-memory-count to ${local.free.memory} in tenancy",
-    "set compute-memory quota standard-a1-memory-regional-count to ${local.free.memory} in tenancy",
-    "set block-storage quota total-storage-gb to ${local.free.storage} in tenancy",
-    "set block-storage quota backup-count to ${local.free.backups} in tenancy",
+    "set compute-memory quota standard-a1-memory-count to ${local.free.memory} ${local.home}",
+    "set compute-memory quota standard-a1-memory-regional-count to ${local.free.memory} ${local.home}",
+    "zero block-storage quota total-storage-gb in tenancy",
+    "set block-storage quota total-storage-gb to ${local.free.storage} ${local.home}",
+    "zero block-storage quota backup-count in tenancy",
+    "set block-storage quota backup-count to ${local.free.backups} ${local.home}",
   ]
 }
 
