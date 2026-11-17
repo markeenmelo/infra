@@ -76,6 +76,7 @@ in
           "claude-code"
           "rtk"
         ];
+        boot.kernel.sysctl."dev.tty.legacy_tiocsti" = 0;
         environment = {
           systemPackages = [
             pkgs.bubblewrap
@@ -126,10 +127,16 @@ in
           derivationArgs = { inherit (pkgs.claude-code) version; };
           runtimeInputs = [ pkgs.coreutils ];
           text = ''
-            if [[ "${home}/" == "''${PWD%/}/"* ]]; then
-              echo "claude: $PWD holds the home directory, which the jail would expose" >&2
+            dir=$(pwd -P)
+            d="''${dir%/}/"
+            refuse() {
+              echo "claude: $dir holds or sits in a path the jail hides" >&2
               exit 1
-            fi
+            }
+            for p in ${lib.escapeShellArgs deniedDirs}; do
+              if [[ "$p/" == "$d"* || "$d" == "$p/"* ]]; then refuse; fi
+            done
+            if [[ "${home}/" == "$d"* || "$d" == "${home}/."* ]]; then refuse; fi
             mkdir -p "${configDir}" "${ponytailLedger}"
             [[ -e "${home}/.claude.json" ]] || echo '{}' >"${home}/.claude.json"
             exec ${lib.getExe' pkgs.passt "pasta"} --config-net --quiet \
@@ -146,7 +153,7 @@ in
               --bind "${home}/.claude.json" "${home}/.claude.json" \
               ${readOnlyIfPresent} \
               --bind "${ponytailLedger}" "${ponytailLedger}" \
-              --bind "$PWD" "$PWD" --chdir "$PWD" \
+              --bind "$dir" "$dir" --chdir "$dir" \
               ${hiddenEnv} \
               -- ${lib.getExe pkgs.claude-code} "$@"
           '';

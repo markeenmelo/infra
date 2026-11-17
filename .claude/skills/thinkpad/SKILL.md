@@ -68,9 +68,13 @@ That sandbox covers Bash only, so on the Linux laptops the `claude` command itse
 servers, hooks and plugins. bubblewrap gives it an empty home holding only Claude's state, the Git
 identity and the working directory, a read-only store and `/etc`, and an empty `/run` holding only
 the two MCP tokens, so no socket under `/run` or the home exists inside. pasta gives it a private
-network namespace that reaches out through NAT, which closes the host's loopback services and
-abstract sockets; the LAN, the tailnet and the internet stay reachable, and only Bash is held to
-the allowlist. It costs what needs the session or the host's loopback: pasting an image, desktop
+network namespace that reaches out through NAT, which closes services bound to the host's loopback
+and abstract sockets. A service bound to every address stays reachable through the host's own
+tailnet or LAN address, which pasta delivers on `lo` past the firewall, and the LAN, the tailnet
+and the internet stay reachable; only Bash is held to the allowlist. The wrapper refuses to start
+in a directory that holds or sits under a path the jail hides, resolved through symlinks. The jail
+keeps the terminal for job control, so `dev.tty.legacy_tiocsti` is 0 on these hosts (claude.nix):
+nothing inside can push input to the shell `claude` returns to. It costs what needs the session or the host's loopback: pasting an image, desktop
 notifications, the editor integrations and a browser sign-in that calls back to a local port.
 Claude Code's Bash sandbox nests inside it, which is why the jail leaves user namespaces enabled.
 The jail has no Nix daemon either, so a `nix` command typed with `!` in Claude falls back to a
