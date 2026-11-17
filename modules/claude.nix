@@ -150,7 +150,13 @@ in
             dir=$(pwd -P)
             binds=("$dir")
             if top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
-              binds=("$(realpath "$top")" "$(realpath "$(git -C "$dir" rev-parse --git-common-dir)")")
+              top=$(realpath "$top")
+              common=$(realpath "$(git -C "$dir" rev-parse --git-common-dir)")
+              gitdir=$(realpath "$(git -C "$dir" rev-parse --git-dir)")
+              if [[ "$common" == "$top/.git" ]] ||
+                [[ "$gitdir" == "$common/worktrees/"* && "$(realpath "$(cat "$gitdir/gitdir" 2>/dev/null)" 2>/dev/null)" == "$top/.git" ]]; then
+                binds=("$top" "$common")
+              fi
             fi
             for b in "''${binds[@]}"; do
               d="''${b%/}/"
