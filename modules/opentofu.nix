@@ -21,6 +21,10 @@ let
   program = ../opentofu/unifi/settings.jq;
   inherit (config.flake.modules.nixos) postgresql;
   statePort = config.flake.nixosConfigurations.bastion.config.services.postgresql.settings.port;
+  tailscalePort = config.flake.nixosConfigurations.bastion.config.services.tailscale.port;
+  deployKeys =
+    lib.concatMapStringsSep "\n" (lib.removePrefix "restrict ")
+      config.flake.nixosConfigurations.bastion.config.users.users.deploy.openssh.authorizedKeys.keys;
   operatorNames = [
     "thinkpad"
     "asahi"
@@ -88,6 +92,8 @@ in
             export TF_VAR_fleet_home_backups=${lib.escapeShellArg (builtins.toJSON homeBackups)}
             export TF_VAR_fleet_operators=${lib.escapeShellArg (builtins.toJSON operatorNames)}
             export TF_VAR_fleet_state_port=${toString statePort}
+            export TF_VAR_fleet_tailscale_port=${toString tailscalePort}
+            export TF_VAR_fleet_deploy_keys=${lib.escapeShellArg deployKeys}
             export TF_CLI_ARGS_init="-input=false -lockfile=readonly"
             command=$(printf '%q ' tofu -chdir="opentofu/$project" "$@")
             if [ -e "secrets/$project/api.yaml" ]; then

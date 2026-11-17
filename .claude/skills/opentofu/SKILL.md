@@ -1,6 +1,6 @@
 ---
 name: opentofu
-description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, device tags, auth keys; Porkbun: the public DNS records; UniFi: VLANs, Wi-Fi, fixed addresses, the LAN firewall, gateway settings), the tofu and unifi-settings flake apps, encrypted state, provider pins, plan and apply rules. Use before changing opentofu/ or modules/opentofu.nix, reviewing a plan the operator pasted, changing a public DNS record, adding a LAN device or firewall rule, or answering who can reach what on the tailnet or the LAN."
+description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, device tags, auth keys; Porkbun: the public DNS records; UniFi: VLANs, Wi-Fi, fixed addresses, the LAN firewall, gateway settings; Oracle: the cloud network, its border firewall, the instances and their reserved addresses), the tofu and unifi-settings flake apps, encrypted state, provider pins, plan and apply rules. Use before changing opentofu/ or modules/opentofu.nix, reviewing a plan the operator pasted, changing a public DNS record, adding a LAN device or firewall rule, adding or resizing a cloud instance or opening a port at its border, or answering who can reach what on the tailnet or the LAN."
 ---
 
 # OpenTofu
@@ -83,6 +83,32 @@ DMARC covering subdomains, empty DKIM) that lets no one send as the domain or an
 bastion's DNS-01 keys and are full-authority, so a plan already carries risk. A record that exists before its block is
 adopted with an `import` block (`<record_id>_<domain>_<type>`, ids from the operator's
 private listing), never duplicated.
+
+## Oracle
+
+[main.tf](../../../opentofu/oracle/main.tf) owns the Oracle Cloud tenancy, all of it in the root
+compartment of the home region, the only place Always Free resources exist: one network with a
+public subnet, its border firewall, and one Ampere A1 instance per row of `local.instances`, each
+behind a reserved address that a recreated instance keeps and `addresses` outputs for
+`fleet.hosts.HOST.publicAddress`. The rows share the Always Free A1 and block volume allowances
+([Always Free Resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm));
+Oracle changes those without notice, so read that page before adding or growing a row. The
+credentials in `secrets/oracle/operator.yaml` are an API signing key with its user's authority
+over the tenancy.
+
+The border is the network's default security list, taken over so Oracle's own rule admitting
+port 22 is gone. It admits the web ports, `local.unlock_port` for a host that takes its disk
+passphrase over SSH from the initrd, where no host firewall runs yet, Tailscale's port
+(`fleet_tailscale_port`) so traffic to bastion connects directly instead of through a relay, and
+the ICMP message path MTU discovery needs. Port 22 opens only with `-var install=true`, for the
+stock image and the nixos-anywhere installer; the apply after the install, without the flag,
+closes it.
+
+An instance launches from the newest Ubuntu image, which admits the deploy account's keys
+(`fleet_deploy_keys`), and ignores later images, since the install replaces it. A1 capacity runs
+out: an apply that fails with `Out of host capacity` has created the network and is applied again
+later. Oracle may reclaim an instance it deems idle; the next apply recreates it behind the same
+address, and the host is installed again.
 
 ## UniFi
 
