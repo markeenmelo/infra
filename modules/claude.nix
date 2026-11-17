@@ -115,12 +115,29 @@ in
           "${config.xdg.configHome}/ponytail"
           "${config.xdg.configHome}/caveman"
         ];
-        hiddenEnv = lib.concatMapStringsSep " " (name: "--unsetenv ${name}") [
-          "SSH_AUTH_SOCK"
-          "DBUS_SESSION_BUS_ADDRESS"
-          "XDG_RUNTIME_DIR"
-          "WAYLAND_DISPLAY"
-          "DISPLAY"
+        keptEnv = lib.concatStringsSep "|" [
+          "PATH"
+          "HOME"
+          "USER"
+          "LOGNAME"
+          "SHELL"
+          "TERM"
+          "TERM_PROGRAM(_VERSION)?"
+          "COLORTERM"
+          "LANG"
+          "LANGUAGE"
+          "LC_[A-Z_]+"
+          "TZ"
+          "LOCALE_ARCHIVE"
+          "TERMINFO(_DIRS)?"
+          "XDG_(CONFIG|DATA|STATE|CACHE)_HOME"
+          "XDG_(CONFIG|DATA)_DIRS"
+          "EDITOR"
+          "VISUAL"
+          "PAGER"
+          "NIX_PATH"
+          "NIX_PROFILES"
+          "(NIX_)?SSL_CERT_FILE"
         ];
         jail = pkgs.writeShellApplication {
           name = "claude";
@@ -138,7 +155,14 @@ in
             done
             if [[ "${home}/" == "$d"* || "$d" == "${home}/."* ]]; then refuse; fi
             mkdir -p "${configDir}" "${ponytailLedger}"
-            [[ -e "${home}/.claude.json" ]] || echo '{}' >"${home}/.claude.json"
+            if [[ ! -e "${configDir}/.claude.json" && -e "${home}/.claude.json" ]]; then
+              mv "${home}/.claude.json" "${configDir}/.claude.json"
+            fi
+            kept=(--clearenv)
+            while IFS= read -r -d "" pair; do
+              name="''${pair%%=*}"
+              if [[ "$name" =~ ^(${keptEnv})$ ]]; then kept+=(--setenv "$name" "''${pair#*=}"); fi
+            done < <(env -0)
             exec ${lib.getExe' pkgs.passt "pasta"} --config-net --quiet \
               --tcp-ports none --udp-ports none --tcp-ns none --udp-ns none \
               --no-map-gw --dns-forward ${dns} -- \
@@ -150,11 +174,10 @@ in
               --ro-bind ${pkgs.writeText "resolv.conf" "nameserver ${dns}\n"} "$(readlink -f /etc/resolv.conf)" \
               --tmpfs "${home}" \
               --bind "${configDir}" "${configDir}" \
-              --bind "${home}/.claude.json" "${home}/.claude.json" \
               ${readOnlyIfPresent} \
               --bind "${ponytailLedger}" "${ponytailLedger}" \
               --bind "$dir" "$dir" --chdir "$dir" \
-              ${hiddenEnv} \
+              "''${kept[@]}" --setenv CLAUDE_CONFIG_DIR "${configDir}" \
               -- ${lib.getExe pkgs.claude-code} "$@"
           '';
         };
@@ -320,6 +343,7 @@ in
                 ]) (import ./_home-secrets.nix)
                 ++ [
                   "~/.claude.json"
+                  "~/.claude/.claude.json"
                   "~/Library/Keychains/**"
                   "~/Library/Application Support/sops/**"
                   "~/Library/Application Support/Bitwarden/**"

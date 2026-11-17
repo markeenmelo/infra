@@ -67,7 +67,10 @@ That sandbox covers Bash only, so on the Linux laptops the `claude` command itse
 (`jail` in claude.nix) around everything Claude Code starts: its own process, the MCP and language
 servers, hooks and plugins. bubblewrap gives it an empty home holding only Claude's state, the Git
 identity and the working directory, a read-only store and `/etc`, and an empty `/run` holding only
-the two MCP tokens, so no socket under `/run` or the home exists inside. pasta gives it a private
+the two MCP tokens, so no socket under `/run` or the home exists inside. Only the environment
+variables in `keptEnv` pass, so a credential exported in the launching shell stays out, and
+`CLAUDE_CONFIG_DIR` keeps `.claude.json` inside `~/.claude`, where the lock that orders two
+sessions' writes is shared; the wrapper moves an old `~/.claude.json` there once. pasta gives it a private
 network namespace that reaches out through NAT, which closes services bound to the host's loopback
 and abstract sockets. A service bound to every address stays reachable through the host's own
 tailnet or LAN address, which pasta delivers on `lo` past the firewall, and the LAN, the tailnet
