@@ -200,9 +200,9 @@ resource "oci_core_instance" "fleet" {
 }
 
 data "oci_core_private_ips" "fleet" {
-  for_each   = oci_core_instance.fleet
+  for_each   = local.instances
   subnet_id  = oci_core_subnet.fleet.id
-  ip_address = each.value.private_ip
+  ip_address = oci_core_instance.fleet[each.key].private_ip
 }
 
 resource "oci_core_public_ip" "fleet" {
