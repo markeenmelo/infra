@@ -92,9 +92,15 @@ public subnet, its border firewall, and one Ampere A1 instance per row of `local
 behind a reserved address that a recreated instance keeps and `addresses` outputs for
 `fleet.hosts.HOST.publicAddress`. The rows share the Always Free A1 and block volume allowances
 ([Always Free Resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm));
-Oracle changes those without notice, so read that page before adding or growing a row. The
-credentials in `secrets/oracle/operator.yaml` are an API signing key with its user's authority
-over the tenancy.
+Oracle changes those without notice, so read that page before adding or growing a row, and move
+`local.free` with it. The credentials in `secrets/oracle/operator.yaml` are an API signing key
+with its user's authority over the tenancy.
+
+The account is Pay As You Go, so use past the allowance is billed instead of refused. The `free`
+quota refuses it first: every compute shape but A1 and the Always Free micro, A1 and block
+storage beyond `local.free`. It names only those two services; outbound data and every other
+service are caught after the fact by the `spend` budget, which Oracle evaluates once a day and
+which mails `alert_email` on any spend at all. A paid resource is a deliberate edit of the quota.
 
 The border is the network's default security list, taken over so Oracle's own rule admitting
 port 22 is gone. It admits the web ports, `local.unlock_port` for a host that takes its disk

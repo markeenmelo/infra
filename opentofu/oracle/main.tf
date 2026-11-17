@@ -67,6 +67,11 @@ variable "fleet_tailscale_port" {
   type        = number
 }
 
+variable "alert_email" {
+  description = "Address that hears of any spend in the tenancy."
+  type        = string
+}
+
 variable "install" {
   description = "Whether the border admits SSH on port 22, where the stock image and the nixos-anywhere installer listen; true only for the apply before an install."
   type        = bool
@@ -85,6 +90,7 @@ locals {
   instances = {
     edge = { ocpus = 1, memory = 2 }
   }
+  free                 = { ocpus = 2, memory = 12, micros = 2, storage = 200, backups = 5 }
   shape                = "VM.Standard.A1.Flex"
   boot_volume          = 50
   network              = "10.80.0.0/24"
@@ -214,6 +220,40 @@ resource "oci_core_public_ip" "fleet" {
   lifecycle {
     prevent_destroy = true
   }
+}
+
+resource "oci_limits_quota" "free" {
+  compartment_id = var.tenancy_ocid
+  name           = "free"
+  description    = "Refuses compute and block storage beyond the Always Free allowance."
+  statements = [
+    "zero compute-core quotas in tenancy",
+    "set compute-core quota standard-a1-core-count to ${local.free.ocpus} in tenancy",
+    "set compute-core quota standard-e2-micro-core-count to ${local.free.micros} in tenancy",
+    "zero compute-memory quotas in tenancy",
+    "set compute-memory quota standard-a1-memory-count to ${local.free.memory} in tenancy",
+    "set block-storage quota total-storage-gb to ${local.free.storage} in tenancy",
+    "set block-storage quota backup-count to ${local.free.backups} in tenancy",
+  ]
+}
+
+resource "oci_budget_budget" "spend" {
+  compartment_id = var.tenancy_ocid
+  display_name   = "spend"
+  description    = "Any spend at all: the tenancy is meant to cost nothing."
+  amount         = 1
+  reset_period   = "MONTHLY"
+  target_type    = "COMPARTMENT"
+  targets        = [var.tenancy_ocid]
+}
+
+resource "oci_budget_alert_rule" "spend" {
+  budget_id      = oci_budget_budget.spend.id
+  display_name   = "spend"
+  type           = "ACTUAL"
+  threshold_type = "ABSOLUTE"
+  threshold      = 0.01
+  recipients     = var.alert_email
 }
 
 output "addresses" {
