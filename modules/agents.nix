@@ -1,8 +1,6 @@
 { config, inputs, ... }:
 let
   inherit (config.flake.modules.nixos) claude-agent;
-  # the operator's login key, the one access.nix admits on the laptops
-  operatorKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAYdnogT40vOG0eZn4guvWq33q6VANCYXEYsxOSIsVbc";
   tap = "vm-agents";
   hostAddress = "10.201.0.1";
   guestAddress = "10.201.0.2";
@@ -132,7 +130,7 @@ let
         users.agent = {
           isNormalUser = true;
           uid = agentUid;
-          openssh.authorizedKeys.keys = [ operatorKey ];
+          openssh.authorizedKeys.keys = [ (import ./_operator-key.nix) ];
         };
       };
 
