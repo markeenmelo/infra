@@ -6,9 +6,13 @@
 let
   inherit (config.fleet) domain;
   inherit (config.flake.modules.homeManager) claude;
+  tokenNames = [
+    "github-mcp-token"
+    "grafana-mcp-token"
+  ];
   tokens =
     owner:
-    lib.genAttrs [ "github-mcp-token" "grafana-mcp-token" ] (_: {
+    lib.genAttrs tokenNames (_: {
       inherit owner;
       sopsFile = ../secrets/shared/mcp.yaml;
     });
@@ -89,6 +93,63 @@ in
         pkgs,
         ...
       }:
+      let
+        home = config.home.homeDirectory;
+        inherit (config.programs.claude-code) configDir;
+        dns = "169.254.1.1";
+        readOnly = lib.concatMapStringsSep " " (path: "--ro-bind ${path} ${path}") (
+          [
+            builtins.storeDir
+            "/etc"
+            "/bin"
+            "/usr"
+            "/run/current-system"
+          ]
+          ++ map (name: osConfig.sops.secrets.${name}.path) tokenNames
+        );
+        readOnlyIfPresent = lib.concatMapStringsSep " " (path: "--ro-bind-try ${path} ${path}") [
+          "${home}/.gitconfig"
+          "${config.xdg.configHome}/git"
+          "${config.xdg.configHome}/ponytail"
+          "${config.xdg.configHome}/caveman"
+        ];
+        hiddenEnv = lib.concatMapStringsSep " " (name: "--unsetenv ${name}") [
+          "SSH_AUTH_SOCK"
+          "DBUS_SESSION_BUS_ADDRESS"
+          "XDG_RUNTIME_DIR"
+          "WAYLAND_DISPLAY"
+          "DISPLAY"
+        ];
+        jail = pkgs.writeShellApplication {
+          name = "claude";
+          derivationArgs = { inherit (pkgs.claude-code) version; };
+          runtimeInputs = [ pkgs.coreutils ];
+          text = ''
+            if [[ "${home}/" == "''${PWD%/}/"* ]]; then
+              echo "claude: $PWD holds the home directory, which the jail would expose" >&2
+              exit 1
+            fi
+            mkdir -p "${configDir}"
+            [[ -e "${home}/.claude.json" ]] || echo '{}' >"${home}/.claude.json"
+            exec ${lib.getExe' pkgs.passt "pasta"} --config-net --quiet \
+              --tcp-ports none --udp-ports none --tcp-ns none --udp-ns none \
+              --no-map-gw --dns-forward ${dns} -- \
+              ${lib.getExe pkgs.bubblewrap} \
+              --unshare-all --unshare-user --share-net --die-with-parent \
+              --uid "$(id -u)" --gid "$(id -g)" \
+              --proc /proc --dev /dev --tmpfs /tmp --tmpfs /run \
+              ${readOnly} \
+              --ro-bind ${pkgs.writeText "resolv.conf" "nameserver ${dns}\n"} "$(readlink -f /etc/resolv.conf)" \
+              --tmpfs "${home}" \
+              --bind "${configDir}" "${configDir}" \
+              --bind "${home}/.claude.json" "${home}/.claude.json" \
+              ${readOnlyIfPresent} \
+              --bind "$PWD" "$PWD" --chdir "$PWD" \
+              ${hiddenEnv} \
+              -- ${lib.getExe pkgs.claude-code} "$@"
+          '';
+        };
+      in
       {
         home = {
           packages = [
@@ -129,6 +190,7 @@ in
         };
         programs.claude-code = {
           enable = true;
+          package = lib.mkIf pkgs.stdenv.hostPlatform.isLinux jail;
           enableMcpIntegration = true;
           lspServers = {
             nix = {

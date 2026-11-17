@@ -63,6 +63,17 @@ list, so a daemon added later needs its socket added there. `/persist` is hidden
 holds a second path to the whole home. As on the mac, `nix` commands that need the daemon run
 outside Claude's sandbox.
 
+That sandbox covers Bash only, so on the Linux laptops the `claude` command itself is a jail
+(`jail` in claude.nix) around everything Claude Code starts: its own process, the MCP and language
+servers, hooks and plugins. bubblewrap gives it an empty home holding only Claude's state, the Git
+identity and the working directory, a read-only store and `/etc`, and an empty `/run` holding only
+the two MCP tokens, so no socket under `/run` or the home exists inside. pasta gives it a private
+network namespace that reaches out through NAT, which closes the host's loopback services and
+abstract sockets; the LAN, the tailnet and the internet stay reachable, and only Bash is held to
+the allowlist. It costs what needs the session or the host's loopback: pasting an image, desktop
+notifications, the editor integrations and a browser sign-in that calls back to a local port.
+Claude Code's Bash sandbox nests inside it, which is why the jail leaves user namespaces enabled.
+
 Idle locks, turns the screen off and suspends on the timers in
 [noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
 does while a video plays. On battery `power-profile-ac` switches to
