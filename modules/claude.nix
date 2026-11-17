@@ -6,9 +6,13 @@
 let
   inherit (config.fleet) domain;
   inherit (config.flake.modules.homeManager) claude;
+  tokenNames = [
+    "github-mcp-token"
+    "grafana-mcp-token"
+  ];
   tokens =
     owner:
-    lib.genAttrs [ "github-mcp-token" "grafana-mcp-token" ] (_: {
+    lib.genAttrs tokenNames (_: {
       inherit owner;
       sopsFile = ../secrets/shared/mcp.yaml;
     });
@@ -72,6 +76,7 @@ in
           "claude-code"
           "rtk"
         ];
+        boot.kernel.sysctl."dev.tty.legacy_tiocsti" = 0;
         environment = {
           systemPackages = [
             pkgs.bubblewrap
@@ -89,6 +94,113 @@ in
         pkgs,
         ...
       }:
+      let
+        home = config.home.homeDirectory;
+        inherit (config.programs.claude-code) configDir;
+        dns = "169.254.1.1";
+        ponytailLedger = "${config.xdg.configHome}/ponytail/band";
+        readOnly = lib.concatMapStringsSep " " (path: "--ro-bind ${path} ${path}") (
+          [
+            builtins.storeDir
+            "/etc"
+            "/bin"
+            "/usr"
+            "/run/current-system"
+          ]
+          ++ map (name: osConfig.sops.secrets.${name}.path) tokenNames
+        );
+        readOnlyIfPresent = lib.concatMapStringsSep " " (path: "--ro-bind-try ${path} ${path}") [
+          "${home}/.gitconfig"
+          "${config.xdg.configHome}/git"
+          "${config.xdg.configHome}/ponytail"
+          "${config.xdg.configHome}/caveman"
+        ];
+        keptEnv = lib.concatStringsSep "|" [
+          "PATH"
+          "HOME"
+          "USER"
+          "LOGNAME"
+          "SHELL"
+          "TERM"
+          "TERM_PROGRAM(_VERSION)?"
+          "COLORTERM"
+          "LANG"
+          "LANGUAGE"
+          "LC_[A-Z_]+"
+          "TZ"
+          "LOCALE_ARCHIVE"
+          "TERMINFO(_DIRS)?"
+          "XDG_(CONFIG|DATA|STATE|CACHE)_HOME"
+          "XDG_(CONFIG|DATA)_DIRS"
+          "EDITOR"
+          "VISUAL"
+          "PAGER"
+          "NIX_PATH"
+          "NIX_PROFILES"
+          "(NIX_)?SSL_CERT_FILE"
+        ];
+        jail = pkgs.writeShellApplication {
+          name = "claude";
+          derivationArgs = { inherit (pkgs.claude-code) version; };
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.git
+          ];
+          text = ''
+            dir=$(pwd -P)
+            binds=("$dir")
+            if top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
+              top=$(realpath "$top")
+              common=$(realpath "$(git -C "$dir" rev-parse --git-common-dir)")
+              gitdir=$(realpath "$(git -C "$dir" rev-parse --git-dir)")
+              if [[ "$common" == "$top/.git" ]] ||
+                [[ "$gitdir" == "$common/worktrees/"* && "$(realpath "$(cat "$gitdir/gitdir" 2>/dev/null)" 2>/dev/null)" == "$top/.git" ]]; then
+                binds=("$top" "$common")
+              fi
+            fi
+            for b in "''${binds[@]}"; do
+              d="''${b%/}/"
+              for p in ${lib.escapeShellArgs deniedDirs}; do
+                if [[ "$p/" == "$d"* || "$d" == "$p/"* ]]; then
+                  echo "claude: $b holds or sits in a path the jail hides" >&2
+                  exit 1
+                fi
+              done
+              if [[ "${home}/" == "$d"* || "$d" == "${home}/."* ]]; then
+                echo "claude: $b holds or sits in a path the jail hides" >&2
+                exit 1
+              fi
+            done
+            bindArgs=()
+            for b in "''${binds[@]}"; do bindArgs+=(--bind "$b" "$b"); done
+            mkdir -p "${configDir}" "${ponytailLedger}"
+            if [[ ! -e "${configDir}/.claude.json" && -e "${home}/.claude.json" ]]; then
+              mv "${home}/.claude.json" "${configDir}/.claude.json"
+            fi
+            kept=(--clearenv)
+            while IFS= read -r -d "" pair; do
+              name="''${pair%%=*}"
+              if [[ "$name" =~ ^(${keptEnv})$ ]]; then kept+=(--setenv "$name" "''${pair#*=}"); fi
+            done < <(env -0)
+            exec ${lib.getExe' pkgs.passt "pasta"} --config-net --quiet \
+              --tcp-ports none --udp-ports none --tcp-ns none --udp-ns none \
+              --no-map-gw --dns-forward ${dns} -- \
+              ${lib.getExe pkgs.bubblewrap} \
+              --unshare-all --unshare-user --share-net --die-with-parent \
+              --uid "$(id -u)" --gid "$(id -g)" \
+              --proc /proc --dev /dev --tmpfs /tmp --tmpfs /run \
+              ${readOnly} \
+              --ro-bind ${pkgs.writeText "resolv.conf" "nameserver ${dns}\n"} "$(readlink -f /etc/resolv.conf)" \
+              --tmpfs "${home}" \
+              --bind "${configDir}" "${configDir}" \
+              ${readOnlyIfPresent} \
+              --bind "${ponytailLedger}" "${ponytailLedger}" \
+              "''${bindArgs[@]}" --chdir "$dir" \
+              "''${kept[@]}" --setenv CLAUDE_CONFIG_DIR "${configDir}" \
+              -- ${lib.getExe pkgs.claude-code} "$@"
+          '';
+        };
+      in
       {
         home = {
           packages = [
@@ -129,6 +241,7 @@ in
         };
         programs.claude-code = {
           enable = true;
+          package = lib.mkIf pkgs.stdenv.hostPlatform.isLinux jail;
           enableMcpIntegration = true;
           lspServers = {
             nix = {
@@ -249,6 +362,7 @@ in
                 ]) (import ./_home-secrets.nix)
                 ++ [
                   "~/.claude.json"
+                  "~/${lib.removePrefix "${config.home.homeDirectory}/" configDir}/.claude.json"
                   "~/Library/Keychains/**"
                   "~/Library/Application Support/sops/**"
                   "~/Library/Application Support/Bitwarden/**"

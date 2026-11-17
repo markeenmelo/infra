@@ -52,16 +52,38 @@ through bastion. Bitwarden's desktop app is the SSH agent
 (`~/.bitwarden-ssh-agent.sock`), started at login.
 
 Claude Code runs under the same managed settings as the mac ([claude.nix](../../../modules/claude.nix)),
-written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. The sandbox does not
-block Unix sockets without Claude Code's optional seccomp helper, which has no documented path
-outside an npm install, so the managed `filesystem.denyRead` in claude.nix hides the sockets one
-by one: `/run/user` (the session D-Bus, the keyring, Wayland), the system D-Bus, `/run/systemd`
+written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. Claude Code's
+seccomp helper (`apply-seccomp`, the first process of every Bash command) refuses a command any
+new Unix socket, but it is Claude Code's to ship or drop, so the managed `filesystem.denyRead` in
+claude.nix also hides the sockets one by one: `/run/user` (the session D-Bus, the keyring, Wayland), the system D-Bus, `/run/systemd`
 (resolved, the journal, the varlink services that ask polkit), nscd, which like resolved would
 resolve any name outside the network namespace, tailscaled, CUPS, Xwayland, Bitwarden's agent
 and the Nix daemon, whose fixed-output builds reach the network outside the sandbox. It is a deny
 list, so a daemon added later needs its socket added there. `/persist` is hidden too, since it
 holds a second path to the whole home. As on the mac, `nix` commands that need the daemon run
 outside Claude's sandbox.
+
+That sandbox covers Bash only, so on the Linux laptops the `claude` command itself is a jail
+(`jail` in claude.nix) around everything Claude Code starts: its own process, the MCP and language
+servers, hooks and plugins. bubblewrap gives it an empty home holding only Claude's state, the Git
+identity and the working directory (the whole repository and its Git directory when it is in one,
+so subdirectories and linked worktrees keep working; a Git directory that is neither the
+repository's own `.git` nor a worktree pointing back at it is not bound), and an empty `/run` with only the read-only
+paths in `readOnly` and the DNS stub, so no socket under `/run` or the home exists inside. Only the environment
+variables in `keptEnv` pass, so a credential exported in the launching shell stays out, and
+`CLAUDE_CONFIG_DIR` keeps `.claude.json` inside `~/.claude`, where the lock that orders two
+sessions' writes is shared; the wrapper moves an old `~/.claude.json` there once. pasta gives it a private
+network namespace that reaches out through NAT, which closes services bound to the host's loopback
+and abstract sockets. A service bound to every address stays reachable through the host's own
+tailnet or LAN address, which pasta delivers on `lo` past the firewall, and the LAN, the tailnet
+and the internet stay reachable; only Bash is held to the allowlist. The wrapper refuses to start
+in a directory that holds or sits under a path the jail hides, resolved through symlinks. The jail
+keeps the terminal for job control, so `dev.tty.legacy_tiocsti` is 0 on these hosts (claude.nix):
+nothing inside can push input to the shell `claude` returns to. It costs what needs the session or the host's loopback: pasting an image, desktop
+notifications, the editor integrations and a browser sign-in that calls back to a local port.
+Claude Code's Bash sandbox nests inside it, which is why the jail leaves user namespaces enabled.
+The jail has no Nix daemon either, so a `nix` command typed with `!` in Claude falls back to a
+throwaway store in the jail's home; Nix runs from a terminal outside Claude.
 
 Idle locks, turns the screen off and suspends on the timers in
 [noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
