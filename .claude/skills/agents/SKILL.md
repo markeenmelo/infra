@@ -89,5 +89,9 @@ and every shell in the guest exports them; a changed token restarts the guest:
   the code a pull-request workflow runs, so the token covers only repositories whose
   pull-request workflows hold no secret that such code can reach.
 
+Commits made in the guest carry the operator's Git identity, which
+[git.nix](../../../modules/git.nix) gives the guest and the workstations alike, and no Claude
+attribution, which the managed settings blank as the workstations' settings do.
+
 The share holds nothing else of bastion's. No sops identity, deploy key, build key or cache write
 access goes in.

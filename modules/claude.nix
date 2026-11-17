@@ -10,6 +10,10 @@ let
     "github-mcp-token"
     "grafana-mcp-token"
   ];
+  attribution = {
+    commit = "";
+    pr = "";
+  };
   tokens =
     owner:
     lib.genAttrs tokenNames (_: {
@@ -197,6 +201,7 @@ in
             pkgs.rtk
           ];
           etc."claude-code/managed-settings.json".text = builtins.toJSON {
+            inherit attribution;
             env = {
               RTK_SUPPRESS_HOOK_WARNING = "1";
               CAVEMAN_DEFAULT_MODE = "ultracave";
@@ -364,10 +369,7 @@ in
           lspServers = lspServers pkgs;
           settings = {
             theme = "dark-ansi";
-            attribution = {
-              commit = "";
-              pr = "";
-            };
+            inherit attribution;
             env = {
               RTK_SUPPRESS_HOOK_WARNING = "1";
               CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" (

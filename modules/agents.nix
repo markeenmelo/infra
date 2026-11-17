@@ -1,6 +1,6 @@
 { config, inputs, ... }:
 let
-  inherit (config.flake.modules.nixos) claude-agent;
+  inherit (config.flake.modules.nixos) claude-agent git;
   tap = "vm-agents";
   hostAddress = "10.201.0.1";
   guestAddress = "10.201.0.2";
@@ -25,7 +25,10 @@ let
       zedServer = pkgs.zed-editor.remoteServerExecutableName;
     in
     {
-      imports = [ claude-agent ];
+      imports = [
+        claude-agent
+        git
+      ];
       system.stateVersion = "26.05";
 
       microvm = {
