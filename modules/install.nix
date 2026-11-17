@@ -58,6 +58,11 @@ in
               [ ! -S "$run/tailscaled.sock" ] || break
               sleep 0.1
             done
+            [ -S "$run/tailscaled.sock" ] || {
+              cat "$run/log" >&2
+              echo "enroll: tailscaled did not start, so nothing is spent" >&2
+              exit 1
+            }
             trap 'kill "$daemon" 2> /dev/null || true; rm -rf "$run"; echo "enroll: failed where the enrollment key may already be spent; the identity is kept in $identity" >&2' EXIT
             tailscale --socket="$run/tailscaled.sock" up --auth-key="file:$run/key" --hostname="$host"
             address=$(tailscale --socket="$run/tailscaled.sock" ip -4)
