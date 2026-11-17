@@ -52,10 +52,10 @@ through bastion. Bitwarden's desktop app is the SSH agent
 (`~/.bitwarden-ssh-agent.sock`), started at login.
 
 Claude Code runs under the same managed settings as the mac ([claude.nix](../../../modules/claude.nix)),
-written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. The sandbox does not
-block Unix sockets without Claude Code's optional seccomp helper, which has no documented path
-outside an npm install, so the managed `filesystem.denyRead` in claude.nix hides the sockets one
-by one: `/run/user` (the session D-Bus, the keyring, Wayland), the system D-Bus, `/run/systemd`
+written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. Claude Code's
+seccomp helper (`apply-seccomp`, the first process of every Bash command) refuses a command any
+new Unix socket, but it is Claude Code's to ship or drop, so the managed `filesystem.denyRead` in
+claude.nix also hides the sockets one by one: `/run/user` (the session D-Bus, the keyring, Wayland), the system D-Bus, `/run/systemd`
 (resolved, the journal, the varlink services that ask polkit), nscd, which like resolved would
 resolve any name outside the network namespace, tailscaled, CUPS, Xwayland, Bitwarden's agent
 and the Nix daemon, whose fixed-output builds reach the network outside the sandbox. It is a deny
