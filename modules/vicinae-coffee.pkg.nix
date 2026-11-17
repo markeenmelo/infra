@@ -1,10 +1,10 @@
 { fetchgit, buildNpmPackage }:
 buildNpmPackage (finalAttrs: {
   pname = "vicinae-coffee";
-  version = "0-unstable-2026-11-04";
+  version = "0-unstable-2026-11-17";
   src = fetchgit {
     url = "https://github.com/vicinaehq/extensions";
-    rev = "181904331f5289b53ee3443f98cfa5441d399f35";
+    rev = "8d7d3d265329bad10056f009dd6eca3d6bf54f68";
     hash = "sha256-o3+IPlWAp39L+BDR0XUwVeXI5czvcT2NTR9xx+Pi/do=";
     sparseCheckout = [ "/extensions/coffee" ];
   };
