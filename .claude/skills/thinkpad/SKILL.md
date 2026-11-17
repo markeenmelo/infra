@@ -73,6 +73,8 @@ abstract sockets; the LAN, the tailnet and the internet stay reachable, and only
 the allowlist. It costs what needs the session or the host's loopback: pasting an image, desktop
 notifications, the editor integrations and a browser sign-in that calls back to a local port.
 Claude Code's Bash sandbox nests inside it, which is why the jail leaves user namespaces enabled.
+The jail has no Nix daemon either, so a `nix` command typed with `!` in Claude falls back to a
+throwaway store in the jail's home; Nix runs from a terminal outside Claude.
 
 Idle locks, turns the screen off and suspends on the timers in
 [noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser

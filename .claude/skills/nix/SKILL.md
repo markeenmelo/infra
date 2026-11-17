@@ -109,8 +109,9 @@ hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-upd
 (Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, each OpenTofu
 provider's constraint and lock, the SHA-pinned actions through pinact). The operator reads the
 diff before committing, above all action, `flake.lock` and plugin moves: actions run with secrets,
-the inputs on every host, and the Claude Code and Noctalia plugins as `marcos` with the Tailscale
-operator; a provider move needs a `tofu plan` with no changes. Updates take the newest release
+the inputs on every host, the Noctalia plugins as `marcos` with the Tailscale operator, and the
+Claude Code plugins as `marcos` (inside the Claude jail on the Linux laptops, see the thinkpad
+skill); a provider move needs a `tofu plan` with no changes. Updates take the newest release
 at once, with no release-age cool-down: that read is the only gate. A source the fleet
 fetches is a `NAME.pkg.nix` added to `pins`, not a `flake = false` input, which a rev in its URL
 freezes. Never hand-edit `flake.lock`: Nix
