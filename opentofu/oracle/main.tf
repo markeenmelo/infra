@@ -70,6 +70,7 @@ variable "fleet_tailscale_port" {
 variable "alert_email" {
   description = "Address that hears of any spend in the tenancy."
   type        = string
+  sensitive   = true
 }
 
 variable "install" {
