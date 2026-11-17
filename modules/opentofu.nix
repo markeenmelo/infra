@@ -21,10 +21,15 @@ let
   program = ../opentofu/unifi/settings.jq;
   inherit (config.flake.modules.nixos) postgresql;
   statePort = config.flake.nixosConfigurations.bastion.config.services.postgresql.settings.port;
+  # shortcut: bastion's Tailscale port and deploy keys stand in for the Oracle instances', which share its modules, read them from each instance's own configuration once the edge host exists
   tailscalePort = config.flake.nixosConfigurations.bastion.config.services.tailscale.port;
   deployKeys =
-    lib.concatMapStringsSep "\n" (lib.removePrefix "restrict ")
-      config.flake.nixosConfigurations.bastion.config.users.users.deploy.openssh.authorizedKeys.keys;
+    let
+      keys = map (lib.removePrefix "restrict ") config.flake.nixosConfigurations.bastion.config.users.users.deploy.openssh.authorizedKeys.keys;
+    in
+    assert lib.assertMsg (lib.all (lib.hasPrefix "ssh-") keys)
+      "a deploy key carries options beyond `restrict`, which the stock image would apply to the install login: ${toString keys}";
+    lib.concatStringsSep "\n" keys;
   operatorNames = [
     "thinkpad"
     "asahi"
