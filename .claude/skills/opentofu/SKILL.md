@@ -105,7 +105,9 @@ stock image and the nixos-anywhere installer; the apply after the install, witho
 closes it.
 
 An instance launches from the newest Ubuntu image, which admits the deploy account's keys
-(`fleet_deploy_keys`), and ignores later images, since the install replaces it. A1 capacity runs
+(`fleet_deploy_keys`), and ignores later images and later keys, since the install replaces both
+and the provider would otherwise reimage the boot volume for a new image and replace the instance
+for a new key. A1 capacity runs
 out: an apply that fails with `Out of host capacity` has created the network and is applied again
 later. Oracle may reclaim an instance it deems idle; the next apply recreates it behind the same
 address, and the host is installed again.

@@ -195,7 +195,7 @@ resource "oci_core_instance" "fleet" {
   }
   lifecycle {
     prevent_destroy = true
-    ignore_changes  = [source_details]
+    ignore_changes  = [source_details[0].source_id, metadata]
   }
 }
 
