@@ -66,8 +66,9 @@ outside Claude's sandbox.
 That sandbox covers Bash only, so on the Linux laptops the `claude` command itself is a jail
 (`jail` in claude.nix) around everything Claude Code starts: its own process, the MCP and language
 servers, hooks and plugins. bubblewrap gives it an empty home holding only Claude's state, the Git
-identity and the working directory, a read-only store and `/etc`, and an empty `/run` holding only
-the two MCP tokens, so no socket under `/run` or the home exists inside. Only the environment
+identity and the working directory (the whole repository and its Git directory when it is in one,
+so subdirectories and linked worktrees keep working), and an empty `/run` with only the read-only
+paths in `readOnly` and the DNS stub, so no socket under `/run` or the home exists inside. Only the environment
 variables in `keptEnv` pass, so a credential exported in the launching shell stays out, and
 `CLAUDE_CONFIG_DIR` keeps `.claude.json` inside `~/.claude`, where the lock that orders two
 sessions' writes is shared; the wrapper moves an old `~/.claude.json` there once. pasta gives it a private

@@ -142,18 +142,31 @@ in
         jail = pkgs.writeShellApplication {
           name = "claude";
           derivationArgs = { inherit (pkgs.claude-code) version; };
-          runtimeInputs = [ pkgs.coreutils ];
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.git
+          ];
           text = ''
             dir=$(pwd -P)
-            d="''${dir%/}/"
-            refuse() {
-              echo "claude: $dir holds or sits in a path the jail hides" >&2
-              exit 1
-            }
-            for p in ${lib.escapeShellArgs deniedDirs}; do
-              if [[ "$p/" == "$d"* || "$d" == "$p/"* ]]; then refuse; fi
+            binds=("$dir")
+            if top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
+              binds=("$(realpath "$top")" "$(realpath "$(git -C "$dir" rev-parse --git-common-dir)")")
+            fi
+            for b in "''${binds[@]}"; do
+              d="''${b%/}/"
+              for p in ${lib.escapeShellArgs deniedDirs}; do
+                if [[ "$p/" == "$d"* || "$d" == "$p/"* ]]; then
+                  echo "claude: $b holds or sits in a path the jail hides" >&2
+                  exit 1
+                fi
+              done
+              if [[ "${home}/" == "$d"* || "$d" == "${home}/."* ]]; then
+                echo "claude: $b holds or sits in a path the jail hides" >&2
+                exit 1
+              fi
             done
-            if [[ "${home}/" == "$d"* || "$d" == "${home}/."* ]]; then refuse; fi
+            bindArgs=()
+            for b in "''${binds[@]}"; do bindArgs+=(--bind "$b" "$b"); done
             mkdir -p "${configDir}" "${ponytailLedger}"
             if [[ ! -e "${configDir}/.claude.json" && -e "${home}/.claude.json" ]]; then
               mv "${home}/.claude.json" "${configDir}/.claude.json"
@@ -176,7 +189,7 @@ in
               --bind "${configDir}" "${configDir}" \
               ${readOnlyIfPresent} \
               --bind "${ponytailLedger}" "${ponytailLedger}" \
-              --bind "$dir" "$dir" --chdir "$dir" \
+              "''${bindArgs[@]}" --chdir "$dir" \
               "''${kept[@]}" --setenv CLAUDE_CONFIG_DIR "${configDir}" \
               -- ${lib.getExe pkgs.claude-code} "$@"
           '';
@@ -343,7 +356,7 @@ in
                 ]) (import ./_home-secrets.nix)
                 ++ [
                   "~/.claude.json"
-                  "~/.claude/.claude.json"
+                  "~/${lib.removePrefix "${config.home.homeDirectory}/" configDir}/.claude.json"
                   "~/Library/Keychains/**"
                   "~/Library/Application Support/sops/**"
                   "~/Library/Application Support/Bitwarden/**"
