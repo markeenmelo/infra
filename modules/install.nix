@@ -11,8 +11,55 @@ in
   };
 
   perSystem =
-    { pkgs, ... }:
+    { config, pkgs, ... }:
     {
+      apps.enroll = {
+        meta.description = "enroll HOST: before a new host's first install, make its identity on this machine: an SSH host key, an initrd SSH host key and a tailnet login under its name, in a private directory an install takes as extra files; prints the age recipient, the tailnet address and the initrd host key its facts need";
+        program = pkgs.writeShellApplication {
+          name = "enroll";
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.git
+            pkgs.jq
+            pkgs.openssh
+            pkgs.ssh-to-age
+            pkgs.tailscale
+          ];
+          text = ''
+            [[ ''${1-} =~ ^[a-z][a-z0-9-]*$ ]] || { echo "enroll: name the new host" >&2; exit 1; }
+            host=$1
+            cd "$(git rev-parse --show-toplevel)"
+            umask 077
+            identity=$(mktemp -d)
+            run=$(mktemp -d)
+            daemon=
+            trap '[ -z "$daemon" ] || kill "$daemon" 2> /dev/null || true; rm -rf "$run" "$identity"' EXIT
+            persist=$identity/persist
+            install -d -m 755 "$persist" "$persist/etc" "$persist/etc/ssh" "$persist/etc/secrets" "$persist/var" "$persist/var/lib"
+            install -d -m 700 "$persist/etc/secrets/initrd" "$persist/var/lib/tailscale"
+            ssh-keygen -q -t ed25519 -N "" -C "$host" -f "$persist/etc/ssh/ssh_host_ed25519_key"
+            ssh-keygen -q -t ed25519 -N "" -C "$host-initrd" -f "$persist/etc/secrets/initrd/ssh_host_ed25519_key"
+            chmod 644 "$persist/etc/ssh/ssh_host_ed25519_key.pub"
+            ${config.apps.tofu.program} tailscale output -json enrollment_keys | jq -er --arg host "$host" '.[$host]' > "$run/key"
+            tailscaled --tun=userspace-networking --statedir="$persist/var/lib/tailscale" --socket="$run/tailscaled.sock" 2> "$run/log" &
+            daemon=$!
+            for _ in $(seq 100); do
+              [ ! -S "$run/tailscaled.sock" ] || break
+              sleep 0.1
+            done
+            tailscale --socket="$run/tailscaled.sock" up --auth-key="file:$run/key" --hostname="$host"
+            address=$(tailscale --socket="$run/tailscaled.sock" ip -4)
+            kill "$daemon"
+            wait "$daemon" || true
+            rm -rf "$run"
+            trap - EXIT
+            echo "age recipient:   $(ssh-to-age < "$persist/etc/ssh/ssh_host_ed25519_key.pub")"
+            echo "tailnet address: $address"
+            echo "initrd host key: $(cut -d ' ' -f 1,2 "$persist/etc/secrets/initrd/ssh_host_ed25519_key.pub")"
+            echo "identity:        $identity, private keys: keep it until the install, then delete it"
+          '';
+        };
+      };
       apps.install = {
         meta.description = "install HOST TARGET ROOT: from an installer image on TARGET, carry HOST's identity paths out of the old persist tree mounted at ROOT, unmount it, then partition with disko and install HOST's configuration";
         program = pkgs.writeShellApplication {

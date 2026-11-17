@@ -88,7 +88,17 @@ admit no root login and no SSH off the tailnet ([ssh.nix](../../../modules/ssh.n
 reinstall always goes through the installer image, where root is the login. The disk is wiped;
 it is an access change and needs the operator's approval.
 
+A new host has no old disk to carry from, and its facts need three values before its
+configuration evaluates: the age recipient its secrets file is encrypted to, its tailnet address,
+and the host key its initrd presents. The `enroll` app in install.nix makes that identity on the
+operator's machine and prints the three: it generates the SSH host key and a separate initrd host
+key, then logs a throwaway userspace `tailscaled` into the tailnet under the host's name with
+the host's enrollment key ([tailnet skill](../tailnet/SKILL.md)), which spends the key, and stops
+it. The directory it names holds the private halves laid out under `persist/`, so the node key
+and host key never touch the provider's stock image; it is deleted after the install.
+
 ```sh
+nix run .#enroll -- HOST            # after the tailscale project minted HOST's enrollment key
 ssh root@ADDRESS 'mkdir -p /mnt/old && mount -o ro /dev/DISK-PART /mnt/old'
 nix run .#install -- HOST root@ADDRESS /mnt/old/persist
 ```

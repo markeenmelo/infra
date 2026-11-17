@@ -54,6 +54,11 @@ tofu project *args:
 unifi-settings action:
     nix run .#unifi-settings -- "$@"
 
+[arg("host", pattern='[a-z0-9-]+')]
+[doc("Make a new HOST's identity before its first install: SSH host keys and a tailnet login, in a private directory")]
+enroll host:
+    nix run .#enroll -- {{ host }}
+
 [doc("Reinstall HOST from an installer at TARGET, carrying its identity from the old persist tree ROOT")]
 [positional-arguments]
 install host target root:
