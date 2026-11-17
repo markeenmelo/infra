@@ -55,7 +55,9 @@ guest's nixpkgs finds its remote server linked in `~/.zed_server`, any other dow
 the workstations' Claude Code that need no workstation secret: the caveman, ponytail and
 cache-tax plugins, the language servers, the rtk hook, and the nixos and GitHub MCP servers, the
 GitHub one read-only on the token `gh` uses. They arrive as managed settings and one generated
-plugin, so nothing depends on the agent's home. The guest has no jail and no Bash sandbox: the
+plugin, so nothing depends on the agent's home. caveman and ponytail start at the workstations'
+levels, set through their environment variables, which unlike the workstations' config files
+also turns caveman on in headless runs. The guest has no jail and no Bash sandbox: the
 guest itself is the boundary. Grafana's MCP server and the account's connectors stay out.
 
 ## Credentials

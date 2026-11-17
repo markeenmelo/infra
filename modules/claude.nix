@@ -199,6 +199,8 @@ in
           etc."claude-code/managed-settings.json".text = builtins.toJSON {
             env = {
               RTK_SUPPRESS_HOOK_WARNING = "1";
+              CAVEMAN_DEFAULT_MODE = "ultracave";
+              PONYTAIL_DEFAULT_MODE = "ultra";
               CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" ([ "${plugin}" ] ++ agentPlugins pkgs);
             };
             hooks.PreToolUse = [ (rtkHook pkgs) ];
