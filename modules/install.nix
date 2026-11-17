@@ -47,8 +47,8 @@ in
               [ ! -S "$run/tailscaled.sock" ] || break
               sleep 0.1
             done
+            trap 'kill "$daemon" 2> /dev/null || true; rm -rf "$run"; echo "enroll: failed where the enrollment key may already be spent; the identity is kept in $identity" >&2' EXIT
             tailscale --socket="$run/tailscaled.sock" up --auth-key="file:$run/key" --hostname="$host"
-            trap 'kill "$daemon" 2> /dev/null || true; rm -rf "$run"; echo "enroll: failed after the enrollment key was spent; the identity is kept in $identity" >&2' EXIT
             address=$(tailscale --socket="$run/tailscaled.sock" ip -4)
             kill "$daemon"
             wait "$daemon" || true

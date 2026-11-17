@@ -25,8 +25,9 @@ initrd brings the uplink up with the host's own networkd units and runs sshd on
 ([opentofu skill](../opentofu/SKILL.md#oracle)); no host firewall exists at that point. It admits
 the deploy account's keys with a pty and nothing else, and root's shell there is the passphrase
 prompt, so a login can type the passphrase and do nothing more. The initrd waits without a
-timeout, and sshd ends when the root is mounted, so the port answers only while the host is
-locked.
+timeout and asks again after a wrong passphrase, however many, since a host that gave up could
+only be reset from the provider's console. sshd ends when the root is mounted, so the port
+answers only while the host is locked.
 
 The initrd host key is its own key under `/persist/etc/secrets/initrd`, never the host's: the
 boot partition is not encrypted, so its private half is readable there, and whoever reads it can

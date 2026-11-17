@@ -18,6 +18,7 @@ in
         }
       ];
       boot.initrd = {
+        luks.devices.state.crypttabExtraOpts = [ "tries=0" ];
         systemd = {
           network = {
             enable = true;
