@@ -13,7 +13,7 @@ closure and a bastion deploy that changes it restarts it, ending every session i
 
 cloud-hypervisor, not QEMU: the QEMU runner opens its disks with io_uring, which
 [server.nix](../../../modules/server.nix) disables. It cannot pass systemd credentials, so the
-one secret the guest gets comes over a read-only virtiofs share. `microvm.vsock.cid` stays unset,
+secrets the guest gets come over a read-only virtiofs share. `microvm.vsock.cid` stays unset,
 at the cost of an evaluation warning, so the guest has no channel to the host's systemd.
 
 ## Disks
@@ -45,15 +45,28 @@ login, so a change to the guest is a change to agents.nix. Sessions run in tmux.
 workstations lists the guest as a remote project host; a workstation whose Zed matches the
 guest's nixpkgs finds its remote server linked in `~/.zed_server`, any other downloads one there.
 
+## Claude
+
+`nixos.claude-agent` in [claude.nix](../../../modules/claude.nix) gives the guest the parts of
+the workstations' Claude Code that need no workstation secret: the caveman, ponytail and
+cache-tax plugins, the language servers, the rtk hook, and the nixos and GitHub MCP servers, the
+GitHub one read-only on the token `gh` uses. They arrive as managed settings and one generated
+plugin, so nothing depends on the agent's home. The guest has no jail and no Bash sandbox: the
+guest itself is the boundary. Grafana's MCP server and the account's connectors stay out.
+
 ## Credentials
 
-Whatever the guest holds, an injected prompt can use or leak. The operator places these by hand
-in the guest's home, never in a fleet secret file:
+Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens from
+`secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by `agent`,
+and every shell in the guest exports them; a changed token restarts the guest:
 
-- Claude: the token from `claude setup-token`, exported as `CLAUDE_CODE_OAUTH_TOKEN`. It makes
-  model requests only. `/login` instead would hand the guest Remote Control and the account's
-  connectors.
-- GitHub: a fine-grained token limited to branch and pull-request writes on the repositories the
-  agents work on, with the default branch protected.
+- `agents/claude-token`: the token from `claude setup-token`, exported as
+  `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the guest
+  Remote Control and the account's connectors.
+- `agents/github-token`: a fine-grained token, exported as `GH_TOKEN` and handed to Git by `gh`,
+  limited to Contents and Pull requests writes and Actions read on the repositories the agents
+  work on, with the default branch protected. Never the Workflows permission, which would let a
+  push change what CI runs with its secrets.
 
-No sops identity, deploy key, build key or cache write access goes in.
+The share holds nothing else of bastion's. No sops identity, deploy key, build key or cache write
+access goes in.

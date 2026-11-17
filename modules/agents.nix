@@ -1,5 +1,6 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
 let
+  inherit (config.flake.modules.nixos) claude-agent;
   # the operator's login key, the one access.nix admits on the laptops
   operatorKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAYdnogT40vOG0eZn4guvWq33q6VANCYXEYsxOSIsVbc";
   tap = "vm-agents";
@@ -9,6 +10,11 @@ let
   hostSecrets = "/run/agents-secrets";
   guestSecrets = "/run/host-secrets";
   storeImage = "store.img";
+  agentUid = 1000;
+  tokenVariables = {
+    claude-token = "CLAUDE_CODE_OAUTH_TOKEN";
+    github-token = "GH_TOKEN";
+  };
 
   guest =
     {
@@ -21,6 +27,7 @@ let
       zedServer = "zed-remote-server-stable-${pkgs.zed-editor.version}";
     in
     {
+      imports = [ claude-agent ];
       system.stateVersion = "26.05";
 
       microvm = {
@@ -124,7 +131,7 @@ let
         allowNoPasswordLogin = true;
         users.agent = {
           isNormalUser = true;
-          uid = 1000;
+          uid = agentUid;
           openssh.authorizedKeys.keys = [ operatorKey ];
         };
       };
@@ -136,9 +143,18 @@ let
           "flakes"
         ];
       };
+      environment.extraInit = lib.concatStrings (
+        lib.mapAttrsToList (file: variable: ''
+          if [ -r ${guestSecrets}/${file} ]; then
+            export ${variable}="$(cat ${guestSecrets}/${file})"
+          fi
+        '') tokenVariables
+      );
+      programs.git = {
+        enable = true;
+        config.credential."https://github.com".helper = "!${lib.getExe pkgs.gh} auth git-credential";
+      };
       environment.systemPackages = [
-        pkgs.claude-code
-        pkgs.git
         pkgs.gh
         pkgs.tmux
         pkgs.ripgrep
@@ -167,11 +183,17 @@ in
     }:
     let
       inherit (config.microvm) stateDir;
+      install = lib.getExe' pkgs.coreutils "install";
+      tokens = lib.attrNames tokenVariables;
+      secret = name: config.sops.secrets."agents-${name}".path;
     in
     {
       imports = [ inputs.microvm.nixosModules.host ];
 
-      nixpkgs.config.allowUnfreePackages = [ "claude-code" ];
+      nixpkgs.config.allowUnfreePackages = [
+        "claude-code"
+        "rtk"
+      ];
       microvm = {
         host.installCommand = false;
         vms.agents.config = guest;
@@ -179,10 +201,15 @@ in
       hardware.ksm.enable = false;
       security.wrappers.qemu-bridge-helper.enable = false;
 
-      sops.secrets.agents-tailscale-auth-key = {
-        key = "agents/tailscale-auth-key";
-        restartUnits = [ "microvm@agents.service" ];
-      };
+      sops.secrets = lib.listToAttrs (
+        map (
+          name:
+          lib.nameValuePair "agents-${name}" {
+            key = "agents/${name}";
+            restartUnits = [ "microvm@agents.service" ];
+          }
+        ) ([ "tailscale-auth-key" ] ++ tokens)
+      );
 
       boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = lib.mkDefault true;
       systemd.network.networks."20-agents" = {
@@ -226,8 +253,12 @@ in
             ExecStart = "${lib.getExe' config.systemd.package "systemd-tmpfiles"} --create --prefix=${stateDir}";
           };
         };
-        "microvm-virtiofsd@agents".serviceConfig.ExecStartPre =
-          "${lib.getExe' pkgs.coreutils "install"} -m 0400 ${config.sops.secrets.agents-tailscale-auth-key.path} ${hostSecrets}/tailscale-auth-key";
+        "microvm-virtiofsd@agents".serviceConfig.ExecStartPre = [
+          "${install} -m 0400 ${secret "tailscale-auth-key"} ${hostSecrets}/tailscale-auth-key"
+        ]
+        ++ map (
+          name: "${install} -o ${toString agentUid} -m 0400 ${secret name} ${hostSecrets}/${name}"
+        ) tokens;
         "microvm@agents".serviceConfig = {
           UMask = "0077";
           ExecStartPre = "${lib.getExe' pkgs.coreutils "rm"} -f ${storeImage}";
