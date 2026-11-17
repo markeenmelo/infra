@@ -34,7 +34,10 @@ the SSH host key) and `home.img` (`/home`). The root is memory and is lost on re
 The guest's tap carries a /24 that only bastion and the guest sit on. The `agents` nftables
 table drops everything the guest sends to bastion itself, to any private, CGNAT, link-local or
 multicast address, to the tailnet interface and over IPv6, and masquerades the rest to the
-internet. The guest resolves through the tailnet's public resolvers.
+internet. The guest resolves through the tailnet's public resolvers. `microvm@agents` requires
+`nftables.service`, so the guest does not run without the ruleset: a firewall that fails to load
+keeps it down, and one that is stopped or restarted takes it along. A switch reloads the ruleset
+and leaves the guest alone.
 
 The guest joins the tailnet as `tag:agent`
 ([main.tf](../../../opentofu/tailscale/main.tf)): admin clients reach its port 22 and the tag is
@@ -72,7 +75,8 @@ guest itself is the boundary. Grafana's MCP server and the account's connectors 
 ## Credentials
 
 Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens from
-`secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by `agent`,
+`secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by `agent`'s
+uid, which no account on bastion holds,
 and every shell in the guest exports them; a changed token restarts the guest:
 
 - `agents/claude-token`: the token from `claude setup-token`, exported as

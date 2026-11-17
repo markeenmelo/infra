@@ -261,7 +261,11 @@ in
           name: "${install} -o ${toString agentUid} -m 0400 ${secret name} ${hostSecrets}/${name}"
         ) tokens;
         "microvm@agents" = {
-          requires = [ "install-microvm-agents.service" ];
+          requires = [
+            "install-microvm-agents.service"
+            "nftables.service"
+          ];
+          after = [ "nftables.service" ];
           serviceConfig = {
             UMask = "0077";
             ExecStartPre = "${lib.getExe' pkgs.coreutils "rm"} -f ${storeImage}";
