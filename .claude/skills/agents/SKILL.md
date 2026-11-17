@@ -10,6 +10,10 @@ bastion ([microvm.nix](https://microvm-nix.github.io/microvm.nix/) host module, 
 The guest is the boundary for unattended agents: its own kernel, no fleet secret, no route to
 the LANs or the tailnet's hosts. It is not a `fleet.hosts` entry: it builds inside bastion's
 closure and a bastion deploy that changes it restarts it, ending every session in it.
+`microvm@agents` requires `install-microvm-agents`, which points the guest at its new system:
+upstream only orders the two, so a switch could restart the guest before the link moved and boot
+the previous system. The guest's kernel command line in `microvm@agents`'s log names the system
+it booted.
 
 cloud-hypervisor, not QEMU: the QEMU runner opens its disks with io_uring, which
 [server.nix](../../../modules/server.nix) disables. It cannot pass systemd credentials, so the
