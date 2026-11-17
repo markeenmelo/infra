@@ -96,7 +96,10 @@ operator's machine and prints the three: it generates the SSH host key and a sep
 key, then logs a throwaway userspace `tailscaled` into the tailnet under the host's name with
 the host's enrollment key ([tailnet skill](../tailnet/SKILL.md)), which spends the key, and stops
 it. The directory it names holds the private halves laid out under `persist/`, so the node key
-and host key never touch the provider's stock image; it is deleted after the install.
+and host key never touch the provider's stock image. It sits beside the operator's sops key,
+under a path the home backup excludes and Claude may not read ([secrets skill](../secrets/SKILL.md)),
+since it is the only copy until the install, which takes it as ROOT and deletes it; losing it
+means enrolling again and changing the three facts.
 
 ```sh
 nix run .#enroll -- HOST            # after the tailscale project minted HOST's enrollment key

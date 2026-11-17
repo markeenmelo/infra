@@ -1,6 +1,14 @@
 { config, lib, ... }:
 let
   carry = lib.mapAttrs (_: nixos: nixos.config.fleet.carry) config.flake.nixosConfigurations;
+  identities =
+    let
+      path = ".config/sops/enroll";
+    in
+    assert lib.assertMsg (lib.any (secret: lib.hasPrefix "${secret}/" path) (
+      import ./_home-secrets.nix
+    )) "enroll keeps private keys in ~/${path}, which must sit under a path in _home-secrets.nix";
+    path;
 in
 {
   flake.modules.nixos.base = {
@@ -14,7 +22,7 @@ in
     { config, pkgs, ... }:
     {
       apps.enroll = {
-        meta.description = "enroll HOST: before a new host's first install, make its identity on this machine: an SSH host key, an initrd SSH host key and a tailnet login under its name, in a private directory an install takes as extra files; prints the age recipient, the tailnet address and the initrd host key its facts need";
+        meta.description = "enroll HOST: before a new host's first install, make its identity on this machine: an SSH host key, an initrd SSH host key and a tailnet login under its name, in a private directory beside the operator's sops key that an install takes as extra files; prints the age recipient, the tailnet address and the initrd host key its facts need";
         program = pkgs.writeShellApplication {
           name = "enroll";
           runtimeInputs = [
@@ -30,7 +38,10 @@ in
             host=$1
             cd "$(git rev-parse --show-toplevel)"
             umask 077
-            identity=$(mktemp -d)
+            identity=$HOME/${identities}/$host
+            [ ! -e "$identity" ] || { echo "enroll: $identity exists: install $host from it, or delete it to enroll again" >&2; exit 1; }
+            mkdir -p "$HOME/${identities}"
+            mkdir "$identity"
             run=$(mktemp -d)
             daemon=
             trap '[ -z "$daemon" ] || kill "$daemon" 2> /dev/null || true; rm -rf "$run" "$identity"' EXIT
@@ -57,7 +68,7 @@ in
             echo "age recipient:   $(ssh-to-age < "$persist/etc/ssh/ssh_host_ed25519_key.pub")"
             echo "tailnet address: $address"
             echo "initrd host key: $(cut -d ' ' -f 1,2 "$persist/etc/secrets/initrd/ssh_host_ed25519_key.pub")"
-            echo "identity:        $identity, private keys: keep it until the install, then delete it"
+            echo "identity:        $identity, private keys: install takes it as ROOT and deletes it"
           '';
         };
       };
