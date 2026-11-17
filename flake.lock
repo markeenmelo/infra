@@ -221,11 +221,11 @@
     "homebrew-cask": {
       "flake": false,
       "locked": {
-        "lastModified": 1794924314,
-        "narHash": "sha256-8QQHfoj2au9kN7xSojGFN+D355Z8LdVvzJfjHMMWEGE=",
+        "lastModified": 1794934058,
+        "narHash": "sha256-SY8qRlrGpEuKXQtiwiEBSin8LFyQqHcMTBOnknxfNfI=",
         "owner": "homebrew",
         "repo": "homebrew-cask",
-        "rev": "06cce304114c1131e7fc9fa38f6897a57f1c3a7f",
+        "rev": "e2b620384ef13e6be3847d25f9c56e79b2d00bd1",
         "type": "github"
       },
       "original": {
@@ -237,11 +237,11 @@
     "homebrew-core": {
       "flake": false,
       "locked": {
-        "lastModified": 1794922072,
-        "narHash": "sha256-XZ8lWRF1+6Ro7tjvNmK1CzDgNUC5OjuRBLu32pN43Mk=",
+        "lastModified": 1794933521,
+        "narHash": "sha256-yiX2IFYpVtjgHt5O2wXuI9oY4ilvpjW6vjzO1cD5IHY=",
         "owner": "homebrew",
         "repo": "homebrew-core",
-        "rev": "768bbe745c75b6f339d3571da690ee0ae5c28cba",
+        "rev": "02ea2c1077471328d21685d62dc467151c67b1a7",
         "type": "github"
       },
       "original": {
@@ -262,6 +262,27 @@
       "original": {
         "owner": "denful",
         "repo": "import-tree",
+        "type": "github"
+      }
+    },
+    "microvm": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "spectrum": []
+      },
+      "locked": {
+        "lastModified": 1794529892,
+        "narHash": "sha256-m5iXk3ILiCuRpCgqYWNiGVFmu8YLh2FNxxaZj/Auc10=",
+        "owner": "microvm-nix",
+        "repo": "microvm.nix",
+        "rev": "194a254693f49af939a2b53d04982bd4b276fdb3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "microvm-nix",
+        "repo": "microvm.nix",
         "type": "github"
       }
     },
@@ -412,6 +433,7 @@
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
         "import-tree": "import-tree",
+        "microvm": "microvm",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
         "nixflix": "nixflix",

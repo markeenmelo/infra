@@ -27,6 +27,7 @@
       opentofu-state
       proton-exit
       monitoring
+      agents
     ];
     system.stateVersion = "26.05";
   };

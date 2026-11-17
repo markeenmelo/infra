@@ -100,6 +100,7 @@ locals {
     proton-ca = ["tag:proton-exit"]
     proton-us = ["tag:proton-exit"]
     proton-br = ["tag:proton-exit"]
+    agents    = ["tag:agent"]
   }
   tagged = {
     bastion = { id = "nRazrRf2yE11CNTRL", tags = ["tag:server", "tag:bastion"] }
@@ -114,6 +115,7 @@ locals {
       "tag:bastion"           = ["tag:infra-provisioner"]
       "tag:proton-exit"       = ["tag:infra-provisioner"]
       "tag:ci"                = ["tag:infra-provisioner"]
+      "tag:agent"             = ["tag:infra-provisioner"]
     }
     groups = { "group:members" = ["naralidy.anjos@gmail.com", "markeenmelo@github"] }
     hosts  = local.hosts
@@ -122,7 +124,7 @@ locals {
       routes   = { for lan in values(var.fleet_routes) : lan => ["tag:bastion"] }
     }
     grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [for host, port in var.fleet_home_backups : { src = [host], dst = ["bastion"], ip = ["tcp:${port}"] }], [
-      { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client"], ip = ["tcp:22"] },
+      { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client", "tag:agent"], ip = ["tcp:22"] },
       { src = ["tag:admin-client"], dst = ["tag:admin-client"], ip = ["tcp:1714-1764", "udp:1714-1764"] },
       { src = local.operators, dst = ["grafite"], ip = ["tcp:1024-65535"] },
       { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:${var.fleet_cache_port}"]) },
@@ -135,11 +137,12 @@ locals {
       { src = ["tag:admin-client", "group:members"], dst = ["autogroup:internet"], ip = ["*"] },
     ])
     tests = concat([for host, ports in local.telemetry : { src = host, proto = "tcp", accept = [for port in ports : "bastion:${port}"], deny = [for port in setsubtract(flatten(values(local.telemetry)), ports) : "bastion:${port}"] }], [
-      { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "tag:admin-client:1716"] },
+      { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "tag:agent:22", "tag:admin-client:1716"] },
       { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}", "grafite:40000"] },
-      { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22", "tag:admin-client:1716", "grafite:40000"] },
-      { src = "group:members", proto = "tcp", deny = ["tag:server:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
-      { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
+      { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:admin-client:22", "tag:admin-client:1716", "grafite:40000"] },
+      { src = "group:members", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
+      { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "tag:agent:22", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
+      { src = "tag:agent", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22", "bastion:443", "bastion:53", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
       { src = "racknerd", proto = "tcp", accept = [for port in var.fleet_edge_ports : "bastion:${port}"], deny = ["bastion:443", "bastion:${var.fleet_state_port}"] },
     ])
   }
