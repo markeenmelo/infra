@@ -1,7 +1,7 @@
 # infra
 
 The whole configuration of a one-operator home fleet: the NixOS hosts, the mac on nix-darwin, the
-Tailscale, Porkbun and UniFi setup in OpenTofu, and their secrets as SOPS ciphertext. It is public
+Tailscale, Porkbun, UniFi and Oracle Cloud setup in OpenTofu, and their secrets as SOPS ciphertext. It is public
 to be read; nothing here is meant to be reused as is.
 
 ## Layout
@@ -11,7 +11,8 @@ to be read; nothing here is meant to be reused as is.
   nix-darwin and Home Manager.
 - [`modules/hosts/`](modules/hosts/): each host's facts, hardware, disk layout and the roles it
   imports.
-- [`opentofu/`](opentofu/): the Tailscale policy, the public DNS records and the UniFi network.
+- [`opentofu/`](opentofu/): the Tailscale policy, the public DNS records, the UniFi network and the
+  Oracle Cloud instances.
 - [`secrets/`](secrets/): SOPS files, ciphertext only; [`.sops.yaml`](.sops.yaml) names who
   can decrypt each.
 - [`.claude/skills/`](.claude/skills/): how each part works and the rules it follows, one skill
