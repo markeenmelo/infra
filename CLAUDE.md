@@ -5,7 +5,7 @@ Dendritic NixOS fleet, one operator. Load the skill whose description owns the f
 
 | Host | System | Role | Builds on |
 |---|---|---|---|
-| `bastion` | x86_64-linux | Home server: LAN proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache | itself |
+| `bastion` | x86_64-linux | Home server: LAN proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, agent MicroVM | itself |
 | `racknerd` | x86_64-linux | Public HTTPS edge (VPS), forwards to bastion over the tailnet | bastion |
 | `thinkpad` | x86_64-linux | Operator laptop | bastion |
 | `asahi` | aarch64-linux | Apple Silicon laptop (dual boot with `mac`) | itself |
@@ -14,7 +14,7 @@ Dendritic NixOS fleet, one operator. Load the skill whose description owns the f
 Stack, decided: flake-parts + import-tree, disko, btrfs root rolled back every boot with state under
 `/persist` (Preservation), sops-nix, deploy-rs with magic rollback over Tailscale, nixos-anywhere for
 installs, Caddy (Porkbun DNS-01) with CrowdSec's firewall bouncer, Authelia, OpenTofu HCL for
-Tailscale, Porkbun and UniFi, Stylix, OpenCloud. No Hydra, Attic, Cachix, containers where a NixOS
+Tailscale, Porkbun and UniFi, Stylix, OpenCloud, microvm.nix for the agent guest. No Hydra, Attic, Cachix, containers where a NixOS
 module exists, or dashboards beyond Grafana. Do not reopen these.
 
 **A rule lives in one place:** the code that enforces it, the check that fails on it, or one skill.

@@ -43,6 +43,81 @@ let
         filesystem.denyRead = deniedDirs ++ [ "${home}/.bitwarden-ssh-agent.sock" ];
       };
     };
+  lspServers = pkgs: {
+    nix = {
+      command = lib.getExe pkgs.nixd;
+      extensionToLanguage.".nix" = "nix";
+    };
+    clangd = {
+      command = lib.getExe' pkgs.clang-tools "clangd";
+      extensionToLanguage = {
+        ".c" = "c";
+        ".h" = "c";
+        ".cpp" = "cpp";
+        ".cc" = "cpp";
+        ".hpp" = "cpp";
+      };
+    };
+    python = {
+      command = lib.getExe' pkgs.basedpyright "basedpyright-langserver";
+      args = [ "--stdio" ];
+      extensionToLanguage.".py" = "python";
+    };
+    typescript = {
+      command = lib.getExe pkgs.typescript-language-server;
+      args = [ "--stdio" ];
+      extensionToLanguage = {
+        ".ts" = "typescript";
+        ".tsx" = "typescriptreact";
+        ".js" = "javascript";
+        ".jsx" = "javascriptreact";
+        ".mjs" = "javascript";
+      };
+    };
+    lua = {
+      command = lib.getExe pkgs.lua-language-server;
+      extensionToLanguage.".lua" = "lua";
+    };
+    terraform = {
+      command = lib.getExe pkgs.terraform-ls;
+      args = [ "serve" ];
+      extensionToLanguage = {
+        ".tf" = "terraform";
+        ".tofu" = "terraform";
+      };
+    };
+    bash = {
+      command = lib.getExe pkgs.bash-language-server;
+      args = [ "start" ];
+      extensionToLanguage = {
+        ".sh" = "shellscript";
+        ".bash" = "shellscript";
+      };
+    };
+    rust = {
+      command = lib.getExe pkgs.rust-analyzer;
+      extensionToLanguage.".rs" = "rust";
+    };
+  };
+  agentPlugins = pkgs: [
+    "${(pkgs.callPackage ./cache-tax.pkg.nix { }).src}"
+    "${(pkgs.callPackage ./ponytail.pkg.nix { }).src}"
+    "${(pkgs.callPackage ./caveman.pkg.nix { }).src}"
+  ];
+  githubMcpArgs = [
+    "stdio"
+    "--read-only"
+    "--toolsets=repos,pull_requests,actions"
+  ];
+  rtkHook = pkgs: {
+    matcher = "Bash";
+    hooks = [
+      {
+        type = "command";
+        command = "${lib.getExe pkgs.rtk} hook claude";
+      }
+    ];
+  };
 in
 {
   flake.modules = {
@@ -83,6 +158,53 @@ in
             pkgs.socat
           ];
           etc."claude-code/managed-settings.json".text = managedSettings config.users.users.marcos.home;
+        };
+      };
+
+    nixos.claude-agent =
+      { pkgs, ... }:
+      let
+        json = pkgs.formats.json { };
+        plugin = pkgs.runCommand "claude-agent-plugin" { } ''
+          install -Dm644 ${
+            # Home Manager's name for its generated plugin, so tool names match the workstations'
+            json.generate "plugin.json" { name = "hm"; }
+          } $out/.claude-plugin/plugin.json
+          install -Dm644 ${
+            json.generate "mcp.json" {
+              mcpServers = {
+                nixos = {
+                  type = "stdio";
+                  command = lib.getExe pkgs.mcp-nixos;
+                };
+                github = {
+                  type = "stdio";
+                  command = lib.getExe pkgs.github-mcp-server;
+                  args = githubMcpArgs;
+                  env.GITHUB_PERSONAL_ACCESS_TOKEN = "\${GH_TOKEN:-}";
+                };
+              };
+            }
+          } $out/.mcp.json
+          install -Dm644 ${json.generate "lsp.json" (lspServers pkgs)} $out/.lsp.json
+        '';
+      in
+      {
+        environment = {
+          systemPackages = [
+            pkgs.claude-code
+            pkgs.nodejs
+            pkgs.rtk
+          ];
+          etc."claude-code/managed-settings.json".text = builtins.toJSON {
+            env = {
+              RTK_SUPPRESS_HOOK_WARNING = "1";
+              CAVEMAN_DEFAULT_MODE = "ultracave";
+              PONYTAIL_DEFAULT_MODE = "ultra";
+              CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" ([ "${plugin}" ] ++ agentPlugins pkgs);
+            };
+            hooks.PreToolUse = [ (rtkHook pkgs) ];
+          };
         };
       };
 
@@ -222,11 +344,7 @@ in
             nixos.command = lib.getExe pkgs.mcp-nixos;
             github = {
               command = lib.getExe pkgs.github-mcp-server;
-              args = [
-                "stdio"
-                "--read-only"
-                "--toolsets=repos,pull_requests,actions"
-              ];
+              args = githubMcpArgs;
               env.GITHUB_PERSONAL_ACCESS_TOKEN.file = osConfig.sops.secrets.github-mcp-token.path;
             };
             grafana = {
@@ -243,62 +361,7 @@ in
           enable = true;
           package = lib.mkIf pkgs.stdenv.hostPlatform.isLinux jail;
           enableMcpIntegration = true;
-          lspServers = {
-            nix = {
-              command = lib.getExe pkgs.nixd;
-              extensionToLanguage.".nix" = "nix";
-            };
-            clangd = {
-              command = lib.getExe' pkgs.clang-tools "clangd";
-              extensionToLanguage = {
-                ".c" = "c";
-                ".h" = "c";
-                ".cpp" = "cpp";
-                ".cc" = "cpp";
-                ".hpp" = "cpp";
-              };
-            };
-            python = {
-              command = lib.getExe' pkgs.basedpyright "basedpyright-langserver";
-              args = [ "--stdio" ];
-              extensionToLanguage.".py" = "python";
-            };
-            typescript = {
-              command = lib.getExe pkgs.typescript-language-server;
-              args = [ "--stdio" ];
-              extensionToLanguage = {
-                ".ts" = "typescript";
-                ".tsx" = "typescriptreact";
-                ".js" = "javascript";
-                ".jsx" = "javascriptreact";
-                ".mjs" = "javascript";
-              };
-            };
-            lua = {
-              command = lib.getExe pkgs.lua-language-server;
-              extensionToLanguage.".lua" = "lua";
-            };
-            terraform = {
-              command = lib.getExe pkgs.terraform-ls;
-              args = [ "serve" ];
-              extensionToLanguage = {
-                ".tf" = "terraform";
-                ".tofu" = "terraform";
-              };
-            };
-            bash = {
-              command = lib.getExe pkgs.bash-language-server;
-              args = [ "start" ];
-              extensionToLanguage = {
-                ".sh" = "shellscript";
-                ".bash" = "shellscript";
-              };
-            };
-            rust = {
-              command = lib.getExe pkgs.rust-analyzer;
-              extensionToLanguage.".rs" = "rust";
-            };
-          };
+          lspServers = lspServers pkgs;
           settings = {
             theme = "dark-ansi";
             attribution = {
@@ -308,11 +371,7 @@ in
             env = {
               RTK_SUPPRESS_HOOK_WARNING = "1";
               CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" (
-                [
-                  "${(pkgs.callPackage ./cache-tax.pkg.nix { }).src}"
-                  "${(pkgs.callPackage ./ponytail.pkg.nix { }).src}"
-                  "${(pkgs.callPackage ./caveman.pkg.nix { }).src}"
-                ]
+                agentPlugins pkgs
                 ++ map (plugin: "${(pkgs.callPackage ./trailofbits-skills.pkg.nix { }).src}/plugins/${plugin}") [
                   "agentic-actions-auditor"
                   "c-review"
@@ -331,17 +390,7 @@ in
                     ]
               );
             };
-            hooks.PreToolUse = [
-              {
-                matcher = "Bash";
-                hooks = [
-                  {
-                    type = "command";
-                    command = "${lib.getExe pkgs.rtk} hook claude";
-                  }
-                ];
-              }
-            ];
+            hooks.PreToolUse = [ (rtkHook pkgs) ];
             permissions = {
               defaultMode = "auto";
               blockReadsOutsideWorkingDirectories = true;

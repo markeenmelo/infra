@@ -13,6 +13,7 @@
         "/srv/opencloud" = "tank/opencloud";
         "/srv/media" = "tank/media";
         "/var/lib/frigate" = "scratch/frigate";
+        "/var/lib/microvms" = "apps/agents";
       };
       pools = lib.unique (
         map (dataset: lib.head (lib.splitString "/" dataset)) (lib.attrValues datasets)

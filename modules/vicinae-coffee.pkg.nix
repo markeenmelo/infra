@@ -4,7 +4,7 @@ buildNpmPackage (finalAttrs: {
   version = "0-unstable-2026-11-17";
   src = fetchgit {
     url = "https://github.com/vicinaehq/extensions";
-    rev = "f54444d5b6a665befc7b666e68f8f2bbafd1cb9f";
+    rev = "7f5e77930ba3a5c35bc2f21d41e539a430429de6";
     hash = "sha256-o3+IPlWAp39L+BDR0XUwVeXI5czvcT2NTR9xx+Pi/do=";
     sparseCheckout = [ "/extensions/coffee" ];
   };

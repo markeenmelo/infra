@@ -70,6 +70,13 @@
         treefmt-nix.follows = "";
       };
     };
+    microvm = {
+      url = "github:microvm-nix/microvm.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        spectrum.follows = "";
+      };
+    };
   };
 
   outputs =
