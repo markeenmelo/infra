@@ -15,7 +15,10 @@ The provider runs the hypervisor and can read the instance's memory, so no disk 
 a running host from it. The design answer is that nothing worth reading lives here: the host
 holds its SSH host key, its tailnet node key and the initrd host key, and each only reaches what
 the tailnet policy grants the host. The encrypted state partition protects those at rest, in
-snapshots and volume backups.
+snapshots and volume backups. Its key derivation is capped in
+[disko.nix](../../../modules/hosts/edge/disko.nix): cryptsetup sizes it to the memory present at
+format time, and the installer runs with more than the host does, so an uncapped volume could
+ask the initrd for more memory than the host has.
 
 ## Unlock
 
