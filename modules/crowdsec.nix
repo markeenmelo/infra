@@ -50,7 +50,7 @@ let
               online_client.credentials_path = "/var/lib/crowdsec/online_api_credentials.yaml";
             };
             cscli = {
-              hub_branch = "6c21c2716fc1780e06e10dacdba9a8a5055263eb";
+              hub_branch = "d4913824998aad6e7f283a7d2a25a48ffc08de20";
               __hub_url_template__ = "https://raw.githubusercontent.com/crowdsecurity/hub/%s/%s";
             };
           };
