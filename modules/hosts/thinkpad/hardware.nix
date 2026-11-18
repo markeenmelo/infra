@@ -12,12 +12,19 @@
         cpu.intel.updateMicrocode = true;
         graphics.extraPackages = [ pkgs.intel-media-driver ];
       };
-      boot.initrd.availableKernelModules = [
-        "xhci_pci"
-        "thunderbolt"
-        "nvme"
-        "usb_storage"
-      ];
+      boot = {
+        initrd.availableKernelModules = [
+          "xhci_pci"
+          "thunderbolt"
+          "nvme"
+          "usb_storage"
+        ];
+        extraModprobeConfig = "options snd_hda_intel power_save=1";
+        kernel.sysctl = {
+          "kernel.nmi_watchdog" = 0;
+          "vm.dirty_writeback_centisecs" = 1500;
+        };
+      };
       services = {
         hardware.bolt.enable = true;
         power-profiles-daemon.enable = true;
