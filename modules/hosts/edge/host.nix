@@ -20,6 +20,21 @@
         passthrough
         crowdsec-bouncer
       ];
+      security.lockKernelModules = true;
+      # shortcut: the modules edge's firewall, Tailscale and the CrowdSec bouncer load at runtime, add one here and deploy with --boot then reboot when a unit fails on a module that cannot load, since the lock holds until reboot
+      boot.kernelModules = [
+        "nft_chain_nat"
+        "nft_compat"
+        "nft_ct"
+        "nft_fib_inet"
+        "xt_MASQUERADE"
+        "xt_connmark"
+        "xt_conntrack"
+        "xt_mark"
+        "xt_tcpudp"
+        "tcp_diag"
+        "udp_diag"
+      ];
       system.stateVersion = "26.11";
     };
   };
