@@ -32,6 +32,10 @@
         loader.limine.extraConfig = "graphics: no";
       };
       networking.useNetworkd = true;
+      nixpkgs.flake = {
+        setFlakeRegistry = false;
+        setNixPath = false;
+      };
       programs = {
         bash.completion.enable = false;
         ssh.systemd-ssh-proxy.enable = false;
