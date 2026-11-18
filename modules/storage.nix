@@ -38,6 +38,10 @@ let
       imports = [
         (modulesPath + "/profiles/perlless.nix")
       ];
+      boot.loader.limine = {
+        enable = true;
+        efiInstallAsRemovable = true;
+      };
       fleet.encryptState = false;
       services.userborn.passwordFilesLocation = "/var/lib/nixos";
       users = {
