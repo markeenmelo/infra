@@ -12,7 +12,7 @@
         text = ''
           export OCI_CLI_USER=''${TF_VAR_user_ocid:?} OCI_CLI_TENANCY=''${TF_VAR_tenancy_ocid:?} OCI_CLI_FINGERPRINT=''${TF_VAR_fingerprint:?}
           export OCI_CLI_KEY_CONTENT=''${TF_VAR_private_key:?} OCI_CLI_REGION=''${TF_VAR_region:?}
-          name=$1 address=$2
+          name=$1 public=$2 tailnet=$3
           instance() {
             oci compute instance list --compartment-id "$OCI_CLI_TENANCY" --display-name "$name" \
               --lifecycle-state "$1" --query 'data[0].id' --raw-output
@@ -20,8 +20,8 @@
           action=START
           id=$(instance STOPPED)
           if [ -z "$id" ]; then
-            if nc -z -w 5 "$address" 443 2> /dev/null; then
-              echo "wake: $name answers on $address, so it is up" >&2
+            if nc -z -w 5 "$public" 443 2> /dev/null || nc -z -w 5 "$tailnet" 22 2> /dev/null; then
+              echo "wake: $name answers, so it is up" >&2
               exit 1
             fi
             action=RESET
@@ -46,7 +46,7 @@
             cd "$(git rev-parse --show-toplevel)"
             case ''${1-} in
               bastion) wakeonlan ${config.fleet.hosts.bastion.lan.mac} ;;
-              edge) sops exec-env secrets/oracle/operator.yaml "${lib.getExe oracle-boot} edge ${config.fleet.hosts.edge.publicAddress}" ;;
+              edge) sops exec-env secrets/oracle/operator.yaml "${lib.getExe oracle-boot} edge ${config.fleet.hosts.edge.publicAddress} ${config.fleet.hosts.edge.tailnetAddress}" ;;
               *) echo "wake: name bastion or edge, not ''${1-}" >&2; exit 1 ;;
             esac
           '';
