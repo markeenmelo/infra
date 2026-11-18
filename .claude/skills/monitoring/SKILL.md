@@ -38,9 +38,9 @@ provisioned uid; a bump is a new revision and hash.
 ## Other hosts
 
 A host that imports `telemetry` runs Alloy, which scrapes its node metrics and every
-`fleet.scrapeTargets` endpoint (CrowdSec on racknerd), probes every `fleet.probes` URL (the
-edge's public hostnames, which racknerd resolves to loopback so its own probes skip the country
-rule and CrowdSec; they test Caddy, the tunnel and the apps, not reachability from outside), and
+`fleet.scrapeTargets` endpoint, probes every `fleet.probes` URL (the
+public hostnames, which the edge resolves to loopback so its own probes skip the country
+rule and CrowdSec; they test the passthrough, the tunnel, bastion's public listener and the apps, not reachability from outside), and
 ships the journal. Caddy serves its metrics on a loopback port of their own; its admin API on 2019,
 which can rewrite its config and expose the Porkbun keys it holds, admits only root and Caddy on
 every host ([caddy.nix](../../../modules/caddy.nix)). It pushes to the port pair in its
@@ -64,7 +64,7 @@ macOS has no journal and nix-darwin no Alloy module.
 Bastion's own Alloy probes `https://auth.DOMAIN` through the gateway's wildcard record, so the
 LAN proxy's certificate and reachability get the same `Public endpoint down` and `Certificate
 expiring` alerts as the edge's. It also probes `auth.DOMAIN` at each `fleet.hosts.HOST.publicAddress`
-from outside, since racknerd's own probes skip its firewall, the country check and CrowdSec; neither probe
+from outside, since the edge's own probes skip its firewall, the country check and CrowdSec; neither probe
 resolves the public record, and a home WAN outage fires this one too. The `alloy-HOST`
 check runs `alloy fmt` on every host's Alloy configuration, which catches syntax errors (a missing
 trailing comma in a multi-line list) but not unknown arguments or wrong component wiring.

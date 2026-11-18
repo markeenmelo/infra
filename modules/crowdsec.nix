@@ -5,9 +5,23 @@ let
   edge = hosts.edge.tailnetAddress;
   port = config.fleet.bansPort;
   engine =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       cfg = config.services.crowdsec;
+      state = {
+        DynamicUser = lib.mkForce false;
+        StateDirectory = map (lib.removePrefix "/var/lib/") [
+          "/var/lib/crowdsec"
+          cfg.settings.config.config_paths.data_dir
+          cfg.settings.config.config_paths.hub_dir
+        ];
+        StateDirectoryMode = "0700";
+      };
     in
     {
       services.crowdsec = {
@@ -31,9 +45,12 @@ let
               listen_addr = "127.0.0.1";
               listen_port = 6060;
             };
-            api.server.online_client.credentials_path = "/var/lib/crowdsec/online_api_credentials.yaml";
+            api.server = {
+              listen_uri = "0.0.0.0:${toString port}";
+              online_client.credentials_path = "/var/lib/crowdsec/online_api_credentials.yaml";
+            };
             cscli = {
-              hub_branch = "6c21c2716fc1780e06e10dacdba9a8a5055263eb";
+              hub_branch = "d4913824998aad6e7f283a7d2a25a48ffc08de20";
               __hub_url_template__ = "https://raw.githubusercontent.com/crowdsecurity/hub/%s/%s";
             };
           };
@@ -81,6 +98,7 @@ let
         };
       };
       fleet.scrapeTargets.crowdsec = cfg.settings.config.prometheus.listen_port;
+      sops.secrets."crowdsec/edge-bouncer-key".restartUnits = [ "crowdsec-edge-bouncer.service" ];
       systemd.services = {
         crowdsec = {
           after = [ "caddy.service" ];
@@ -88,14 +106,40 @@ let
             (lib.toJSON cfg.settings)
             (lib.toJSON cfg.hub)
           ];
+          serviceConfig = state;
+        };
+        crowdsec-setup.serviceConfig = state;
+        crowdsec-edge-bouncer = {
+          description = "Register the edge's firewall bouncer with CrowdSec";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "crowdsec.service" ];
+          wants = [ "crowdsec.service" ];
+          path = [
+            cfg.package
+            pkgs.curl
+          ];
+          enableStrictShellChecks = true;
+          script = ''
+            key=$CREDENTIALS_DIRECTORY/key
+            if curl -fsS -o /dev/null --retry 15 --retry-connrefused --retry-delay 2 \
+              -H @<(printf 'X-Api-Key: %s\n' "$(< "$key")") 'http://127.0.0.1:${toString port}/v1/decisions?ip=192.0.2.1'; then
+              exit 0
+            fi
+            cscli bouncers delete edge > /dev/null 2>&1 || true
+            cscli bouncers add edge --key "$(< "$key")" > /dev/null
+          '';
           serviceConfig = {
-            DynamicUser = lib.mkForce false;
-            StateDirectory = "crowdsec";
-            StateDirectoryMode = "0700";
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = cfg.user;
+            Group = cfg.group;
+            LoadCredential = "key:${config.sops.secrets."crowdsec/edge-bouncer-key".path}";
           };
         };
-        crowdsec-setup.serviceConfig.DynamicUser = lib.mkForce false;
       };
+      networking.firewall.extraInputRules = ''
+        iifname "${config.services.tailscale.interfaceName}" ip saddr ${edge} tcp dport ${toString port} accept
+      '';
       preservation.preserveAt."/persist".directories = [
         {
           directory = "/var/lib/crowdsec";
@@ -112,57 +156,7 @@ in
   };
   config.fleet.bansPort = 8081;
 
-  config.flake.modules.nixos.crowdsec =
-    { config, ... }:
-    {
-      imports = [ engine ];
-      services.crowdsec-firewall-bouncer.enable = true;
-      preservation.preserveAt."/persist".directories = [
-        {
-          directory = "/var/lib/crowdsec-firewall-bouncer-register";
-          inherit (config.services.crowdsec) user group;
-          mode = "0750";
-        }
-      ];
-    };
-
-  config.flake.modules.nixos.crowdsec-engine =
-    { config, pkgs, ... }:
-    {
-      imports = [ engine ];
-      services.crowdsec.settings.config.api.server.listen_uri = "0.0.0.0:${toString port}";
-      sops.secrets."crowdsec/edge-bouncer-key".restartUnits = [ "crowdsec-edge-bouncer.service" ];
-      systemd.services.crowdsec-edge-bouncer = {
-        description = "Register the edge's firewall bouncer with CrowdSec";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "crowdsec.service" ];
-        wants = [ "crowdsec.service" ];
-        path = [
-          config.services.crowdsec.package
-          pkgs.curl
-        ];
-        enableStrictShellChecks = true;
-        script = ''
-          key=$CREDENTIALS_DIRECTORY/key
-          if curl -fsS -o /dev/null --retry 15 --retry-connrefused --retry-delay 2 \
-            -H @<(printf 'X-Api-Key: %s\n' "$(< "$key")") 'http://127.0.0.1:${toString port}/v1/decisions?ip=192.0.2.1'; then
-            exit 0
-          fi
-          cscli bouncers delete edge > /dev/null 2>&1 || true
-          cscli bouncers add edge --key "$(< "$key")" > /dev/null
-        '';
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          User = config.services.crowdsec.user;
-          Group = config.services.crowdsec.group;
-          LoadCredential = "key:${config.sops.secrets."crowdsec/edge-bouncer-key".path}";
-        };
-      };
-      networking.firewall.extraInputRules = ''
-        iifname "${config.services.tailscale.interfaceName}" ip saddr ${edge} tcp dport ${toString port} accept
-      '';
-    };
+  config.flake.modules.nixos.crowdsec-engine = engine;
 
   config.flake.modules.nixos.crowdsec-bouncer =
     { config, ... }:
@@ -171,7 +165,10 @@ in
       services.crowdsec-firewall-bouncer = {
         enable = true;
         secrets.apiKeyPath = config.sops.secrets.crowdsec-bouncer-key.path;
-        settings.api_url = "http://${bastion}:${toString port}/";
+        settings = {
+          api_url = "http://${bastion}:${toString port}/";
+          retry_initial_connect = true;
+        };
       };
       systemd.services.crowdsec-firewall-bouncer.serviceConfig = {
         Restart = "on-failure";

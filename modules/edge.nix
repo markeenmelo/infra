@@ -12,7 +12,6 @@ let
       lib,
       pkgs,
       logDir,
-      upstream,
     }:
     let
       countries = [ "CA" ];
@@ -122,7 +121,7 @@ let
           respond @${name}-denied-${toString i} 404
         '') app.denied
         + ''
-            reverse_proxy ${upstream app}
+            reverse_proxy ${app.address}:${toString app.port}
           }
         '';
     in
@@ -206,17 +205,6 @@ let
         }
       '';
     };
-  logs = config: {
-    systemd.services.caddy.serviceConfig.LogsDirectoryMode = "0750";
-    preservation.preserveAt."/persist".directories = [
-      {
-        directory = config.services.caddy.logDir;
-        user = config.services.caddy.user;
-        group = config.services.caddy.group;
-        mode = "0750";
-      }
-    ];
-  };
 in
 {
   options.fleet.publicPort = lib.mkOption {
@@ -224,45 +212,6 @@ in
     description = "Port on bastion's tailnet address where its Caddy terminates TLS for the connections the edge passes through; the `tofu` app hands it to `opentofu/tailscale` as `fleet_public_port`.";
   };
   config.fleet.publicPort = 8443;
-
-  config.flake.modules.nixos.edge =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
-    let
-      rules = policy {
-        inherit lib pkgs;
-        inherit (config.services.caddy) logDir;
-        upstream = app: "${bastion}:${toString app.port}";
-      };
-    in
-    {
-      imports = [
-        caddy
-        (logs config)
-      ];
-      services.caddy = {
-        globalConfig = ''
-          servers {
-            protocols h1 h2
-          }
-        '';
-        logFormat = rules.errorLog;
-        virtualHosts."*.${domain}" = {
-          logFormat = rules.accessLog;
-          inherit (rules) extraConfig;
-        };
-      };
-      fleet.probes = lib.mapAttrs (name: _: "https://${name}.${domain}") served;
-      networking.hosts."127.0.0.1" = map (name: "${name}.${domain}") (lib.attrNames served);
-      networking.firewall.allowedTCPPorts = [
-        80
-        443
-      ];
-    };
 
   config.flake.modules.nixos.public-proxy =
     {
@@ -275,14 +224,10 @@ in
       rules = policy {
         inherit lib pkgs;
         inherit (config.services.caddy) logDir;
-        upstream = app: "${app.address}:${toString app.port}";
       };
     in
     {
-      imports = [
-        caddy
-        (logs config)
-      ];
+      imports = [ caddy ];
       services.caddy = {
         globalConfig = ''
           servers :${toString port} {
@@ -304,6 +249,15 @@ in
           inherit (rules) extraConfig;
         };
       };
+      systemd.services.caddy.serviceConfig.LogsDirectoryMode = "0750";
+      preservation.preserveAt."/persist".directories = [
+        {
+          directory = config.services.caddy.logDir;
+          user = config.services.caddy.user;
+          group = config.services.caddy.group;
+          mode = "0750";
+        }
+      ];
       networking.firewall.extraInputRules = ''
         iifname "${config.services.tailscale.interfaceName}" ip saddr ${edge} tcp dport ${toString port} accept
       '';

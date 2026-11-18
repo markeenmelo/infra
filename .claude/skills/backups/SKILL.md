@@ -42,6 +42,6 @@ The household repository opens with `backups/restic-password`, each laptop's wit
 `backups/HOST-password` ([secrets skill](../secrets/SKILL.md)), so the household key can
 change without a laptop ever learning it. Each repository is its own dataset, `apps/backup-HOST`, created by hand before the deploy that declares it ([bastion skill](../bastion/SKILL.md)). bastion reaches pCloud directly with
 `backups/rclone-pcloud`, a full rclone config, so a compromised bastion can delete the off-site
-copies too; the operator accepted that over an append-only proxy on racknerd. Restore with
+copies too; the operator accepted that over an append-only proxy on another host. Restore with
 `restic -r /mnt/backup/restic snapshots` and `restic restore`, run as root on bastion; for
 pCloud, `-r rclone:pcloud:bastion/restic` with `RCLONE_CONFIG` pointing at that secret.

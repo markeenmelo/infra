@@ -15,7 +15,7 @@ API after every start; configuration lives in Nix, not in the dashboard.
 
 It is public at `jellyfin.` through both proxies ([proxy skill](../proxy/SKILL.md)), with its
 admin API denied at the edge, so administration happens on the LAN or the tailnet. Jellyfin
-trusts `X-Forwarded-For` only from the LAN proxy and racknerd.
+trusts `X-Forwarded-For` only from loopback, where both proxies run.
 
 ## Sign-in
 

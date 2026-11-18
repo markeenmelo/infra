@@ -3,7 +3,7 @@ let
   wired = lib.filterAttrs (_: host: host.lan != null) config.fleet.hosts;
   lan = lib.mapAttrs (_: host: removeAttrs host.lan [ "routes" ]) wired;
   routes = lib.mergeAttrsList (lib.mapAttrsToList (_: host: host.lan.routes) wired);
-  edge = config.fleet.hosts.racknerd.publicAddress;
+  edge = config.fleet.hosts.edge.publicAddress;
   gateways = lib.unique (lib.mapAttrsToList (_: host: host.gateway) lan);
   gateway =
     assert lib.assertMsg (
@@ -11,11 +11,6 @@ let
     ) "every fleet.hosts.*.lan must name the one UniFi gateway, found: ${toString gateways}";
     lib.head gateways;
   hosts = builtins.toJSON (lib.mapAttrs (_: host: host.tailnetAddress) config.fleet.hosts);
-  edgePorts = builtins.toJSON (
-    lib.mapAttrsToList (_: app: app.port) (
-      lib.filterAttrs (_: app: app.public) config.flake.nixosConfigurations.bastion.config.fleet.web.apps
-    )
-  );
   telemetry = builtins.toJSON (lib.mapAttrs (_: host: host.telemetry) config.fleet.hosts);
   settings = ../opentofu/unifi/settings.json;
   program = ../opentofu/unifi/settings.jq;
@@ -93,7 +88,6 @@ in
             export PG_SCHEMA_NAME=$project
             export TF_VAR_fleet_domain=${lib.escapeShellArg config.fleet.domain}
             export TF_VAR_fleet_hosts=${lib.escapeShellArg hosts}
-            export TF_VAR_fleet_edge_ports=${lib.escapeShellArg edgePorts}
             export TF_VAR_fleet_telemetry=${lib.escapeShellArg telemetry}
             export TF_VAR_fleet_lan=${lib.escapeShellArg (builtins.toJSON lan)}
             export TF_VAR_fleet_routes=${lib.escapeShellArg (builtins.toJSON routes)}

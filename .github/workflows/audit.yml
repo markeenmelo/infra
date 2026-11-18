@@ -24,7 +24,7 @@ jobs:
           git -C "$RUNNER_TEMP/ponytail" fetch -q --depth 1 https://github.com/DietrichGebert/ponytail "$rev"
           git -C "$RUNNER_TEMP/ponytail" checkout -q FETCH_HEAD
       - id: claude
-        uses: anthropics/claude-code-action@cc98b3ae241b0fcfb6a42a2690751afffecb4452 # v1.0.278
+        uses: anthropics/claude-code-action@e5812cd75691ca7bbfc57c0ecf4441db3a1ab7dd # v1.0.281
         env:
           CLAUDE_CODE_PLUGIN_DIRS: ${{ runner.temp }}/ponytail
         with:

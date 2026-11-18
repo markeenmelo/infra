@@ -21,7 +21,8 @@ handshake, sizes and timing. The encrypted state partition protects those at res
 snapshots and volume backups. Its key derivation is capped in
 [disko.nix](../../../modules/hosts/edge/disko.nix): cryptsetup sizes it to the memory present at
 format time, and the installer runs with more than the host does, so an uncapped volume could
-ask the initrd for more memory than the host has.
+ask the initrd for more memory than the host has. Once booted the host refuses to load further
+kernel modules ([host.nix](../../../modules/hosts/edge/host.nix)), so root there cannot add one.
 
 ## Unlock
 
@@ -45,9 +46,13 @@ provider maintenance) leaves the host down until someone unlocks it; nothing on 
 Bastion's `Host silent` alert is the signal for that
 ([monitoring skill](../monitoring/SKILL.md)).
 
+Oracle goes on calling an instance running after the host powered itself off, as `shutdown`
+does, so `wake` starts a stopped instance and, after asking, resets a running one, and refuses the reset while
+the host still answers on its public address or over the tailnet, or waits for its passphrase.
+
 ```sh
 nix run .#unlock -- edge            # type the passphrase; rerun it to see whether the host still waits
-nix run .#wake -- edge              # start a stopped instance through the Oracle API
+nix run .#wake -- edge              # power the instance on through the Oracle API
 ```
 
 ## Boot and network
@@ -57,8 +62,7 @@ Limine installs to the removable-media path and leaves the EFI variables alone
 the provider would have to keep. The uplink is the instance's one physical Ethernet link, matched
 by type and by having no kind, which virtual links such as veth and bridges have, and not by MAC
 address: a recreated instance gets a new address, and the initrd needs the network before anyone
-can unlock it. It takes DHCP, and the host resolves over DNS-over-TLS on its own,
-as racknerd does. A recreated instance also starts from a fresh stock volume, so it is installed
+can unlock it. It takes DHCP, and the host resolves over DNS-over-TLS on its own. A recreated instance also starts from a fresh stock volume, so it is installed
 again.
 
 ## Install

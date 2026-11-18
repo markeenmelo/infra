@@ -5,9 +5,8 @@ Dendritic NixOS fleet, one operator. Load the skill whose description owns the f
 
 | Host | System | Role | Builds on |
 |---|---|---|---|
-| `bastion` | x86_64-linux | Home server: LAN proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, agent MicroVM | itself |
-| `racknerd` | x86_64-linux | Public HTTPS edge (VPS), forwards to bastion over the tailnet | bastion |
-| `edge` | aarch64-linux | Oracle Cloud instance that takes the public edge over from racknerd: passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
+| `bastion` | x86_64-linux | Home server: LAN and public proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, agent MicroVM | itself |
+| `edge` | aarch64-linux | Public HTTPS edge (Oracle Cloud instance): passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
 | `thinkpad` | x86_64-linux | Operator laptop | bastion |
 | `asahi` | aarch64-linux | Apple Silicon laptop (dual boot with `mac`) | itself |
 | `mac` | aarch64-darwin | macOS laptop, nix-darwin + Home Manager | itself |

@@ -1,7 +1,7 @@
 { config, lib, ... }:
 let
   inherit (config.flake.modules.nixos) postgresql;
-  inherit (config.fleet) domain hosts;
+  inherit (config.fleet) domain;
   port = 2283;
   root = "/srv/immich";
   hostname = "photos.${domain}";
@@ -59,13 +59,13 @@ in
       services = {
         immich = {
           enable = true;
-          host = "0.0.0.0";
+          host = "127.0.0.1";
           inherit port;
           mediaLocation = "${root}/library";
           accelerationDevices = [ "${config.fleet.renderDevice} rw" ];
           environment = {
             IMMICH_ALLOW_SETUP = "false";
-            IMMICH_TRUSTED_PROXIES = "127.0.0.1,${hosts.racknerd.tailnetAddress}";
+            IMMICH_TRUSTED_PROXIES = "127.0.0.1";
           };
           settings = {
             server.externalDomain = "https://${hostname}";

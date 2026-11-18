@@ -42,13 +42,12 @@ settings, DNS (global resolver plus split DNS for the domain to bastion), tags o
 without a key, and one auth key per host. Bastion's apps are reached through that split DNS and
 its LAN proxy, so the tailnet defines no Tailscale services; that is why `group:members` reach
 bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, which the `tofu`
-app passes as `TF_VAR_fleet_hosts`; the bastion ports racknerd reaches for the public apps in
-`fleet.web.apps` come the same way as `TF_VAR_fleet_edge_ports`, the two bastion ports the
-passthrough edge reaches as `fleet_public_port` and `fleet_bans_port`
+app passes as `TF_VAR_fleet_hosts`; the two bastion ports the
+edge reaches come the same way as `fleet_public_port` and `fleet_bans_port`
 ([proxy skill](../proxy/SKILL.md)), and each host's
 `fleet.hosts.HOST.telemetry` ports as `TF_VAR_fleet_telemetry`, and the cache port, each laptop's home
 backup port, the operator laptops, the state database's port, the routed LAN subnets and the gateway as `fleet_cache_port`,
-`fleet_home_backups`, `fleet_operators`, `fleet_state_port`, `fleet_routes` and `fleet_lan`, so a new public app, a new log
+`fleet_home_backups`, `fleet_operators`, `fleet_state_port`, `fleet_routes` and `fleet_lan`, so a new log
 sender or a moved port needs only a plan and an apply. Every project reads the domain
 from `fleet.domain` as `TF_VAR_fleet_domain`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
@@ -79,7 +78,8 @@ read-only for all of these; `acls_externally_managed_on` says so.
 [main.tf](../../../opentofu/porkbun/main.tf) owns every record of the domain: one wildcard `A`
 to the edge (`fleet.hosts.*.publicAddress`, passed as `fleet_edge_address`), since the edge aborts any hostname it does not publish and the wildcard
 certificate names none ([proxy skill](../proxy/SKILL.md)), so publishing an app needs no DNS
-change; the `CAA` set that confines issuance to Let's Encrypt, wildcard included, and forbids
+change; the `CAA` set that confines issuance to Let's Encrypt, wildcard included, and to DNS-01,
+so holding the address the names point at, as the edge's provider does, gets no certificate, and forbids
 S/MIME; and the null-mail set (null `MX` on the apex and on the wildcard, `-all` SPF, reject
 DMARC covering subdomains, empty DKIM) that lets no one send as the domain or any name under it. The API keys in `secrets/porkbun/api.yaml` are
 bastion's DNS-01 keys and are full-authority, so a plan already carries risk. A record that exists before its block is

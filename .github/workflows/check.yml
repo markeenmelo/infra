@@ -54,7 +54,7 @@ jobs:
       - name: Fetch what bastion's Harmonia cache holds
         if: steps.tailnet.outcome == 'success'
         run: |
-          settings=$(nix eval --json .#nixosConfigurations.racknerd.config.nix.settings \
+          settings=$(nix eval --json .#nixosConfigurations.thinkpad.config.nix.settings \
             --apply 's: { inherit (s) substituters trusted-public-keys; }')
           xargs -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 \
             --option substituters "$(jq -r '.substituters | join(" ")' <<< "$settings")" \

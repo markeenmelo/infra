@@ -1,7 +1,7 @@
 { config, inputs, ... }:
 let
   inherit (config.flake.modules.nixos) nixflix;
-  inherit (config.fleet) domain hosts;
+  inherit (config.fleet) domain;
   port = 8096;
   hostname = "jellyfin.${domain}";
   api = "(?i)^/(emby/|mediabrowser/)?";
@@ -61,12 +61,9 @@ in
         cacheDir = "${media}/cache/jellyfin";
         network = {
           internalHttpPort = port;
-          localNetworkAddresses = [ "0.0.0.0" ];
+          localNetworkAddresses = [ "127.0.0.1" ];
           autoDiscovery = false;
-          knownProxies = [
-            "127.0.0.1"
-            hosts.racknerd.tailnetAddress
-          ];
+          knownProxies = [ "127.0.0.1" ];
           publicHttpsPort = 443;
         };
         encoding = {
