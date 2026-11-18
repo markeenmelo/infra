@@ -425,6 +425,7 @@ in
         after = [ "tailscaled.service" ];
         conflicts = [ "sleep.target" ];
         before = [ "sleep.target" ];
+        unitConfig.ConditionACPower = true;
         serviceConfig = {
           Restart = "on-failure";
           RestartSec = "1h";

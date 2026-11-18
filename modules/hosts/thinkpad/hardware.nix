@@ -12,12 +12,19 @@
         cpu.intel.updateMicrocode = true;
         graphics.extraPackages = [ pkgs.intel-media-driver ];
       };
-      boot.initrd.availableKernelModules = [
-        "xhci_pci"
-        "thunderbolt"
-        "nvme"
-        "usb_storage"
-      ];
+      boot = {
+        initrd.availableKernelModules = [
+          "xhci_pci"
+          "thunderbolt"
+          "nvme"
+          "usb_storage"
+        ];
+        extraModprobeConfig = "options snd_hda_intel power_save=1";
+        kernel.sysctl = {
+          "kernel.nmi_watchdog" = 0;
+          "vm.dirty_writeback_centisecs" = 1500;
+        };
+      };
       services = {
         hardware.bolt.enable = true;
         power-profiles-daemon.enable = true;
@@ -29,6 +36,7 @@
           extraRules = ''
             ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
             ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="0033", ATTR{power/wakeup}="enabled"
+            ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1532", ATTR{idProduct}=="0083", ATTR{power/control}="auto"
             ACTION=="change", SUBSYSTEM=="power_supply", KERNEL=="AC", RUN+="${lib.getExe' config.systemd.package "systemctl"} restart --no-block power-profile-ac.service"
           '';
         };
@@ -39,18 +47,13 @@
           AllowHybridSleep = false;
           AllowSuspendThenHibernate = false;
         };
-        services.upower = {
-          enableStrictShellChecks = true;
-          preStart = "printf 1 > /var/lib/upower/charging-threshold-status";
-        };
         services.power-profile-ac = {
-          description = "Use power-saver on battery and restore the previous profile on AC";
+          description = "Use power-saver and a dimmer panel on battery and restore the previous profile and brightness on AC";
           wantedBy = [ "power-profiles-daemon.service" ];
           requires = [ "power-profiles-daemon.service" ];
           after = [ "power-profiles-daemon.service" ];
           path = [
             config.services.power-profiles-daemon.package
-            config.systemd.package
           ];
           enableStrictShellChecks = true;
           serviceConfig = {
@@ -59,9 +62,11 @@
             Restart = "on-failure";
             RestartSec = 5;
           };
+          # shortcut: the 40% brightness cap on battery is a starting point, not measured; tune after a battery baseline
           script = ''
             saved=$STATE_DIRECTORY/saved
-            if systemd-ac-power; then
+            ac=$(cat /sys/class/power_supply/AC/online)
+            if [ "$ac" = 1 ]; then
               if [ -s "$saved" ]; then
                 powerprofilesctl set "$(cat "$saved")"
               fi
@@ -70,6 +75,22 @@
               [ -s "$saved" ] || powerprofilesctl get > "$saved"
               powerprofilesctl set power-saver
             fi
+            for panel in /sys/class/backlight/*; do
+              [ -e "$panel/brightness" ] || continue
+              bright=$STATE_DIRECTORY/brightness-''${panel##*/}
+              if [ "$ac" = 1 ]; then
+                if [ -s "$bright" ]; then
+                  cat "$bright" > "$panel/brightness"
+                fi
+                rm -f "$bright"
+              elif [ ! -s "$bright" ]; then
+                cat "$panel/brightness" > "$bright"
+                cap=$(($(cat "$panel/max_brightness") * 40 / 100))
+                if [ "$(cat "$panel/brightness")" -gt "$cap" ]; then
+                  echo "$cap" > "$panel/brightness"
+                fi
+              fi
+            done
           '';
         };
       };

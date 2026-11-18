@@ -37,7 +37,8 @@ SDR without VRR, Umbriel's defaults. `appledrm.show_notch` puts the bar over the
 notch, at a scale that divides the panel; `appledrm.hdmi_audio` is a driver option its authors mark
 unstable. There is no `platform_profile`, so TuneD's PPD bridge replaces power-profiles-daemon for
 Noctalia's power widget and picks power-saver on battery. The panel runs its preferred mode at
-scale 4/3 on AC and battery alike. wluma sets the panel brightness from the light sensor.
+scale 4/3 on AC and battery alike. wluma sets the panel brightness from the light sensor. UPower's charge threshold is switched on as
+on the thinkpad ([desktop.nix](../../../modules/desktop.nix)), at UPower's own default limits.
 
 Sleep is s2idle, and only the lid and the power button wake it: USB drops during sleep, so a key on
 the dock's keyboard does not, even with the controller's wakeup armed. The idle suspend in
