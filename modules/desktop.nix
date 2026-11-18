@@ -42,9 +42,15 @@ in
         connectionConfig."ipv4.dhcp-send-hostname" = false;
       };
       systemd.user.settings.Manager.DefaultTimeoutStopSec = "10s";
-      systemd.services.systemd-logind.restartTriggers = [
-        config.environment.etc."systemd/logind.conf".source
-      ];
+      systemd.services = {
+        systemd-logind.restartTriggers = [ config.environment.etc."systemd/logind.conf".source ];
+        upower = {
+          enableStrictShellChecks = true;
+          preStart = "printf 1 > /var/lib/upower/charging-threshold-status";
+        };
+        "btrfs-scrub@".unitConfig.ConditionACPower = true;
+      };
+      services.btrfs.autoScrub.interval = "weekly";
       networking.modemmanager.enable = false;
       security.rtkit.enable = true;
       programs.zsh.enable = true;

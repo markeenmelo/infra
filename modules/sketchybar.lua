@@ -282,7 +282,7 @@ end)
 close_on_leave(tailnet)
 
 local memory = sbar.add("item", "memory", { position = "right", icon = { string = "󰍛" } })
-local cpu = sbar.add("item", "cpu", { position = "right", update_freq = 10, icon = { string = "󰻠" } })
+local cpu = sbar.add("item", "cpu", { position = "right", update_freq = 30, icon = { string = "󰻠" } })
 cpu:subscribe({ "routine", "forced" }, function()
   sbar.exec(
     [[cpu=$(ps -A -o %cpu | awk -v n="$(getconf _NPROCESSORS_ONLN)" '{ s += $1 } END { printf "%.0f", s / n }')
@@ -299,7 +299,7 @@ end)
 local alerts = sbar.add("item", "alerts", {
   position = "right",
   drawing = "off",
-  update_freq = 60,
+  update_freq = 300,
   icon = { string = "󰂚" },
   click_script = "open '" .. grafana .. "/alerting/list'",
 })

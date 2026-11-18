@@ -108,23 +108,11 @@
                 match.is_floating = false;
                 shadow = false;
               }
-              {
-                match.is_focused = false;
-                opacity = 0.92;
-              }
-            ];
-            scratchpad = [
-              {
-                name = "terminal";
-                spawn_when_empty = lib.getExe config.programs.ghostty.package;
-              }
             ];
             layer_rule = [
               {
                 match.namespace = "^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$";
-                blur = true;
                 blur_ignore_alpha = 0.6;
-                blur_optimized = false;
               }
             ];
           }
@@ -143,16 +131,11 @@
               "Mod+E" = spawn pkgs.nautilus;
               "Mod+Escape" = noctalia "panel-toggle session";
               "Mod+Slash" = "cheatsheet-toggle";
-              "Mod+Space" = "scratchpad-toggle terminal";
-              "Mod+Shift+Space" = {
-                action = "window-move-to-scratchpad terminal";
-                repeat = false;
-              };
-              "Mod+Ctrl+Space" = {
-                action = "window-restore-from-scratchpad terminal";
-                repeat = false;
-              };
-              "Mod+Tab" = "scratchpad-focus-next terminal";
+              "Mod+Space" = noctalia "panel-toggle launcher";
+              # shortcut: Umbriel cannot unbind a stock key, so the stock scratchpad binds do nothing through cheatsheet-close; drop when it can
+              "Mod+Shift+Space" = "cheatsheet-close";
+              "Mod+Ctrl+Space" = "cheatsheet-close";
+              "Mod+Tab" = "cheatsheet-close";
               "Mod+Z" = spawn config.programs.zed-editor.package;
               "Alt+Tab" = noctalia "window-switcher hold";
               "Alt+Shift+Tab" = noctalia "window-switcher hold reverse";

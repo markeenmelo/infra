@@ -39,12 +39,8 @@
           AllowHybridSleep = false;
           AllowSuspendThenHibernate = false;
         };
-        services.upower = {
-          enableStrictShellChecks = true;
-          preStart = "printf 1 > /var/lib/upower/charging-threshold-status";
-        };
         services.power-profile-ac = {
-          description = "Use power-saver on battery and restore the previous profile on AC";
+          description = "Use power-saver and a dimmer panel on battery and restore the previous profile and brightness on AC";
           wantedBy = [ "power-profiles-daemon.service" ];
           requires = [ "power-profiles-daemon.service" ];
           after = [ "power-profiles-daemon.service" ];
@@ -59,6 +55,7 @@
             Restart = "on-failure";
             RestartSec = 5;
           };
+          # shortcut: the 40% brightness cap on battery is a starting point, not measured; tune after a battery baseline
           script = ''
             saved=$STATE_DIRECTORY/saved
             if systemd-ac-power; then
@@ -70,6 +67,22 @@
               [ -s "$saved" ] || powerprofilesctl get > "$saved"
               powerprofilesctl set power-saver
             fi
+            for panel in /sys/class/backlight/*; do
+              [ -e "$panel/brightness" ] || continue
+              bright=$STATE_DIRECTORY/brightness-''${panel##*/}
+              if systemd-ac-power; then
+                if [ -s "$bright" ]; then
+                  cat "$bright" > "$panel/brightness"
+                fi
+                rm -f "$bright"
+              else
+                [ -s "$bright" ] || cat "$panel/brightness" > "$bright"
+                cap=$(($(cat "$panel/max_brightness") * 40 / 100))
+                if [ "$(cat "$panel/brightness")" -gt "$cap" ]; then
+                  echo "$cap" > "$panel/brightness"
+                fi
+              fi
+            done
           '';
         };
       };

@@ -63,9 +63,14 @@
     {
       config,
       lib,
+      osConfig,
       pkgs,
       ...
     }:
+    let
+      onBattery = "${lib.getExe' osConfig.systemd.package "systemd-ac-power"} ||";
+      umbriel = lib.getExe osConfig.programs.umbriel.package;
+    in
     {
       programs.noctalia = {
         enable = true;
@@ -97,13 +102,13 @@
             };
           };
           bar.default = {
-            margin_ends = lib.mkDefault 6;
-            margin_edge = lib.mkDefault 6;
+            margin_ends = 0;
+            margin_edge = 0;
             thickness = lib.mkDefault 32;
             font_family = config.stylix.fonts.monospace.name;
             font_weight = 600;
             background_opacity = config.stylix.opacity.desktop;
-            radius = lib.mkDefault 6;
+            radius = 0;
             capsule_radius = 4;
             shadow = false;
             widget_spacing = 8;
@@ -228,6 +233,17 @@
             suspend = {
               timeout = 900;
               action = lib.mkDefault "lock_and_suspend";
+            };
+            battery-screen-off = {
+              timeout = 180;
+              action = "command";
+              command = "${onBattery} ${umbriel} msg dpms-off";
+              resume_command = "${umbriel} msg dpms-on";
+            };
+            battery-suspend = {
+              timeout = 300;
+              action = "command";
+              command = "${onBattery} ${lib.getExe' osConfig.systemd.package "systemctl"} suspend";
             };
           };
         };
