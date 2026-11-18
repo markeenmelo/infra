@@ -127,7 +127,7 @@ in
     };
 
   config.flake.modules.nixos.crowdsec-engine =
-    { config, ... }:
+    { config, pkgs, ... }:
     {
       imports = [ engine ];
       services.crowdsec.settings.config.api.server.listen_uri = "0.0.0.0:${toString port}";
@@ -137,11 +137,19 @@ in
         wantedBy = [ "multi-user.target" ];
         after = [ "crowdsec.service" ];
         wants = [ "crowdsec.service" ];
-        path = [ config.services.crowdsec.package ];
+        path = [
+          config.services.crowdsec.package
+          pkgs.curl
+        ];
         enableStrictShellChecks = true;
         script = ''
+          key=$CREDENTIALS_DIRECTORY/key
+          if curl -fsS -o /dev/null --retry 15 --retry-connrefused --retry-delay 2 \
+            -H @<(printf 'X-Api-Key: %s\n' "$(< "$key")") 'http://127.0.0.1:${toString port}/v1/decisions?ip=192.0.2.1'; then
+            exit 0
+          fi
           cscli bouncers delete edge > /dev/null 2>&1 || true
-          cscli bouncers add edge --key "$(< "$CREDENTIALS_DIRECTORY/key")" > /dev/null
+          cscli bouncers add edge --key "$(< "$key")" > /dev/null
         '';
         serviceConfig = {
           Type = "oneshot";
@@ -164,6 +172,10 @@ in
         enable = true;
         secrets.apiKeyPath = config.sops.secrets.crowdsec-bouncer-key.path;
         settings.api_url = "http://${bastion}:${toString port}/";
+      };
+      systemd.services.crowdsec-firewall-bouncer.serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = 30;
       };
     };
 }

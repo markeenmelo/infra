@@ -69,7 +69,10 @@ The `edge` host carries the same public surface without reading it
 ([edge skill](../edge/SKILL.md)). Its `passthrough` role in edge.nix is nginx: the stream module
 forwards TCP 443 to bastion over the tailnet with PROXY protocol, and port 80 only redirects to
 https. TLS ends on bastion, so the host holds no certificate and no Porkbun key and keeps no
-access log; nginx comes from the binary cache, so the one-core host compiles nothing.
+access log; nginx comes from the binary cache, so the one-core host compiles nothing. Since
+bastion sheds an abusive client only after the edge already holds its connection open, the edge
+caps the connections one address may hold, and its connection ceiling is raised well above
+nginx's default so one source cannot exhaust it.
 
 Everything decided per request lives once, in `policy` in edge.nix, and two roles call it:
 racknerd's `edge` with bastion's tailnet address, and bastion's `public-proxy` with each app's
@@ -90,9 +93,11 @@ tailnet; `crowdsec-bouncer` on the edge pulls them and drops banned addresses in
 they cross the tailnet. Bastion runs no bouncer of its own, since every public connection
 reaches it from the edge's address. The bouncer's key is one value under two names,
 `crowdsec-bouncer-key` in the edge's secrets file and `crowdsec/edge-bouncer-key` in bastion's
-([secrets skill](../secrets/SKILL.md)), and reads decisions only; bastion registers it on every
-start of the unit, so a rotated key needs no command. Bastion is deployed before the edge: the
-bouncer does not start against an API that does not know its key.
+([secrets skill](../secrets/SKILL.md)), and reads decisions only; bastion registers it whenever
+the API does not accept it, so a rotated key needs no command and an unchanged one leaves no
+moment in which the edge is refused. The edge's bouncer restarts on failure, so it comes back by
+itself after bastion was away, and a deploy of the edge does not hinge on bastion answering.
+Bastion is still deployed first, so the key is known when the bouncer first asks.
 
 ## LAN proxy
 

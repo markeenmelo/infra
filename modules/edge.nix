@@ -312,12 +312,16 @@ in
   config.flake.modules.nixos.passthrough = {
     services.nginx = {
       enable = true;
+      appendConfig = "worker_rlimit_nofile 8192;";
+      eventsConfig = "worker_connections 4096;";
       streamConfig = ''
+        limit_conn_zone $binary_remote_addr zone=source:1m;
         server {
           listen 443;
           proxy_pass ${bastion}:${toString port};
           proxy_protocol on;
           proxy_connect_timeout 5s;
+          limit_conn source 64;
         }
       '';
       virtualHosts.redirect = {
