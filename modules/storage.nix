@@ -96,7 +96,7 @@ in
       extraTestScript = ''
         machine.wait_for_unit("multi-user.target")
         machine.succeed("findmnt --types overlay /etc")
-        machine.succeed("test -s /var/lib/nixos/passwd")
+        machine.succeed("test -s /persist/var/lib/nixos/passwd")
         probe_id = machine.succeed("id -u probe")
       ''
       + survivesReboot

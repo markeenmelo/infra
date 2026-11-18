@@ -53,6 +53,7 @@
         description = "Delete all but the newest ten system generations";
         startAt = "weekly";
         before = [ "nix-gc.service" ];
+        enableStrictShellChecks = true;
         path = [ config.nix.package ];
         serviceConfig.Type = "oneshot";
         script = "nix-env --profile /nix/var/nix/profiles/system --delete-generations +10";

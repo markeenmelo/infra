@@ -77,7 +77,9 @@ in
         };
         # shortcut: reads the first page of unexpired issuances, 100 at most; follow its "after" cursor when the domain has more
         script = ''
-          held=$(openssl s_client -connect auth.${domain}:443 -servername auth.${domain} < /dev/null 2> /dev/null \
+          file=${config.fleet.metricsDir}/certificate-watch.prom
+          [ -e "$file" ] || printf 'certificate_watch_last_success_timestamp_seconds %s\n' "$(date +%s)" > "$file"
+          held=$(openssl s_client -connect 127.0.0.1:443 -servername auth.${domain} < /dev/null 2> /dev/null \
             | openssl x509 -noout -pubkey | openssl pkey -pubin -outform DER | openssl dgst -sha256 -r | cut -d ' ' -f 1) || exit 0
           [ -n "$held" ] || exit 0
           issued=$(curl --fail --silent --show-error --max-time 60 --retry 3 \
@@ -85,8 +87,8 @@ in
           unexpected=$(jq --arg held "$held" --arg since "$(date --utc --date '7 days ago' +%Y-%m-%dT%H:%M:%SZ)" \
             '[.[] | select(.not_before >= $since and .pubkey_sha256 != $held)] | length' <<< "$issued") || exit 0
           printf 'certificate_watch_unexpected %s\ncertificate_watch_last_success_timestamp_seconds %s\n' "$unexpected" "$(date +%s)" \
-            > ${config.fleet.metricsDir}/certificate-watch.prom.tmp
-          mv ${config.fleet.metricsDir}/certificate-watch.prom.tmp ${config.fleet.metricsDir}/certificate-watch.prom
+            > "$file.tmp"
+          mv "$file.tmp" "$file"
         '';
       };
       networking.firewall = {
