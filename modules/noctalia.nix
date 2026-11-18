@@ -243,7 +243,7 @@
             battery-suspend = {
               timeout = 300;
               action = "command";
-              command = "${onBattery} ${lib.getExe' osConfig.systemd.package "systemctl"} suspend";
+              command = "${onBattery} ${lib.getExe config.programs.noctalia.package} msg session lock-and-suspend";
             };
           };
         };
