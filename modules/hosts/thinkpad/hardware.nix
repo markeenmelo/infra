@@ -83,8 +83,8 @@
                   cat "$bright" > "$panel/brightness"
                 fi
                 rm -f "$bright"
-              else
-                [ -s "$bright" ] || cat "$panel/brightness" > "$bright"
+              elif [ ! -s "$bright" ]; then
+                cat "$panel/brightness" > "$bright"
                 cap=$(($(cat "$panel/max_brightness") * 40 / 100))
                 if [ "$(cat "$panel/brightness")" -gt "$cap" ]; then
                   echo "$cap" > "$panel/brightness"
