@@ -22,7 +22,9 @@ snapshots and volume backups. Its key derivation is capped in
 [disko.nix](../../../modules/hosts/edge/disko.nix): cryptsetup sizes it to the memory present at
 format time, and the installer runs with more than the host does, so an uncapped volume could
 ask the initrd for more memory than the host has. Once booted the host refuses to load further
-kernel modules ([host.nix](../../../modules/hosts/edge/host.nix)), so root there cannot add one.
+kernel modules ([host.nix](../../../modules/hosts/edge/host.nix)), so root there cannot add one. It
+also stays off the hypervisor's vsock channel, where systemd would otherwise serve SSH in any VM
+past the firewall: the server role turns that off and the host blacklists the transport.
 
 ## Unlock
 

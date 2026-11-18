@@ -13,8 +13,10 @@ off a server without its console. Its key is therefore the operator's root key o
 every host, so it is not the operator's login key: its private half lives only in the operator's
 Bitwarden SSH agent, which asks before each use. The servers have no login account
 ([access.nix](../../../modules/access.nix)), so `deploy` is the only way into them. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
-off: it would make sudo unexecutable for it and break every deploy. IPv6 stays on host-wide for the
-same reason: MagicDNS answers with each node's tailnet IPv6 address, and a peer that tries it first
+off: it would make sudo unexecutable for it and break every deploy. A server gets the same restriction
+without `wheel`: [server.nix](../../../modules/server.nix) forces the sudo wrapper's group to `deploy` and its
+permissions to owner and group, so no service account can run sudo at all. IPv6 stays on host-wide, also for the
+sake of deploys: MagicDNS answers with each node's tailnet IPv6 address, and a peer that tries it first
 against a host with IPv6 off waits out a connect timeout that can outlast the rollback confirm;
 the uplinks refuse IPv6 per link instead. Magic rollback and auto rollback stay on: a profile
 that breaks the SSH path reverts after the confirm timeout. `--boot` is the exception: deploy-rs
@@ -70,7 +72,7 @@ deploy-rs activation files, so the first deploy after an install cannot roll bac
 activation leaves the new configuration running with the profile pointing at the old generation,
 until a deploy succeeds. Any failed unit fails the activation, so setup units stay idempotent and
 do not fail on an outside service being down. A host without a tailnet
-connection is unreachable to deploy-rs by design. No server accepts a console login, so recover
+connection is unreachable to deploy-rs by design. No server accepts a console login or runs a getty, so recover
 by booting the previous generation from the Limine menu on the provider or physical console, or
 reinstall from the installer image as below.
 

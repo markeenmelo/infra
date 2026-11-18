@@ -20,6 +20,12 @@
         passthrough
         crowdsec-bouncer
       ];
+      boot.blacklistedKernelModules = [
+        "vmw_vsock_virtio_transport"
+        "vsock"
+        "vsock_loopback"
+      ];
+      fonts.fontconfig.enable = false;
       security.lockKernelModules = true;
       # shortcut: the modules edge's firewall, Tailscale and the CrowdSec bouncer load at runtime, add one here and deploy with --boot then reboot when a unit fails on a module that cannot load, since the lock holds until reboot
       boot.kernelModules = [
