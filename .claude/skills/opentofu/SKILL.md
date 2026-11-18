@@ -111,11 +111,13 @@ The border is the network's default security list, taken over so Oracle's own ru
 port 22 is gone. It admits the web ports, `fleet_unlock_ports` for a host that takes its disk
 passphrase over SSH from the initrd, where no host firewall runs yet, Tailscale's port
 (`fleet_tailscale_port`) so traffic to bastion connects directly instead of through a relay, and
-the ICMP message path MTU discovery needs. Port 22 opens only with `-var install=true`, for the
-stock image and the nixos-anywhere installer. The same flag raises an instance to
+the ICMP message path MTU discovery needs. Port 22 opens only with `-var install=NAME`, for the
+stock image and the nixos-anywhere installer. The same flag raises that one instance to
 `local.installer_memory`, the only size the installer, which runs from memory, has been through
-an install at; whether the edge's running size would do is untested. The apply after the
-install, without the flag, closes the port and shrinks the instance, which reboots it.
+an install at; whether the edge's running size would do is untested. A resize reboots an
+instance, which is why the flag names one: any other instance keeps running. The apply after the
+install, without the flag, closes the port and shrinks the instance, which reboots it. A
+precondition refuses a plan whose instances, at those sizes, exceed `local.free`.
 
 An instance launches from the newest Ubuntu image, which admits the deploy account's keys
 (`fleet_deploy_keys`), and ignores later images and later keys, since the install replaces both

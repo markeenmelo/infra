@@ -77,7 +77,7 @@ the usual way, carrying the identity off the old disk. Bastion is deployed with 
 has never sent.
 
 ```sh
-nix run .#tofu -- oracle apply -var install=true
+nix run .#tofu -- oracle apply -var install=edge
 nix run .#install -- edge ubuntu@ADDRESS IDENTITY
 nix run .#unlock -- edge
 nix run .#tofu -- oracle apply      # reboots edge at its running size
