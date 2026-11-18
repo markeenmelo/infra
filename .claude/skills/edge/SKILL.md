@@ -62,7 +62,10 @@ A new instance starts from the provider's stock image. `enroll` makes its identi
 admits the installer's port 22, and the instance has the installer's memory, only for that
 apply. disko asks for the passphrase on the terminal, and the host then waits in its initrd for
 `unlock`. The apply that ends the install shrinks the instance again, which reboots it, so it is
-unlocked a second time. A reinstall of a live host goes
+unlocked a second time. For a new host `install` makes the installer boot itself
+through the older kexec syscall: the stock image's kernel refuses the newer one for an image
+this size with `Address not available`, which fits its Kexec HandOver being on by default, and
+the installer's own fallback does not cover that error. A reinstall of a live host goes
 the usual way, carrying the identity off the old disk. Bastion is deployed with a new host's
 `telemetry` fact only after that host's first boot: the silence alerts fire for a sender that
 has never sent.

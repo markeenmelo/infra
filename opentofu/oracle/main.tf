@@ -79,7 +79,7 @@ variable "alert_email" {
 }
 
 variable "install" {
-  description = "Whether an install is under way: the border admits SSH on port 22, where the stock image and the nixos-anywhere installer listen, and every instance gets at least the memory the installer's kexec needs; true only for the apply before an install."
+  description = "Whether an install is under way: the border admits SSH on port 22, where the stock image and the nixos-anywhere installer listen, and every instance gets at least the memory the installer has been through an install at; true only for the apply before an install."
   type        = bool
   default     = false
 }

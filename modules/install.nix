@@ -96,8 +96,10 @@ in
               )
             }  *) echo "install: no NixOS host named $host" >&2; exit 1 ;;
             esac
+            kexec=()
             if [ -d "$root/persist" ]; then
               extra=$root
+              kexec=(--kexec-extra-flags --kexec-syscall)
               for path in "''${paths[@]}"; do
                 [ -e "$extra/persist/$path" ] || { echo "install: the identity in $extra lacks $path" >&2; exit 1; }
               done
@@ -113,7 +115,7 @@ in
               ssh "$target" umount -R "''${mount@Q}"
               trap - EXIT
             fi
-            nixos-anywhere --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
+            nixos-anywhere "''${kexec[@]}" --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
               echo "install: nixos-anywhere failed; read above how far it got, since once it has partitioned, the target's old system is gone. The identity is kept in $extra: rerun nixos-anywhere with --extra-files $extra" >&2
               exit 1
             }

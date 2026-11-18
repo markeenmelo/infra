@@ -111,9 +111,9 @@ passphrase over SSH from the initrd, where no host firewall runs yet, Tailscale'
 (`fleet_tailscale_port`) so traffic to bastion connects directly instead of through a relay, and
 the ICMP message path MTU discovery needs. Port 22 opens only with `-var install=true`, for the
 stock image and the nixos-anywhere installer. The same flag raises an instance to
-`local.installer_memory`, since the installer's kexec finds no room for its image in the edge's
-running size. The apply after the install, without the flag, closes the port and shrinks the
-instance, which reboots it.
+`local.installer_memory`, the only size the installer, which runs from memory, has been through
+an install at; whether the edge's running size would do is untested. The apply after the
+install, without the flag, closes the port and shrinks the instance, which reboots it.
 
 An instance launches from the newest Ubuntu image, which admits the deploy account's keys
 (`fleet_deploy_keys`), and ignores later images and later keys, since the install replaces both
