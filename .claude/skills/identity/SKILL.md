@@ -6,9 +6,8 @@ description: "Authelia on bastion: the sign-in portal at auth.DOMAIN, the people
 # Identity
 
 [authelia.nix](../../../modules/authelia.nix) runs the portal every app's single sign-on
-redirects to. The edge forwards `auth.` to bastion's port 9091 over the tailnet and the LAN
-proxy to loopback ([proxy skill](../proxy/SKILL.md)); the port is open only on the tailnet
-interface, and the tailnet policy lets only racknerd reach it. Access control denies by default
+redirects to. Both of bastion's proxies forward `auth.` to its port on loopback
+([proxy skill](../proxy/SKILL.md)), and the firewall opens that port on no interface. Access control denies by default
 and the portal needs two factors, WebAuthn first.
 
 Authelia is also the OIDC provider. An app module declares its client in `fleet.oidc.clients.ID`

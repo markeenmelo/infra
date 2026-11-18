@@ -27,9 +27,10 @@ system than bastion, builds itself; every other host is built on the deploying m
 hands the build to bastion when it imports `remote-builds` (the mac, the thinkpad and asahi). The deploying
 machine receives the whole closure back from bastion; deploy-rs then pushes it with
 `--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
-Bastion trusts the admin clients' build keys, not the hosts it builds for: racknerd only reads
-the cache, signed, so a compromised edge cannot write into bastion's store. A build key is a
-trusted user on bastion and whatever it uploads is signed and served to racknerd, so a stolen
+Bastion trusts the admin clients' build keys alone: the edge builds itself, and the tailnet
+policy keeps it off the cache ([opentofu skill](../opentofu/SKILL.md)), so a compromised edge
+cannot reach bastion's store. A build key is a
+trusted user on bastion and whatever it uploads is signed and served to every workstation, so a stolen
 build key is root on bastion without the deploy key's Bitwarden prompt. That is accepted: Nix
 refuses remote builds from an untrusted user (`you are not privileged to build input-addressed
 derivations`), and the key is readable only by root on an admin client.
@@ -53,7 +54,7 @@ nix run .#deploy -- .#HOST          # after checks pass on the committed revisio
 nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
 nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
 nix run .#shutdown -- HOST          # power off as deploy
-nix run .#wake -- HOST              # bastion by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); racknerd through the RackNerd API; edge through the Oracle API
+nix run .#wake -- HOST              # bastion by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); edge through the Oracle API
 nix run .#unlock -- HOST            # send the disk passphrase to a host waiting in its initrd (edge skill)
 nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```

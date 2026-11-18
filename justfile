@@ -31,7 +31,7 @@ shutdown host:
     nix run .#shutdown -- {{ host }}
 
 [arg("host", pattern='[a-z0-9-]+')]
-[doc("Power on bastion by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), racknerd through the RackNerd API, or edge through the Oracle Cloud API")]
+[doc("Power on bastion by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), or edge through the Oracle Cloud API")]
 wake host:
     nix run .#wake -- {{ host }}
 

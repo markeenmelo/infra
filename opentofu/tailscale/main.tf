@@ -36,11 +36,6 @@ variable "fleet_hosts" {
   type        = map(string)
 }
 
-variable "fleet_edge_ports" {
-  description = "Bastion ports racknerd reaches for the public apps in fleet.web.apps; the tofu app sets it."
-  type        = list(number)
-}
-
 variable "fleet_telemetry" {
   description = "Bastion ports each host pushes its telemetry to, from fleet.hosts.*.telemetry, null where a host pushes nothing; the tofu app sets it."
   type        = map(object({ metrics = number, logs = number }))
@@ -105,7 +100,6 @@ locals {
     thinkpad  = ["tag:admin-client"]
     asahi     = ["tag:admin-client"]
     mac       = ["tag:admin-client"]
-    racknerd  = ["tag:server"]
     edge      = ["tag:server"]
     bastion   = ["tag:server", "tag:bastion"]
     proton-ca = ["tag:proton-exit"]
@@ -138,7 +132,6 @@ locals {
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client", "tag:agent"], ip = ["tcp:22"] },
       { src = ["tag:admin-client"], dst = ["tag:admin-client"], ip = ["tcp:1714-1764", "udp:1714-1764"] },
       { src = local.operators, dst = ["grafite"], ip = ["tcp:1024-65535"] },
-      { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:${var.fleet_cache_port}"]) },
       { src = ["edge"], dst = ["bastion"], ip = ["tcp:${var.fleet_public_port}", "tcp:${var.fleet_bans_port}"] },
       { src = local.operators, dst = ["bastion"], ip = ["tcp:${var.fleet_state_port}"] },
       { src = concat(local.admin_clients, ["tag:ci"]), dst = ["bastion"], ip = ["tcp:${var.fleet_cache_port}"] },
@@ -155,8 +148,7 @@ locals {
       { src = "group:members", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "tag:agent:22", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
       { src = "tag:agent", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22", "bastion:443", "bastion:53", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
-      { src = "racknerd", proto = "tcp", accept = [for port in var.fleet_edge_ports : "bastion:${port}"], deny = ["bastion:443", "bastion:${var.fleet_state_port}"] },
-      { src = "edge", proto = "tcp", accept = ["bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}"], deny = concat([for port in var.fleet_edge_ports : "bastion:${port}"], ["bastion:443", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"]) },
+      { src = "edge", proto = "tcp", accept = ["bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}"], deny = ["bastion:443", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
     ])
   }
 }

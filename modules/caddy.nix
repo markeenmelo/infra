@@ -1,6 +1,5 @@
 { config, lib, ... }:
 let
-  edge = config.fleet.hosts.racknerd.tailnetAddress;
   identityHeaders = [
     "Remote-User"
     "Remote-Groups"
@@ -23,11 +22,11 @@ in
   config.fleet.domain = "marcosmelo.dev";
 
   config.flake.modules.nixos.base =
-    { config, lib, ... }:
+    { lib, ... }:
     {
       options.fleet.web.apps = lib.mkOption {
         default = { };
-        description = "Apps this host serves, by subdomain: the LAN proxy routes each to its address and port, and the edge forwards the public ones to the port over the tailnet with their denied paths.";
+        description = "Apps this host serves, by subdomain: the LAN proxy routes each to its address and port, and the public proxy does the same for the public ones, behind their denied paths.";
         type = lib.types.attrsOf (
           lib.types.submodule {
             options = {
@@ -35,36 +34,23 @@ in
               address = lib.mkOption {
                 type = lib.types.str;
                 default = "127.0.0.1";
-                description = "Address the LAN proxy reaches the app at, for apps confined to another network namespace.";
+                description = "Address the proxies reach the app at, for apps confined to another network namespace.";
               };
               public = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
-                description = "Whether the edge publishes the app and the tailnet interface opens its port.";
+                description = "Whether the public proxy serves the app to the internet.";
               };
               denied = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
                 default = [ ];
-                description = "Caddy matcher bodies the edge answers with 404, for admin paths that only the LAN and the tailnet reach.";
+                description = "Caddy matcher bodies the public proxy answers with 404, for admin paths that only the LAN and the tailnet reach.";
               };
             };
           }
         );
       };
-      config.assertions = lib.mapAttrsToList (name: app: {
-        assertion = app.public -> app.address == "127.0.0.1";
-        message = "fleet.web.apps.${name}: the edge reaches a public app on the host's port, bypassing the LAN proxy, so it cannot live at another address.";
-      }) config.fleet.web.apps;
       config.networking.nftables.enable = true;
-      config.networking.firewall.extraInputRules =
-        let
-          ports = lib.mapAttrsToList (_: app: toString app.port) (
-            lib.filterAttrs (_: app: app.public) config.fleet.web.apps
-          );
-        in
-        lib.optionalString (ports != [ ]) ''
-          iifname "${config.services.tailscale.interfaceName}" ip saddr ${edge} tcp dport { ${lib.concatStringsSep ", " ports} } accept
-        '';
     };
 
   config.flake.checks =

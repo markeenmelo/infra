@@ -42,13 +42,12 @@ settings, DNS (global resolver plus split DNS for the domain to bastion), tags o
 without a key, and one auth key per host. Bastion's apps are reached through that split DNS and
 its LAN proxy, so the tailnet defines no Tailscale services; that is why `group:members` reach
 bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, which the `tofu`
-app passes as `TF_VAR_fleet_hosts`; the bastion ports racknerd reaches for the public apps in
-`fleet.web.apps` come the same way as `TF_VAR_fleet_edge_ports`, the two bastion ports the
-passthrough edge reaches as `fleet_public_port` and `fleet_bans_port`
+app passes as `TF_VAR_fleet_hosts`; the two bastion ports the
+edge reaches come the same way as `fleet_public_port` and `fleet_bans_port`
 ([proxy skill](../proxy/SKILL.md)), and each host's
 `fleet.hosts.HOST.telemetry` ports as `TF_VAR_fleet_telemetry`, and the cache port, each laptop's home
 backup port, the operator laptops, the state database's port, the routed LAN subnets and the gateway as `fleet_cache_port`,
-`fleet_home_backups`, `fleet_operators`, `fleet_state_port`, `fleet_routes` and `fleet_lan`, so a new public app, a new log
+`fleet_home_backups`, `fleet_operators`, `fleet_state_port`, `fleet_routes` and `fleet_lan`, so a new log
 sender or a moved port needs only a plan and an apply. Every project reads the domain
 from `fleet.domain` as `TF_VAR_fleet_domain`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.

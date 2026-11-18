@@ -107,8 +107,6 @@ in
       };
     };
 
-  config.flake.modules.nixos.cache = cacheClient;
-
   config.flake.modules.darwin.remote-builds = remoteBuilds;
 
   config.flake.modules.nixos.remote-builds =

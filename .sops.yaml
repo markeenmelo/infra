@@ -1,6 +1,5 @@
 keys:
   - &operator age1vxf38fcnxh2v5razwzrlknljxja76jnt9gxxvnjwrun29h5cgymq297mht
-  - &racknerd age1qd9jj98f3wt0x6g6j5xme6xajhk24kpnl0hasd2pe7uenxhfcypqsyhp2k
   - &bastion age16fyy8678zedgm6nqgqnvmwzlc9cjzsc2nu9u45jaxvuh0sw5wfjst73np2
   - &edge age1wp59wfdt35kt2nu4w7ufepqmw44qpe3f79u8h46rz74jp2y95d3q4defmp
   - &mac age1jvw4ewqjsv9r5j9lwx8z6r5xc2zxqvg0d2u4lx383geg3gwv2dzquj7fzv
@@ -8,11 +7,6 @@ keys:
   - &asahi age1et80u88r8f33syj202xmn6xaxf4s7t52uez6yj30ev5a7l6h843s9nkdrq
 
 creation_rules:
-  - path_regex: ^secrets/hosts/racknerd\.yaml$
-    key_groups:
-      - age:
-          - *operator
-          - *racknerd
   - path_regex: ^secrets/hosts/edge\.yaml$
     key_groups:
       - age:
@@ -65,10 +59,6 @@ creation_rules:
           - *operator
           - *bastion
   - path_regex: ^secrets/oracle/operator\.yaml$
-    key_groups:
-      - age:
-          - *operator
-  - path_regex: ^secrets/racknerd/operator\.yaml$
     key_groups:
       - age:
           - *operator

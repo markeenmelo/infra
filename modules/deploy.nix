@@ -141,7 +141,7 @@ in
           "reboot HOST: reboot a NixOS host over the tailnet as the deploy account, e.g. after deploy --boot";
       apps.shutdown =
         systemctl "shutdown" "poweroff"
-          "shutdown HOST: power off a NixOS host over the tailnet as the deploy account, at once and without asking; wake brings bastion back only from home and racknerd through the RackNerd API";
+          "shutdown HOST: power off a NixOS host over the tailnet as the deploy account, at once and without asking; wake brings bastion back only from home and edge through the Oracle Cloud API, where it waits for its disk passphrase";
       apps.clean = {
         meta.description = "clean [HOST]: delete every generation but the newest two and optimise the store on HOST over the tailnet as the deploy account, or on this machine without HOST";
         program = pkgs.writeShellApplication {
