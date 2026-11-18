@@ -45,9 +45,13 @@ provider maintenance) leaves the host down until someone unlocks it; nothing on 
 Bastion's `Host silent` alert is the signal for that
 ([monitoring skill](../monitoring/SKILL.md)).
 
+Oracle goes on calling an instance running after the host powered itself off, as `shutdown`
+does, so `wake` starts a stopped instance and resets a running one, and refuses the reset while
+the host still answers on its public address.
+
 ```sh
 nix run .#unlock -- edge            # type the passphrase; rerun it to see whether the host still waits
-nix run .#wake -- edge              # start a stopped instance through the Oracle API
+nix run .#wake -- edge              # power the instance on through the Oracle API
 ```
 
 ## Boot and network

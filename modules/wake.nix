@@ -5,14 +5,30 @@
     let
       oracle-boot = pkgs.writeShellApplication {
         name = "oracle-boot";
-        runtimeInputs = [ pkgs.oci-cli ];
+        runtimeInputs = [
+          pkgs.netcat
+          pkgs.oci-cli
+        ];
         text = ''
           export OCI_CLI_USER=''${TF_VAR_user_ocid:?} OCI_CLI_TENANCY=''${TF_VAR_tenancy_ocid:?} OCI_CLI_FINGERPRINT=''${TF_VAR_fingerprint:?}
           export OCI_CLI_KEY_CONTENT=''${TF_VAR_private_key:?} OCI_CLI_REGION=''${TF_VAR_region:?}
-          instance=$(oci compute instance list --compartment-id "$OCI_CLI_TENANCY" --display-name "$1" \
-            --lifecycle-state STOPPED --query 'data[0].id' --raw-output)
-          [ -n "$instance" ] || { echo "wake: Oracle has no stopped instance named $1" >&2; exit 1; }
-          oci compute instance action --instance-id "$instance" --action START > /dev/null
+          name=$1 address=$2
+          instance() {
+            oci compute instance list --compartment-id "$OCI_CLI_TENANCY" --display-name "$name" \
+              --lifecycle-state "$1" --query 'data[0].id' --raw-output
+          }
+          action=START
+          id=$(instance STOPPED)
+          if [ -z "$id" ]; then
+            if nc -z -w 5 "$address" 443 2> /dev/null; then
+              echo "wake: $name answers on $address, so it is up" >&2
+              exit 1
+            fi
+            action=RESET
+            id=$(instance RUNNING)
+          fi
+          [ -n "$id" ] || { echo "wake: Oracle has no stopped or running instance named $name" >&2; exit 1; }
+          oci compute instance action --instance-id "$id" --action "$action" > /dev/null
         '';
       };
     in
@@ -30,7 +46,7 @@
             cd "$(git rev-parse --show-toplevel)"
             case ''${1-} in
               bastion) wakeonlan ${config.fleet.hosts.bastion.lan.mac} ;;
-              edge) sops exec-env secrets/oracle/operator.yaml "${lib.getExe oracle-boot} edge" ;;
+              edge) sops exec-env secrets/oracle/operator.yaml "${lib.getExe oracle-boot} edge ${config.fleet.hosts.edge.publicAddress}" ;;
               *) echo "wake: name bastion or edge, not ''${1-}" >&2; exit 1 ;;
             esac
           '';
