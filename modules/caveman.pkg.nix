@@ -1,6 +1,6 @@
 { fetchFromGitHub }:
 let
-  version = "4.1.0-unstable-2026-11-16";
+  version = "4.1.0-unstable-2026-11-17";
 in
 {
   name = "caveman-${version}";
@@ -8,7 +8,7 @@ in
   src = fetchFromGitHub {
     owner = "JuliusBrussee";
     repo = "caveman";
-    rev = "9b243662ff98d392bc0a95b865a554583d71be75";
-    hash = "sha256-1X2DjYa4xqO1ZqwxdFjCmaypp0+HYncEpXaut4i9LkE=";
+    rev = "a192894723a8f47e7f504c7b5041967ff1f18e55";
+    hash = "sha256-qG7njZgc+JCg+AAVNcFmOYjWMIAy73q4BociYG+WsEw=";
   };
 }

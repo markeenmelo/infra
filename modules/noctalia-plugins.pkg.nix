@@ -9,11 +9,11 @@ let
 in
 stdenvNoCC.mkDerivation {
   pname = "noctalia-plugins";
-  version = "0-unstable-2026-11-17";
+  version = "0-unstable-2026-11-18";
   src = fetchgit {
     url = "https://github.com/noctalia-dev/community-plugins";
-    rev = "60332e1c43af22086c855fe3c3cbfbd35666cb90";
-    hash = "sha256-XRH/zIvDrK4sP/lTIUiozqNSSZ84Liiln/P3csyzE8g=";
+    rev = "744fe5a1909ff5ebc1da3f74b1ffbf59668b9b9c";
+    hash = "sha256-q8SRcZ/dj0OCkGnzQnp2Nnvcvewl5ZQeBlZT2mKfAL0=";
     sparseCheckout = map (plugin: "/${plugin}") plugins;
   };
   postPatch = ''
