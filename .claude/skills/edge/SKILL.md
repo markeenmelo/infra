@@ -25,9 +25,11 @@ initrd brings the uplink up with the host's own networkd units and runs sshd on
 ([opentofu skill](../opentofu/SKILL.md#oracle)); no host firewall exists at that point. It admits
 the deploy account's keys with a pty and nothing else, and root's shell there is the passphrase
 prompt, so a login can type the passphrase and do nothing more. The initrd waits without a
-timeout and asks again after a wrong passphrase, however many, since a host that gave up could
-only be reset from the provider's console. sshd ends when the root is mounted, so the port
-answers only while the host is locked.
+timeout and keeps asking after a wrong passphrase, however many, since a host that gave up could
+only be reset from the provider's console. The prompt answers once and exits, so the session
+closes the same way after a right passphrase and a wrong one: run `unlock` again, and it prompts
+again if the host is still locked or finds nothing listening if it is not, since sshd ends when
+the root is mounted.
 
 The initrd host key is its own key under `/persist/etc/secrets/initrd`, never the host's: the
 boot partition is not encrypted, so its private half is readable there, and whoever reads it can
@@ -38,7 +40,7 @@ Bastion's `Host silent` alert is the signal for that
 ([monitoring skill](../monitoring/SKILL.md)).
 
 ```sh
-nix run .#unlock -- edge            # type the passphrase; the session closes when it is taken
+nix run .#unlock -- edge            # type the passphrase; rerun it to see whether the host still waits
 nix run .#wake -- edge              # start a stopped instance through the Oracle API
 ```
 
