@@ -308,4 +308,29 @@ in
         iifname "${config.services.tailscale.interfaceName}" ip saddr ${edge} tcp dport ${toString port} accept
       '';
     };
+
+  config.flake.modules.nixos.passthrough = {
+    services.nginx = {
+      enable = true;
+      streamConfig = ''
+        server {
+          listen 443;
+          proxy_pass ${bastion}:${toString port};
+          proxy_protocol on;
+          proxy_connect_timeout 5s;
+        }
+      '';
+      virtualHosts.redirect = {
+        default = true;
+        extraConfig = "access_log off;";
+        locations."/".return = "308 https://$host$request_uri";
+      };
+    };
+    fleet.probes = lib.mapAttrs (name: _: "https://${name}.${domain}") served;
+    networking.hosts."127.0.0.1" = map (name: "${name}.${domain}") (lib.attrNames served);
+    networking.firewall.allowedTCPPorts = [
+      80
+      443
+    ];
+  };
 }

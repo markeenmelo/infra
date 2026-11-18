@@ -17,6 +17,8 @@
         server
         telemetry
         unlock
+        passthrough
+        crowdsec-bouncer
       ];
       system.stateVersion = "26.11";
     };

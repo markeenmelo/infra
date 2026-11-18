@@ -1,5 +1,10 @@
-{
-  flake.modules.nixos.crowdsec =
+{ config, lib, ... }:
+let
+  inherit (config.fleet) hosts;
+  bastion = hosts.bastion.tailnetAddress;
+  edge = hosts.edge.tailnetAddress;
+  port = config.fleet.bansPort;
+  engine =
     { config, lib, ... }:
     let
       cfg = config.services.crowdsec;
@@ -75,7 +80,6 @@
           ];
         };
       };
-      services.crowdsec-firewall-bouncer.enable = true;
       fleet.scrapeTargets.crowdsec = cfg.settings.config.prometheus.listen_port;
       systemd.services = {
         crowdsec = {
@@ -98,11 +102,68 @@
           inherit (cfg) user group;
           mode = "0700";
         }
+      ];
+    };
+in
+{
+  options.fleet.bansPort = lib.mkOption {
+    type = lib.types.port;
+    description = "Port on bastion's tailnet address where CrowdSec's local API serves ban decisions to the edge's firewall bouncer; the `tofu` app hands it to `opentofu/tailscale` as `fleet_bans_port`.";
+  };
+  config.fleet.bansPort = 8081;
+
+  config.flake.modules.nixos.crowdsec =
+    { config, ... }:
+    {
+      imports = [ engine ];
+      services.crowdsec-firewall-bouncer.enable = true;
+      preservation.preserveAt."/persist".directories = [
         {
           directory = "/var/lib/crowdsec-firewall-bouncer-register";
-          inherit (cfg) user group;
+          inherit (config.services.crowdsec) user group;
           mode = "0750";
         }
       ];
+    };
+
+  config.flake.modules.nixos.crowdsec-engine =
+    { config, ... }:
+    {
+      imports = [ engine ];
+      services.crowdsec.settings.config.api.server.listen_uri = "0.0.0.0:${toString port}";
+      sops.secrets."crowdsec/edge-bouncer-key".restartUnits = [ "crowdsec-edge-bouncer.service" ];
+      systemd.services.crowdsec-edge-bouncer = {
+        description = "Register the edge's firewall bouncer with CrowdSec";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "crowdsec.service" ];
+        wants = [ "crowdsec.service" ];
+        path = [ config.services.crowdsec.package ];
+        enableStrictShellChecks = true;
+        script = ''
+          cscli bouncers delete edge > /dev/null 2>&1 || true
+          cscli bouncers add edge --key "$(< "$CREDENTIALS_DIRECTORY/key")" > /dev/null
+        '';
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          User = config.services.crowdsec.user;
+          Group = config.services.crowdsec.group;
+          LoadCredential = "key:${config.sops.secrets."crowdsec/edge-bouncer-key".path}";
+        };
+      };
+      networking.firewall.extraInputRules = ''
+        iifname "${config.services.tailscale.interfaceName}" ip saddr ${edge} tcp dport ${toString port} accept
+      '';
+    };
+
+  config.flake.modules.nixos.crowdsec-bouncer =
+    { config, ... }:
+    {
+      sops.secrets.crowdsec-bouncer-key.restartUnits = [ "crowdsec-firewall-bouncer.service" ];
+      services.crowdsec-firewall-bouncer = {
+        enable = true;
+        secrets.apiKeyPath = config.sops.secrets.crowdsec-bouncer-key.path;
+        settings.api_url = "http://${bastion}:${toString port}/";
+      };
     };
 }
