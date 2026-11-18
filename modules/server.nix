@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.server =
-    { lib, modulesPath, ... }:
+    {
+      config,
+      lib,
+      modulesPath,
+      ...
+    }:
     {
       imports = [ (modulesPath + "/profiles/minimal.nix") ];
       boot = {
@@ -32,6 +37,18 @@
         loader.limine.extraConfig = "graphics: no";
       };
       networking.useNetworkd = true;
+      nix.gc = {
+        automatic = lib.mkDefault true;
+        dates = "weekly";
+      };
+      systemd.services.generations-clean = {
+        description = "Delete all but the newest ten system generations";
+        startAt = "weekly";
+        before = [ "nix-gc.service" ];
+        path = [ config.nix.package ];
+        serviceConfig.Type = "oneshot";
+        script = "nix-env --profile /nix/var/nix/profiles/system --delete-generations +10";
+      };
       nixpkgs.flake = {
         setFlakeRegistry = false;
         setNixPath = false;

@@ -1,15 +1,17 @@
 let
-  common =
+  common = {
+    nix.settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      connect-timeout = 5;
+      fallback = true;
+    };
+  };
+  nh =
     { lib, ... }:
     {
-      nix.settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-        ];
-        connect-timeout = 5;
-        fallback = true;
-      };
       programs.nh = {
         enable = true;
         clean = {
@@ -21,12 +23,17 @@ let
 in
 {
   flake.modules.darwin.base = {
-    imports = [ common ];
+    imports = [
+      common
+      nh
+    ];
     nix = {
       settings.allowed-users = [ "@admin" ];
       optimise.automatic = true;
     };
   };
+
+  flake.modules.nixos.desktop = nh;
 
   flake.modules.nixos.base =
     { lib, ... }:
