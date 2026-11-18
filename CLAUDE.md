@@ -7,14 +7,14 @@ Dendritic NixOS fleet, one operator. Load the skill whose description owns the f
 |---|---|---|---|
 | `bastion` | x86_64-linux | Home server: LAN proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, agent MicroVM | itself |
 | `racknerd` | x86_64-linux | Public HTTPS edge (VPS), forwards to bastion over the tailnet | bastion |
-| `edge` | aarch64-linux | Oracle Cloud instance that takes the public edge over from racknerd; encrypted, unlocked over SSH | itself |
+| `edge` | aarch64-linux | Oracle Cloud instance that takes the public edge over from racknerd: passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
 | `thinkpad` | x86_64-linux | Operator laptop | bastion |
 | `asahi` | aarch64-linux | Apple Silicon laptop (dual boot with `mac`) | itself |
 | `mac` | aarch64-darwin | macOS laptop, nix-darwin + Home Manager | itself |
 
 Stack, decided: flake-parts + import-tree, disko, btrfs root rolled back every boot with state under
 `/persist` (Preservation), sops-nix, deploy-rs with magic rollback over Tailscale, nixos-anywhere for
-installs, Caddy (Porkbun DNS-01) with CrowdSec's firewall bouncer, Authelia, OpenTofu HCL for
+installs, Caddy (Porkbun DNS-01) with CrowdSec's firewall bouncer, nginx only as the edge's TLS passthrough, Authelia, OpenTofu HCL for
 Tailscale, Porkbun, UniFi and Oracle Cloud, Stylix, OpenCloud, microvm.nix for the agent guest. No Hydra, Attic, Cachix, containers where a NixOS
 module exists, or dashboards beyond Grafana. Do not reopen these.
 

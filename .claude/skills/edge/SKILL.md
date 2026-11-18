@@ -7,14 +7,17 @@ description: "The edge host: the Oracle Cloud Ampere A1 instance, its LUKS state
 
 [modules/hosts/edge/](../../../modules/hosts/edge/) is the instance the
 [Oracle project](../opentofu/SKILL.md#oracle) creates: one Ampere A1 core on a virtio disk, UEFI,
-`aarch64-linux`. It runs the `server` role with `telemetry` and nothing public yet; racknerd is
-still the edge ([proxy skill](../proxy/SKILL.md)). Like asahi it builds its own closure on
+`aarch64-linux`. It runs the `server` role with `telemetry`, and the public surface as a
+passthrough that forwards TLS unread to bastion and enforces bastion's bans
+([proxy skill](../proxy/SKILL.md)). Like asahi it builds its own closure on
 deploy, which is nearly all substitution from cache.nixos.org.
 
 The provider runs the hypervisor and can read the instance's memory, so no disk encryption hides
 a running host from it. The design answer is that nothing worth reading lives here: the host
-holds its SSH host key, its tailnet node key and the initrd host key, and each only reaches what
-the tailnet policy grants the host. The encrypted state partition protects those at rest, in
+holds its SSH host key, its tailnet node key, the initrd host key and the key that reads ban
+decisions, and each only reaches what the tailnet policy grants the host. What it can see of the
+traffic it carries is what any network on the path sees: addresses, the server name in the TLS
+handshake, sizes and timing. The encrypted state partition protects those at rest, in
 snapshots and volume backups. Its key derivation is capped in
 [disko.nix](../../../modules/hosts/edge/disko.nix): cryptsetup sizes it to the memory present at
 format time, and the installer runs with more than the host does, so an uncapped volume could

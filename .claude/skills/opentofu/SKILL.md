@@ -43,7 +43,9 @@ without a key, and one auth key per host. Bastion's apps are reached through tha
 its LAN proxy, so the tailnet defines no Tailscale services; that is why `group:members` reach
 bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, which the `tofu`
 app passes as `TF_VAR_fleet_hosts`; the bastion ports racknerd reaches for the public apps in
-`fleet.web.apps` come the same way as `TF_VAR_fleet_edge_ports`, and each host's
+`fleet.web.apps` come the same way as `TF_VAR_fleet_edge_ports`, the two bastion ports the
+passthrough edge reaches as `fleet_public_port` and `fleet_bans_port`
+([proxy skill](../proxy/SKILL.md)), and each host's
 `fleet.hosts.HOST.telemetry` ports as `TF_VAR_fleet_telemetry`, and the cache port, each laptop's home
 backup port, the operator laptops, the state database's port, the routed LAN subnets and the gateway as `fleet_cache_port`,
 `fleet_home_backups`, `fleet_operators`, `fleet_state_port`, `fleet_routes` and `fleet_lan`, so a new public app, a new log
