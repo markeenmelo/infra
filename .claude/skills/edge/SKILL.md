@@ -27,7 +27,9 @@ also stays off the hypervisor's vsock channel, where systemd would otherwise ser
 past the firewall: the server role turns that off and the host blacklists the transport. It carries
 no Perl: `/etc` is an overlay and userborn makes the accounts, their files under the preserved
 `/var/lib/nixos`, a layout the `storage-perlless` check boots; bastion cannot follow, since sanoid
-and Immich's ExifTool are Perl.
+and Immich's ExifTool are Perl. It keeps no log on disk either: the journal lives in memory and Loki on
+bastion is the record ([monitoring skill](../monitoring/SKILL.md)), so what was not shipped before a
+reboot is lost and a failed boot is read from the provider's console history.
 
 ## Unlock
 

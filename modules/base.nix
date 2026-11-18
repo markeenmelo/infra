@@ -36,7 +36,7 @@ in
   flake.modules.nixos.desktop = nh;
 
   flake.modules.nixos.base =
-    { lib, ... }:
+    { config, lib, ... }:
     {
       imports = [ common ];
       nix = {
@@ -101,9 +101,11 @@ in
         MulticastDNS = false;
       };
       services.journald.settings.Journal = {
-        Storage = "persistent";
+        Storage = lib.mkDefault "persistent";
         SystemMaxUse = "256M";
       };
-      preservation.preserveAt."/persist".directories = [ "/var/log/journal" ];
+      preservation.preserveAt."/persist".directories = lib.mkIf (
+        config.services.journald.settings.Journal.Storage == "persistent"
+      ) [ "/var/log/journal" ];
     };
 }

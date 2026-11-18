@@ -40,6 +40,11 @@
       ];
       boot.kernel.sysctl."net.ipv4.tcp_mtu_probing" = 1;
       fonts.fontconfig.enable = false;
+      services.journald.settings.Journal = {
+        Storage = "volatile";
+        RuntimeMaxUse = "32M";
+      };
+      systemd.tmpfiles.settings.journal."/persist/var/log/journal".R = { };
       security.lockKernelModules = true;
       # shortcut: the modules edge's firewall, Tailscale and the CrowdSec bouncer load at runtime, add one here and deploy with --boot then reboot when a unit fails on a module that cannot load, since the lock holds until reboot
       boot.kernelModules = [
