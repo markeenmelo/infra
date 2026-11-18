@@ -75,17 +75,25 @@ in
           ProtectHome = true;
           ReadWritePaths = [ config.fleet.metricsDir ];
         };
-        # shortcut: reads the first page of unexpired issuances, 100 at most; follow its "after" cursor when the domain has more
         script = ''
           file=${config.fleet.metricsDir}/certificate-watch.prom
           [ -e "$file" ] || printf 'certificate_watch_last_success_timestamp_seconds %s\n' "$(date +%s)" > "$file"
           held=$(openssl s_client -connect 127.0.0.1:443 -servername auth.${domain} < /dev/null 2> /dev/null \
             | openssl x509 -noout -pubkey | openssl pkey -pubin -outform DER | openssl dgst -sha256 -r | cut -d ' ' -f 1) || exit 0
           [ -n "$held" ] || exit 0
-          issued=$(curl --fail --silent --show-error --max-time 60 --retry 3 \
-            'https://api.certspotter.com/v1/issuances?domain=${domain}&include_subdomains=true') || exit 0
-          unexpected=$(jq --arg held "$held" --arg since "$(date --utc --date '7 days ago' +%Y-%m-%dT%H:%M:%SZ)" \
-            '[.[] | select(.not_before >= $since and .pubkey_sha256 != $held)] | length' <<< "$issued") || exit 0
+          since=$(date --utc --date '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          unexpected=0
+          after=
+          while :; do
+            page=$(curl --fail --silent --show-error --max-time 60 --retry 3 \
+              "https://api.certspotter.com/v1/issuances?domain=${domain}&include_subdomains=true&after=$after") || exit 0
+            last=$(jq --raw-output '.[-1].id // empty' <<< "$page") || exit 0
+            [ -n "$last" ] || break
+            count=$(jq --arg held "$held" --arg since "$since" \
+              '[.[] | select(.not_before >= $since and .pubkey_sha256 != $held)] | length' <<< "$page") || exit 0
+            unexpected=$((unexpected + count))
+            after=$last
+          done
           printf 'certificate_watch_unexpected %s\ncertificate_watch_last_success_timestamp_seconds %s\n' "$unexpected" "$(date +%s)" \
             > "$file.tmp"
           mv "$file.tmp" "$file"

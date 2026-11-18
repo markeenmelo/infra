@@ -50,11 +50,15 @@ in
           (pkgs.writeShellApplication {
             name = "clean-generations";
             runtimeInputs = [ config.nix.package ];
-            text = ''
-              nix-env --profile /nix/var/nix/profiles/system --delete-generations +2
-              nix-collect-garbage
-              nix-store --optimise
-            '';
+            text =
+              if config.programs.nh.enable then
+                "exec ${lib.getExe config.programs.nh.package} clean all --keep 2 --optimise"
+              else
+                ''
+                  nix-env --profile /nix/var/nix/profiles/system --delete-generations +2
+                  nix-collect-garbage
+                  nix-store --optimise
+                '';
           })
         ];
         users = {
@@ -92,7 +96,7 @@ in
                 options = [ "NOPASSWD" ];
               }
               {
-                command = clean;
+                command = ''${clean} ""'';
                 options = [ "NOPASSWD" ];
               }
             ];
