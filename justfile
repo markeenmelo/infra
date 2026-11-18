@@ -31,9 +31,14 @@ shutdown host:
     nix run .#shutdown -- {{ host }}
 
 [arg("host", pattern='[a-z0-9-]+')]
-[doc("Power on bastion by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), or racknerd through the RackNerd API")]
+[doc("Power on bastion by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), racknerd through the RackNerd API, or edge through the Oracle Cloud API")]
 wake host:
     nix run .#wake -- {{ host }}
+
+[arg("host", pattern='[a-z0-9-]+')]
+[doc("Send the disk passphrase to HOST waiting in its initrd, over SSH to its public address")]
+unlock host:
+    nix run .#unlock -- {{ host }}
 
 [arg("host", pattern='[a-z0-9-]*')]
 [doc("Delete every generation but the newest two, garbage-collect and optimise the store on HOST over the tailnet, or on this machine without HOST; on bastion this empties the build cache")]
@@ -54,7 +59,12 @@ tofu project *args:
 unifi-settings action:
     nix run .#unifi-settings -- "$@"
 
-[doc("Reinstall HOST from an installer at TARGET, carrying its identity from the old persist tree ROOT")]
+[arg("host", pattern='[a-z0-9-]+')]
+[doc("Make a new HOST's identity before its first install: SSH host keys and a tailnet login, in a private directory")]
+enroll host:
+    nix run .#enroll -- {{ host }}
+
+[doc("Install HOST on TARGET with its identity: carried from the old persist tree ROOT on an installer, or for a new host from the directory ROOT that enroll made")]
 [positional-arguments]
 install host target root:
     nix run .#install -- "$@"

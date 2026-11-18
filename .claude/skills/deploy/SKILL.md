@@ -53,7 +53,8 @@ nix run .#deploy -- .#HOST          # after checks pass on the committed revisio
 nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
 nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
 nix run .#shutdown -- HOST          # power off as deploy
-nix run .#wake -- HOST              # bastion by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); racknerd through the RackNerd API
+nix run .#wake -- HOST              # bastion by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); racknerd through the RackNerd API; edge through the Oracle API
+nix run .#unlock -- HOST            # send the disk passphrase to a host waiting in its initrd (edge skill)
 nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```
 
@@ -88,9 +89,25 @@ admit no root login and no SSH off the tailnet ([ssh.nix](../../../modules/ssh.n
 reinstall always goes through the installer image, where root is the login. The disk is wiped;
 it is an access change and needs the operator's approval.
 
+A new host has no old disk to carry from, and its facts need three values before its
+configuration evaluates: the age recipient its secrets file is encrypted to, its tailnet address,
+and the host key its initrd presents. The `enroll` app in install.nix makes that identity on the
+operator's machine and prints the three: it generates the SSH host key and a separate initrd host
+key, then logs a throwaway userspace `tailscaled` into the tailnet under the host's name with
+the host's enrollment key ([tailnet skill](../tailnet/SKILL.md)), which spends the key, and stops
+it. The directory it names holds the private halves laid out under `persist/`, so the node key
+and host key never touch the provider's stock image. It sits beside the operator's sops key,
+under a path the home backup excludes and Claude may not read ([secrets skill](../secrets/SKILL.md)),
+since it is the only copy until the host has booted. The install takes it as ROOT and leaves it
+in place, since a finished install proves nothing about the first boot; the operator deletes it
+once the host answers on the tailnet. Losing it before then means enrolling again and changing
+the three facts.
+
 ```sh
+nix run .#enroll -- HOST            # after the tailscale project minted HOST's enrollment key
 ssh root@ADDRESS 'mkdir -p /mnt/old && mount -o ro /dev/DISK-PART /mnt/old'
 nix run .#install -- HOST root@ADDRESS /mnt/old/persist
+nix run .#install -- HOST USER@ADDRESS IDENTITY   # a new host, with the directory enroll named
 ```
 
 An encrypted old disk is opened first, with `cryptsetup open /dev/DISK-PART old` and

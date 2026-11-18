@@ -35,7 +35,7 @@ in
           publicAddress = lib.mkOption {
             type = lib.types.nullOr ipv4;
             default = null;
-            description = "The host's public IPv4 address, for a host the internet reaches; the `tofu` app hands the edge's to `opentofu/porkbun` as `fleet_edge_address`, and bastion probes each from outside.";
+            description = "The host's public IPv4 address, for a host the internet reaches; the `tofu` app hands the edge's to `opentofu/porkbun` as `fleet_edge_address`, and bastion probes from outside each that publishes apps.";
           };
           lan = lib.mkOption {
             type = lib.types.nullOr (
@@ -102,6 +102,24 @@ in
             );
             default = null;
             description = "A workstation that imports `backup-home`; bastion keeps an append-only restic repository for its home.";
+          };
+          unlock = lib.mkOption {
+            type = lib.types.nullOr (
+              lib.types.submodule {
+                options = {
+                  port = lib.mkOption {
+                    type = lib.types.port;
+                    description = "TCP port on `publicAddress` where the initrd's sshd takes the disk passphrase; the `tofu` app hands these to `opentofu/oracle` as `fleet_unlock_ports`.";
+                  };
+                  hostKey = lib.mkOption {
+                    type = lib.types.strMatching "ssh-ed25519 [A-Za-z0-9+/]+";
+                    description = "Public half of the host key the initrd's sshd presents, which the `unlock` app pins; it is not the host's own key, since its private half sits unencrypted on the boot partition.";
+                  };
+                };
+              }
+            );
+            default = null;
+            description = "A host that imports `unlock`: its state partition has no TPM to open it, so the operator sends the passphrase over SSH to the initrd.";
           };
           module = lib.mkOption {
             type = lib.types.deferredModuleWith { staticModules = [ { _class = "nixos"; } ]; };

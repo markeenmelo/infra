@@ -96,6 +96,7 @@ locals {
     asahi     = ["tag:admin-client"]
     mac       = ["tag:admin-client"]
     racknerd  = ["tag:server"]
+    edge      = ["tag:server"]
     bastion   = ["tag:server", "tag:bastion"]
     proton-ca = ["tag:proton-exit"]
     proton-us = ["tag:proton-exit"]

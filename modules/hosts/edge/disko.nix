@@ -1,0 +1,7 @@
+{
+  fleet.hosts.edge.module = {
+    fleet.encryptState = true;
+    disko.devices.disk.os.device = "/dev/disk/by-path/pci-0000:18:00.0-scsi-0:0:0:1";
+    boot.loader.efi.canTouchEfiVariables = false;
+  };
+}

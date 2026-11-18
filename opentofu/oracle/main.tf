@@ -67,6 +67,11 @@ variable "fleet_tailscale_port" {
   type        = number
 }
 
+variable "fleet_unlock_ports" {
+  description = "TCP ports where a host's initrd takes its disk passphrase over SSH, from fleet.hosts.*.unlock; the tofu app sets it."
+  type        = list(number)
+}
+
 variable "alert_email" {
   description = "Address that hears of any spend in the tenancy."
   type        = string
@@ -97,8 +102,7 @@ locals {
   boot_volume          = 50
   network              = "10.80.0.0/24"
   anywhere             = "0.0.0.0/0"
-  unlock_port          = 22022
-  tcp_ports            = concat([80, 443, local.unlock_port], var.install ? [22] : [])
+  tcp_ports            = concat([80, 443], var.fleet_unlock_ports, var.install ? [22] : [])
   protocol             = { icmp = "1", tcp = "6", udp = "17" }
   fragmentation_needed = { type = 3, code = 4 }
 }
