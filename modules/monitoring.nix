@@ -703,6 +703,35 @@ in
                         summary = "{{ $labels.job }} has failed its {{ $labels.source }} health check for over an hour; its System page names what";
                       }
                       {
+                        title = "Server login";
+                        datasource = "loki";
+                        expr = "sum by (host, user, source) (count_over_time({host=~\"${
+                          lib.concatStringsSep "|" (lib.attrNames metricSenders ++ [ host ])
+                        }\", syslog_identifier=~\"sshd.*\"} |= \"Accepted \" != \" for nix-ssh \" | regexp `Accepted \\S+ for (?P<user>\\S+) from (?P<source>\\S+)` [10m]))";
+                        for = "0s";
+                        summary = "{{ $labels.user }} logged in to {{ $labels.host }} over SSH from {{ $labels.source }}; expected only while deploying";
+                      }
+                      {
+                        title = "Authelia mail failing";
+                        datasource = "loki";
+                        expr = "sum(count_over_time({host=\"${host}\", unit=\"authelia-main.service\"} |= `\"level\":\"error\"` |~ `(?i)smtp|notif|mail` [10m]))";
+                        for = "0s";
+                        summary = "Authelia logged an error about sending mail; identity checks for new devices do not arrive until its SMTP account works";
+                      }
+                      {
+                        title = "Unexpected certificate";
+                        expr = "certificate_watch_unexpected";
+                        for = "0s";
+                        severity = "critical";
+                        summary = "{{ $value }} certificate(s) for the domain entered the public logs within a week with a key the proxy on {{ $labels.instance }} does not hold";
+                      }
+                      {
+                        title = "Certificate watch stale";
+                        expr = "time() - certificate_watch_last_success_timestamp_seconds";
+                        threshold = 3 * 86400;
+                        summary = "The certificate logs have not been read from {{ $labels.instance }} for over 3 days";
+                      }
+                      {
                         title = "Gateway security event";
                         datasource = "loki";
                         expr = "sum by (name) (count_over_time({host=\"gateway\"} |= \"UNIFIcategory=Security\" != \"|Blocked by Firewall|\" | regexp `CEF:0\\|[^|]*\\|[^|]*\\|[^|]*\\|[^|]*\\|(?P<name>[^|]*)\\|` [10m]))";
