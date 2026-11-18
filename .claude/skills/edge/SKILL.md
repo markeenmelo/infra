@@ -59,8 +59,10 @@ again.
 
 A new instance starts from the provider's stock image. `enroll` makes its identity first and
 `install` takes that directory as ROOT ([deploy skill](../deploy/SKILL.md#install)); the border
-admits the installer's port 22 only for that apply. disko asks for the passphrase on the
-terminal, and the host then waits in its initrd for `unlock`. A reinstall of a live host goes
+admits the installer's port 22, and the instance has the installer's memory, only for that
+apply. disko asks for the passphrase on the terminal, and the host then waits in its initrd for
+`unlock`. The apply that ends the install shrinks the instance again, which reboots it, so it is
+unlocked a second time. A reinstall of a live host goes
 the usual way, carrying the identity off the old disk. Bastion is deployed with a new host's
 `telemetry` fact only after that host's first boot: the silence alerts fire for a sender that
 has never sent.
@@ -69,6 +71,7 @@ has never sent.
 nix run .#tofu -- oracle apply -var install=true
 nix run .#install -- edge ubuntu@ADDRESS IDENTITY
 nix run .#unlock -- edge
-nix run .#tofu -- oracle apply
+nix run .#tofu -- oracle apply      # reboots edge at its running size
+nix run .#unlock -- edge
 rm -rf IDENTITY                     # only once edge answers on the tailnet
 ```

@@ -114,7 +114,7 @@ in
               trap - EXIT
             fi
             nixos-anywhere --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
-              echo "install: failed with the target's disk no longer usable; identity kept in $extra, rerun nixos-anywhere with --extra-files $extra" >&2
+              echo "install: nixos-anywhere failed; read above how far it got, since once it has partitioned, the target's old system is gone. The identity is kept in $extra: rerun nixos-anywhere with --extra-files $extra" >&2
               exit 1
             }
             if [ "$extra" = "$root" ]; then

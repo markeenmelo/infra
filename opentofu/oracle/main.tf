@@ -79,7 +79,7 @@ variable "alert_email" {
 }
 
 variable "install" {
-  description = "Whether the border admits SSH on port 22, where the stock image and the nixos-anywhere installer listen; true only for the apply before an install."
+  description = "Whether an install is under way: the border admits SSH on port 22, where the stock image and the nixos-anywhere installer listen, and every instance gets at least the memory the installer's kexec needs; true only for the apply before an install."
   type        = bool
   default     = false
 }
@@ -100,6 +100,7 @@ locals {
   home                 = "in tenancy where request.region = '${var.region}'"
   shape                = "VM.Standard.A1.Flex"
   boot_volume          = 50
+  installer_memory     = 6
   network              = "10.80.0.0/24"
   anywhere             = "0.0.0.0/0"
   tcp_ports            = concat([80, 443], var.fleet_unlock_ports, var.install ? [22] : [])
@@ -191,7 +192,7 @@ resource "oci_core_instance" "fleet" {
   shape               = local.shape
   shape_config {
     ocpus         = each.value.ocpus
-    memory_in_gbs = each.value.memory
+    memory_in_gbs = var.install ? max(each.value.memory, local.installer_memory) : each.value.memory
   }
   source_details {
     source_type             = "image"
