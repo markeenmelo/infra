@@ -4,6 +4,7 @@
       config,
       lib,
       modulesPath,
+      pkgs,
       ...
     }:
     {
@@ -12,8 +13,14 @@
         kernel.sysctl = {
           "kernel.sysrq" = 0;
           "kernel.io_uring_disabled" = 2;
+          "kernel.yama.ptrace_scope" = 2;
+          "vm.mmap_rnd_bits" = if pkgs.stdenv.hostPlatform.isAarch64 then 33 else 32;
+          "vm.mmap_rnd_compat_bits" = 16;
         };
-        kernelParams = [ "systemd.ssh_auto=no" ];
+        kernelParams = [
+          "systemd.ssh_auto=no"
+        ]
+        ++ lib.optional pkgs.stdenv.hostPlatform.isx86_64 "vsyscall=none";
         blacklistedKernelModules = [
           "appletalk"
           "atm"

@@ -39,6 +39,10 @@
         "vsock_loopback"
       ];
       boot.kernel.sysctl."net.ipv4.tcp_mtu_probing" = 1;
+      boot.kernelParams = [
+        "debugfs=off"
+        "init_on_free=1"
+      ];
       fonts.fontconfig.enable = false;
       services.journald.settings.Journal = {
         Storage = "volatile";
