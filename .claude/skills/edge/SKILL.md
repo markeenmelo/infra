@@ -46,9 +46,10 @@ nix run .#wake -- edge              # start a stopped instance through the Oracl
 
 Limine installs to the removable-media path and leaves the EFI variables alone
 ([disko.nix](../../../modules/hosts/edge/disko.nix)), so the boot depends on no firmware state
-the provider would have to keep. The uplink is the instance's one Ethernet link, matched by type
-and not by MAC address: a recreated instance gets a new address, and the initrd needs the network
-before anyone can unlock it. It takes DHCP, and the host resolves over DNS-over-TLS on its own,
+the provider would have to keep. The uplink is the instance's one physical Ethernet link, matched
+by type and by having no kind, which virtual links such as veth and bridges have, and not by MAC
+address: a recreated instance gets a new address, and the initrd needs the network before anyone
+can unlock it. It takes DHCP, and the host resolves over DNS-over-TLS on its own,
 as racknerd does. A recreated instance also starts from a fresh stock volume, so it is installed
 again.
 
@@ -67,4 +68,5 @@ nix run .#tofu -- oracle apply -var install=true
 nix run .#install -- edge ubuntu@ADDRESS IDENTITY
 nix run .#unlock -- edge
 nix run .#tofu -- oracle apply
+rm -rf IDENTITY                     # only once edge answers on the tailnet
 ```

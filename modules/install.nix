@@ -73,7 +73,7 @@ in
             echo "age recipient:   $(ssh-to-age < "$persist/etc/ssh/ssh_host_ed25519_key.pub")"
             echo "tailnet address: $address"
             echo "initrd host key: $(cut -d ' ' -f 1,2 "$persist/etc/secrets/initrd/ssh_host_ed25519_key.pub")"
-            echo "identity:        $identity, private keys: install takes it as ROOT and deletes it"
+            echo "identity:        $identity, private keys: install takes it as ROOT; delete it once the host answers on the tailnet"
           '';
         };
       };
@@ -117,7 +117,11 @@ in
               echo "install: failed with the target's disk no longer usable; identity kept in $extra, rerun nixos-anywhere with --extra-files $extra" >&2
               exit 1
             }
-            rm -rf "$extra"
+            if [ "$extra" = "$root" ]; then
+              echo "install: $host has not booted yet and $extra is the only other copy of its identity; delete it once $host answers on the tailnet" >&2
+            else
+              rm -rf "$extra"
+            fi
           '';
         };
       };

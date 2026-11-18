@@ -98,8 +98,10 @@ the host's enrollment key ([tailnet skill](../tailnet/SKILL.md)), which spends t
 it. The directory it names holds the private halves laid out under `persist/`, so the node key
 and host key never touch the provider's stock image. It sits beside the operator's sops key,
 under a path the home backup excludes and Claude may not read ([secrets skill](../secrets/SKILL.md)),
-since it is the only copy until the install, which takes it as ROOT and deletes it; losing it
-means enrolling again and changing the three facts.
+since it is the only copy until the host has booted. The install takes it as ROOT and leaves it
+in place, since a finished install proves nothing about the first boot; the operator deletes it
+once the host answers on the tailnet. Losing it before then means enrolling again and changing
+the three facts.
 
 ```sh
 nix run .#enroll -- HOST            # after the tailscale project minted HOST's enrollment key

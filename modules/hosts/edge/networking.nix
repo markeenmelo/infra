@@ -8,7 +8,10 @@
       DNSOverTLS = "yes";
     };
     systemd.network.networks."10-uplink" = {
-      matchConfig.Type = "ether";
+      matchConfig = {
+        Type = "ether";
+        Kind = "!*";
+      };
       networkConfig = {
         DHCP = "ipv4";
         IPv6AcceptRA = false;
