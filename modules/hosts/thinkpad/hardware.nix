@@ -46,7 +46,6 @@
           after = [ "power-profiles-daemon.service" ];
           path = [
             config.services.power-profiles-daemon.package
-            config.systemd.package
           ];
           enableStrictShellChecks = true;
           serviceConfig = {
@@ -58,7 +57,8 @@
           # shortcut: the 40% brightness cap on battery is a starting point, not measured; tune after a battery baseline
           script = ''
             saved=$STATE_DIRECTORY/saved
-            if systemd-ac-power; then
+            ac=$(cat /sys/class/power_supply/AC/online)
+            if [ "$ac" = 1 ]; then
               if [ -s "$saved" ]; then
                 powerprofilesctl set "$(cat "$saved")"
               fi
@@ -70,7 +70,7 @@
             for panel in /sys/class/backlight/*; do
               [ -e "$panel/brightness" ] || continue
               bright=$STATE_DIRECTORY/brightness-''${panel##*/}
-              if systemd-ac-power; then
+              if [ "$ac" = 1 ]; then
                 if [ -s "$bright" ]; then
                   cat "$bright" > "$panel/brightness"
                 fi
