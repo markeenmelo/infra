@@ -61,7 +61,6 @@ in
         cacheDir = "${media}/cache/jellyfin";
         network = {
           internalHttpPort = port;
-          localNetworkAddresses = [ "0.0.0.0" ];
           autoDiscovery = false;
           knownProxies = [ "127.0.0.1" ];
           publicHttpsPort = 443;

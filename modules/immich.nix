@@ -59,7 +59,7 @@ in
       services = {
         immich = {
           enable = true;
-          host = "0.0.0.0";
+          host = "127.0.0.1";
           inherit port;
           mediaLocation = "${root}/library";
           accelerationDevices = [ "${config.fleet.renderDevice} rw" ];

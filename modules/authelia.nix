@@ -186,7 +186,7 @@ in
           };
           environmentVariables.AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = "${credentials}/smtp-password";
           settings = {
-            server.address = "tcp://0.0.0.0:${toString port}/";
+            server.address = "tcp://127.0.0.1:${toString port}/";
             log.level = "warn";
             default_2fa_method = "webauthn";
             identity_validation.elevated_session = {

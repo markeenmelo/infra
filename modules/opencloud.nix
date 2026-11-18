@@ -62,7 +62,6 @@ in
       services.opencloud = {
         enable = true;
         package = pkgs.opencloud-production;
-        address = "0.0.0.0";
         inherit port;
         url = "https://${hostname}";
         stateDir = root;
