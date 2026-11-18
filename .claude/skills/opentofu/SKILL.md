@@ -78,7 +78,8 @@ read-only for all of these; `acls_externally_managed_on` says so.
 [main.tf](../../../opentofu/porkbun/main.tf) owns every record of the domain: one wildcard `A`
 to the edge (`fleet.hosts.*.publicAddress`, passed as `fleet_edge_address`), since the edge aborts any hostname it does not publish and the wildcard
 certificate names none ([proxy skill](../proxy/SKILL.md)), so publishing an app needs no DNS
-change; the `CAA` set that confines issuance to Let's Encrypt, wildcard included, and forbids
+change; the `CAA` set that confines issuance to Let's Encrypt, wildcard included, and to DNS-01,
+so holding the address the names point at, as the edge's provider does, gets no certificate, and forbids
 S/MIME; and the null-mail set (null `MX` on the apex and on the wildcard, `-all` SPF, reject
 DMARC covering subdomains, empty DKIM) that lets no one send as the domain or any name under it. The API keys in `secrets/porkbun/api.yaml` are
 bastion's DNS-01 keys and are full-authority, so a plan already carries risk. A record that exists before its block is

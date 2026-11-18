@@ -46,7 +46,7 @@ locals {
   edge   = var.fleet_edge_address
   records = {
     edge          = { subdomain = "*", type = "A", content = local.edge }
-    caa-issue     = { subdomain = null, type = "CAA", content = "0 issue \"letsencrypt.org\"" }
+    caa-issue     = { subdomain = null, type = "CAA", content = "0 issue \"letsencrypt.org;validationmethods=dns-01\"" }
     caa-issuewild = { subdomain = null, type = "CAA", content = "0 issuewild \"letsencrypt.org\"" }
     caa-issuemail = { subdomain = null, type = "CAA", content = "0 issuemail \";\"" }
     null-mx       = { subdomain = null, type = "MX", content = "." }
