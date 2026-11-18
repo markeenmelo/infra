@@ -47,7 +47,7 @@ Bastion's `Host silent` alert is the signal for that
 ([monitoring skill](../monitoring/SKILL.md)).
 
 Oracle goes on calling an instance running after the host powered itself off, as `shutdown`
-does, so `wake` starts a stopped instance and resets a running one, and refuses the reset while
+does, so `wake` starts a stopped instance and, after asking, resets a running one, and refuses the reset while
 the host still answers on its public address or over the tailnet, or waits for its passphrase.
 
 ```sh

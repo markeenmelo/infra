@@ -32,7 +32,10 @@
             id=$(instance RUNNING)
           fi
           [ -n "$id" ] || { echo "wake: Oracle has no stopped or running instance named $name" >&2; exit 1; }
-          [ "$action" = START ] || echo "wake: Oracle calls $name running but it answers nowhere, resetting it" >&2
+          if [ "$action" = RESET ]; then
+            read -r -p "wake: Oracle calls $name running, but it answers nowhere from this machine. Reset it? [y/N] " answer < /dev/tty
+            [ "$answer" = y ] || exit 1
+          fi
           oci compute instance action --instance-id "$id" --action "$action" > /dev/null
         '';
       };
