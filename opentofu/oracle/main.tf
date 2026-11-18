@@ -100,17 +100,16 @@ locals {
   instances = {
     edge = { ocpus = 1, memory = 2 }
   }
-  free                 = { ocpus = 2, memory = 12, micros = 2, storage = 200, backups = 5 }
-  home                 = "in tenancy where request.region = '${var.region}'"
-  shape                = "VM.Standard.A1.Flex"
-  boot_volume          = 50
-  installer_memory     = 6
-  memory               = { for name, instance in local.instances : name => name == var.install ? max(instance.memory, local.installer_memory) : instance.memory }
-  network              = "10.80.0.0/24"
-  anywhere             = "0.0.0.0/0"
-  tcp_ports            = concat([80, 443], var.fleet_unlock_ports, var.install == "" ? [] : [22])
-  protocol             = { icmp = "1", tcp = "6", udp = "17" }
-  fragmentation_needed = { type = 3, code = 4 }
+  free             = { ocpus = 2, memory = 12, micros = 2, storage = 200, backups = 5 }
+  home             = "in tenancy where request.region = '${var.region}'"
+  shape            = "VM.Standard.A1.Flex"
+  boot_volume      = 50
+  installer_memory = 6
+  memory           = { for name, instance in local.instances : name => name == var.install ? max(instance.memory, local.installer_memory) : instance.memory }
+  network          = "10.80.0.0/24"
+  anywhere         = "0.0.0.0/0"
+  tcp_ports        = concat([80, 443], var.fleet_unlock_ports, var.install == "" ? [] : [22])
+  protocol         = { tcp = "6", udp = "17" }
 }
 
 data "oci_identity_availability_domains" "home" {
@@ -170,14 +169,6 @@ resource "oci_core_default_security_list" "fleet" {
     udp_options {
       min = var.fleet_tailscale_port
       max = var.fleet_tailscale_port
-    }
-  }
-  ingress_security_rules {
-    source   = local.anywhere
-    protocol = local.protocol.icmp
-    icmp_options {
-      type = local.fragmentation_needed.type
-      code = local.fragmentation_needed.code
     }
   }
 }

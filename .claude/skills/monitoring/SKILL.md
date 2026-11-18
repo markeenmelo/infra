@@ -88,6 +88,13 @@ the current time for a job with no file yet, so one that never succeeds still go
 deletes the files of removed jobs.
 Provisioning never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
 
+Three rules watch for compromise, not failure. `Server login` fires on every SSH login to a server
+except the build account's, so it also fires on a deploy and a login at any other time stands out.
+`Unexpected certificate` is critical: the proxy's `certificate-watch` job found a certificate for the
+domain in the public logs whose key the proxy does not hold ([proxy skill](../proxy/SKILL.md)).
+`Authelia mail failing` catches a broken SMTP account, which Authelia no longer tests at start
+([identity skill](../identity/SKILL.md)).
+
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the tailnet;
 the `alerts` topic needs no login and describes the fleet, an accepted exposure to every client the LAN proxy admits (Home, Kids, the IoT players) and to bastion's own processes through the proxy. Everything is denied by default; `alerts` is readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
