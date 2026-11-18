@@ -16,6 +16,8 @@
     imports = with config.flake.modules.nixos; [
       server
       lan-proxy
+      public-proxy
+      crowdsec-engine
       authelia
       immich
       frigate

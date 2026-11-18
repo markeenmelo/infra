@@ -61,6 +61,16 @@ variable "fleet_cache_port" {
   type        = number
 }
 
+variable "fleet_public_port" {
+  description = "Bastion port that terminates TLS for the connections the edge passes through, from fleet.publicPort; the tofu app sets it."
+  type        = number
+}
+
+variable "fleet_bans_port" {
+  description = "Bastion port where CrowdSec serves ban decisions to the edge's firewall bouncer, from fleet.bansPort; the tofu app sets it."
+  type        = number
+}
+
 variable "fleet_state_port" {
   description = "Bastion port of the PostgreSQL that holds OpenTofu state; the tofu app sets it."
   type        = number
@@ -129,6 +139,7 @@ locals {
       { src = ["tag:admin-client"], dst = ["tag:admin-client"], ip = ["tcp:1714-1764", "udp:1714-1764"] },
       { src = local.operators, dst = ["grafite"], ip = ["tcp:1024-65535"] },
       { src = ["racknerd"], dst = ["bastion"], ip = concat([for port in var.fleet_edge_ports : "tcp:${port}"], ["tcp:${var.fleet_cache_port}"]) },
+      { src = ["edge"], dst = ["bastion"], ip = ["tcp:${var.fleet_public_port}", "tcp:${var.fleet_bans_port}"] },
       { src = local.operators, dst = ["bastion"], ip = ["tcp:${var.fleet_state_port}"] },
       { src = concat(local.admin_clients, ["tag:ci"]), dst = ["bastion"], ip = ["tcp:${var.fleet_cache_port}"] },
       { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443", "udp:443"] },
@@ -145,6 +156,7 @@ locals {
       { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "tag:agent:22", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
       { src = "tag:agent", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22", "bastion:443", "bastion:53", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}", "tag:admin-client:1716", "grafite:40000"] },
       { src = "racknerd", proto = "tcp", accept = [for port in var.fleet_edge_ports : "bastion:${port}"], deny = ["bastion:443", "bastion:${var.fleet_state_port}"] },
+      { src = "edge", proto = "tcp", accept = ["bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}"], deny = concat([for port in var.fleet_edge_ports : "bastion:${port}"], ["bastion:443", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"]) },
     ])
   }
 }

@@ -1,6 +1,6 @@
 ---
 name: proxy
-description: "The public edge on racknerd: Caddy with a wildcard certificate by Porkbun DNS-01, the hostnames it forwards to bastion over the tailnet, the headers it strips and the admin paths it denies, CrowdSec bans at the firewall, where certificates, logs and ban state live; bastion's LAN proxy and the tailnet split DNS that keep home traffic off the WAN. Use before touching modules/edge.nix, modules/lan-proxy.nix, modules/caddy.nix or modules/crowdsec.nix, publishing or removing a hostname, or debugging HTTPS, name resolution of the domain, or bans."
+description: "The public edge on racknerd: Caddy with a wildcard certificate by Porkbun DNS-01, the hostnames it forwards to bastion over the tailnet, the headers it strips and the admin paths it denies, CrowdSec bans at the firewall, where certificates, logs and ban state live; the passthrough edge that forwards TLS unread to bastion's public listener, with its PROXY protocol trust and its remote CrowdSec bouncer; bastion's LAN proxy and the tailnet split DNS that keep home traffic off the WAN. Use before touching modules/edge.nix, modules/lan-proxy.nix, modules/caddy.nix or modules/crowdsec.nix, publishing or removing a hostname, or debugging HTTPS, name resolution of the domain, or bans."
 ---
 
 # Edge proxy
@@ -62,6 +62,42 @@ Zen's enforced policies ([zen.nix](../../../modules/zen.nix)) turn DNS-over-HTTP
 engine runs; moving it is a lock-style bump of that literal. State under `/var/lib/crowdsec`
 (database, hub, API credentials) persists, and the engine runs as a static user so the
 persisted files keep their owner across reboots.
+
+## Passthrough edge
+
+The `edge` host carries the same public surface without reading it
+([edge skill](../edge/SKILL.md)). Its `passthrough` role in edge.nix is nginx: the stream module
+forwards TCP 443 to bastion over the tailnet with PROXY protocol, and port 80 only redirects to
+https. TLS ends on bastion, so the host holds no certificate and no Porkbun key and keeps no
+access log; nginx comes from the binary cache, so the one-core host compiles nothing. Since
+bastion sheds an abusive client only after the edge already holds its connection open, the edge
+caps the connections one address may hold, and its connection ceiling is raised well above
+nginx's default so one source cannot exhaust it.
+
+Everything decided per request lives once, in `policy` in edge.nix, and two roles call it:
+racknerd's `edge` with bastion's tailnet address, and bastion's `public-proxy` with each app's
+own address. `public-proxy` is a second Caddy listener on `fleet.publicPort` holding the same
+wildcard certificate as the LAN proxy. It takes the client's address from the PROXY header of
+the edge host alone and refuses a header from any other source; the firewall admits the port
+from that host on the tailnet interface only, and the tailnet policy's test keeps the edge off
+the app ports, the LAN proxy, the cache and the state database
+([opentofu skill](../opentofu/SKILL.md)). A connection that reaches the listener with no header
+counts as its sender: the edge's own address is outside `countries` and is aborted, so a
+passthrough that stops sending the header fails closed. The loopback exemption in `policy` is
+for the edge's probes of its own port, which arrive with a loopback client address; on bastion
+it also covers a local process, which reaches the apps on loopback anyway.
+
+[crowdsec.nix](../../../modules/crowdsec.nix) splits the same way. `crowdsec-engine` on bastion
+reads the public listener's access log and serves ban decisions on `fleet.bansPort` to the
+tailnet; `crowdsec-bouncer` on the edge pulls them and drops banned addresses in nftables before
+they cross the tailnet. Bastion runs no bouncer of its own, since every public connection
+reaches it from the edge's address. The bouncer's key is one value under two names,
+`crowdsec-bouncer-key` in the edge's secrets file and `crowdsec/edge-bouncer-key` in bastion's
+([secrets skill](../secrets/SKILL.md)), and reads decisions only; bastion registers it whenever
+the API does not accept it, so a rotated key needs no command and an unchanged one leaves no
+moment in which the edge is refused. The edge's bouncer restarts on failure, so it comes back by
+itself after bastion was away, and a deploy of the edge does not hinge on bastion answering.
+Bastion is still deployed first, so the key is known when the bouncer first asks.
 
 ## LAN proxy
 

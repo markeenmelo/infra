@@ -4,15 +4,15 @@ let
   inherit (config.fleet) domain;
   declared = config.flake.nixosConfigurations.bastion.config.fleet.web.apps;
   bastion = config.fleet.hosts.bastion.tailnetAddress;
+  edge = config.fleet.hosts.edge.tailnetAddress;
+  port = config.fleet.publicPort;
   served = lib.filterAttrs (_: app: app.public) declared;
-in
-{
-  flake.modules.nixos.edge =
+  policy =
     {
-      config,
       lib,
       pkgs,
-      ...
+      logDir,
+      upstream,
     }:
     let
       countries = [ "CA" ];
@@ -109,8 +109,7 @@ in
         }
       '';
       site =
-        name:
-        { port, denied, ... }:
+        name: app:
         ''
           @${name} host ${name}.${domain}
           handle @${name} {
@@ -121,115 +120,221 @@ in
           }
           log_append @${name}-denied-${toString i} edge_denied path
           respond @${name}-denied-${toString i} 404
-        '') denied
+        '') app.denied
         + ''
-            reverse_proxy ${bastion}:${toString port}
+            reverse_proxy ${upstream app}
           }
         '';
     in
     {
-      imports = [ caddy ];
+      errorLog = ''
+        level ERROR
+        format filter {
+          wrap console
+          ${logFilter}
+        }
+      '';
+      accessLog = ''
+        output file ${logDir}/access.log {
+          mode 0640
+        }
+        format filter {
+          wrap json
+          ${logFilter}
+        }
+      '';
+      extraConfig = ''
+        import porkbun
+        header {
+          Strict-Transport-Security "max-age=63072000; includeSubDomains"
+          X-Content-Type-Options nosniff
+          Referrer-Policy no-referrer
+          X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
+          ?X-Frame-Options SAMEORIGIN
+          ?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
+          ?Cross-Origin-Opener-Policy same-origin-allow-popups
+          -Server
+          -Via
+          -X-Powered-By
+        }
+        @crawler header_regexp User-Agent "(?i)(${lib.concatStringsSep "|" crawlers})"
+        @robots {
+          path /robots.txt
+          host ${lib.concatMapStringsSep " " (name: "${name}.${domain}") (lib.attrNames served)}
+        }
+        @abroad {
+          not remote_ip 127.0.0.0/8 ::1
+          not {
+            maxmind_geolocation {
+              db_path ${pkgs.dbip-country-lite.mmdb}
+              allow_countries ${lib.concatStringsSep " " countries}
+            }
+          }
+        }
+        @hosting {
+          not remote_ip 127.0.0.0/8 ::1
+          not {
+            maxmind_geolocation {
+              db_path ${pkgs.dbip-asn-lite.mmdb}
+              deny_asn ${lib.concatMapStringsSep " " toString (lib.concatLists (lib.attrValues hosting))}
+            }
+          }
+        }
+        import identity
+        route {
+          log_append @abroad <edge_denied abroad
+          abort @abroad
+          log_append @hosting <edge_denied hosting
+          abort @hosting
+          log_append @crawler <edge_denied crawler
+          abort @crawler
+          respond @robots <<TXT
+            User-agent: *
+            Disallow: /
+            TXT 200
+          rate_limit {
+            zone address {
+              key {remote_host}
+              events 3000
+              window 1m
+            }
+          }
+          ${lib.concatStrings (lib.mapAttrsToList site served)}
+          handle {
+            abort
+          }
+        }
+      '';
+    };
+  logs = config: {
+    systemd.services.caddy.serviceConfig.LogsDirectoryMode = "0750";
+    preservation.preserveAt."/persist".directories = [
+      {
+        directory = config.services.caddy.logDir;
+        user = config.services.caddy.user;
+        group = config.services.caddy.group;
+        mode = "0750";
+      }
+    ];
+  };
+in
+{
+  options.fleet.publicPort = lib.mkOption {
+    type = lib.types.port;
+    description = "Port on bastion's tailnet address where its Caddy terminates TLS for the connections the edge passes through; the `tofu` app hands it to `opentofu/tailscale` as `fleet_public_port`.";
+  };
+  config.fleet.publicPort = 8443;
+
+  config.flake.modules.nixos.edge =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      rules = policy {
+        inherit lib pkgs;
+        inherit (config.services.caddy) logDir;
+        upstream = app: "${bastion}:${toString app.port}";
+      };
+    in
+    {
+      imports = [
+        caddy
+        (logs config)
+      ];
       services.caddy = {
         globalConfig = ''
           servers {
             protocols h1 h2
           }
         '';
-        logFormat = ''
-          level ERROR
-          format filter {
-            wrap console
-            ${logFilter}
-          }
-        '';
+        logFormat = rules.errorLog;
         virtualHosts."*.${domain}" = {
-          logFormat = ''
-            output file ${config.services.caddy.logDir}/access.log {
-              mode 0640
-            }
-            format filter {
-              wrap json
-              ${logFilter}
-            }
-          '';
-          extraConfig = ''
-            import porkbun
-            header {
-              Strict-Transport-Security "max-age=63072000; includeSubDomains"
-              X-Content-Type-Options nosniff
-              Referrer-Policy no-referrer
-              X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
-              ?X-Frame-Options SAMEORIGIN
-              ?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
-              ?Cross-Origin-Opener-Policy same-origin-allow-popups
-              -Server
-              -Via
-              -X-Powered-By
-            }
-            @crawler header_regexp User-Agent "(?i)(${lib.concatStringsSep "|" crawlers})"
-            @robots {
-              path /robots.txt
-              host ${lib.concatMapStringsSep " " (name: "${name}.${domain}") (lib.attrNames served)}
-            }
-            @abroad {
-              not remote_ip 127.0.0.0/8 ::1
-              not {
-                maxmind_geolocation {
-                  db_path ${pkgs.dbip-country-lite.mmdb}
-                  allow_countries ${lib.concatStringsSep " " countries}
-                }
-              }
-            }
-            @hosting {
-              not remote_ip 127.0.0.0/8 ::1
-              not {
-                maxmind_geolocation {
-                  db_path ${pkgs.dbip-asn-lite.mmdb}
-                  deny_asn ${lib.concatMapStringsSep " " toString (lib.concatLists (lib.attrValues hosting))}
-                }
-              }
-            }
-            import identity
-            route {
-              log_append @abroad <edge_denied abroad
-              abort @abroad
-              log_append @hosting <edge_denied hosting
-              abort @hosting
-              log_append @crawler <edge_denied crawler
-              abort @crawler
-              respond @robots <<TXT
-                User-agent: *
-                Disallow: /
-                TXT 200
-              rate_limit {
-                zone address {
-                  key {remote_host}
-                  events 3000
-                  window 1m
-                }
-              }
-              ${lib.concatStrings (lib.mapAttrsToList site served)}
-              handle {
-                abort
-              }
-            }
-          '';
+          logFormat = rules.accessLog;
+          inherit (rules) extraConfig;
         };
       };
       fleet.probes = lib.mapAttrs (name: _: "https://${name}.${domain}") served;
       networking.hosts."127.0.0.1" = map (name: "${name}.${domain}") (lib.attrNames served);
-      systemd.services.caddy.serviceConfig.LogsDirectoryMode = "0750";
       networking.firewall.allowedTCPPorts = [
         80
         443
       ];
-      preservation.preserveAt."/persist".directories = [
-        {
-          directory = config.services.caddy.logDir;
-          user = config.services.caddy.user;
-          group = config.services.caddy.group;
-          mode = "0750";
-        }
-      ];
     };
+
+  config.flake.modules.nixos.public-proxy =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      rules = policy {
+        inherit lib pkgs;
+        inherit (config.services.caddy) logDir;
+        upstream = app: "${app.address}:${toString app.port}";
+      };
+    in
+    {
+      imports = [
+        caddy
+        (logs config)
+      ];
+      services.caddy = {
+        globalConfig = ''
+          servers :${toString port} {
+            listener_wrappers {
+              proxy_protocol {
+                allow ${edge}/32
+                fallback_policy reject
+                timeout 5s
+              }
+              tls
+            }
+            protocols h1 h2
+          }
+        '';
+        logFormat = rules.errorLog;
+        virtualHosts.public = {
+          hostName = "*.${domain}:${toString port}";
+          logFormat = rules.accessLog;
+          inherit (rules) extraConfig;
+        };
+      };
+      networking.firewall.extraInputRules = ''
+        iifname "${config.services.tailscale.interfaceName}" ip saddr ${edge} tcp dport ${toString port} accept
+      '';
+    };
+
+  config.flake.modules.nixos.passthrough = {
+    services.nginx = {
+      enable = true;
+      appendConfig = "worker_rlimit_nofile 8192;";
+      eventsConfig = "worker_connections 4096;";
+      streamConfig = ''
+        limit_conn_zone $binary_remote_addr zone=source:1m;
+        server {
+          listen 443;
+          proxy_pass ${bastion}:${toString port};
+          proxy_protocol on;
+          proxy_connect_timeout 5s;
+          limit_conn source 64;
+        }
+      '';
+      virtualHosts.redirect = {
+        default = true;
+        extraConfig = "access_log off;";
+        locations."/".return = "308 https://$host$request_uri";
+      };
+    };
+    fleet.probes = lib.mapAttrs (name: _: "https://${name}.${domain}") served;
+    networking.hosts."127.0.0.1" = map (name: "${name}.${domain}") (lib.attrNames served);
+    networking.firewall.allowedTCPPorts = [
+      80
+      443
+    ];
+  };
 }

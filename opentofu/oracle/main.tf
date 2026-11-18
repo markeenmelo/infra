@@ -79,9 +79,13 @@ variable "alert_email" {
 }
 
 variable "install" {
-  description = "Whether the border admits SSH on port 22, where the stock image and the nixos-anywhere installer listen; true only for the apply before an install."
-  type        = bool
-  default     = false
+  description = "The instance an install is under way on, empty otherwise: the border then admits SSH on port 22, where the stock image and the nixos-anywhere installer listen, and that instance alone gets at least the memory the installer has been through an install at."
+  type        = string
+  default     = ""
+  validation {
+    condition     = var.install == "" || contains(keys(local.instances), var.install)
+    error_message = "install names an instance in local.instances, or is empty."
+  }
 }
 
 provider "oci" {
@@ -100,9 +104,11 @@ locals {
   home                 = "in tenancy where request.region = '${var.region}'"
   shape                = "VM.Standard.A1.Flex"
   boot_volume          = 50
+  installer_memory     = 6
+  memory               = { for name, instance in local.instances : name => name == var.install ? max(instance.memory, local.installer_memory) : instance.memory }
   network              = "10.80.0.0/24"
   anywhere             = "0.0.0.0/0"
-  tcp_ports            = concat([80, 443], var.fleet_unlock_ports, var.install ? [22] : [])
+  tcp_ports            = concat([80, 443], var.fleet_unlock_ports, var.install == "" ? [] : [22])
   protocol             = { icmp = "1", tcp = "6", udp = "17" }
   fragmentation_needed = { type = 3, code = 4 }
 }
@@ -191,7 +197,7 @@ resource "oci_core_instance" "fleet" {
   shape               = local.shape
   shape_config {
     ocpus         = each.value.ocpus
-    memory_in_gbs = each.value.memory
+    memory_in_gbs = local.memory[each.key]
   }
   source_details {
     source_type             = "image"
@@ -208,6 +214,10 @@ resource "oci_core_instance" "fleet" {
   lifecycle {
     prevent_destroy = true
     ignore_changes  = [source_details[0].source_id, metadata]
+    precondition {
+      condition     = sum(values(local.memory)) <= local.free.memory && sum([for instance in values(local.instances) : instance.ocpus]) <= local.free.ocpus
+      error_message = "The instances, with the one being installed at the installer's memory, exceed the free A1 allowance in local.free."
+    }
   }
 }
 

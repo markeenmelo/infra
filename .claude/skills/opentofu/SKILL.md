@@ -43,7 +43,9 @@ without a key, and one auth key per host. Bastion's apps are reached through tha
 its LAN proxy, so the tailnet defines no Tailscale services; that is why `group:members` reach
 bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, which the `tofu`
 app passes as `TF_VAR_fleet_hosts`; the bastion ports racknerd reaches for the public apps in
-`fleet.web.apps` come the same way as `TF_VAR_fleet_edge_ports`, and each host's
+`fleet.web.apps` come the same way as `TF_VAR_fleet_edge_ports`, the two bastion ports the
+passthrough edge reaches as `fleet_public_port` and `fleet_bans_port`
+([proxy skill](../proxy/SKILL.md)), and each host's
 `fleet.hosts.HOST.telemetry` ports as `TF_VAR_fleet_telemetry`, and the cache port, each laptop's home
 backup port, the operator laptops, the state database's port, the routed LAN subnets and the gateway as `fleet_cache_port`,
 `fleet_home_backups`, `fleet_operators`, `fleet_state_port`, `fleet_routes` and `fleet_lan`, so a new public app, a new log
@@ -109,9 +111,13 @@ The border is the network's default security list, taken over so Oracle's own ru
 port 22 is gone. It admits the web ports, `fleet_unlock_ports` for a host that takes its disk
 passphrase over SSH from the initrd, where no host firewall runs yet, Tailscale's port
 (`fleet_tailscale_port`) so traffic to bastion connects directly instead of through a relay, and
-the ICMP message path MTU discovery needs. Port 22 opens only with `-var install=true`, for the
-stock image and the nixos-anywhere installer; the apply after the install, without the flag,
-closes it.
+the ICMP message path MTU discovery needs. Port 22 opens only with `-var install=NAME`, for the
+stock image and the nixos-anywhere installer. The same flag raises that one instance to
+`local.installer_memory`, the only size the installer, which runs from memory, has been through
+an install at; whether the edge's running size would do is untested. A resize reboots an
+instance, which is why the flag names one: any other instance keeps running. The apply after the
+install, without the flag, closes the port and shrinks the instance, which reboots it. A
+precondition refuses a plan whose instances, at those sizes, exceed `local.free`.
 
 An instance launches from the newest Ubuntu image, which admits the deploy account's keys
 (`fleet_deploy_keys`), and ignores later images and later keys, since the install replaces both
