@@ -20,9 +20,15 @@
         passthrough
         crowdsec-bouncer
         (
-          { config, modulesPath, ... }:
+          {
+            config,
+            modulesPath,
+            pkgs,
+            ...
+          }:
           {
             imports = [ (modulesPath + "/profiles/perlless.nix") ];
+            boot.kernelPackages = pkgs.linuxPackages;
             networking.firewall = {
               allowPing = false;
               extraInputRules = ''

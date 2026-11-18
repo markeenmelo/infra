@@ -18,6 +18,7 @@
           "vm.mmap_rnd_compat_bits" = 16;
         };
         kernelParams = [
+          "randomize_kstack_offset=on"
           "systemd.ssh_auto=no"
         ]
         ++ lib.optional pkgs.stdenv.hostPlatform.isx86_64 "vsyscall=none";
