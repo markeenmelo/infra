@@ -8,6 +8,15 @@ let
     { config, lib, ... }:
     let
       cfg = config.services.crowdsec;
+      state = {
+        DynamicUser = lib.mkForce false;
+        StateDirectory = map (lib.removePrefix "/var/lib/") [
+          "/var/lib/crowdsec"
+          cfg.settings.config.config_paths.data_dir
+          cfg.settings.config.config_paths.hub_dir
+        ];
+        StateDirectoryMode = "0700";
+      };
     in
     {
       services.crowdsec = {
@@ -88,13 +97,9 @@ let
             (lib.toJSON cfg.settings)
             (lib.toJSON cfg.hub)
           ];
-          serviceConfig = {
-            DynamicUser = lib.mkForce false;
-            StateDirectory = "crowdsec";
-            StateDirectoryMode = "0700";
-          };
+          serviceConfig = state;
         };
-        crowdsec-setup.serviceConfig.DynamicUser = lib.mkForce false;
+        crowdsec-setup.serviceConfig = state;
       };
       preservation.preserveAt."/persist".directories = [
         {
@@ -171,7 +176,10 @@ in
       services.crowdsec-firewall-bouncer = {
         enable = true;
         secrets.apiKeyPath = config.sops.secrets.crowdsec-bouncer-key.path;
-        settings.api_url = "http://${bastion}:${toString port}/";
+        settings = {
+          api_url = "http://${bastion}:${toString port}/";
+          retry_initial_connect = true;
+        };
       };
       systemd.services.crowdsec-firewall-bouncer.serviceConfig = {
         Restart = "on-failure";
