@@ -48,7 +48,7 @@ Bastion's `Host silent` alert is the signal for that
 
 Oracle goes on calling an instance running after the host powered itself off, as `shutdown`
 does, so `wake` starts a stopped instance and resets a running one, and refuses the reset while
-the host still answers on its public address or over the tailnet.
+the host still answers on its public address or over the tailnet, or waits for its passphrase.
 
 ```sh
 nix run .#unlock -- edge            # type the passphrase; rerun it to see whether the host still waits
