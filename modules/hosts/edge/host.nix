@@ -20,9 +20,15 @@
         passthrough
         crowdsec-bouncer
         (
-          { modulesPath, ... }:
+          { config, modulesPath, ... }:
           {
             imports = [ (modulesPath + "/profiles/perlless.nix") ];
+            networking.firewall = {
+              allowPing = false;
+              extraInputRules = ''
+                iifname "${config.services.tailscale.interfaceName}" icmp type echo-request accept
+              '';
+            };
             services.userborn.passwordFilesLocation = "/var/lib/nixos";
           }
         )
@@ -32,6 +38,7 @@
         "vsock"
         "vsock_loopback"
       ];
+      boot.kernel.sysctl."net.ipv4.tcp_mtu_probing" = 1;
       fonts.fontconfig.enable = false;
       security.lockKernelModules = true;
       # shortcut: the modules edge's firewall, Tailscale and the CrowdSec bouncer load at runtime, add one here and deploy with --boot then reboot when a unit fails on a module that cannot load, since the lock holds until reboot

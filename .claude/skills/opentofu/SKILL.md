@@ -111,7 +111,7 @@ The border is the network's default security list, taken over so Oracle's own ru
 port 22 is gone. It admits the web ports, `fleet_unlock_ports` for a host that takes its disk
 passphrase over SSH from the initrd, where no host firewall runs yet, Tailscale's port
 (`fleet_tailscale_port`) so traffic to bastion connects directly instead of through a relay, and
-the ICMP message path MTU discovery needs. Port 22 opens only with `-var install=NAME`, for the
+no ICMP at all, so the host finds the path MTU by probing ([host.nix](../../../modules/hosts/edge/host.nix)). Port 22 opens only with `-var install=NAME`, for the
 stock image and the nixos-anywhere installer. The same flag raises that one instance to
 `local.installer_memory`, the only size the installer, which runs from memory, has been through
 an install at; whether the edge's running size would do is untested. A resize reboots an
