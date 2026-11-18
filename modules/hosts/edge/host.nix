@@ -19,6 +19,13 @@
         unlock
         passthrough
         crowdsec-bouncer
+        (
+          { modulesPath, ... }:
+          {
+            imports = [ (modulesPath + "/profiles/perlless.nix") ];
+            services.userborn.passwordFilesLocation = "/var/lib/nixos";
+          }
+        )
       ];
       boot.blacklistedKernelModules = [
         "vmw_vsock_virtio_transport"

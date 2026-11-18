@@ -32,6 +32,23 @@ let
       boot.initrd.secrets."/tmp/secret.key" = pkgs.writeText "secret.key" "secretsecret";
     }
   );
+  probePerlless = probeWith (
+    { modulesPath, ... }:
+    {
+      imports = [
+        (modulesPath + "/profiles/perlless.nix")
+      ];
+      fleet.encryptState = false;
+      services.userborn.passwordFilesLocation = "/var/lib/nixos";
+      users = {
+        users.probe = {
+          isSystemUser = true;
+          group = "probe";
+        };
+        groups.probe = { };
+      };
+    }
+  );
   survivesReboot = ''
     machine.wait_for_unit("multi-user.target")
     machine.succeed("touch /stray /var/lib/probe/kept")
@@ -66,6 +83,22 @@ in
         machine.succeed("cryptsetup status state")
       ''
       + survivesReboot;
+    };
+    storage-perlless = inputs.disko.lib.testLib.makeDiskoTest {
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      name = "storage-perlless";
+      disko-config.disko.devices = probePerlless.config.disko.devices;
+      inherit (probePerlless) extendModules;
+      extraTestScript = ''
+        machine.wait_for_unit("multi-user.target")
+        machine.succeed("findmnt --types overlay /etc")
+        machine.succeed("test -s /var/lib/nixos/passwd")
+        probe_id = machine.succeed("id -u probe")
+      ''
+      + survivesReboot
+      + ''
+        assert machine.succeed("id -u probe") == probe_id, "an account's id changed across a reboot"
+      '';
     };
     storage-esp = inputs.disko.lib.testLib.makeDiskoTest {
       pkgs = inputs.nixpkgs.legacyPackages.${system};
