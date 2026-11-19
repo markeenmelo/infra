@@ -310,7 +310,7 @@ let
           requires = [ "arr-restore.service" ];
           after = [ "arr-restore.service" ];
           serviceConfig.ExecCondition = pkgs.writeShellScript "${name}-has-tables" ''
-            tables=$(${lib.getExe' config.services.postgresql.package "psql"} -d ${lib.removePrefix "postgresqlBackup-" name} -Atc "select count(*) from pg_tables where schemaname = 'public'") || exit 1
+            tables=$(${lib.getExe' config.services.postgresql.package "psql"} -d ${lib.removePrefix "postgresqlBackup-" name} -Atc "select count(*) from pg_tables where schemaname = 'public'") || exit 255
             [ "$tables" != 0 ]
           '';
         }))
@@ -712,7 +712,7 @@ let
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
       system.activationScripts.arr-handover.text = ''
         if [ -e /run/current-system/etc/systemd/system/${lib.head apps}.service ] &&
-          [ -n "$(find ${handover}/done -mtime -7 2> /dev/null)" ]; then
+          [ -e ${handover}/done ]; then
           mkdir -p ${handover}/replaced
           mv -f ${hostDumps}/*.sql.gz ${handover}/replaced/ 2> /dev/null || true
           if [ -e ${config.microvm.stateDir}/downloads/var.img ]; then
@@ -768,14 +768,13 @@ let
           };
           arr-dumps-fresh = {
             description = "Fail when the downloads guest's database dumps are older than two days";
-            startAt = "daily";
+            startAt = "06:00";
             path = [ pkgs.findutils ];
             enableStrictShellChecks = true;
             serviceConfig.Type = "oneshot";
             script = ''
               [ -e ${handover}/done ] || exit 0
               for db in ${lib.concatStringsSep " " apps}; do
-                [ -e ${hostDumps}/"$db.sql.gz" ] || [ -e ${hostDumps}/"$db.prev.sql.gz" ] || continue
                 if [ -z "$(find ${hostDumps}/"$db.sql.gz" ${hostDumps}/"$db.prev.sql.gz" -mtime -2 2> /dev/null)" ]; then
                   echo "$db has no dump newer than two days in ${hostDumps}" >&2
                   exit 1

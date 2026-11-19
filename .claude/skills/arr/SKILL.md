@@ -35,7 +35,8 @@ Decluttarr handles instead.
 
 Seerr takes requests at `seerr.DOMAIN`, on the LAN and the tailnet, and runs on bastion, outside the guest, because it
 needs Jellyfin; its database stays in bastion's shared PostgreSQL ([identity skill](../identity/SKILL.md)); it signs in to Jellyfin as the declared native admin to set itself up, and its Sonarr and Radarr
-setup units start from a timer a minute after boot or a deploy, outside the switch, and retry until
+setup units start from a timer a minute after boot or a deploy that changes them, outside the
+switch, and retry until
 the request profile exists in the guest, giving up after fifteen tries in an hour, since no
 unit ordering crosses into it. Its login
 takes a Jellyfin password and Seerr has no OIDC, so only accounts with a native Jellyfin password
@@ -106,12 +107,12 @@ has no table, so a failed load never replaces a good dump with an empty one. `ar
 bastion writes the first dumps, from the databases bastion's PostgreSQL still holds from before
 the move, and once only: its marker, `/srv/backups/downloads-handover/done`, and its temporary
 files sit outside the share, since bastion's `postgres` must not write where the guest can plant
-a link. Those old databases are left in place. When the generation being replaced still ran the
-arr apps on bastion and the marker is less than a week old (a move redone after a rollback),
-activation removes the marker and moves the dumps (to `/srv/backups/downloads-handover/replaced`)
-and the guest's `var.img` (to `var.img.replaced`) aside, so a misfire can be undone and the handover starts again
-from bastion's databases instead of resuming on the guest's older ones. After that week the
-guest's databases are the ones that count, and an old generation booted by accident resets
-nothing. A boot straight into the new generation has no previous one to look at; there the three
-are removed by hand. `arr-dumps-fresh` on bastion fails daily, and so raises `Unit failed`
-([monitoring skill](../monitoring/SKILL.md)), while a database's dump is older than two days.
+a link. Those old databases are left in place. The side that ran last wins: when the generation
+being replaced ran the arr apps on bastion after a handover (a move redone after a rollback, or
+an old generation booted for any reason), activation removes the marker and moves the dumps (to
+`/srv/backups/downloads-handover/replaced`) and the guest's `var.img` (to `var.img.replaced`)
+aside, so the handover starts again from bastion's databases and the guest's former ones can be
+put back by hand. A boot straight into the new generation has no previous one to look at; there
+the three are moved by hand. `arr-dumps-fresh` on bastion fails each morning, and so raises
+`Unit failed` ([monitoring skill](../monitoring/SKILL.md)), while a database has no dump, current
+or previous, newer than two days.
