@@ -8,7 +8,7 @@ Hosts, their roles and where each builds: [README.md](README.md#hosts).
 Stack, decided: flake-parts + import-tree, disko, btrfs root rolled back every boot with state under
 `/persist` (Preservation), sops-nix, deploy-rs with magic rollback over Tailscale, nixos-anywhere for
 installs, Caddy (Porkbun DNS-01) with CrowdSec's firewall bouncer, nginx only as the edge's TLS passthrough, Authelia, OpenTofu HCL for
-Tailscale, Porkbun, UniFi and Oracle Cloud, Stylix, OpenCloud, microvm.nix for the agent guest. No Hydra, Attic, Cachix, containers where a NixOS
+Tailscale, Porkbun, UniFi and Oracle Cloud, Stylix, OpenCloud, microvm.nix for the agent guest, jail.nix for the Claude jail on the Linux laptops. No Hydra, Attic, Cachix, containers where a NixOS
 module exists, or dashboards beyond Grafana. Do not reopen these.
 
 **A rule lives in one place:** the code that enforces it, the check that fails on it, or one skill.

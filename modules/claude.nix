@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   ...
 }:
@@ -226,17 +227,15 @@ in
         inherit (config.programs.claude-code) configDir;
         dns = "169.254.1.1";
         ponytailLedger = "${config.xdg.configHome}/ponytail/band";
-        readOnly = lib.concatMapStringsSep " " (path: "--ro-bind ${path} ${path}") (
-          [
-            builtins.storeDir
-            "/etc"
-            "/bin"
-            "/usr"
-            "/run/current-system"
-          ]
-          ++ map (name: osConfig.sops.secrets.${name}.path) tokenNames
-        );
-        readOnlyIfPresent = lib.concatMapStringsSep " " (path: "--ro-bind-try ${path} ${path}") [
+        readOnly = [
+          builtins.storeDir
+          "/etc"
+          "/bin"
+          "/usr"
+          "/run/current-system"
+        ]
+        ++ map (name: osConfig.sops.secrets.${name}.path) tokenNames;
+        readOnlyIfPresent = [
           "${home}/.gitconfig"
           "${config.xdg.configHome}/git"
           "${config.xdg.configHome}/ponytail"
@@ -266,67 +265,83 @@ in
           "NIX_PROFILES"
           "(NIX_)?SSL_CERT_FILE"
         ];
-        jail = pkgs.writeShellApplication {
-          name = "claude";
-          derivationArgs = { inherit (pkgs.claude-code) version; };
-          runtimeInputs = [
-            pkgs.coreutils
-            pkgs.git
-          ];
-          text = ''
-            dir=$(pwd -P)
-            binds=("$dir")
-            if top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
-              top=$(realpath "$top")
-              common=$(realpath "$(git -C "$dir" rev-parse --git-common-dir)")
-              gitdir=$(realpath "$(git -C "$dir" rev-parse --git-dir)")
-              if [[ "$common" == "$top/.git" ]] ||
-                [[ "$gitdir" == "$common/worktrees/"* && "$(realpath "$(cat "$gitdir/gitdir" 2>/dev/null)" 2>/dev/null)" == "$top/.git" ]]; then
-                binds=("$top" "$common")
-              fi
-            fi
-            for b in "''${binds[@]}"; do
-              d="''${b%/}/"
-              for p in ${lib.escapeShellArgs deniedDirs}; do
-                if [[ "$p/" == "$d"* || "$d" == "$p/"* ]]; then
-                  echo "claude: $b holds or sits in a path the jail hides" >&2
-                  exit 1
-                fi
-              done
-              if [[ "${home}/" == "$d"* || "$d" == "${home}/."* ]]; then
-                echo "claude: $b holds or sits in a path the jail hides" >&2
-                exit 1
-              fi
-            done
-            bindArgs=()
-            for b in "''${binds[@]}"; do bindArgs+=(--bind "$b" "$b"); done
-            mkdir -p "${configDir}" "${ponytailLedger}"
-            if [[ ! -e "${configDir}/.claude.json" && -e "${home}/.claude.json" ]]; then
-              mv "${home}/.claude.json" "${configDir}/.claude.json"
-            fi
-            kept=(--clearenv)
-            while IFS= read -r -d "" pair; do
-              name="''${pair%%=*}"
-              if [[ "$name" =~ ^(${keptEnv})$ ]]; then kept+=(--setenv "$name" "''${pair#*=}"); fi
-            done < <(env -0)
-            exec ${lib.getExe' pkgs.passt "pasta"} --config-net --quiet \
-              --tcp-ports none --udp-ports none --tcp-ns none --udp-ns none \
-              --no-map-gw --dns-forward ${dns} -- \
-              ${lib.getExe pkgs.bubblewrap} \
-              --unshare-all --unshare-user --share-net --die-with-parent \
-              --uid "$(id -u)" --gid "$(id -g)" \
-              --proc /proc --dev /dev --tmpfs /tmp --tmpfs /run \
-              ${readOnly} \
-              --ro-bind ${pkgs.writeText "resolv.conf" "nameserver ${dns}\n"} "$(readlink -f /etc/resolv.conf)" \
-              --tmpfs "${home}" \
-              --bind "${configDir}" "${configDir}" \
-              ${readOnlyIfPresent} \
-              --bind "${ponytailLedger}" "${ponytailLedger}" \
-              "''${bindArgs[@]}" --chdir "$dir" \
-              "''${kept[@]}" --setenv CLAUDE_CONFIG_DIR "${configDir}" \
-              -- ${lib.getExe pkgs.claude-code} "$@"
-          '';
-        };
+        jailed =
+          inputs.jail-nix.lib.extend
+            {
+              inherit pkgs;
+              basePermissions = [ ];
+              bubblewrapPackage = pkgs.writeShellScriptBin "bwrap" ''
+                exec ${lib.getExe' pkgs.passt "pasta"} --config-net --quiet \
+                  --tcp-ports none --udp-ports none --tcp-ns none --udp-ns none \
+                  --no-map-gw --dns-forward ${dns} -- \
+                  ${lib.getExe pkgs.bubblewrap} "$@"
+              '';
+            }
+            "claude"
+            pkgs.claude-code
+            (
+              c:
+              [
+                c.no-new-session
+                (c.share-ns "net")
+                (c.unsafe-add-raw-args "--proc /proc --dev /dev --tmpfs /tmp --tmpfs /run --clearenv")
+              ]
+              ++ map c.readonly readOnly
+              ++ [
+                (c.tmpfs home)
+                (c.readwrite configDir)
+              ]
+              ++ map c.try-readonly readOnlyIfPresent
+              ++ [
+                (c.readwrite ponytailLedger)
+                (c.set-env "CLAUDE_CONFIG_DIR" configDir)
+                (c.add-runtime ''
+                  export PATH=${
+                    lib.makeBinPath [
+                      pkgs.coreutils
+                      pkgs.git
+                    ]
+                  }:$PATH
+                  dir=$(pwd -P)
+                  binds=("$dir")
+                  if top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
+                    top=$(realpath "$top")
+                    common=$(realpath "$(git -C "$dir" rev-parse --git-common-dir)")
+                    gitdir=$(realpath "$(git -C "$dir" rev-parse --git-dir)")
+                    if [[ "$common" == "$top/.git" ]] ||
+                      [[ "$gitdir" == "$common/worktrees/"* && "$(realpath "$(cat "$gitdir/gitdir" 2>/dev/null)" 2>/dev/null)" == "$top/.git" ]]; then
+                      binds=("$top" "$common")
+                    fi
+                  fi
+                  for b in "''${binds[@]}"; do
+                    d="''${b%/}/"
+                    for p in ${lib.escapeShellArgs deniedDirs}; do
+                      if [[ "$p/" == "$d"* || "$d" == "$p/"* ]]; then
+                        echo "claude: $b holds or sits in a path the jail hides" >&2
+                        exit 1
+                      fi
+                    done
+                    if [[ "${home}/" == "$d"* || "$d" == "${home}/."* ]]; then
+                      echo "claude: $b holds or sits in a path the jail hides" >&2
+                      exit 1
+                    fi
+                  done
+                  mkdir -p "${configDir}" "${ponytailLedger}"
+                  if [[ ! -e "${configDir}/.claude.json" && -e "${home}/.claude.json" ]]; then
+                    mv "${home}/.claude.json" "${configDir}/.claude.json"
+                  fi
+                  RUNTIME_ARGS+=(--uid "$(id -u)" --gid "$(id -g)")
+                  RUNTIME_ARGS+=(--ro-bind ${pkgs.writeText "resolv.conf" "nameserver ${dns}\n"} "$(readlink -f /etc/resolv.conf)")
+                  for b in "''${binds[@]}"; do RUNTIME_ARGS+=(--bind "$b" "$b"); done
+                  RUNTIME_ARGS+=(--chdir "$dir")
+                  while IFS= read -r -d "" pair; do
+                    name="''${pair%%=*}"
+                    if [[ "$name" =~ ^(${keptEnv})$ ]]; then RUNTIME_ARGS+=(--setenv "$name" "''${pair#*=}"); fi
+                  done < <(env -0)
+                '')
+              ]
+            );
+        jail = jailed.overrideAttrs { inherit (pkgs.claude-code) version; };
       in
       {
         home = {
