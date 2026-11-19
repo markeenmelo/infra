@@ -709,7 +709,8 @@ let
       ];
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
       system.activationScripts.arr-handover.text = ''
-        if [ -e /run/current-system/etc/systemd/system/${lib.head apps}.service ]; then
+        if [ -e /run/current-system/etc/systemd/system/${lib.head apps}.service ] &&
+          [ -n "$(find ${handover}/done -mtime -7 2> /dev/null)" ]; then
           rm -f ${handover}/done ${hostDumps}/*.sql.gz ${config.microvm.stateDir}/downloads/var.img
         fi
       '';
@@ -743,6 +744,22 @@ let
             serviceConfig.ExecStartPre = map (
               name: "${install} -D -m 0400 ${secret name} ${hostSecrets}/${name}"
             ) guestHeld;
+          };
+          arr-dumps-fresh = {
+            description = "Fail when the downloads guest's database dumps are older than two days";
+            startAt = "daily";
+            path = [ pkgs.findutils ];
+            enableStrictShellChecks = true;
+            serviceConfig.Type = "oneshot";
+            script = ''
+              [ -e ${handover}/done ] || exit 0
+              for db in ${lib.concatStringsSep " " apps}; do
+                if [ -z "$(find ${hostDumps}/"$db.sql.gz" -mtime -2 2> /dev/null)" ]; then
+                  echo "$db has no dump newer than two days in ${hostDumps}" >&2
+                  exit 1
+                fi
+              done
+            '';
           };
           arr-handover = {
             description = "Dump the arr databases bastion still holds for the downloads guest to load";
