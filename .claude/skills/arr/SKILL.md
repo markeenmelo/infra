@@ -1,6 +1,6 @@
 ---
 name: arr
-description: "Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr and Decluttarr on bastion through nixflix: their logins and databases, the Proton WireGuard namespace they run in, ProtonVPN port forwarding, the firewall around the namespace, their web UIs on the LAN and the tailnet, the torrent and usenet indexers, the Easynews bridge, the usenet servers, media requests and the quality profile. Use before touching modules/arr.nix, modules/easynews-indexer.pkg.nix or modules/decluttarr.pkg.nix, changing indexers, servers, quality profiles or download limits, rotating the WireGuard config or a provider credential, or debugging downloads, imports or the VPN."
+description: "Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr and Decluttarr on bastion through nixflix: their logins and databases, the Proton WireGuard namespace they run in, ProtonVPN port forwarding, the firewall around the namespace, their web UIs on the LAN and the tailnet, the torrent and usenet indexers, the Easynews bridge, the usenet servers, media requests and the quality profile. Use before touching modules/arr.nix, modules/downloads.nix, modules/easynews-indexer.pkg.nix or modules/decluttarr.pkg.nix, changing indexers, servers, quality profiles or download limits, rotating the WireGuard config or a provider credential, or debugging downloads, imports or the VPN."
 ---
 
 # Arr apps
@@ -61,3 +61,26 @@ on the Newshosting password and with strict certificate checks. Prowlarr's index
 application setup units print no response bodies, which can echo the keys they sent. An indexer
 that fails to apply (its site down, a key rejected) is logged and the rest still apply; the unit
 succeeds, so one unreachable site never fails a deploy.
+
+## The downloads guest
+
+[downloads.nix](../../../modules/downloads.nix) runs a second MicroVM on bastion, `downloads`, built
+like the agents' ([agents skill](../agents/SKILL.md)): cloud-hypervisor, a tap carrying a /24 only
+bastion and the guest sit on, and the `downloads` nftables table, which masquerades the guest to
+the internet and drops what it sends to bastion, to private addresses, to the tailnet and over
+IPv6; replies to connections bastion opens pass. It will hold the apps that talk to indexers and
+peers, so that one of them compromised meets a second kernel before bastion. For now it holds
+nothing: the apps still run on bastion, and the guest only mounts what they will need over
+virtiofs, the media dataset and the state directories of Sonarr, Radarr, Prowlarr, qBittorrent and
+SABnzbd, at the paths they have on bastion. Jellyfin's and Seerr's state is not shared. The guest
+has no login, no tailnet node, no sops identity or credential share and no disk of its own; its
+root is memory. The state directories are shared read-only, enforced by bastion's virtiofs daemon,
+until the apps move; they do carry the apps' credentials (API keys, usenet
+logins, the qBittorrent password hash), which the guest's root can read. The guest's uplink is
+bastion's, not the Proton tunnel: no app starts in the guest before nixflix's WireGuard namespace
+runs inside it and confines them as it does on bastion. Each share is
+mounted with the options its dataset has on bastion (`nosuid`, `nodev`, and `noexec` on media). Its journal
+goes to its console, which is `microvm@downloads`'s log on bastion, so Loki holds it. Unlike the
+agents' guest it restarts whenever a deploy changes it. At each boot `downloads-probe` prints the
+owners of the shared directories and hardlinks a file from the downloads directory into the
+library as Sonarr's uid, which is what an import does; its last line in the log says both worked.

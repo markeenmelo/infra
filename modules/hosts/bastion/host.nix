@@ -30,6 +30,7 @@
       proton-exit
       monitoring
       agents
+      downloads
     ];
     system.stateVersion = "26.05";
   };
