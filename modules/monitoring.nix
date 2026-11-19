@@ -579,6 +579,14 @@ in
                   ];
                 }
               ];
+              # shortcut: Grafana keeps a provisioned rule that leaves the file; name a removed host here until one deploy has deleted its rules
+              rules.settings.deleteRules = lib.concatMap (
+                sender:
+                map (kind: { uid = "${kind}-silent-${sender}"; }) [
+                  "host"
+                  "logs"
+                ]
+              ) [ "racknerd" ];
               rules.settings.groups = [
                 {
                   orgId = 1;
@@ -746,7 +754,7 @@ in
                       }
                       {
                         title = "Filesystem almost full";
-                        expr = "1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|nsfs\"} / node_filesystem_size_bytes";
+                        expr = "1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|erofs|overlay|nsfs\"} / node_filesystem_size_bytes";
                         threshold = 0.85;
                         summary = "{{ $labels.mountpoint }} on {{ $labels.instance }} is over 85% full";
                       }
