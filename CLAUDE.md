@@ -33,6 +33,8 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Query live state read-only through the Grafana, GitHub and nixos MCP tools.
 - Commit validated work in small Conventional Commits (`type(scope): summary`; the body says what
   changed and why), refactors and features in separate commits.
+- Push branches, open pull requests, answer their reviewers and merge a clean round, within the
+  limits of [Branches and pull requests](#branches-and-pull-requests).
 - Prepare `deploy .#HOST` of a committed revision whose checks passed and report the command,
   saying when the revision changes remote access (SSH, firewall, Tailscale, users, sudo, deploy
   config) or data storage and persistence.
@@ -57,7 +59,7 @@ Permissions apply within the requested task. Continue independent safe work whil
 
 ## Branches and pull requests
 
-- Never commit to `main`. One branch per change: `feat/TOPIC`, `refactor/TOPIC` or `docs/TOPIC`. A
+- Never commit to `main` directly. One branch per change: `feat/TOPIC`, `refactor/TOPIC` or `docs/TOPIC`. A
   structural change (moving a module, renaming an option, changing the layout) gets its own branch
   and pull request, never mixed with feature work.
 - Measure a branch with `git diff --stat main...HEAD`, leaving out lock-only files such as
@@ -82,17 +84,29 @@ Permissions apply within the requested task. Continue independent safe work whil
   sections Summary, Hosts affected, Validation run, Risks, Rollback, and After deploying when the
   operator has something to run or look at. The body stays true: a later commit that changes what
   it says updates it.
-- After each push, wait for both reviewers on that commit, not for the CI jobs. Check every
-  finding against the code, an evaluation or an experiment before acting on it, the ones a
-  reviewer marks unverified included. Fix what holds, and reply on each inline finding with the
-  commit that fixed it or the reason nothing changed.
-- When a round brings no new finding, squash-merge and delete the branch, local and remote, then
-  take the next branch. Hold the merge and report instead when the next step needs something only
-  the operator can do or see, such as a deploy or a log from a host.
-- Not waiting for CI is a limit to lift, not a preference: a [check.yml](.github/workflows/check.yml)
-  run takes many times longer than a review and a newer push cancels it, so a merge can precede
-  its result. Making it fast enough to wait for is open work; once it is, agents wait for it too
-  and merge only when it is green.
+- After each push, wait for both reviewers to report on that commit, not for the CI jobs: the
+  `review` run concluded on the head commit and the Codex review names it. A reviewer that never
+  reports on the head commit is not a clean round: hold and report. Check every finding against
+  the code, an evaluation or an experiment before acting on it, the ones a reviewer marks
+  unverified included. Fix what holds, and reply on each inline finding with the commit that
+  fixed it or the reason nothing changed.
+- When a round brings no new finding, and `check` passed on the head commit where CI is the only
+  build of something the change affects (the `mac`, a toplevel the session could not build),
+  squash-merge through the pull request, the one way an
+  agent's work reaches `main`, and delete the branch, local and remote. Then read the `check` run
+  that merge starts on `main` before pushing the next branch, and fix or revert when it is red. A
+  stacked part branches from `main` once the part below it is merged.
+- Hold the merge and report instead when:
+  - the pull request touches what gates agents or the fleet's trust: `CLAUDE.md`,
+    `.github/workflows/`, `flake.lock`, `modules/secrets.nix`, `.sops.yaml` or `opentofu/`. `main`
+    is what CI joins the tailnet from and what the operator deploys, and the reviewers only read
+    a diff, so these wait for the operator;
+  - the next step needs something only the operator can do or see, such as a deploy or a log
+    from a host.
+- Not waiting for CI on every merge is a limit to lift, not a preference: a
+  [check.yml](.github/workflows/check.yml) run takes many times longer than a review and a newer
+  push cancels it. Making it fast enough to wait for is open work; once it is, agents wait for
+  it on every pull request and merge only when it is green.
 
 ## Method
 
