@@ -18,7 +18,8 @@ revision and the patch does not apply to the fleet's. The package is upstream's 
 variant, the chat gateways without the terminal UI, web and desktop parts. Evaluating it reads
 its Python workspace from a filtered copy of the source, which a read-only evaluation
 (`nix flake check --no-build`, `nix eval --read-only`) cannot add to the store: evaluate the
-package once without it first, as [check.yml](../../../.github/workflows/check.yml) does.
+package once without it first, as [check.yml](../../../.github/workflows/check.yml) and `just check`
+do.
 
 The agent runs shell commands and writes files as its own account inside the guest, and upstream
 is plain that only isolation by the operating system holds against a model that turns hostile:
