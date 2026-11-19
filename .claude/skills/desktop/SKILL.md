@@ -41,7 +41,8 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
 - **Quick terminal:** on the mac one key drops Ghostty's quick terminal over the work and hides it
   again ([ghostty.nix](../../../modules/ghostty.nix)). The Linux laptops have none: Umbriel has no global-shortcuts portal for Ghostty's own, and
   its scratchpad is unused, the stock binds parked in [umbriel.nix](../../../modules/umbriel.nix).
-- **Launcher:** `Mod + Space` on the Linux laptops, beside Umbriel's stock tap on `Mod`.
+- **Launcher:** `Mod + Space` on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
+  in [umbriel.nix](../../../modules/umbriel.nix) with the scratchpad binds.
 - **Motion:** none, or a fade or slide of at most 150 ms; nothing bounces or zooms.
 - **Spacing:** multiples of 2 px. Windows: 8 px between them, 6 px to the screen edge (the bar's
   edge counts as the screen's). Terminal padding 10 px across, 8 px down.
