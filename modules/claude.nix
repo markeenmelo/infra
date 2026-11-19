@@ -296,7 +296,12 @@ in
                 (c.readwrite ponytailLedger)
                 (c.set-env "CLAUDE_CONFIG_DIR" configDir)
                 (c.add-runtime ''
-                  export PATH=${lib.makeBinPath [ pkgs.git ]}:$PATH
+                  export PATH=${
+                    lib.makeBinPath [
+                      pkgs.coreutils
+                      pkgs.git
+                    ]
+                  }:$PATH
                   dir=$(pwd -P)
                   binds=("$dir")
                   if top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
