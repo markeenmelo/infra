@@ -35,7 +35,7 @@ first; wiping it destroys the old LUKS header and with it everything the old ins
 
 The role is one file per concern, each setting its NixOS and Home Manager halves: the base in
 [desktop.nix](../../../modules/desktop.nix) (Home Manager as a NixOS module, NetworkManager,
-Bluetooth, PipeWire, UPower, power profiles, the apps), [umbriel.nix](../../../modules/umbriel.nix)
+Bluetooth, PipeWire, UPower, the apps), [umbriel.nix](../../../modules/umbriel.nix)
 (the compositor session from nixpkgs' module, and `programs.umbriel.settings`, a config layered
 over Umbriel's packaged `config.toml`: tables merge by key and the last file wins, so only changes
 to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists the keybinds),
@@ -49,7 +49,7 @@ follow the [desktop skill](../desktop/SKILL.md). The tailnet client accepts bast
 so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
 advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
 through bastion. Bitwarden's desktop app is the SSH agent
-(`~/.bitwarden-ssh-agent.sock`), started at login.
+(`~/.bitwarden-ssh-agent.sock`), started at login ([bitwarden.nix](../../../modules/bitwarden.nix)).
 
 Claude Code runs under the same managed settings as the mac ([claude.nix](../../../modules/claude.nix)),
 written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. Claude Code's
@@ -91,8 +91,8 @@ does while a video plays; on battery two earlier timers there turn the screen of
 sooner. On battery `power-profile-ac` switches to
 power-saver and caps the panel brightness, and restores the previous profile and brightness on AC;
 the battery charges to 90% and resumes at
-85%. The home backup and the btrfs scrub ([desktop.nix](../../../modules/desktop.nix)) start on
-AC only. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move
+85%. The home backup ([backups.nix](../../../modules/backups.nix)) and the btrfs scrub
+([desktop.nix](../../../modules/desktop.nix)) start on AC only. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move
 to another display until it opens; undocked on AC that leaves no display until the lid opens or the
 idle timer suspends, and the idle lock still engages with no output, so opening the lid shows the
 lock screen. Shutting it suspends on
@@ -169,7 +169,7 @@ loopback guard because `marcos` has no pinned uid.
 
 `restic-backups-home` sends `/home/marcos` every 6 hours, skipping a run that falls on battery, to the append-only server on bastion
 ([backups skill](../backups/SKILL.md)) with `backups/thinkpad-password`, never the household key;
-only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh, adb, KDE Connect), the keyring,
+only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh, adb, KDE Connect, Claude's credentials), the keyring,
 caches and the Bitwarden socket stay out, and so do Steam's installed games, shader caches and
 downloads, which Steam fetches again. App data stays in, browser and messenger sessions
 included, so a restore brings back a signed-in desktop, and Steam's Proton prefixes, where games

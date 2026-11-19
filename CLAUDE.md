@@ -3,13 +3,7 @@
 Dendritic NixOS fleet, one operator. Load the skill whose description owns the files you touch
 (`.claude/skills/`); `nix` for any Nix. Skills are created when their code lands, not before.
 
-| Host | System | Role | Builds on |
-|---|---|---|---|
-| `bastion` | x86_64-linux | Home server: LAN and public proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, agent MicroVM | itself |
-| `edge` | aarch64-linux | Public HTTPS edge (Oracle Cloud instance): passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
-| `thinkpad` | x86_64-linux | Operator laptop | bastion |
-| `asahi` | aarch64-linux | Apple Silicon laptop (dual boot with `mac`) | itself |
-| `mac` | aarch64-darwin | macOS laptop, nix-darwin + Home Manager | itself |
+Hosts, their roles and where each builds: [README.md](README.md#hosts).
 
 Stack, decided: flake-parts + import-tree, disko, btrfs root rolled back every boot with state under
 `/persist` (Preservation), sops-nix, deploy-rs with magic rollback over Tailscale, nixos-anywhere for
@@ -22,6 +16,13 @@ Docs point to the module or check instead of restating it, and never record live
 hashes; those go in commit messages. Code has no comments except `shortcut: <limit>, <when to upgrade>` and the meaning of an opaque
 id the code cannot name.
 
+[README.md](README.md) is for people: what the fleet is, the host table, a quick start and the
+essentials (layout, secrets, deploying, bootstrap, adding a host or a system). It gives the commands
+and links the skill that holds the rules; once it grows long, detail moves to `docs/` behind a link,
+and nothing technical is dropped to shorten it. This file holds agent rules only. A change updates
+the docs that describe it in the same commit; a doc that no longer matches the code is a gap to
+report.
+
 ## Autonomy
 
 Permissions apply within the requested task. Continue independent safe work while an approval is pending.
@@ -30,35 +31,74 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Read files without decrypting secrets. Edit non-secret files. Run formatters, linters, offline
   tests and `nix flake check`. If Bash cannot run `nix`, prepare the exact command and ask for the output.
 - Query live state read-only through the Grafana, GitHub and nixos MCP tools.
-- Commit validated work: imperative title, body says what changed and why. Never push unless asked.
-- Prepare `deploy .#HOST` of a committed revision whose checks passed and report the command.
+- Commit validated work in small Conventional Commits (`type(scope): summary`; the body says what
+  changed and why), refactors and features in separate commits.
+- Prepare `deploy .#HOST` of a committed revision whose checks passed and report the command,
+  saying when the revision changes remote access (SSH, firewall, Tailscale, users, sudo, deploy
+  config) or data storage and persistence.
 
 **Ask first, naming the exact target and command**
-- Any activation (`nh os switch`, `deploy`, `deploy --boot`), reboot or install.
+- Any local activation (`nh os switch`), local reboot or power-off, local `clean`, `wake` and `unlock`.
 - Any partition, format, mount, btrfs subvolume or ZFS operation.
 - `tofu apply`, state import or migration.
 - Editing secrets, decrypting beyond read-only plan and show, generating or rotating keys, enrolling devices.
-- State-changing remote commands: `sudo`, service restarts, `tailscale serve`, file changes.
-- Deploys that change remote access (SSH, firewall, Tailscale, users, sudo, deploy config) or
-  data storage and persistence.
+- State-changing remote commands on a host with another login than `deploy`: `sudo`, service
+  restarts, `tailscale serve`, file changes.
 
 **Never**
+- Run `deploy` (with or without `--dry-activate` or `--boot`), `install`, or the remote `reboot`,
+  `shutdown` and `clean HOST`: only the operator acts as the deploy account, by these or by any `ssh deploy@HOST`, or wipes a host.
+  Prepare the command and report it.
 - Put plaintext secrets, password hashes or private keys in Git, Nix, logs or chat.
 - Invent hardware, disks, keys, addresses or UUIDs. Ask.
 - Disable magic rollback, host-key checking or deploy-rs checks; use `-force-copy`, `-lock=false` or `-reconfigure`.
 - Touch data pools beyond the declared mounts.
 - Widen this agent's permissions or sandbox, or add hooks to get around a prompt.
 
+## Branches and pull requests
+
+- Never commit to `main`. One branch per change: `feat/TOPIC`, `refactor/TOPIC` or `docs/TOPIC`. A
+  structural change (moving a module, renaming an option, changing the layout) gets its own branch
+  and pull request, never mixed with feature work.
+- Measure a branch with `git diff --stat main...HEAD`, leaving out lock-only files such as
+  `flake.lock` and saying so. At about 500 changed lines, or when the change is complete, stop:
+  summarize what changed, what was validated and what remains, and ask whether to open the pull
+  request. A feature that will clearly pass 500 lines is split into stacked branches at logical
+  boundaries, proposed before the code is written.
+- Push a branch other than `main` once the `secrets` check passes on every commit the push would
+  publish (`nix build ".?rev=REV#checks.SYSTEM.secrets"` for each), so committed work has a copy
+  outside the machine it was written on. The repository is public and a push cannot be taken
+  back: a secret a later commit removes is still published, so a branch that ever held one is
+  rewritten before its first push. The check matches known token shapes only, so it is necessary
+  and not sufficient: first read `git log -p` of the commits to be pushed, diffs and messages,
+  for anything credential-like, and ask when in doubt, or when the branch changes the check
+  itself (`modules/secrets.nix`), since each revision is judged by its own copy. Open the pull request only once the operator approves: `gh pr create` with
+  the body sections Summary, Hosts affected, Validation run, Risks, Rollback. Never push to `main`
+  or force-push a branch someone has reviewed.
+
 ## Method
 
+- Each session works one cycle over the area it touches, and over the whole tree for a health
+  pass: analyze, validate, check gaps, refactor, document.
+- Refactor while working: in a touched module and its neighbors, fix duplication, dead options,
+  misplaced modules and unclear names when the fix is local, low-risk and keeps every host's
+  outPath. It goes in its own commit; a structural or output-changing fix waits for its own branch.
+- End the cycle with the gaps found, fixing only the small ones: affected hosts not built or
+  tested, modules no skill or README covers, options declared but never read, TODOs and FIXMEs,
+  hosts or areas CI does not cover.
+- Ask one focused question instead of guessing, above all on secrets, network exposure (the cache,
+  the edge), disk layout and persistence.
 - Verify upstream claims (nixpkgs options at the pinned revision, flake-parts, import-tree, a CLI)
   against the nixos MCP tool, `/nix/store` sources or upstream docs, not memory. Before setting
   an option, read the module that owns it: its defaults and what else it wires (reloads, users,
   directories, firewall).
 - Before writing a module, walk the `nix` skill's new-service checklist.
 - Run every shell snippet handed to the operator, or its closest local equivalent, first.
-- Edit, run the narrowest check that can fail on the change, fix, repeat; then `nix flake check`
-  naming every affected x86_64 host so its toplevel builds. The `darwin` CI job builds
+- Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Once per
+  branch, before asking to open the pull request, `nix flake check` naming every affected x86_64
+  host so its toplevel builds; a branch that changes only Markdown needs the outPath comparison and the `format` and `secrets` checks.
+  Where the whole check cannot run, evaluate each check on its own, leave the builds to CI and say
+  so in the report. The `darwin` CI job builds
   `mac` on a macOS runner; `asahi` only evaluates in CI and builds on itself.
 - A refactor keeps every host's outPath identical (`nix` skill).
 - Report exactly what passed, failed and is unknown. A build proves evaluation and closure, not

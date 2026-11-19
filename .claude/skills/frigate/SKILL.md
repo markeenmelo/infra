@@ -1,6 +1,6 @@
 ---
 name: frigate
-description: "Frigate on bastion: the NVR at frigate.DOMAIN, the Tapo camera and its RTSP secrets, go2rtc restreaming, OpenVINO detection on the iGPU, false-positive filters, recordings on scratch/frigate. Use before touching modules/frigate.nix, adding a camera, tuning detection, or debugging streams or recordings."
+description: "Frigate on bastion: the NVR at frigate.DOMAIN, the Tapo camera and its RTSP secrets, go2rtc restreaming, OpenVINO detection on the iGPU, recordings on scratch/frigate. Use before touching modules/frigate.nix, adding a camera, tuning detection, or debugging streams or recordings."
 ---
 
 # Frigate
@@ -20,7 +20,7 @@ credentials, are `frigate-main` and `frigate-sub` in `secrets/hosts/bastion.yaml
 both services through `LoadCredential`.
 
 Detection runs OpenVINO on the iGPU with the bundled SSDLite MobileNet model, tracking only
-people, and alerts only inside `person_area`. False positives are tuned with person object
+people, and alerts only inside `person_area`. No object filter is set; the knobs for false positives are person object
 filters (`min_area`, `min_ratio`/`max_ratio`, `threshold`) and zone `inertia`. Recordings,
 snapshots and the database live on `scratch/frigate` at `/var/lib/frigate`, rebuildable and not
 snapshotted; Frigate refuses to start without that mount.

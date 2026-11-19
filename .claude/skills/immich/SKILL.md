@@ -6,7 +6,7 @@ description: "Immich on bastion: the photo library at photos.DOMAIN, its Autheli
 # Immich
 
 [immich.nix](../../../modules/immich.nix) serves the library at `photos.` through both proxies
-([proxy skill](../proxy/SKILL.md)); the edge denies its admin API, so administration happens on
+([proxy skill](../proxy/SKILL.md)); the public listener denies its admin API, so administration happens on
 the LAN or the tailnet. Sign-in is only through Authelia ([identity skill](../identity/SKILL.md)):
 password login and first-admin setup are off, and `autoRegister` is off, so a person signs in
 only once an Immich admin has created their user with the same email. The mobile app's

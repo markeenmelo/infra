@@ -43,7 +43,7 @@ from the queues, qBittorrent and SABnzbd, and searches for missing media, every 
 default; a download goes after five strikes.
 
 Everything reaches qBittorrent from inside the namespace or the bridge, so nothing is exempt from
-its login: Sonarr, Radarr and the port-forward unit use `arr/qbittorrent-password`, and the
+its login: Sonarr, Radarr, Decluttarr and the port-forward unit use `arr/qbittorrent-password`, and the
 PBKDF2 hash qBittorrent checks is written into its config at each start from
 `arr/qbittorrent-password-hash`, never into the store.
 

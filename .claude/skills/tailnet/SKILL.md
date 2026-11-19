@@ -22,14 +22,15 @@ nix run .#tofu -- tailscale output -json enrollment_keys | jq .HOST |
   sops set --value-stdin secrets/hosts/HOST.yaml '["tailscale-auth-key"]'
 ```
 
-The key is consumed on the host's first boot and ignored once the node is logged in, so it only
+The key is spent by `enroll` for a new host ([deploy skill](../deploy/SKILL.md#install)), or on
+the first boot of a host whose `/var/lib/tailscale` holds no login, and ignored once the node is logged in, so it only
 matters at install time: an expired key in Git blocks nothing until a reinstall, when the operator
 applies and copies again.
 
 ## Reinstall
 
-Pass the preserved `/persist/var/lib/tailscale` to nixos-anywhere `--extra-files` with
-`/persist/etc/ssh` and the node keeps its identity; otherwise it joins as a new node under the
+The `install` app carries `/persist/var/lib/tailscale` with `/persist/etc/ssh` (both in
+`fleet.carry`, [deploy skill](../deploy/SKILL.md#install)), so the node keeps its identity; otherwise it joins as a new node under the
 same name and the old one is removed in the admin console. Never `tailscale logout` a live host.
 
 ## Proton exit nodes

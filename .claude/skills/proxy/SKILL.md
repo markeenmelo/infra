@@ -1,6 +1,6 @@
 ---
 name: proxy
-description: "The public edge: the passthrough on the edge host that forwards TLS unread to bastion's public listener, with its PROXY protocol trust; that listener on bastion, Caddy with a wildcard certificate by Porkbun DNS-01, the hostnames it serves, the headers it strips and the admin paths it denies; CrowdSec bans decided on bastion and enforced at the edge's firewall; where certificates, logs and ban state live; bastion's LAN proxy and the tailnet split DNS that keep home traffic off the WAN. Use before touching modules/edge.nix, modules/lan-proxy.nix, modules/caddy.nix or modules/crowdsec.nix, publishing or removing a hostname, or debugging HTTPS, name resolution of the domain, or bans."
+description: "The public edge: the passthrough on the edge host that forwards TLS unread to bastion's public listener, with its PROXY protocol trust; that listener on bastion, Caddy with a wildcard certificate by Porkbun DNS-01, the hostnames it serves, the headers it strips and the admin paths it denies; CrowdSec bans decided on bastion and enforced at the edge's firewall; where certificates, logs and ban state live; bastion's LAN proxy and the tailnet split DNS that keep home traffic off the WAN. Use before touching modules/edge.nix, modules/lan-proxy.nix, modules/caddy.nix, modules/caddy.pkg.nix or modules/crowdsec.nix, publishing or removing a hostname, or debugging HTTPS, name resolution of the domain, or bans."
 ---
 
 # Edge proxy
@@ -102,8 +102,8 @@ persisted certificates, and the DNS-01 snippet, whose checks ask public resolver
 the LAN's resolver may answer the domain locally. It keeps no access log: app URLs carry
 credentials and nothing reads it.
 
-The Caddy package pins the plugin version and a hash that covers the Go module tree of both
-Caddy and the plugin, so a nixpkgs bump that moves Caddy changes it as much as a plugin update.
+The Caddy package ([caddy.pkg.nix](../../../modules/caddy.pkg.nix)) pins each plugin's version (Porkbun DNS-01, MaxMind geolocation, rate limit) and a hash that covers the Go module tree of
+Caddy and the plugins, so a nixpkgs bump that moves Caddy changes it as much as a plugin update.
 
 The `certificate-watch` job in [lan-proxy.nix](../../../modules/lan-proxy.nix) asks Cert Spotter once a day for the certificates
 issued for the domain and its subdomains, and counts those from the last week whose public key is

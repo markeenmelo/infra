@@ -8,9 +8,9 @@ description: "deploy-rs: how a host's committed configuration is activated over 
 [deploy.nix](../../../modules/deploy.nix) turns every `fleet.hosts` entry into a deploy-rs node
 reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
 Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
-`activate-rs`, remove the rollback canary, reboot and power off, the only way to reboot or power
+`activate-rs`, remove the rollback canary, run `clean-generations`, reboot and power off, the only way to reboot or power
 off a server without its console. Its key is therefore the operator's root key on
-every host, so it is not the operator's login key: its private half lives only in the operator's
+every host, so it is not the operator's login key ([_operator-key.nix](../../../modules/_operator-key.nix)): its private half lives only in the operator's
 Bitwarden SSH agent, which asks before each use. The servers have no login account
 ([access.nix](../../../modules/access.nix)), so `deploy` is the only way into them. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
 off: it would make sudo unexecutable for it and break every deploy. A server gets the same restriction
@@ -65,7 +65,7 @@ The `deploy` app refuses a run that names no `.#HOST`, has uncommitted tracked c
 any flag outside its allow list, so none can skip the checks, turn a rollback off, stretch the confirm timeout or set SSH options; `clean` keeps the newest two generations, so
 the previous one stays in the Limine menu.
 
-Claude prepares the command and asks first ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
+Claude prepares the command and the operator runs it ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
 that changes SSH, firewall, Tailscale, users, sudo or this module is an access change. The first
 activation of a host is a nixos-anywhere install, not a deploy. The installed generation has no
 deploy-rs activation files, so the first deploy after an install cannot roll back to it: a failed
@@ -90,7 +90,7 @@ A path that holds the only copy of a key goes in `fleet.carry` beside its owner,
 can forget it. Fleet hosts
 admit no root login and no SSH off the tailnet ([ssh.nix](../../../modules/ssh.nix)), so a
 reinstall always goes through the installer image, where root is the login. The disk is wiped;
-it is an access change and needs the operator's approval.
+it is an access change, and the operator runs it.
 
 A new host has no old disk to carry from, and its facts need three values before its
 configuration evaluates: the age recipient its secrets file is encrypted to, its tailnet address,

@@ -17,7 +17,7 @@ Background: [dendritic pattern](https://github.com/mightyiam/dendritic),
 | Every host / role / service | `flake.modules.nixos.base` / `server`, `desktop` / `flake.modules.nixos.SERVICE` |
 | Operator user settings | `flake.modules.homeManager.base` on every workstation; `homeManager.desktop` for the Linux desktop; mac-only ones in the darwin module's `home-manager.users` |
 | nix-darwin base / role | `flake.modules.darwin.base` / `desktop`, in the same file as the NixOS counterpart |
-| Host facts (system, addresses, keys, role flags) and imports | `modules/hosts/HOST/host.nix`, the only writer of `fleet.hosts.HOST` |
+| Host facts (system, addresses, keys, role flags) and imports | `modules/hosts/HOST/host.nix`; the files of `modules/hosts/HOST/` are the only writers of `fleet.hosts.HOST` |
 | Hardware, disko, networking, host-only data | `modules/hosts/HOST/` |
 | Cross-concern facts | Typed `fleet.*` options beside their owner; never `specialArgs` or `_module.args` |
 | Package expression or pin set | `NAME.pkg.nix`, not loaded as a module; other imported Nix is `_NAME.nix` |
