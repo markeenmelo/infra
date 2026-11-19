@@ -612,6 +612,13 @@ let
       microvm.vms.downloads.config = {
         imports = [ guest ];
         services.postgresql.package = config.services.postgresql.package;
+        fileSystems = lib.genAttrs [ guestSecrets guestDumps ] (_: {
+          options = [
+            "nosuid"
+            "nodev"
+            "noexec"
+          ];
+        });
         time.timeZone = config.time.timeZone;
         microvm.shares = [
           {
