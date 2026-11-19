@@ -42,11 +42,12 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Any partition, format, mount, btrfs subvolume or ZFS operation.
 - `tofu apply`, state import or migration.
 - Editing secrets, decrypting beyond read-only plan and show, generating or rotating keys, enrolling devices.
-- State-changing remote commands: `sudo`, service restarts, `tailscale serve`, file changes.
+- State-changing remote commands on a host with another login than `deploy`: `sudo`, service
+  restarts, `tailscale serve`, file changes.
 
 **Never**
 - Run `deploy` (with or without `--dry-activate` or `--boot`), `install`, or the remote `reboot`,
-  `shutdown` and `clean HOST`: only the operator acts as the deploy account or wipes a host.
+  `shutdown` and `clean HOST`: only the operator acts as the deploy account, by these or by any `ssh deploy@HOST`, or wipes a host.
   Prepare the command and report it.
 - Put plaintext secrets, password hashes or private keys in Git, Nix, logs or chat.
 - Invent hardware, disks, keys, addresses or UUIDs. Ask.
