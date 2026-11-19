@@ -78,6 +78,14 @@
       };
     };
     jail-nix.url = "sourcehut:~alexdavid/jail.nix";
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent/v0.23.2";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        home-manager.follows = "home-manager";
+      };
+    };
   };
 
   outputs =

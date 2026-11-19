@@ -30,6 +30,7 @@
       proton-exit
       monitoring
       agents
+      hermes
     ];
     system.stateVersion = "26.05";
   };
