@@ -53,7 +53,7 @@ Tailnet clients never need the edge, even behind a foreign exit node: the split 
 domain to bastion directly.
 An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, denied paths,
 [caddy.nix](../../../modules/caddy.nix)): both proxies route an app to loopback, or to its
-`address` when the app lives in another network namespace, and only a `public` one is served by
+`address` when the app lives in another network namespace or in a guest, and only a `public` one is served by
 the public listener. No app port is open on any interface, so nothing reaches an app past the
 denied paths and the country check. The wildcard record already
 resolves it ([opentofu skill](../opentofu/SKILL.md#porkbun)), so publishing an app is a deploy of bastion. Certificates, the ACME account and the JSON access logs CrowdSec reads live

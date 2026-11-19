@@ -310,7 +310,8 @@ let
           requires = [ "arr-restore.service" ];
           after = [ "arr-restore.service" ];
           serviceConfig.ExecCondition = pkgs.writeShellScript "${name}-has-tables" ''
-            [ "$(${lib.getExe' config.services.postgresql.package "psql"} -d ${lib.removePrefix "postgresqlBackup-" name} -Atc "select count(*) from pg_tables where schemaname = 'public'")" != 0 ]
+            tables=$(${lib.getExe' config.services.postgresql.package "psql"} -d ${lib.removePrefix "postgresqlBackup-" name} -Atc "select count(*) from pg_tables where schemaname = 'public'") || exit 1
+            [ "$tables" != 0 ]
           '';
         }))
         (lib.genAttrs
@@ -351,6 +352,7 @@ let
               set -o pipefail
               for db in ${lib.concatStringsSep " " apps}; do
                 dump=${guestDumps}/$db.sql.gz
+                [ -e "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
                 [ -e "$dump" ] || continue
                 tables=$(runuser -u "$db" -- psql -d "$db" -Atc "select count(*) from pg_tables where schemaname = 'public'")
                 [ "$tables" = 0 ] || continue
@@ -711,7 +713,12 @@ let
       system.activationScripts.arr-handover.text = ''
         if [ -e /run/current-system/etc/systemd/system/${lib.head apps}.service ] &&
           [ -n "$(find ${handover}/done -mtime -7 2> /dev/null)" ]; then
-          rm -f ${handover}/done ${hostDumps}/*.sql.gz ${config.microvm.stateDir}/downloads/var.img
+          mkdir -p ${handover}/replaced
+          mv -f ${hostDumps}/*.sql.gz ${handover}/replaced/ 2> /dev/null || true
+          if [ -e ${config.microvm.stateDir}/downloads/var.img ]; then
+            mv -f ${config.microvm.stateDir}/downloads/var.img ${config.microvm.stateDir}/downloads/var.img.replaced
+          fi
+          rm -f ${handover}/done
         fi
       '';
       networking.nftables.tables.arr = {
@@ -767,6 +774,7 @@ let
             script = ''
               [ -e ${handover}/done ] || exit 0
               for db in ${lib.concatStringsSep " " apps}; do
+                [ -e ${hostDumps}/"$db.sql.gz" ] || continue
                 if [ -z "$(find ${hostDumps}/"$db.sql.gz" -mtime -2 2> /dev/null)" ]; then
                   echo "$db has no dump newer than two days in ${hostDumps}" >&2
                   exit 1

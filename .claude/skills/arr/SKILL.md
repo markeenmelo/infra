@@ -100,14 +100,16 @@ What the guest gets from bastion, over virtiofs:
 The guest's disk, `var.img` on `apps/agents`, holds `/var/lib`: PostgreSQL, Recyclarr and
 Decluttarr. It is neither snapshotted nor backed up, so the dumps are the databases' only copy
 outside it: before the arr apps start, `arr-restore` loads each database that has no table from
-its dump, which is also how a lost disk comes back, and the nightly dump skips a database that
+its dump, or from the previous one when a failed dump left only that, which is also how a lost
+disk comes back, and the nightly dump skips a database that
 has no table, so a failed load never replaces a good dump with an empty one. `arr-handover` on
 bastion writes the first dumps, from the databases bastion's PostgreSQL still holds from before
 the move, and once only: its marker, `/srv/backups/downloads-handover/done`, and its temporary
 files sit outside the share, since bastion's `postgres` must not write where the guest can plant
 a link. Those old databases are left in place. When the generation being replaced still ran the
 arr apps on bastion and the marker is less than a week old (a move redone after a rollback),
-activation removes the dumps, the marker and the guest's `var.img`, so the handover starts again
+activation removes the marker and moves the dumps (to `/srv/backups/downloads-handover/replaced`)
+and the guest's `var.img` (to `var.img.replaced`) aside, so a misfire can be undone and the handover starts again
 from bastion's databases instead of resuming on the guest's older ones. After that week the
 guest's databases are the ones that count, and an old generation booted by accident resets
 nothing. A boot straight into the new generation has no previous one to look at; there the three
