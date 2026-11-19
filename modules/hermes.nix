@@ -70,7 +70,7 @@ let
           updates.check = false;
           browser = {
             executable_path = lib.getExe pkgs.chromium;
-            user_data_dir = "browser-profile";
+            user_data_dir = "${cfg.stateDir}/.hermes/browser-profile";
           };
         };
         environmentFiles = [ "${guestSecrets}/env" ];
