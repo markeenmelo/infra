@@ -49,7 +49,10 @@ The workstations share one pair, so a lost laptop means rotating both tokens for
 the workstations, which is why bastion is a recipient of that file and of no other workstation
 secret. On the workstations the `claude` wrapper opens the file and hands Claude the descriptor
 (`CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR`), so the value is never in an environment a command,
-hook or server Claude starts could read; a token already in the caller's environment wins. It makes model requests only, so a
+hook or server Claude starts could read; a hook or MCP server, which run outside the Bash
+sandbox, can still read the file by its path. On the mac a token already in the caller's
+environment wins; the Linux jail clears the environment, so there the secret is always used. It
+makes model requests only, so a
 workstation signed in this way has no Remote Control and none of the account's connectors, and
 one revocation signs out the guest and every workstation.
 The Grafana one is a Viewer service account's token, and the server runs with `--disable-write`.
