@@ -85,16 +85,19 @@ Permissions apply within the requested task. Continue independent safe work whil
   operator has something to run or look at. The body stays true: a later commit that changes what
   it says updates it.
 - After each push, wait for both reviewers to report on that commit, not for the CI jobs: the
-  `review` job ran to success on the head commit, not skipped, and its summary comment was
-  updated after that commit; the Codex review names the commit. Anything less (a reviewer that
-  never reports, a run that failed, was cancelled or skipped) is not a clean round: hold and
-  report. Check every finding against the code, an evaluation or an experiment before acting on
+  `claude-code (fable)` check of [review.yml](.github/workflows/review.yml) succeeded on the
+  head commit, not skipped, and its summary comment was updated after that commit; the Codex
+  review names the commit. Anything less (a reviewer that never reports, a run that failed, was
+  cancelled or skipped, a summary that says its coverage was cut short) is not a clean round:
+  hold and report. Check every finding against the code, an evaluation or an experiment before acting on
   it, the ones a reviewer marks unverified included. Fix what holds, and reply on each inline
   finding with the commit that fixed it or the evidence that nothing needs to change.
 - When a round brings no new finding, and `check` passed on the head commit where CI is the only
   build of something the change affects (the `mac`, a toplevel the session could not build),
   squash-merge through the pull request, the one way an
-  agent's work reaches `main`, and delete the branch, local and remote. Then read the `check` run
+  agent's work reaches `main`, naming the reviewed commit
+  (`gh pr merge --squash --match-head-commit SHA`) so a head that moved is not merged unread, and
+  delete the branch, local and remote. Then read the `check` run
   that merge starts on `main` before pushing the next branch, and fix or revert when it is red. A
   stacked part branches from `main` once the part below it is merged.
 - Hold the merge and report instead when:
@@ -112,8 +115,8 @@ Permissions apply within the requested task. Continue independent safe work whil
       `deploy.nix`, `install.nix`, `access.nix`, `ssh.nix`, `tailscale.nix`, `builder.nix`,
       `unlock.nix` and `_operator-key.nix`.
 
-    The skills are left out, since nearly every change updates one: a skill cannot grant what
-    this file forbids;
+    The skills are left out, since nearly every change updates one, with one exception: a skill
+    edit that removes or loosens a rule, instead of describing the code it lands with, is held;
   - the next step needs something only the operator can do or see, such as a deploy or a log
     from a host.
 - Not waiting for CI on every merge is a limit to lift, not a preference: a
