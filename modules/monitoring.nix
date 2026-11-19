@@ -8,7 +8,6 @@ let
     host.publicAddress != null && config.flake.nixosConfigurations.${name}.config.fleet.probes != { }
   ) hosts;
   metricSenders = lib.filterAttrs (_: host: host.telemetry.metrics != null) senders;
-  workstations = lib.filterAttrs (_: host: host.telemetry == null) hosts;
   senderPorts = telemetry: lib.remove null (lib.attrValues telemetry);
   laptops = lib.concatStringsSep "|" (
     lib.attrNames (lib.filterAttrs (_: host: host.homeBackup != null) hosts)
@@ -712,7 +711,7 @@ in
                         }\", syslog_identifier=~\"sshd.*\"} |= \"Accepted \" != \" for nix-ssh \" | regexp `Accepted \\S+ for (?P<user>\\S+) from (?P<source>\\S+)` | user != \"deploy\" or source !~ `${
                           lib.concatMapStringsSep "|" (
                             workstation: lib.replaceStrings [ "." ] [ "\\." ] workstation.tailnetAddress
-                          ) (lib.attrValues workstations)
+                          ) (lib.attrValues (lib.removeAttrs hosts (lib.attrNames metricSenders ++ [ host ])))
                         }` [10m]))";
                         for = "0s";
                         summary = "{{ $labels.user }} logged in to {{ $labels.host }} over SSH from {{ $labels.source }}; only a deploy from a workstation is expected";
