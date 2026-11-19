@@ -34,7 +34,11 @@ generation's modules are reference only; a tool is added when the operator names
 Vicinae ([vicinae.nix](../../../modules/vicinae.nix)) is the launcher (its toggle shortcut
 is set once in the app, `ctrl+comma`, since it owns `~/.config/vicinae/settings.json`),
 `system.defaults` holds the macOS preferences. Vicinae is the one GUI app from nixpkgs, so its
-launchd agent can point at the bundle. The other GUI apps are Homebrew casks from taps pinned
+launchd agent can point at the bundle; its coffee extension is built from a pinned commit
+([vicinae-coffee.pkg.nix](../../../modules/vicinae-coffee.pkg.nix)). Bitwarden on the mac
+([bitwarden.nix](../../../modules/bitwarden.nix)) is the `rbw` CLI against the operator's vault
+server, the desktop app's SSH agent socket exported to the shell when it exists, and the browser
+extension forced in Zen and pointed at the same server. The other GUI apps are Homebrew casks from taps pinned
 as flake inputs ([homebrew.nix](../../../modules/homebrew.nix)), so `brew tap` is refused and a
 cask moves with `nix flake update homebrew-cask`; whatever the Brewfile stops naming is zapped at
 activation, app data included, so preview a switch that drops a cask with
@@ -42,7 +46,8 @@ activation, app data included, so preview a switch that drops a cask with
 operator's settings; the sandbox and bypass lock live in the managed settings file that
 activation installs under `/Library/Application Support/ClaudeCode`, which no user setting
 overrides. The plugins it loads (`CLAUDE_CODE_PLUGIN_DIRS` in claude.nix) are `NAME.pkg.nix` pins on a
-commit, never a tag their authors could move: their hooks run outside the sandbox with the
+commit (`cache-tax`, `ponytail` and `caveman` whole, and chosen plugin directories of
+`claude-plugins-official` and `trailofbits-skills`), never a tag their authors could move: their hooks run outside the sandbox with the
 operator's rights, so after `just update` read what changed in their hooks before committing
 ([nix skill](../nix/SKILL.md)). The ponytail pin also feeds
 [audit.yml](../../../.github/workflows/audit.yml), where it runs with the Claude OAuth token.

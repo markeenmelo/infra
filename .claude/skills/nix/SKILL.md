@@ -7,6 +7,11 @@ description: "How this flake is organized (dendritic flake-parts + import-tree):
 
 `flake.nix` holds only inputs and `flake-parts.lib.mkFlake` over `import-tree ./modules`. Every
 file under `modules/` is a flake-parts module for one concern, and nothing Nix lives elsewhere.
+[flake-parts.nix](../../../modules/flake-parts.nix) lists the systems and loads the flake module
+that makes `flake.modules.*` exist. [base.nix](../../../modules/base.nix) is what every host gets
+before any role: flakes with a short connect timeout and a fallback to building, nh cleaning old
+generations on the workstations, Limine as the loader with ten generations, the kernel and sysctl
+hardening, no core dumps, and a capped journal kept under `/persist` unless a host makes it volatile.
 Background: [dendritic pattern](https://github.com/mightyiam/dendritic),
 [module semantics](https://nixos.org/manual/nixos/stable/#sec-writing-modules).
 
