@@ -65,7 +65,7 @@ The `deploy` app refuses a run that names no `.#HOST`, has uncommitted tracked c
 any flag outside its allow list, so none can skip the checks, turn a rollback off, stretch the confirm timeout or set SSH options; `clean` keeps the newest two generations, so
 the previous one stays in the Limine menu.
 
-Claude prepares the command and asks first ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
+Claude prepares the command and the operator runs it ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
 that changes SSH, firewall, Tailscale, users, sudo or this module is an access change. The first
 activation of a host is a nixos-anywhere install, not a deploy. The installed generation has no
 deploy-rs activation files, so the first deploy after an install cannot roll back to it: a failed

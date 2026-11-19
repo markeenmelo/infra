@@ -104,7 +104,8 @@ instance for the install).
 3. Add the recipient and a `hosts/HOST.yaml` rule to `.sops.yaml`
    ([secrets skill](.claude/skills/secrets/SKILL.md#new-host)), then create the file with the
    `tailscale-auth-key` every NixOS host declares
-   ([tailnet skill](.claude/skills/tailnet/SKILL.md#auth-key)).
+   ([tailnet skill](.claude/skills/tailnet/SKILL.md#auth-key)). The key `enroll` spent will do: it
+   is ignored once the node is logged in.
 4. Write `modules/hosts/HOST/`: `host.nix` (facts and the roles it imports), `hardware.nix` and
    `disko.nix`, `git add` them, and `just check`.
 5. Install as in [Bootstrap](#bootstrap), add the host to the table above, and delete the identity

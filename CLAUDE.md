@@ -33,19 +33,19 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Query live state read-only through the Grafana, GitHub and nixos MCP tools.
 - Commit validated work in small Conventional Commits (`type(scope): summary`; the body says what
   changed and why), refactors and features in separate commits.
-- Prepare `deploy .#HOST` of a committed revision whose checks passed and report the command.
-- Dry-activate that revision on a deploy-rs target: `nix run .#deploy -- .#HOST --dry-activate`.
+- Prepare `deploy .#HOST` of a committed revision whose checks passed and report the command,
+  saying when the revision changes remote access (SSH, firewall, Tailscale, users, sudo, deploy
+  config) or data storage and persistence.
 
 **Ask first, naming the exact target and command**
-- Any real activation (`nh os switch`, `deploy`, `deploy --boot`), reboot or install.
+- Any local activation (`nh os switch`), reboot or install.
 - Any partition, format, mount, btrfs subvolume or ZFS operation.
 - `tofu apply`, state import or migration.
 - Editing secrets, decrypting beyond read-only plan and show, generating or rotating keys, enrolling devices.
 - State-changing remote commands: `sudo`, service restarts, `tailscale serve`, file changes.
-- Deploys that change remote access (SSH, firewall, Tailscale, users, sudo, deploy config) or
-  data storage and persistence.
 
 **Never**
+- Run `deploy`, with or without `--dry-activate` or `--boot`: only the operator deploys.
 - Put plaintext secrets, password hashes or private keys in Git, Nix, logs or chat.
 - Invent hardware, disks, keys, addresses or UUIDs. Ask.
 - Disable magic rollback, host-key checking or deploy-rs checks; use `-force-copy`, `-lock=false` or `-reconfigure`.
@@ -71,7 +71,8 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Each session works one cycle over the area it touches, and over the whole tree for a health
   pass: analyze, validate, check gaps, refactor, document.
 - Refactor while working: in a touched module and its neighbors, fix duplication, dead options,
-  misplaced modules and unclear names when the fix is local and low-risk.
+  misplaced modules and unclear names when the fix is local, low-risk and keeps every host's
+  outPath. It goes in its own commit; a structural or output-changing fix waits for its own branch.
 - End the cycle with the gaps found, fixing only the small ones: affected hosts not built or
   tested, modules no skill or README covers, options declared but never read, TODOs and FIXMEs,
   hosts or areas CI does not cover.
@@ -84,8 +85,11 @@ Permissions apply within the requested task. Continue independent safe work whil
   directories, firewall).
 - Before writing a module, walk the `nix` skill's new-service checklist.
 - Run every shell snippet handed to the operator, or its closest local equivalent, first.
-- Edit, run the narrowest check that can fail on the change, fix, repeat; then, before every
-  commit, `nix flake check` naming every affected x86_64 host so its toplevel builds. The `darwin` CI job builds
+- Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Once per
+  branch, before asking to open the pull request, `nix flake check` naming every affected x86_64
+  host so its toplevel builds; a branch that changes no Nix needs only the outPath comparison.
+  Where the whole check cannot run, evaluate each check on its own, leave the builds to CI and say
+  so in the report. The `darwin` CI job builds
   `mac` on a macOS runner; `asahi` only evaluates in CI and builds on itself.
 - A refactor keeps every host's outPath identical (`nix` skill).
 - Report exactly what passed, failed and is unknown. A build proves evaluation and closure, not
