@@ -26,8 +26,8 @@ native theme's background and surfaces are overridden from `base00`–`base02` s
 black as the rest, since `onedark-dark` is darker than the classic One Dark these themes ship.
 Terminals and desktop chrome stay on Stylix. [tmux.nix](../../../modules/tmux.nix) draws its status
 line and pane borders from the same palette (prefix `C-a`, vi keys, sessions restored by
-resurrect and continuum), and Ghostty attaches to its session `main`. Zed's settings are
-immutable: extensions, language servers and keymaps are declared in zed.nix, not in the app.
+resurrect and continuum), and Ghostty attaches to its session `main`. Zed's settings file is
+immutable; its extensions, language servers and keymaps are declared in zed.nix.
 
 ## Rules
 
