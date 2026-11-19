@@ -38,7 +38,7 @@ Permissions apply within the requested task. Continue independent safe work whil
   config) or data storage and persistence.
 
 **Ask first, naming the exact target and command**
-- Any local activation (`nh os switch`).
+- Any local activation (`nh os switch`), local reboot or power-off, `wake` and `unlock`.
 - Any partition, format, mount, btrfs subvolume or ZFS operation.
 - `tofu apply`, state import or migration.
 - Editing secrets, decrypting beyond read-only plan and show, generating or rotating keys, enrolling devices.
@@ -70,7 +70,8 @@ Permissions apply within the requested task. Continue independent safe work whil
   back: a secret a later commit removes is still published, so a branch that ever held one is
   rewritten before its first push. The check matches known token shapes only, so it is necessary
   and not sufficient: first read `git log -p` of the commits to be pushed, diffs and messages,
-  for anything credential-like, and ask when in doubt. Open the pull request only once the operator approves: `gh pr create` with
+  for anything credential-like, and ask when in doubt, or when the branch changes the check
+  itself (`modules/secrets.nix`), since each revision is judged by its own copy. Open the pull request only once the operator approves: `gh pr create` with
   the body sections Summary, Hosts affected, Validation run, Risks, Rollback. Never push to `main`
   or force-push a branch someone has reviewed.
 
