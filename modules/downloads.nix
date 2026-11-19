@@ -84,6 +84,7 @@ in
             tag = baseNameOf path;
             source = path;
             mountPoint = path;
+            readOnly = path != media;
           }) shared;
           fileSystems = lib.genAttrs shared (path: {
             options = hostOptions (if path == media then media else config.nixflix.stateDir);
