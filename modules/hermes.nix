@@ -75,17 +75,20 @@ let
           guestSecrets
           cfg.stateDir
         ];
+        path = [ pkgs.util-linux ];
         enableStrictShellChecks = true;
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
           UMask = "0077";
+          StateDirectory = "hermes-auth";
         };
         script = ''
-          seen=${cfg.stateDir}/.auth-seeded
+          seen=$STATE_DIRECTORY/seeded
           new=$(sha256sum < ${guestSecrets}/auth)
           if [ "$new" != "$(cat "$seen" 2> /dev/null)" ]; then
-            install -o ${cfg.user} -g ${cfg.group} -m 0600 ${guestSecrets}/auth ${cfg.stateDir}/.hermes/auth.json
+            setpriv --reuid ${cfg.user} --regid ${cfg.group} --init-groups \
+              tee ${cfg.stateDir}/.hermes/auth.json < ${guestSecrets}/auth > /dev/null
             printf '%s\n' "$new" > "$seen"
           fi
         '';

@@ -40,6 +40,7 @@ module reads them. A change restarts the guest.
 - `hermes/auth`: the `auth.json` that `hermes auth add openai-codex` writes. The operator runs
   that once on a workstation, in a throwaway `HERMES_HOME`, follows the device code, and stores
   the file. `hermes-auth` in the guest installs it whenever its content differs from the one it
-  installed last; in between, Hermes refreshes the sign-in itself and keeps it on its disk. The
+  installed last, a record it keeps where the agent cannot write, and writes it as the agent's
+  account; in between, Hermes refreshes the sign-in itself and keeps it on its disk. The
   refresh token is single-use: the stored copy goes stale after the first refresh, which is
   fine until the sign-in dies and a new one is stored. Never share that login with Codex CLI.
