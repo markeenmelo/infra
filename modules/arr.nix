@@ -306,6 +306,13 @@ let
         pgdumpOptions = "--no-owner --no-privileges --lock-wait-timeout=5min";
       };
       systemd.services = lib.mkMerge [
+        (lib.genAttrs (map (name: "postgresqlBackup-${name}") apps) (name: {
+          requires = [ "arr-restore.service" ];
+          after = [ "arr-restore.service" ];
+          serviceConfig.ExecCondition = pkgs.writeShellScript "${name}-has-tables" ''
+            [ "$(${lib.getExe' config.services.postgresql.package "psql"} -d ${lib.removePrefix "postgresqlBackup-" name} -Atc "select count(*) from pg_tables where schemaname = 'public'")" != 0 ]
+          '';
+        }))
         (lib.genAttrs
           (
             apps
@@ -564,6 +571,7 @@ let
         "proton-wireguard"
       ];
       hostDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
+      handover = "${hostDumps}-handover";
       install = lib.getExe' pkgs.coreutils "install";
       toGuest =
         name: uids:
@@ -722,17 +730,17 @@ let
               Type = "oneshot";
               RemainAfterExit = true;
               User = "postgres";
-              ExecStartPre = "+${install} -d -o postgres -m 0700 ${hostDumps}";
+              ExecStartPre = "+${install} -d -o postgres -m 0700 ${hostDumps} ${handover}";
             };
             script = ''
               set -o pipefail
+              [ ! -e ${handover}/done ] || exit 0
               for db in ${lib.concatStringsSep " " apps}; do
-                out=${hostDumps}/$db.sql.gz
-                [ ! -e "$out" ] || continue
                 [ "$(psql -Atc "select count(*) from pg_database where datname = '$db'")" = 1 ] || continue
-                pg_dump --no-owner --no-privileges "$db" | gzip > "$out.tmp"
-                mv "$out.tmp" "$out"
+                pg_dump --no-owner --no-privileges "$db" | gzip > ${handover}/"$db.sql.gz"
+                mv -T ${handover}/"$db.sql.gz" ${hostDumps}/"$db.sql.gz"
               done
+              touch ${handover}/done
             '';
           };
         }

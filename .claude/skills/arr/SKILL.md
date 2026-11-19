@@ -94,6 +94,9 @@ What the guest gets from bastion, over virtiofs:
 The guest's disk, `var.img` on `apps/agents`, holds `/var/lib`: PostgreSQL, Recyclarr and
 Decluttarr. It is neither snapshotted nor backed up, so the dumps are the databases' only copy
 outside it: before the arr apps start, `arr-restore` loads each database that has no table from
-its dump, which is also how a lost disk comes back. `arr-handover` on bastion writes the first
-dumps, from the databases bastion's PostgreSQL still holds from before the move, and only while
-the dump directory has none; those old databases are left in place.
+its dump, which is also how a lost disk comes back, and the nightly dump skips a database that
+has no table, so a failed load never replaces a good dump with an empty one. `arr-handover` on
+bastion writes the first dumps, from the databases bastion's PostgreSQL still holds from before
+the move, and once only: its marker, `/srv/backups/downloads-handover/done`, and its temporary
+files sit outside the share, since bastion's `postgres` must not write where the guest can plant
+a link. Those old databases are left in place.
