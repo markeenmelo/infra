@@ -36,8 +36,8 @@ is set once in the app, `ctrl+comma`, since it owns `~/.config/vicinae/settings.
 `system.defaults` holds the macOS preferences. Vicinae is the one GUI app from nixpkgs, so its
 launchd agent can point at the bundle; its coffee extension is built from a pinned commit
 ([vicinae-coffee.pkg.nix](../../../modules/vicinae-coffee.pkg.nix)). Bitwarden on the mac
-([bitwarden.nix](../../../modules/bitwarden.nix)) is the `rbw` CLI against the operator's vault
-server, the desktop app's SSH agent socket exported to the shell when it exists, and the browser
+([bitwarden.nix](../../../modules/bitwarden.nix)) is the `rbw` CLI against the hosted vault
+server the operator uses (`server` in that file), the desktop app's SSH agent socket exported to the shell when it exists, and the browser
 extension forced in Zen and pointed at the same server. The other GUI apps are Homebrew casks from taps pinned
 as flake inputs ([homebrew.nix](../../../modules/homebrew.nix)), so `brew tap` is refused and a
 cask moves with `nix flake update homebrew-cask`; whatever the Brewfile stops naming is zapped at
