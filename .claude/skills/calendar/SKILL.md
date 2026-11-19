@@ -15,13 +15,17 @@ unit is nixpkgs' sandboxed one, further limited to loopback traffic.
   authentication. A person uses their Authelia password: Radicale checks the same argon2id
   hash, `authelia/USER-password-hash`, so a change there applies here at the next deploy. On
   `cal.DOMAIN` that password works alone, without the second factor, and every client stores
-  it; the operator accepted that a leaked client password is also the Authelia first factor.
+  it; the operator accepted that a leaked client password is also the Authelia first factor,
+  and that guesses here meet Radicale's failure delay and the proxy's rate limit, not
+  Authelia's ban. Sign-ins are cached briefly, since argon2id is costly on every request.
   `hermes` has its own bcrypt hash, `radicale/hermes-password-hash` in bastion's secrets
   ([secrets skill](../secrets/SKILL.md)).
 - **Rights:** an account reads and writes its own collections and nothing of another's.
 - **The family calendar:** one collection outside every home, linked into each account's home
   as `family`, so every client discovers it beside the account's own calendars and all of them
-  write the same events. tmpfiles creates the collection and the links; its properties file is
+  write the same events. A client may write events there but cannot delete or replace the link
+  itself. tmpfiles creates the collection and the links, again before each start of the unit
+  since `/srv` mounts late; its properties file is
   written once, so a name or color a client sets later stays. Sharing another calendar is one
   more collection and link there.
 - **State:** `/srv/radicale` on `apps/srv`, plain files, inside the `/srv` backup root

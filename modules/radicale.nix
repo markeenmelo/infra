@@ -41,6 +41,7 @@ in
             type = "htpasswd";
             htpasswd_filename = "/run/credentials/radicale.service/users";
             htpasswd_encryption = "autodetect";
+            cache_logins = true;
           };
           storage.filesystem_folder = dirOf collections;
         };
@@ -57,8 +58,13 @@ in
           };
           calendars = {
             user = ".+";
-            collection = "{user}/[^/]+";
+            collection = "{user}/(?!${shared}$)[^/]+";
             permissions = "rw";
+          };
+          ${shared} = {
+            user = ".+";
+            collection = "{user}/${shared}";
+            permissions = "rwdo";
           };
         };
       };
@@ -66,6 +72,7 @@ in
         services.radicale = {
           unitConfig.RequiresMountsFor = root;
           serviceConfig = {
+            ExecStartPre = "+${lib.getExe' config.systemd.package "systemd-tmpfiles"} --create --prefix=${root}";
             LoadCredential = [ "users:${config.sops.templates.radicale-users.path}" ];
             IPAddressAllow = "localhost";
             IPAddressDeny = "any";
