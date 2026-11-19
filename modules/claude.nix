@@ -334,7 +334,7 @@ in
             pkgs.nodejs
             pkgs.rtk
           ];
-          file."${config.programs.claude-code.configDir}/.ponytail-band".text = "off";
+          file."${configDir}/.ponytail-band".text = "off";
         };
         xdg.configFile = {
           "ponytail/config.json".text = builtins.toJSON {
@@ -413,7 +413,7 @@ in
                 ]) (import ./_home-secrets.nix)
                 ++ [
                   "~/.claude.json"
-                  "~/${lib.removePrefix "${config.home.homeDirectory}/" configDir}/.claude.json"
+                  "~/${lib.removePrefix "${home}/" configDir}/.claude.json"
                   "~/Library/Keychains/**"
                   "~/Library/Application Support/sops/**"
                   "~/Library/Application Support/Bitwarden/**"

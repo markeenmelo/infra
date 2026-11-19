@@ -17,9 +17,6 @@ in
     in
     {
       imports = [ caddy ];
-      sops.secrets = lib.genAttrs [ "PORKBUN_API_KEY" "PORKBUN_SECRET_KEY" ] (_: {
-        sopsFile = ../secrets/porkbun/api.yaml;
-      });
       services.caddy.virtualHosts."*.${domain}" = {
         logFormat = null;
         extraConfig = lib.mkMerge [

@@ -230,6 +230,15 @@ in
     }:
     let
       credentials = "/run/credentials/grafana.service";
+      ntfyReceiver = uid: query: {
+        inherit uid;
+        type = "webhook";
+        settings = {
+          url = "http://${config.services.ntfy-sh.settings.listen-http}/alerts?template=grafana${query}";
+          authorization_scheme = "Bearer";
+          authorization_credentials = "$__file{${credentials}/ntfy-token}";
+        };
+      };
       host = config.networking.hostName;
       inherit (hosts.${host}) lan;
       smtp = config.services.authelia.instances.main.settings.notifier.smtp;
@@ -513,24 +522,8 @@ in
                     receivers = [ receiver ];
                   })
                   [
-                    {
-                      uid = "ntfy";
-                      type = "webhook";
-                      settings = {
-                        url = "http://${config.services.ntfy-sh.settings.listen-http}/alerts?template=grafana";
-                        authorization_scheme = "Bearer";
-                        authorization_credentials = "$__file{${credentials}/ntfy-token}";
-                      };
-                    }
-                    {
-                      uid = "ntfy-critical";
-                      type = "webhook";
-                      settings = {
-                        url = "http://${config.services.ntfy-sh.settings.listen-http}/alerts?template=grafana&priority=high";
-                        authorization_scheme = "Bearer";
-                        authorization_credentials = "$__file{${credentials}/ntfy-token}";
-                      };
-                    }
+                    (ntfyReceiver "ntfy" "")
+                    (ntfyReceiver "ntfy-critical" "&priority=high")
                     {
                       uid = "email";
                       type = "email";

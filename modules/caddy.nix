@@ -99,7 +99,9 @@ in
         ];
       };
       sops = {
-        secrets = lib.genAttrs [ "PORKBUN_API_KEY" "PORKBUN_SECRET_KEY" ] (_: { });
+        secrets = lib.genAttrs [ "PORKBUN_API_KEY" "PORKBUN_SECRET_KEY" ] (_: {
+          sopsFile = ../secrets/porkbun/api.yaml;
+        });
         templates.caddy-env = {
           content = ''
             PORKBUN_API_KEY=${config.sops.placeholder.PORKBUN_API_KEY}
