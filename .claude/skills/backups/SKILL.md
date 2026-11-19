@@ -7,8 +7,9 @@ description: "bastion's backups: the nightly restic runs to the USB disk and to 
 
 [backups.nix](../../../modules/backups.nix) backs bastion up to the USB disk at `/mnt/backup`
 (ext4, automounted, [data.nix](../../../modules/hosts/bastion/data.nix)) every night at 02:30.
-Before each run it dumps every PostgreSQL database except the arr log ones to
-`/srv/backups/postgresql`, snapshots `/srv` and each backup root as `@restic-usb`, and takes a
+Before each run it dumps every database of bastion's PostgreSQL to
+`/srv/backups/postgresql` (the arr databases live in the downloads guest, which dumps them at 01:15
+into `/srv/backups/downloads`, [arr skill](../arr/SKILL.md)), snapshots `/srv` and each backup root as `@restic-usb`, and takes a
 read-only btrfs snapshot of `/persist`; at 04:00, after the USB run, the `pcloud` job does the
 same under `@restic-pcloud` into `pcloud:bastion/restic`, the repository the old generation
 filled. restic reads those snapshots, so each dataset is

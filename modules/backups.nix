@@ -54,7 +54,7 @@ in
       recorded = lib.attrNames jobs ++ [ "drill-usb" ] ++ lib.attrNames laptops;
       dumps = config.services.postgresqlBackup;
       dumpDir = dumps.location;
-      databases = lib.filter (db: !lib.hasSuffix "-logs" db) config.services.postgresql.ensureDatabases;
+      databases = config.services.postgresql.ensureDatabases;
       persisted =
         name:
         map (path: "/persist/.${snapOf name}${path}") [

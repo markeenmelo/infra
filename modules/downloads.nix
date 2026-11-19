@@ -1,10 +1,12 @@
 { config, inputs, ... }:
 let
   inherit (config.flake.modules.nixos) nixflix;
-  tap = "vm-downloads";
-  hostAddress = "10.202.0.1";
-  guestAddress = "10.202.0.2";
-  mac = "02:00:00:00:00:02";
+  inherit (import ./_downloads.nix)
+    tap
+    hostAddress
+    guestAddress
+    mac
+    ;
   stateOf = [
     "sonarr"
     "radarr"
@@ -20,6 +22,14 @@ let
       hypervisor = "cloud-hypervisor";
       vcpu = 4;
       mem = 8192;
+      volumes = [
+        {
+          image = "var.img";
+          label = "var";
+          mountPoint = "/var/lib";
+          size = 16 * 1024;
+        }
+      ];
       interfaces = [
         {
           type = "tap";
@@ -47,6 +57,8 @@ let
       };
     };
 
+    fileSystems."/var/lib".neededForBoot = true;
+
     services.journald.settings.Journal.ForwardToConsole = true;
     users = {
       mutableUsers = false;
@@ -64,8 +76,8 @@ in
     }:
     let
       inherit (config.microvm) stateDir;
-      inherit (config.nixflix) downloadsDir mediaDir;
-      media = dirOf mediaDir;
+
+      media = dirOf config.nixflix.mediaDir;
       shared = [ media ] ++ map (name: "${config.nixflix.stateDir}/${name}") stateOf;
       hostOptions = mount: lib.remove "nofail" config.fileSystems.${mount}.options;
     in
@@ -84,39 +96,10 @@ in
             tag = baseNameOf path;
             source = path;
             mountPoint = path;
-            readOnly = path != media;
           }) shared;
           fileSystems = lib.genAttrs shared (path: {
             options = hostOptions (if path == media then media else config.nixflix.stateDir);
           });
-          # shortcut: proves the shares before the apps move in, remove with the move
-          systemd.services.downloads-probe = {
-            description = "Check ownership and hardlinks through the shared datasets";
-            wantedBy = [ "multi-user.target" ];
-            unitConfig.RequiresMountsFor = shared;
-            path = [
-              pkgs.coreutils
-              pkgs.util-linux
-            ];
-            enableStrictShellChecks = true;
-            serviceConfig.Type = "oneshot";
-            script = ''
-              src=${downloadsDir}/.downloads-probe
-              dst=${mediaDir}/.downloads-probe
-              as_sonarr() {
-                setpriv --reuid ${toString config.users.users.sonarr.uid} --regid ${
-                  toString config.users.groups.${config.nixflix.globals.libraryOwner.group}.gid
-                } --clear-groups "$@"
-              }
-              trap 'rm -f "$src" "$dst"' EXIT
-              stat -c '%u:%g %a %n' ${lib.concatStringsSep " " shared} ${downloadsDir} ${mediaDir}
-              as_sonarr touch "$src"
-              stat -c '%u:%g %a %n' "$src"
-              as_sonarr ln "$src" "$dst"
-              [ "$(stat -c %h "$dst")" = 2 ]
-              echo "downloads-probe: ownership and hardlinks through virtiofs work"
-            '';
-          };
         };
       };
       hardware.ksm.enable = false;
@@ -143,6 +126,7 @@ in
           chain forward {
             type filter hook forward priority -10; policy accept;
             iifname "${tap}" meta nfproto ipv6 drop
+            oifname "${tap}" ct state new drop
             iifname "${tap}" ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/3 } drop
             iifname "${tap}" oifname "${config.services.tailscale.interfaceName}" drop
           }
@@ -166,7 +150,12 @@ in
             ExecStart = "${lib.getExe' config.systemd.package "systemd-tmpfiles"} --create --prefix=${stateDir}/downloads";
           };
         };
-        "microvm-virtiofsd@downloads".unitConfig.RequiresMountsFor = shared;
+        "microvm-virtiofsd@downloads" = {
+          unitConfig.RequiresMountsFor = shared;
+          serviceConfig.ExecStartPre = [
+            "${lib.getExe' pkgs.coreutils "mkdir"} -p ${lib.concatStringsSep " " shared}"
+          ];
+        };
         "microvm@downloads" = {
           requires = [
             "install-microvm-downloads.service"

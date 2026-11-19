@@ -1,7 +1,20 @@
 { config, inputs, ... }:
 let
-  inherit (config.flake.modules.nixos) nixflix postgresql;
+  inherit (config.flake.modules.nixos) downloads nixflix postgresql;
   inherit (config.fleet) domain;
+  net = import ./_downloads.nix;
+  hostSecrets = "/run/downloads-secrets";
+  guestSecrets = "/run/host-secrets";
+  guestDumps = "/var/backup/postgresql";
+  exporterPorts = {
+    sonarr = 19708;
+    radarr = 19709;
+    prowlarr = 19710;
+  };
+  seerrApps = [
+    "sonarr"
+    "radarr"
+  ];
   apps = [
     "sonarr"
     "radarr"
@@ -57,13 +70,11 @@ let
   ];
   # ProtonVPN's NAT-PMP gateway inside the tunnel
   protonGateway = "10.2.0.1";
-in
-{
-  flake.modules.nixos.arr =
+
+  guest =
     {
       config,
       lib,
-      options,
       pkgs,
       ...
     }:
@@ -73,16 +84,11 @@ in
       qbittorrent = config.nixflix.torrentClients.qbittorrent;
       inherit (config.services.qbittorrent) webuiPort;
       sabnzbd = config.nixflix.usenetClients.sabnzbd;
-      secret = name: { _secret = config.sops.secrets."arr-${name}".path; };
+      secret = name: { _secret = "${guestSecrets}/${name}"; };
       appPort = name: config.nixflix.${name}.config.hostConfig.port;
       confined = {
         enable = true;
         vpnNamespace = vpn;
-      };
-      exporterPorts = {
-        sonarr = 19708;
-        radarr = 19709;
-        prowlarr = 19710;
       };
       media = dirOf config.nixflix.mediaDir;
       withoutResponseBody =
@@ -101,10 +107,7 @@ in
             [ ''echo "Response body omitted: it may echo API keys."'' ] ++ lib.attrValues rewrites
           ) script
         );
-      decluttarrApps = [
-        "sonarr"
-        "radarr"
-      ];
+      decluttarrApps = seerrApps;
       decluttarrEnv = map (name: "${lib.toUpper name}_API_KEY") (decluttarrApps ++ [ "sabnzbd" ]) ++ [
         "QBITTORRENT_PASSWORD"
       ];
@@ -189,82 +192,14 @@ in
       };
     in
     {
-      imports = [
-        nixflix
-        postgresql
-      ];
-      sops.secrets =
-        lib.mapAttrs'
-          (name: units: {
-            name = "arr-${name}";
-            value = {
-              key = "arr/${name}";
-              restartUnits = map (unit: "${unit}.service") units;
-            };
-          })
-          {
-            sonarr-api-key = [
-              "sonarr"
-              "prometheus-exportarr-sonarr-exporter"
-              "prowlarr-applications"
-              "seerr"
-              "decluttarr"
-            ];
-            radarr-api-key = [
-              "radarr"
-              "prometheus-exportarr-radarr-exporter"
-              "prowlarr-applications"
-              "seerr"
-              "decluttarr"
-            ];
-            seerr-api-key = [ "seerr" ];
-            prowlarr-api-key = [
-              "prowlarr"
-              "prometheus-exportarr-prowlarr-exporter"
-            ];
-            password = [
-              "sonarr-config"
-              "radarr-config"
-              "prowlarr-config"
-              "sabnzbd"
-            ];
-            sabnzbd-api-key = [
-              "sabnzbd"
-              "sonarr-downloadclients"
-              "radarr-downloadclients"
-              "decluttarr"
-            ];
-            sabnzbd-nzb-key = [ "sabnzbd" ];
-            newshosting-username = [
-              "sabnzbd"
-              "easynews-indexer"
-            ];
-            newshosting-password = [ "sabnzbd" ];
-            tweaknews-username = [ "sabnzbd" ];
-            easynews-password = [ "easynews-indexer" ];
-            easynews-api-key = [
-              "easynews-indexer"
-              "prowlarr-indexers"
-            ];
-            ninjacentral-api-key = [ "prowlarr-indexers" ];
-            nzbgeek-api-key = [ "prowlarr-indexers" ];
-            althub-api-key = [ "prowlarr-indexers" ];
-            qbittorrent-password = [
-              "sonarr-downloadclients"
-              "radarr-downloadclients"
-              "qbittorrent-port-forward"
-              "decluttarr"
-            ];
-            qbittorrent-password-hash = [ "qbittorrent" ];
-            proton-wireguard = [ vpn ];
-          };
+      imports = [ nixflix ];
       nixflix = lib.mkMerge [
         {
           postgres.enable = true;
           vpn = {
             enable = true;
-            wgConfFile = config.sops.secrets.arr-proton-wireguard.path;
-            allowedIngress = [ ];
+            wgConfFile = "${guestSecrets}/proton-wireguard";
+            allowedIngress = [ net.hostAddress ];
           };
           torrentClients.qbittorrent = {
             enable = true;
@@ -320,19 +255,6 @@ in
               }) usenetServers;
             };
           };
-          seerr = {
-            enable = true;
-            vpn.enable = false;
-            apiKey = secret "seerr-api-key";
-            sonarr = lib.mkMerge [
-              options.nixflix.seerr.sonarr.default
-              { Sonarr.activeProfileName = storageProfile; }
-            ];
-            radarr = lib.mkMerge [
-              options.nixflix.seerr.radarr.default
-              { Radarr.activeProfileName = storageProfile; }
-            ];
-          };
           recyclarr = {
             enable = true;
             config = lib.genAttrs decluttarrApps (name: {
@@ -371,81 +293,26 @@ in
           };
         }))
       ];
-      # the uid that owns qbittorrent's state, allocated by the old generation; nixflix pins 70 with mkForce
-      users.users.qbittorrent.uid = lib.mkOverride 49 988;
-      users.users.exportarr = {
+      # the uid bastion allocated to qbittorrent, which owns its state; nixflix forces the whole account, so it is restated
+      users.users.qbittorrent = lib.mkOverride 49 {
+        uid = 994;
         isSystemUser = true;
-        uid = 357;
-        group = "exportarr";
+        inherit (config.services.qbittorrent) group;
       };
-      users.groups.exportarr.gid = 357;
-      services.prometheus.exporters = lib.listToAttrs (
-        map (
-          name:
-          lib.nameValuePair "exportarr-${name}" {
-            enable = true;
-            url = "http://${namespaceAddress}:${toString (appPort name)}";
-            apiKeyFile = config.sops.secrets."arr-${name}-api-key".path;
-            environment.INTERFACE = "127.0.0.1";
-            port = exporterPorts.${name};
-            user = "exportarr";
-            group = "exportarr";
-          }
-        ) apps
-      );
-      fleet.scrapeTargets = lib.mapAttrs' (
-        name: port: lib.nameValuePair "exportarr-${name}" port
-      ) exporterPorts;
-      fleet.web.apps = lib.mkMerge [
-        (lib.genAttrs apps (name: {
-          inherit (config.nixflix.${name}.config.hostConfig) port;
-          address = namespaceAddress;
-        }))
-        {
-          qbittorrent = {
-            port = webuiPort;
-            address = namespaceAddress;
-          };
-          sabnzbd = {
-            inherit (sabnzbd.settings.misc) port;
-            address = namespaceAddress;
-          };
-          seerr = { inherit (config.nixflix.seerr) port; };
-        }
-      ];
-      nixpkgs.config.allowUnfreePackages = [ "unrar" ];
-      networking.nftables.tables.arr-vpn = {
-        family = "inet";
-        content = ''
-          chain forward {
-            type filter hook forward priority -200; policy accept;
-            oifname "${vpn}-br" counter drop
-            iifname "${vpn}-br" counter drop
-          }
-          chain output {
-            type filter hook output priority -150; policy accept;
-            ct state new oifname "${vpn}-br" meta skuid ${
-              toString config.users.users.${config.nixflix.seerr.user}.uid
-            } tcp dport { ${
-              lib.concatMapStringsSep ", " (name: toString (appPort name)) [
-                "sonarr"
-                "radarr"
-              ]
-            } } accept
-            ct state new oifname "${vpn}-br" meta skuid ${toString config.users.users.exportarr.uid} tcp dport { ${
-              lib.concatMapStringsSep ", " (name: toString (appPort name)) apps
-            } } accept
-            ct state new oifname "${vpn}-br" meta skuid != { ${
-              lib.concatMapStringsSep ", " toString (
-                [ 0 ] ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
-              )
-            } } reject
-          }
-        '';
+      services.postgresqlBackup = {
+        enable = true;
+        databases = apps;
+        location = guestDumps;
+        pgdumpOptions = "--no-owner --no-privileges --lock-wait-timeout=5min";
       };
       systemd.services = lib.mkMerge [
-        (lib.genAttrs (map (name: "prometheus-exportarr-${name}-exporter") apps) (_: {
-          serviceConfig.DynamicUser = false;
+        (lib.genAttrs (map (name: "postgresqlBackup-${name}") apps) (name: {
+          requires = [ "arr-restore.service" ];
+          after = [ "arr-restore.service" ];
+          serviceConfig.ExecCondition = pkgs.writeShellScript "${name}-has-tables" ''
+            tables=$(${lib.getExe' config.services.postgresql.package "psql"} -d ${lib.removePrefix "postgresqlBackup-" name} -Atc "select count(*) from pg_tables where schemaname = 'public'") || exit 255
+            [ "$tables" != 0 ]
+          '';
         }))
         (lib.genAttrs
           (
@@ -453,7 +320,6 @@ in
             ++ [
               "qbittorrent"
               "sabnzbd"
-              "seerr"
               "decluttarr"
             ]
           )
@@ -465,6 +331,36 @@ in
           })
         )
         {
+          arr-restore = {
+            description = "Load each arr database from its last dump while it is empty";
+            requiredBy = map (name: "${name}.service") apps;
+            before = map (name: "${name}.service") apps;
+            requires = [ "postgresql-setup.service" ];
+            after = [ "postgresql-setup.service" ];
+            unitConfig.RequiresMountsFor = [ guestDumps ];
+            path = [
+              config.services.postgresql.package
+              pkgs.gzip
+              pkgs.util-linux
+            ];
+            enableStrictShellChecks = true;
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+            };
+            script = ''
+              set -o pipefail
+              for db in ${lib.concatStringsSep " " apps}; do
+                dump=${guestDumps}/$db.sql.gz
+                [ -e "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
+                [ -e "$dump" ] || continue
+                tables=$(runuser -u "$db" -- psql -d "$db" -Atc "select count(*) from pg_tables where schemaname = 'public'")
+                [ "$tables" = 0 ] || continue
+                echo "Loading $db from $dump"
+                gunzip -c "$dump" | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db" > /dev/null
+              done
+            '';
+          };
           prowlarr-indexers = {
             wants = [ "easynews-indexer.service" ];
             after = [ "easynews-indexer.service" ];
@@ -495,10 +391,10 @@ in
               StateDirectory = "decluttarr";
               WorkingDirectory = "%S/decluttarr";
               LoadCredential =
-                map (name: "${name}:${config.sops.secrets."arr-${name}".path}") (
+                map (name: "${name}:${guestSecrets}/${name}") (
                   map (name: "${name}-api-key") (decluttarrApps ++ [ "sabnzbd" ])
                 )
-                ++ [ "QBITTORRENT_PASSWORD:${config.sops.secrets.arr-qbittorrent-password.path}" ];
+                ++ [ "QBITTORRENT_PASSWORD:${guestSecrets}/qbittorrent-password" ];
             };
             script = ''
               mkdir -p config
@@ -525,7 +421,7 @@ in
               DynamicUser = true;
               Restart = "on-failure";
               RestartSec = "5s";
-              LoadCredential = map (name: "${name}:${config.sops.secrets."arr-${name}".path}") [
+              LoadCredential = map (name: "${name}:${guestSecrets}/${name}") [
                 "newshosting-username"
                 "easynews-password"
                 "easynews-api-key"
@@ -544,7 +440,7 @@ in
             Restart = "on-failure";
             RestartSec = "5s";
             LoadCredential = [
-              "webui-password-hash:${config.sops.secrets.arr-qbittorrent-password-hash.path}"
+              "webui-password-hash:${guestSecrets}/qbittorrent-password-hash"
             ];
             ExecStartPre = lib.mkAfter [
               (lib.getExe (
@@ -588,7 +484,7 @@ in
               RuntimeDirectory = "qbittorrent-port-forward";
               RuntimeDirectoryMode = "0700";
               UMask = "0077";
-              LoadCredential = [ "password:${config.sops.secrets.arr-qbittorrent-password.path}" ];
+              LoadCredential = [ "password:${guestSecrets}/qbittorrent-password" ];
             };
             script = ''
               api=http://${namespaceAddress}:${toString webuiPort}/api/v2
@@ -632,4 +528,304 @@ in
         }
       ];
     };
+
+  host =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      guestSystem = config.microvm.vms.downloads.config;
+      guestConfig = guestSystem.config;
+      appPort = name: guestConfig.nixflix.${name}.config.hostConfig.port;
+      secret = name: config.sops.secrets."arr-${name}".path;
+      hostUnits = {
+        sonarr-api-key = [
+          "prometheus-exportarr-sonarr-exporter"
+          "seerr"
+        ];
+        radarr-api-key = [
+          "prometheus-exportarr-radarr-exporter"
+          "seerr"
+        ];
+        prowlarr-api-key = [ "prometheus-exportarr-prowlarr-exporter" ];
+        seerr-api-key = [ "seerr" ];
+      };
+      guestHeld = [
+        "sonarr-api-key"
+        "radarr-api-key"
+        "prowlarr-api-key"
+        "password"
+        "sabnzbd-api-key"
+        "sabnzbd-nzb-key"
+        "newshosting-username"
+        "newshosting-password"
+        "tweaknews-username"
+        "easynews-password"
+        "easynews-api-key"
+        "ninjacentral-api-key"
+        "nzbgeek-api-key"
+        "althub-api-key"
+        "qbittorrent-password"
+        "qbittorrent-password-hash"
+        "proton-wireguard"
+      ];
+      hostDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
+      handover = "${hostDumps}-handover";
+      install = lib.getExe' pkgs.coreutils "install";
+      awaitProfile =
+        name:
+        pkgs.writeShellApplication {
+          name = "await-${name}-profile";
+          runtimeInputs = [
+            pkgs.curl
+            pkgs.jq
+          ];
+          text = ''
+            while (( SECONDS < 180 )); do
+              if curl -fsS --max-time 5 -H @<(printf 'X-Api-Key: %s' "$(< ${secret "${name}-api-key"})") \
+                http://${net.guestAddress}:${toString (appPort name)}/api/v3/qualityprofile |
+                jq -e --arg profile ${lib.escapeShellArg storageProfile} 'any(.[]; .name == $profile)' > /dev/null; then
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "${name} in the downloads guest has no profile ${storageProfile} after 3 minutes" >&2
+            exit 1
+          '';
+        };
+      toGuest =
+        name: uids:
+        ''ct state new oifname "${net.tap}" meta skuid { ${
+          lib.concatMapStringsSep ", " toString uids
+        } } tcp dport { ${lib.concatMapStringsSep ", " (app: toString (appPort app)) name} } accept'';
+    in
+    {
+      imports = [
+        downloads
+        nixflix
+        postgresql
+      ];
+
+      microvm.vms.downloads.config = {
+        imports = [ guest ];
+        services.postgresql.package = config.services.postgresql.package;
+        fileSystems = lib.genAttrs [ guestSecrets guestDumps ] (_: {
+          options = [
+            "nosuid"
+            "nodev"
+            "noexec"
+          ];
+        });
+        time.timeZone = config.time.timeZone;
+        microvm.shares = [
+          {
+            proto = "virtiofs";
+            tag = "secrets";
+            source = hostSecrets;
+            mountPoint = guestSecrets;
+            readOnly = true;
+          }
+          {
+            proto = "virtiofs";
+            tag = "dumps";
+            source = hostDumps;
+            mountPoint = guestDumps;
+          }
+        ];
+      };
+
+      sops.secrets = lib.listToAttrs (
+        map (
+          name:
+          lib.nameValuePair "arr-${name}" {
+            key = "arr/${name}";
+            restartUnits =
+              map (unit: "${unit}.service") (
+                hostUnits.${name} or [ ] ++ lib.optional (lib.elem name guestHeld) "microvm-virtiofsd@downloads"
+              )
+              ++ map (app: "seerr-${app}.timer") (lib.filter (app: name == "${app}-api-key") seerrApps);
+          }
+        ) (lib.unique (lib.attrNames hostUnits ++ guestHeld))
+      );
+
+      nixflix = {
+        postgres.enable = true;
+        seerr = lib.mkMerge [
+          {
+            enable = true;
+            vpn.enable = false;
+            apiKey._secret = secret "seerr-api-key";
+          }
+          (lib.genAttrs seerrApps (
+            name:
+            let
+              instance = lib.head (lib.attrNames guestSystem.options.nixflix.seerr.${name}.default);
+            in
+            lib.mkMerge [
+              guestSystem.options.nixflix.seerr.${name}.default
+              {
+                ${instance} = {
+                  hostname = lib.mkForce net.guestAddress;
+                  apiKey = lib.mkForce { _secret = secret "${name}-api-key"; };
+                  activeProfileName = storageProfile;
+                };
+              }
+            ]
+          ))
+        ];
+      };
+
+      users.users.exportarr = {
+        isSystemUser = true;
+        uid = 357;
+        group = "exportarr";
+      };
+      users.groups.exportarr.gid = 357;
+      services.prometheus.exporters = lib.listToAttrs (
+        map (
+          name:
+          lib.nameValuePair "exportarr-${name}" {
+            enable = true;
+            url = "http://${net.guestAddress}:${toString (appPort name)}";
+            apiKeyFile = secret "${name}-api-key";
+            environment.INTERFACE = "127.0.0.1";
+            port = exporterPorts.${name};
+            user = "exportarr";
+            group = "exportarr";
+          }
+        ) apps
+      );
+      fleet.scrapeTargets = lib.mapAttrs' (
+        name: port: lib.nameValuePair "exportarr-${name}" port
+      ) exporterPorts;
+      fleet.web.apps = lib.mkMerge [
+        (lib.genAttrs apps (name: {
+          port = appPort name;
+          address = net.guestAddress;
+        }))
+        {
+          qbittorrent = {
+            port = guestConfig.services.qbittorrent.webuiPort;
+            address = net.guestAddress;
+          };
+          sabnzbd = {
+            inherit (guestConfig.nixflix.usenetClients.sabnzbd.settings.misc) port;
+            address = net.guestAddress;
+          };
+          seerr = { inherit (config.nixflix.seerr) port; };
+        }
+      ];
+      nixpkgs.config.allowUnfreePackages = [ "unrar" ];
+      system.activationScripts.arr-handover.text = ''
+        if [ -e /run/current-system/etc/systemd/system/${lib.head apps}.service ] &&
+          [ -e ${handover}/done ]; then
+          stamp=$(date +%s)
+          mkdir -p ${handover}/replaced-"$stamp"
+          mv -f ${hostDumps}/*.sql.gz ${handover}/replaced-"$stamp"/ 2> /dev/null || true
+          if [ -e ${config.microvm.stateDir}/downloads/var.img ]; then
+            mv -f ${config.microvm.stateDir}/downloads/var.img ${config.microvm.stateDir}/downloads/var.img.replaced-"$stamp"
+          fi
+          rm -f ${handover}/done
+        fi
+      '';
+      networking.nftables.tables.arr = {
+        family = "inet";
+        content = ''
+          chain output {
+            type filter hook output priority -150; policy accept;
+            ${toGuest seerrApps [ config.users.users.${config.nixflix.seerr.user}.uid ]}
+            ${toGuest apps [ config.users.users.exportarr.uid ]}
+            ct state new oifname "${net.tap}" meta skuid != { ${
+              lib.concatMapStringsSep ", " toString (
+                [ 0 ] ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
+              )
+            } } reject
+          }
+        '';
+      };
+
+      systemd.timers = lib.genAttrs (map (name: "seerr-${name}") seerrApps) (unit: {
+        wantedBy = [ "timers.target" ];
+        timerConfig.OnActiveSec = "1min";
+        restartTriggers = [ config.systemd.units."${unit}.service".unit ];
+      });
+      systemd.services = lib.mkMerge [
+        (lib.genAttrs (map (name: "prometheus-exportarr-${name}-exporter") apps) (_: {
+          serviceConfig.DynamicUser = false;
+        }))
+        (lib.genAttrs (map (name: "seerr-${name}") seerrApps) (unit: {
+          wantedBy = lib.mkForce [ ];
+          restartIfChanged = false;
+          startLimitIntervalSec = 3600;
+          startLimitBurst = 15;
+          serviceConfig = {
+            ExecStartPre = lib.getExe (awaitProfile (lib.removePrefix "seerr-" unit));
+            RemainAfterExit = lib.mkForce false;
+            Restart = "on-failure";
+            RestartSec = "30s";
+          };
+        }))
+        {
+          seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];
+          "microvm-virtiofsd@downloads" = {
+            unitConfig.RequiresMountsFor = [ hostDumps ];
+            serviceConfig.ExecStartPre = map (
+              name: "${install} -D -m 0400 ${secret name} ${hostSecrets}/${name}"
+            ) guestHeld;
+          };
+          arr-dumps-fresh = {
+            description = "Fail when the downloads guest's database dumps are older than two days";
+            startAt = "06:00";
+            path = [ pkgs.findutils ];
+            enableStrictShellChecks = true;
+            serviceConfig.Type = "oneshot";
+            script = ''
+              [ -e ${handover}/done ] || exit 0
+              for db in ${lib.concatStringsSep " " apps}; do
+                if [ -z "$(find ${hostDumps}/"$db.sql.gz" ${hostDumps}/"$db.prev.sql.gz" -mtime -2 2> /dev/null)" ]; then
+                  echo "$db has no dump newer than two days in ${hostDumps}" >&2
+                  exit 1
+                fi
+              done
+            '';
+          };
+          arr-handover = {
+            description = "Dump the arr databases bastion still holds for the downloads guest to load";
+            requiredBy = [ "microvm-virtiofsd@downloads.service" ];
+            before = [ "microvm-virtiofsd@downloads.service" ];
+            wants = [ "postgresql.target" ];
+            after = [ "postgresql.target" ];
+            unitConfig.RequiresMountsFor = [ (dirOf hostDumps) ];
+            path = [
+              config.services.postgresql.package
+              pkgs.gzip
+            ];
+            enableStrictShellChecks = true;
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              User = "postgres";
+              ExecStartPre = "+${install} -d -o postgres -m 0700 ${hostDumps} ${handover}";
+            };
+            script = ''
+              set -o pipefail
+              [ ! -e ${handover}/done ] || exit 0
+              for db in ${lib.concatStringsSep " " apps}; do
+                exists=$(psql -Atc "select count(*) from pg_database where datname = '$db'")
+                [ "$exists" = 1 ] || continue
+                pg_dump --no-owner --no-privileges "$db" | gzip > ${handover}/"$db.sql.gz"
+                mv -T ${handover}/"$db.sql.gz" ${hostDumps}/"$db.sql.gz"
+              done
+              touch ${handover}/done
+            '';
+          };
+        }
+      ];
+    };
+in
+{
+  flake.modules.nixos.arr = host;
 }
