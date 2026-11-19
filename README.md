@@ -16,7 +16,7 @@ to be read; nothing here is meant to be reused as is.
 
 ## Quick start
 
-The dev shell provides `just`, `sops` and the formatter. `just` lists the tasks; each wraps a
+The dev shell provides `just`, `sops`, `openssl`, `mkpasswd`, `jq` and the formatter. `just` lists the tasks; each wraps a
 flake app or a Nix command:
 
 ```sh
