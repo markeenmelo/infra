@@ -26,6 +26,11 @@ or a web page can talk the agent into using or leaking.
   `TELEGRAM_ALLOWED_USERS` are answered; anyone else is ignored without a reply.
 - **Model:** `gpt-6-luna` through the `openai-codex` provider, which is the operator's ChatGPT
   subscription, not an API key.
+- **Browser:** the fleet's Chromium, named in `browser.executable_path` because upstream's own
+  download cannot run on NixOS, with one persistent profile under the agent's home
+  (`browser.user_data_dir`), so a site the operator had it sign in to stays signed in. That
+  session is one more thing the guest holds: any page the agent reads can steer what it does
+  with those accounts.
 - **State:** `var.img` on `apps/agents` holds `/var/lib`, with the agent's memory, skills,
   sessions and its refreshed sign-in under `/var/lib/hermes`. Neither snapshotted nor backed up.
 
