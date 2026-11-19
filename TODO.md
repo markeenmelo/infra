@@ -1,7 +1,6 @@
 # To do
 
-Work the operator wants done, not yet started unless a line says so. An item leaves this file in
-the pull request that finishes it.
+Work the operator wants done. An item leaves this file in the pull request that finishes it.
 
 - **Checks:** make `check.yml` fast enough for agents to wait for it on every pull request
   ([CLAUDE.md](CLAUDE.md#branches-and-pull-requests)), and improve the checks themselves.

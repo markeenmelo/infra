@@ -43,6 +43,7 @@ just tofu unifi plan  # plan an OpenTofu project
 - [`.claude/skills/`](.claude/skills/): how each part works and the rules it follows, one skill
   per area; the [nix skill](.claude/skills/nix/SKILL.md) says where a module, option, package pin,
   app or check goes. [CLAUDE.md](CLAUDE.md) holds the agents' rules and the decided stack.
+  [TODO.md](TODO.md) lists the work to come; an item leaves it in the pull request that finishes it.
 
 Flakes see only files Git tracks, so `git add` a new file before evaluating.
 
