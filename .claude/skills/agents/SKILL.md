@@ -12,7 +12,7 @@ the LANs or the tailnet's hosts. It is not a `fleet.hosts` entry: it builds insi
 closure. A bastion deploy installs the guest's new system but leaves the running guest alone:
 `restartIfChanged` is off, since a nixpkgs or plugin bump changes every store path in its units
 and would end every session in it on each update. `agents-restart` restarts it instead, and only
-when agents.nix itself, `restartGeneration` in it, or one of its tokens changed since the unit
+when agents.nix itself, `restartGeneration` in it, the operator's login key, or one of its tokens changed since the unit
 last ran; anything else, a new Claude Code included, reaches the guest at its next restart, which
 bumping `restartGeneration` forces. The system a running guest booted stays a garbage-collector
 root until then.

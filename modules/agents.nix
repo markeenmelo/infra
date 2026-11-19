@@ -188,7 +188,11 @@ in
       install = lib.getExe' pkgs.coreutils "install";
       tokens = lib.attrNames tokenVariables;
       secret = name: config.sops.secrets."agents-${name}".path;
-      scope = "${toString restartGeneration} ${builtins.hashFile "sha256" ./agents.nix}";
+      scope = lib.concatStringsSep " " [
+        (toString restartGeneration)
+        (builtins.hashFile "sha256" ./agents.nix)
+        (builtins.hashFile "sha256" ./_operator-key.nix)
+      ];
     in
     {
       imports = [ inputs.microvm.nixosModules.host ];
@@ -277,6 +281,7 @@ in
           requiredBy = [ "install-microvm-agents.service" ];
           before = [ "install-microvm-agents.service" ];
           unitConfig.RequiresMountsFor = stateDir;
+          restartIfChanged = false;
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
