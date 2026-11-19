@@ -61,10 +61,14 @@ Permissions apply within the requested task. Continue independent safe work whil
   structural change (moving a module, renaming an option, changing the layout) gets its own branch
   and pull request, never mixed with feature work.
 - Measure a branch with `git diff --stat main...HEAD`, leaving out lock-only files such as
-  `flake.lock` and saying so. At about 500 changed lines, or when the change is complete, stop:
-  summarize what changed, what was validated and what remains, and ask whether to open the pull
-  request. A feature that will clearly pass 500 lines is split into stacked branches at logical
-  boundaries, proposed before the code is written.
+  `flake.lock` and saying so. At about 500 changed lines with the change unfinished, stop:
+  summarize what changed, what was validated and what remains, and ask whether to go on or split.
+  A feature that will clearly pass 500 lines is split into stacked branches at logical
+  boundaries, proposed before the code is written; a part of an approved split that still passes
+  500 says so in its pull request.
+- A change that cannot be run where it is written (a guest, a boot path, a move of live data) is
+  split so the first pull request proves the unknowns on the host without touching what runs: it
+  prints what it found to a log the operator can read, and the second pull request does the move.
 - Push a branch other than `main` once the `secrets` check passes on every commit the push would
   publish (`nix build ".?rev=REV#checks.SYSTEM.secrets"` for each), so committed work has a copy
   outside the machine it was written on. The repository is public and a push cannot be taken
@@ -72,9 +76,19 @@ Permissions apply within the requested task. Continue independent safe work whil
   rewritten before its first push. The check matches known token shapes only, so it is necessary
   and not sufficient: first read `git log -p` of the commits to be pushed, diffs and messages,
   for anything credential-like, and ask when in doubt, or when the branch changes the check
-  itself (`modules/secrets.nix`), since each revision is judged by its own copy. Open the pull request only once the operator approves: `gh pr create` with
-  the body sections Summary, Hosts affected, Validation run, Risks, Rollback. Never push to `main`
+  itself (`modules/secrets.nix`), since each revision is judged by its own copy. Never push to `main`
   or force-push a branch someone has reviewed.
+- Open the pull request when the change is complete and pushed: `gh pr create` with the body
+  sections Summary, Hosts affected, Validation run, Risks, Rollback, and After deploying when the
+  operator has something to run or look at. The body stays true: a later commit that changes what
+  it says updates it.
+- After each push, wait for both reviewers on that commit, not for the CI jobs. Check every
+  finding against the code, an evaluation or an experiment before acting on it, the ones a
+  reviewer marks unverified included. Fix what holds, and reply on each inline finding with the
+  commit that fixed it or the reason nothing changed.
+- When a round brings no new finding, squash-merge and delete the branch, local and remote, then
+  take the next branch. Hold the merge and report instead when the next step needs something only
+  the operator can do or see, such as a deploy or a log from a host.
 
 ## Method
 
@@ -87,7 +101,9 @@ Permissions apply within the requested task. Continue independent safe work whil
   tested, modules no skill or README covers, options declared but never read, TODOs and FIXMEs,
   hosts or areas CI does not cover.
 - Ask one focused question instead of guessing, above all on secrets, network exposure (the cache,
-  the edge), disk layout and persistence.
+  the edge), disk layout and persistence. Decisions that block the same work go in one prompt,
+  each readable on its own, the recommended option first, with what each option costs. Say so
+  when reading the code changed a recommendation made earlier.
 - Verify upstream claims (nixpkgs options at the pinned revision, flake-parts, import-tree, a CLI)
   against the nixos MCP tool, `/nix/store` sources or upstream docs, not memory. Before setting
   an option, read the module that owns it: its defaults and what else it wires (reloads, users,
@@ -95,14 +111,15 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Before writing a module, walk the `nix` skill's new-service checklist.
 - Run every shell snippet handed to the operator, or its closest local equivalent, first.
 - Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Once per
-  branch, before asking to open the pull request, `nix flake check` naming every affected x86_64
+  branch, before opening the pull request, `nix flake check` naming every affected x86_64
   host so its toplevel builds; a branch that changes only Markdown needs the outPath comparison and the `format` and `secrets` checks.
   Where the whole check cannot run, evaluate each check on its own, leave the builds to CI and say
   so in the report. The `darwin` CI job builds
   `mac` on a macOS runner; `asahi` only evaluates in CI and builds on itself.
 - A refactor keeps every host's outPath identical (`nix` skill).
 - Report exactly what passed, failed and is unknown. A build proves evaluation and closure, not
-  boot, networking, credentials or backups. Never report green from a partial run.
+  boot, networking, credentials or backups. Never report green from a partial run. A report ends
+  with what was not checked and what the operator does next, as exact commands.
 - Git flakes ignore untracked files: stage new files before any check.
 
 ## Review guidelines
