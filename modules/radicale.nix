@@ -10,7 +10,6 @@ let
     skip_x_access_token = true;
     additional_headers = {
       X-Script-Name = "/${dav}";
-      # Radicale strips X-Script-Name only from requests that name a proxy, and OpenCloud's sets no X-Forwarded header
       X-Forwarded-Proto = "https";
     };
   };
@@ -108,6 +107,7 @@ in
             description = "Link the family calendar into every Radicale home";
             after = [ "radicale.service" ];
             wantedBy = [ "radicale.service" ];
+            startAt = "*:0/10";
             unitConfig.RequiresMountsFor = root;
             serviceConfig = {
               Type = "oneshot";

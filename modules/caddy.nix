@@ -2,6 +2,7 @@
 let
   identityHeaders = [
     "Remote-User"
+    "X-Remote-User"
     "Remote-Groups"
     "Remote-Email"
     "Remote-Name"
