@@ -1,4 +1,4 @@
-github_token=${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}
+github_token=${GITHUB_TOKEN:-$(gh auth token 2> /dev/null || true)}
 
 caddy=modules/caddy.pkg.nix
 modules=$(grep -o 'github\.com/[^@"]*' "$caddy")
