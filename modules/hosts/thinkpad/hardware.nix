@@ -128,7 +128,7 @@
           };
           "Samsung Electric Company Odyssey G93SC HCSY300098" = {
             position = above 5120;
-            hdr = "auto";
+            hdr = "on";
           };
         };
     };
