@@ -730,12 +730,25 @@ let
         '';
       };
 
+      systemd.timers = lib.genAttrs (map (name: "seerr-${name}") seerrApps) (unit: {
+        wantedBy = [ "timers.target" ];
+        timerConfig.OnActiveSec = "1min";
+        restartTriggers = [ config.systemd.units."${unit}.service".unit ];
+      });
       systemd.services = lib.mkMerge [
         (lib.genAttrs (map (name: "prometheus-exportarr-${name}-exporter") apps) (_: {
           serviceConfig.DynamicUser = false;
         }))
         (lib.genAttrs (map (name: "seerr-${name}") seerrApps) (unit: {
-          serviceConfig.ExecStartPre = lib.getExe (awaitProfile (lib.removePrefix "seerr-" unit));
+          wantedBy = lib.mkForce [ ];
+          restartIfChanged = false;
+          startLimitIntervalSec = 3600;
+          startLimitBurst = 15;
+          serviceConfig = {
+            ExecStartPre = lib.getExe (awaitProfile (lib.removePrefix "seerr-" unit));
+            Restart = "on-failure";
+            RestartSec = "30s";
+          };
         }))
         {
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];

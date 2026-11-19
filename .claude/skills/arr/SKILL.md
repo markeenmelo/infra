@@ -35,7 +35,8 @@ Decluttarr handles instead.
 
 Seerr takes requests at `seerr.DOMAIN`, on the LAN and the tailnet, and runs on bastion, outside the guest, because it
 needs Jellyfin; its database stays in bastion's shared PostgreSQL ([identity skill](../identity/SKILL.md)); it signs in to Jellyfin as the declared native admin to set itself up, and its Sonarr and Radarr
-setup units first wait up to three minutes for the request profile to exist in the guest, since no
+setup units start from a timer a minute after boot or a deploy, outside the switch, and retry until
+the request profile exists in the guest, giving up after fifteen tries in an hour, since no
 unit ordering crosses into it. Its login
 takes a Jellyfin password and Seerr has no OIDC, so only accounts with a native Jellyfin password
 (the admin) sign in; people who reach Jellyfin through Authelia have none. Requests go to Sonarr and Radarr on
