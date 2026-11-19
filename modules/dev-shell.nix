@@ -7,7 +7,58 @@
       ...
     }:
     {
-      formatter = pkgs.nixfmt-tree;
+      formatter = pkgs.nixfmt-tree.override {
+        runtimeInputs = [
+          pkgs.opentofu
+          pkgs.prettier
+          pkgs.shfmt
+          pkgs.stylua
+          pkgs.taplo
+        ];
+        settings = {
+          excludes = [
+            "secrets/*"
+            "modules/sketchybar.lua"
+          ];
+          formatter = {
+            tofu = {
+              command = "tofu";
+              options = [ "fmt" ];
+              includes = [ "*.tf" ];
+            };
+            stylua = {
+              command = "stylua";
+              includes = [
+                "*.lua"
+                "*.luau"
+              ];
+            };
+            shfmt = {
+              command = "shfmt";
+              options = [
+                "-w"
+                "-i=2"
+                "-sr"
+              ];
+              includes = [ "*.sh" ];
+            };
+            taplo = {
+              command = "taplo";
+              options = [ "format" ];
+              includes = [ "*.toml" ];
+            };
+            prettier = {
+              command = "prettier";
+              options = [ "--write" ];
+              includes = [
+                "*.json"
+                "*.yaml"
+                "*.yml"
+              ];
+            };
+          };
+        };
+      };
       devShells.default = pkgs.mkShellNoCC {
         packages = [
           config.formatter

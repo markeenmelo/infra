@@ -17,7 +17,7 @@ apply, then drop the blocks. The tailscale project's own state sits behind the g
 project applies, and bastion's sshd forwards no ports, so a policy that loses the operator
 laptops' grant to the state port is repaired in the admin console (lifting
 `acls_externally_managed_on` first if it blocks the edit), then planned and applied again. The
-`opentofu` check only runs `tofu fmt`; validation needs the providers, so
+`format` check runs `tofu fmt` over the projects ([nix skill](../nix/SKILL.md)); validation needs the providers, so
 [check.yml](../../../.github/workflows/check.yml) runs `tofu validate` on each project.
 
 ```sh

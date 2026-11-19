@@ -166,10 +166,6 @@ in
           '';
         };
       };
-      checks.opentofu = pkgs.runCommand "opentofu" { } ''
-        ${lib.getExe pkgs.opentofu} fmt -check -diff -recursive ${../opentofu}
-        touch $out
-      '';
       checks.unifi-settings = pkgs.runCommand "unifi-settings" { nativeBuildInputs = [ pkgs.jq ]; } ''
         jq -n '{meta: {rc: "ok"}, data: [{key: "usg", upnp_enabled: true, kept: 1}, {key: "doh", state: "manual"}]}' > have.json
         jq -n '{usg: {upnp_enabled: false}, doh: {state: "manual"}, usg_geo: {ip_filtering: {enabled: true}}}' > want.json
