@@ -93,7 +93,12 @@ and every shell in the guest exports them; a changed token restarts the guest, t
   work on, with the default branch protected. Never the Workflows permission, which would let a
   push rewrite the workflows themselves. Contents write alone still lets a pushed branch change
   the code a pull-request workflow runs, so the token covers only repositories whose
-  pull-request workflows hold no secret that such code can reach.
+  pull-request workflows hold no secret that such code can reach. It also merges: an agent
+  squash-merges its own pull request once the reviewers find nothing
+  ([CLAUDE.md](../../../CLAUDE.md#branches-and-pull-requests)), so for those the two reviewers,
+  which only read the diff, are the gate before `main`. The changes CLAUDE.md keeps for the
+  operator to merge are a rule the agent follows, not a control: an injected session holding this
+  token can merge whatever the branch protection admits.
 
 Commits made in the guest carry the operator's Git identity, which
 [git.nix](../../../modules/git.nix) gives the guest and the workstations alike, and no Claude

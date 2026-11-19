@@ -33,6 +33,8 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Query live state read-only through the Grafana, GitHub and nixos MCP tools.
 - Commit validated work in small Conventional Commits (`type(scope): summary`; the body says what
   changed and why), refactors and features in separate commits.
+- Push branches, open pull requests, answer their reviewers and merge a clean round, within the
+  limits of [Branches and pull requests](#branches-and-pull-requests).
 - Prepare `deploy .#HOST` of a committed revision whose checks passed and report the command,
   saying when the revision changes remote access (SSH, firewall, Tailscale, users, sudo, deploy
   config) or data storage and persistence.
@@ -57,14 +59,18 @@ Permissions apply within the requested task. Continue independent safe work whil
 
 ## Branches and pull requests
 
-- Never commit to `main`. One branch per change: `feat/TOPIC`, `refactor/TOPIC` or `docs/TOPIC`. A
+- Never commit to `main` directly. One branch per change: `feat/TOPIC`, `refactor/TOPIC` or `docs/TOPIC`. A
   structural change (moving a module, renaming an option, changing the layout) gets its own branch
   and pull request, never mixed with feature work.
 - Measure a branch with `git diff --stat main...HEAD`, leaving out lock-only files such as
-  `flake.lock` and saying so. At about 500 changed lines, or when the change is complete, stop:
-  summarize what changed, what was validated and what remains, and ask whether to open the pull
-  request. A feature that will clearly pass 500 lines is split into stacked branches at logical
-  boundaries, proposed before the code is written.
+  `flake.lock` and saying so. At about 500 changed lines with the change unfinished, stop:
+  summarize what changed, what was validated and what remains, and ask whether to go on or split.
+  A feature that will clearly pass 500 lines is split into stacked branches at logical
+  boundaries, proposed before the code is written; a part of an approved split that still passes
+  500 says so in its pull request.
+- A change that cannot be run where it is written (a guest, a boot path, a move of live data) is
+  split so the first pull request proves the unknowns on the host without touching what runs: it
+  prints what it found to a log the operator can read, and the second pull request does the move.
 - Push a branch other than `main` once the `secrets` check passes on every commit the push would
   publish (`nix build ".?rev=REV#checks.SYSTEM.secrets"` for each), so committed work has a copy
   outside the machine it was written on. The repository is public and a push cannot be taken
@@ -72,9 +78,51 @@ Permissions apply within the requested task. Continue independent safe work whil
   rewritten before its first push. The check matches known token shapes only, so it is necessary
   and not sufficient: first read `git log -p` of the commits to be pushed, diffs and messages,
   for anything credential-like, and ask when in doubt, or when the branch changes the check
-  itself (`modules/secrets.nix`), since each revision is judged by its own copy. Open the pull request only once the operator approves: `gh pr create` with
-  the body sections Summary, Hosts affected, Validation run, Risks, Rollback. Never push to `main`
+  itself (`modules/secrets.nix`), since each revision is judged by its own copy. Never push to `main`
   or force-push a branch someone has reviewed.
+- Open the pull request when the change is complete and pushed: `gh pr create` with the body
+  sections Summary, Hosts affected, Validation run, Risks, Rollback, and After deploying when the
+  operator has something to run or look at. The body stays true: a later commit that changes what
+  it says updates it.
+- After each push, wait for both reviewers to report on that commit, not for the CI jobs: the
+  `claude-code (fable)` check of [review.yml](.github/workflows/review.yml) succeeded on the
+  head commit, not skipped, and its summary comment was updated after that commit; the Codex
+  review names the commit. Anything less (a reviewer that never reports, a run that failed, was
+  cancelled or skipped, a summary that says its coverage was cut short) is not a clean round:
+  hold and report. Check every finding against the code, an evaluation or an experiment before acting on
+  it, the ones a reviewer marks unverified included. Fix what holds, and reply on each inline
+  finding with the commit that fixed it or the evidence that nothing needs to change.
+- When a round brings no new finding, and `check` passed on the head commit where CI is the only
+  build of something the change affects (the `mac`, a toplevel the session could not build),
+  squash-merge through the pull request, the one way an
+  agent's work reaches `main`, naming the reviewed commit
+  (`gh pr merge --squash --match-head-commit SHA`) so a head that moved is not merged unread, and
+  delete the branch, local and remote. Then read the `check` run
+  that merge starts on `main` before pushing the next branch, and fix or revert when it is red. A
+  stacked part branches from `main` once the part below it is merged.
+- Hold the merge and report instead when:
+  - a finding was declined rather than fixed: the reviewers never read the reply, so their
+    silence in the next round settles nothing, and the operator does;
+  - the pull request touches what gates agents or the fleet's trust. `main` is what CI joins the
+    tailnet from and what the operator deploys, and the reviewers only read a diff, so these
+    wait for the operator:
+    - `CLAUDE.md`, `.claude/` outside `skills/`, `.mcp.json`, `.github/workflows/`, `justfile`;
+    - what brings in other people's code: `flake.nix`, `flake.lock`, `modules/pins.nix`, any
+      `*.pkg.nix`;
+    - secrets and infrastructure: `.sops.yaml`, `secrets/`, `opentofu/`, and the modules
+      `secrets.nix` and `opentofu.nix`;
+    - the agents' own reach and remote access: the modules `agents.nix`, `claude.nix`,
+      `deploy.nix`, `install.nix`, `access.nix`, `ssh.nix`, `tailscale.nix`, `builder.nix`,
+      `unlock.nix` and `_operator-key.nix`.
+
+    The skills are left out, since nearly every change updates one, with one exception: a skill
+    edit that removes or loosens a rule, instead of describing the code it lands with, is held;
+  - the next step needs something only the operator can do or see, such as a deploy or a log
+    from a host.
+- Not waiting for CI on every merge is a limit to lift, not a preference: a
+  [check.yml](.github/workflows/check.yml) run takes many times longer than a review and a newer
+  push cancels it. Making it fast enough to wait for is open work; once it is, agents wait for
+  it on every pull request and merge only when it is green.
 
 ## Method
 
@@ -87,7 +135,9 @@ Permissions apply within the requested task. Continue independent safe work whil
   tested, modules no skill or README covers, options declared but never read, TODOs and FIXMEs,
   hosts or areas CI does not cover.
 - Ask one focused question instead of guessing, above all on secrets, network exposure (the cache,
-  the edge), disk layout and persistence.
+  the edge), disk layout and persistence. Decisions that block the same work go in one prompt,
+  each readable on its own, the recommended option first, with what each option costs. Say so
+  when reading the code changed a recommendation made earlier.
 - Verify upstream claims (nixpkgs options at the pinned revision, flake-parts, import-tree, a CLI)
   against the nixos MCP tool, `/nix/store` sources or upstream docs, not memory. Before setting
   an option, read the module that owns it: its defaults and what else it wires (reloads, users,
@@ -95,14 +145,15 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Before writing a module, walk the `nix` skill's new-service checklist.
 - Run every shell snippet handed to the operator, or its closest local equivalent, first.
 - Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Once per
-  branch, before asking to open the pull request, `nix flake check` naming every affected x86_64
+  branch, before opening the pull request, `nix flake check` naming every affected x86_64
   host so its toplevel builds; a branch that changes only Markdown needs the outPath comparison and the `format` and `secrets` checks.
   Where the whole check cannot run, evaluate each check on its own, leave the builds to CI and say
   so in the report. The `darwin` CI job builds
   `mac` on a macOS runner; `asahi` only evaluates in CI and builds on itself.
 - A refactor keeps every host's outPath identical (`nix` skill).
 - Report exactly what passed, failed and is unknown. A build proves evaluation and closure, not
-  boot, networking, credentials or backups. Never report green from a partial run.
+  boot, networking, credentials or backups. Never report green from a partial run. A report ends
+  with what was not checked and what the operator does next, as exact commands.
 - Git flakes ignore untracked files: stage new files before any check.
 
 ## Review guidelines
