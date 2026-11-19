@@ -85,9 +85,9 @@ logic beyond picking the platform's switch.
 one that needs only tools stays in `perSystem`. A check made for every NixOS host that runs a
 service goes through [_host-checks.nix](../../../modules/_host-checks.nix) (name, enabled predicate, derivation). Prefer `runCommand` assertions on generated config
 over `nixosTest`; one VM test, `storage` in [storage.nix](../../../modules/storage.nix), installs
-the disk layout with disko's test library, reboots, and asserts the root subvolume was recreated
-while preserved paths and the machine id survived, and `storage-luks` repeats it on the encrypted
-layout with a key file; they need KVM, which the linux CI job enables. The `apps` check builds
+the disk layout with disko's test library, the state partition opened with a key file, reboots, and asserts the root subvolume was recreated
+while preserved paths and the machine id survived (`storage-perlless` and `storage-esp` cover the edge's and asahi's
+variants); they need KVM, which the linux CI job enables. The `apps` check builds
 every flake app, which is what runs shellcheck on them, and `format` fails on unformatted Nix, OpenTofu, Luau, shell, TOML, JSON, YAML or
 `justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/` and `sketchybar.lua`, a template stylua cannot parse.
 [check.yml](../../../.github/workflows/check.yml) evaluates every system and builds the x86_64
