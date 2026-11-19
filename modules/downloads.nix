@@ -94,20 +94,24 @@ in
             description = "Check ownership and hardlinks through the shared datasets";
             wantedBy = [ "multi-user.target" ];
             unitConfig.RequiresMountsFor = shared;
-            path = [ pkgs.coreutils ];
+            path = [
+              pkgs.coreutils
+              pkgs.util-linux
+            ];
             enableStrictShellChecks = true;
-            serviceConfig = {
-              Type = "oneshot";
-              User = toString config.users.users.sonarr.uid;
-              Group = toString config.users.groups.${config.nixflix.globals.libraryOwner.group}.gid;
-            };
+            serviceConfig.Type = "oneshot";
             script = ''
               src=${downloadsDir}/.downloads-probe
               dst=${mediaDir}/.downloads-probe
+              as_sonarr() {
+                setpriv --reuid ${toString config.users.users.sonarr.uid} --regid ${
+                  toString config.users.groups.${config.nixflix.globals.libraryOwner.group}.gid
+                } --clear-groups "$@"
+              }
               trap 'rm -f "$src" "$dst"' EXIT
               stat -c '%u:%g %a %n' ${lib.concatStringsSep " " shared} ${downloadsDir} ${mediaDir}
-              touch "$src"
-              ln "$src" "$dst"
+              as_sonarr touch "$src"
+              as_sonarr ln "$src" "$dst"
               [ "$(stat -c %h "$dst")" = 2 ]
               echo "downloads-probe: ownership and hardlinks through virtiofs work"
             '';
