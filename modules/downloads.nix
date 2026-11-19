@@ -111,6 +111,7 @@ in
               trap 'rm -f "$src" "$dst"' EXIT
               stat -c '%u:%g %a %n' ${lib.concatStringsSep " " shared} ${downloadsDir} ${mediaDir}
               as_sonarr touch "$src"
+              stat -c '%u:%g %a %n' "$src"
               as_sonarr ln "$src" "$dst"
               [ "$(stat -c %h "$dst")" = 2 ]
               echo "downloads-probe: ownership and hardlinks through virtiofs work"
