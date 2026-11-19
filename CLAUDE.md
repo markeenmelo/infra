@@ -89,6 +89,10 @@ Permissions apply within the requested task. Continue independent safe work whil
 - When a round brings no new finding, squash-merge and delete the branch, local and remote, then
   take the next branch. Hold the merge and report instead when the next step needs something only
   the operator can do or see, such as a deploy or a log from a host.
+- Not waiting for CI is a limit to lift, not a preference: a [check.yml](.github/workflows/check.yml)
+  run takes many times longer than a review and a newer push cancels it, so a merge can precede
+  its result. Making it fast enough to wait for is open work; once it is, agents wait for it too
+  and merge only when it is green.
 
 ## Method
 
