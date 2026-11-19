@@ -236,6 +236,7 @@ let
                 username = "marcos";
                 password = secret "password";
                 host_whitelist = "sabnzbd.${domain}";
+                inet_exposure = 4;
                 admin_dir = "${config.nixflix.stateDir}/sabnzbd/admin";
                 log_dir = "${config.nixflix.stateDir}/sabnzbd/logs";
                 unwanted_extensions = "exe, scr, com, bat, cmd, lnk, msi, vbs, ps1";
