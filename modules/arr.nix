@@ -335,8 +335,8 @@ let
             description = "Load each arr database from its last dump while it is empty";
             requiredBy = map (name: "${name}.service") apps;
             before = map (name: "${name}.service") apps;
-            requires = [ "postgresql-setup.service" ];
-            after = [ "postgresql-setup.service" ];
+            requires = [ "postgresql-ready.target" ];
+            after = [ "postgresql-ready.target" ];
             unitConfig.RequiresMountsFor = [ guestDumps ];
             path = [
               config.services.postgresql.package
