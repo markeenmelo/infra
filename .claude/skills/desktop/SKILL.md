@@ -20,7 +20,8 @@ app Stylix cannot theme gets the same treatment by hand.
 An app that ships its own One Dark uses it for syntax instead of Stylix's base16 colors, while its
 fonts still come from Stylix: its target's `colors.enable` is false (or the whole target when it
 only sets colors) and the native theme is selected. This holds where the native theme is clearly
-richer, as in editors (Zed's `One Dark`, Neovim's `onedark-nvim`) and bat (`OneHalfDark`). The
+richer, as in editors (Zed's `One Dark` in [zed.nix](../../../modules/zed.nix), Neovim's `onedark-nvim` in
+[neovim.nix](../../../modules/neovim.nix)) and bat (`OneHalfDark`). The
 native theme's background and surfaces are overridden from `base00`–`base02` so it sits on the same
 black as the rest, since `onedark-dark` is darker than the classic One Dark these themes ship.
 Terminals and desktop chrome stay on Stylix.
@@ -35,7 +36,7 @@ Terminals and desktop chrome stay on Stylix.
   text stays fully readable. A drop shadow marks a floating window only (Umbriel's window rules);
   tiled windows, the bar and popups have none.
 - **Quick terminal:** on the mac one key drops Ghostty's quick terminal over the work and hides it
-  again. The Linux laptops have none: Umbriel has no global-shortcuts portal for Ghostty's own, and
+  again ([ghostty.nix](../../../modules/ghostty.nix)). The Linux laptops have none: Umbriel has no global-shortcuts portal for Ghostty's own, and
   its scratchpad is unused, the stock binds parked in [umbriel.nix](../../../modules/umbriel.nix).
 - **Launcher:** `Mod + Space` on the Linux laptops, beside Umbriel's stock tap on `Mod`.
 - **Motion:** none, or a fade or slide of at most 150 ms; nothing bounces or zooms.
@@ -85,7 +86,8 @@ One accent: `base0D` (blue) marks focus, selection and the active item, and noth
 
 ## Type
 
-All set in Stylix, so every target agrees:
+All set in Stylix, so every target agrees, except the bar's size and weight, which each bar's
+module sets ([noctalia.nix](../../../modules/noctalia.nix), [sketchybar.lua](../../../modules/sketchybar.lua)):
 
 | Use | Font | Size |
 |---|---|---|

@@ -69,7 +69,7 @@ Limine installs to the removable-media path and leaves the EFI variables alone
 the provider would have to keep. The uplink is the instance's one physical Ethernet link, matched
 by type and by having no kind, which virtual links such as veth and bridges have, and not by MAC
 address: a recreated instance gets a new address, and the initrd needs the network before anyone
-can unlock it. It takes DHCP, and the host resolves over DNS-over-TLS on its own. A recreated instance also starts from a fresh stock volume, so it is installed
+can unlock it. It takes DHCP, and the host resolves over DNS-over-TLS on its own ([networking.nix](../../../modules/hosts/edge/networking.nix)). A recreated instance also starts from a fresh stock volume, so it is installed
 again.
 
 ## Install

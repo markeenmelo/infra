@@ -13,14 +13,14 @@ change needs [approval](../../../CLAUDE.md#autonomy); **never** touch `tank`, `a
 
 ## Pools
 
-`tank` (Immich, OpenCloud, media), `apps` (`/srv`, PostgreSQL, nixflix state, the ThinkPad
-backup) and `scratch` (Frigate, rebuildable) are encrypted with key files under `/persist/zfs`,
+`tank` (Immich, OpenCloud, media), `apps` (`/srv`, PostgreSQL, nixflix state, the laptops'
+backups, the agent guest's disks) and `scratch` (Frigate, rebuildable) are encrypted with key files under `/persist/zfs`,
 which the install carries and backups exclude; the password-manager copy beside the LUKS
 passphrase is the only other one. Topology, quotas and key locations are not declared: the
 operator pastes `zpool status` and `zfs get quota,keylocation`. The import units are not
 restarted on a switch, which would unmount every dataset of the pool; mounts are `nofail`, so a
 pool that fails to import leaves the host and SSH up. Sanoid snapshots only the datasets it
-names, nonrecursively, and `tank` daily only so its disks can sleep.
+names, nonrecursively, and `tank` never hourly so its disks can sleep.
 
 ZFS lags the newest kernel, so [kernel.nix](../../../modules/kernel.nix) boots the newest
 kernel series the ZFS module still supports; a nixpkgs bump moves it when ZFS catches up.
@@ -42,7 +42,10 @@ sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel
 ## Network and power
 
 It holds `192.168.2.2` on the homelab LAN and advertises the three LANs to the tailnet; it may
-not open connections into the IoT and kids LANs, and forwards into them only from the tailnet.
+not open connections into the IoT and kids LANs, and forwards into them only from the tailnet
+([networking.nix](../../../modules/hosts/bastion/networking.nix)).
+[power.nix](../../../modules/hosts/bastion/power.nix) runs powertop's auto-tune, then puts back the
+SATA link power policy it changed and keeps USB input and storage devices awake.
 The IT8613 watchdog (out-of-tree `it87`) is armed by systemd, so the firmware watchdog stays off;
 the UPS hooks drop to the power-saver profile on battery and cut UPS output after the pools
 unmount. The front-panel LEDs ([leds.nix](../../../modules/hosts/bastion/leds.nix), out-of-tree

@@ -19,8 +19,8 @@ rotating every value its files held.
 - **Operator**: the age key in `~/.config/sops/age/keys.txt` (`&operator`).
 - **Hosts**: derived from the SSH host key, `ssh-to-age <<< "$(cat /etc/ssh/ssh_host_ed25519_key.pub)"`.
   [secrets.nix](../../../modules/secrets.nix) reads `/persist/etc/ssh/ssh_host_ed25519_key`
-  directly, since activation decrypts before tmpfiles links `/etc/ssh`. A reinstall keeps the key by
-  passing the preserved `/persist/etc/ssh` to nixos-anywhere `--extra-files`; a new key is a new
+  directly, since activation decrypts before tmpfiles links `/etc/ssh`. A reinstall keeps the key: the
+  `install` app carries `/persist/etc/ssh` over ([deploy skill](../deploy/SKILL.md#install)); a new key is a new
   recipient and `sops updatekeys` on every file whose rule names the host.
 
 ## Files

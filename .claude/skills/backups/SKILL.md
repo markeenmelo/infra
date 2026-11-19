@@ -1,6 +1,6 @@
 ---
 name: backups
-description: "bastion's backups: the nightly restic runs to the USB disk and to pCloud, the ZFS and /persist snapshots it reads from, the PostgreSQL dumps, the monthly restore drill, and the append-only restic server that takes the ThinkPad's home backups with its forged-date guard. Use before touching modules/backups.nix or the /mnt/backup mount, adding a dataset that holds data worth keeping, restoring anything, or rotating the restic password."
+description: "bastion's backups: the nightly restic runs to the USB disk and to pCloud, the ZFS and /persist snapshots it reads from, the PostgreSQL dumps, the monthly restore drill, and the append-only restic server that takes the laptops' home backups with its forged-date guard. Use before touching modules/backups.nix or the /mnt/backup mount, adding a dataset that holds data worth keeping, restoring anything, or rotating the restic password."
 ---
 
 # Backups

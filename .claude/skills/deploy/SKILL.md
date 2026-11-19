@@ -8,9 +8,9 @@ description: "deploy-rs: how a host's committed configuration is activated over 
 [deploy.nix](../../../modules/deploy.nix) turns every `fleet.hosts` entry into a deploy-rs node
 reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
 Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
-`activate-rs`, remove the rollback canary, reboot and power off, the only way to reboot or power
+`activate-rs`, remove the rollback canary, run `clean-generations`, reboot and power off, the only way to reboot or power
 off a server without its console. Its key is therefore the operator's root key on
-every host, so it is not the operator's login key: its private half lives only in the operator's
+every host, so it is not the operator's login key ([_operator-key.nix](../../../modules/_operator-key.nix)): its private half lives only in the operator's
 Bitwarden SSH agent, which asks before each use. The servers have no login account
 ([access.nix](../../../modules/access.nix)), so `deploy` is the only way into them. It is not in `wheel`, so `security.sudo.execWheelOnly` stays
 off: it would make sudo unexecutable for it and break every deploy. A server gets the same restriction
