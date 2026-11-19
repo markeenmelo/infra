@@ -70,7 +70,8 @@ or directive order fails CI instead of the edge.
 `caddy` group, the hub `caddy` collection parses it and
 supplies the generic HTTP scenarios, and one local scenario bans an address after repeated
 denials by the listener itself, which marks them with an `edge_denied` field in the access log and nothing in the response, so backend errors never
-count; the community blocklist comes from the central API the setup unit registers with
+count; an app module may add its own, as the calendar does for refused sign-ins
+([calendar skill](../calendar/SKILL.md)); the community blocklist comes from the central API the setup unit registers with
 on first boot. The engine serves ban decisions on `fleet.bansPort` to the tailnet;
 `crowdsec-bouncer` on the edge pulls them and drops banned addresses in nftables, the firewall
 backend of every host ([caddy.nix](../../../modules/caddy.nix)), before they cross the tailnet.

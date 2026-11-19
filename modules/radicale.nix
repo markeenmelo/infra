@@ -1,4 +1,6 @@
+{ config, ... }:
 let
+  inherit (config.fleet) domain;
   port = 5232;
   root = "/srv/radicale";
   collections = "${root}/collections/collection-root";
@@ -102,6 +104,26 @@ in
           }) accounts
         );
       };
+      services.crowdsec.settings.scenarios = [
+        {
+          name = "fleet/calendar-sign-in";
+          description = "Repeated refused sign-ins on the calendar, which checks the household's Authelia passwords";
+          filter = "evt.Meta.log_type == 'http_access-log' && evt.Line.Raw contains '\"host\":\"cal.${domain}\"' && evt.Line.Raw contains '\"status\":401'";
+          type = "leaky";
+          groupby = "evt.Meta.source_ip";
+          capacity = 10;
+          leakspeed = "1m";
+          blackhole = "5m";
+          labels = {
+            service = "http";
+            type = "bruteforce";
+            remediation = true;
+            confidence = 3;
+            spoofable = 0;
+            label = "Calendar sign-in";
+          };
+        }
+      ];
       fleet.web.apps.cal = {
         inherit port;
         public = true;

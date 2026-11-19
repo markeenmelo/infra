@@ -16,8 +16,11 @@ unit is nixpkgs' sandboxed one, further limited to loopback traffic.
   hash, `authelia/USER-password-hash`, so a change there applies here at the next deploy. On
   `cal.DOMAIN` that password works alone, without the second factor, and every client stores
   it; the operator accepted that a leaked client password is also the Authelia first factor,
-  and that guesses here meet Radicale's failure delay and the proxy's rate limit, not
-  Authelia's ban. Sign-ins are cached briefly, since argon2id is costly on every request.
+  and that guesses here skip Authelia's ban. Instead, a local CrowdSec scenario bans an
+  address at the edge after a burst of refused sign-ins on this hostname, about one a minute
+  sustained; clients first ask without credentials, so a sync costs one. A phone left with an old
+  password gets its mobile address banned; at home it reaches the LAN proxy and is never banned.
+  Sign-ins are cached briefly, since argon2id is costly on every request.
   `hermes` has its own bcrypt hash, `radicale/hermes-password-hash` in bastion's secrets
   ([secrets skill](../secrets/SKILL.md)).
 - **Rights:** an account reads and writes its own collections and nothing of another's.
