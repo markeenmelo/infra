@@ -67,7 +67,7 @@ read-only for all of these; `acls_externally_managed_on` says so.
   a pull request would otherwise run its own edits to `check.yml` and its
   bumped inputs' evaluation on the tailnet, so pull requests fetch from cache.nixos.org only. An agent's
   merge is a push to `main` too, so [CLAUDE.md](../../../CLAUDE.md#branches-and-pull-requests) keeps
-  changes to workflows, `flake.lock` and this project for the operator to merge; any other Nix an
+  changes to workflows, the flake's inputs and pins, and this project for the operator to merge; any other Nix an
   agent merges is still evaluated on that run, which the policy lets reach bastion's cache port
   and nothing else. Like the OAuth client, it is a trust credential made in the admin console, since the OAuth
   client lacks the scope to create one: issuer GitHub, subject
