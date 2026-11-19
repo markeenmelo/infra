@@ -3,7 +3,6 @@
     { config, ... }:
     {
       fleet = {
-        encryptState = true;
         carry = [ "var/lib/sbctl" ];
       };
       disko.devices.disk.os.device = "/dev/disk/by-id/nvme-eui.6479a7a2ea200e8e";

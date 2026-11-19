@@ -5,44 +5,42 @@
 }:
 let
   inherit (config.fleet.hosts.bastion) system;
+  keyFile = "/tmp/secret.key";
   probeWith =
     extra:
     inputs.nixpkgs.lib.nixosSystem {
       modules = [
         config.flake.modules.nixos.storage
-        {
-          nixpkgs.hostPlatform = system;
-          system.stateVersion = "26.05";
-          disko.devices.disk.os.device = "/dev/vda";
-          preservation.preserveAt."/persist".directories = [ "/var/lib/probe" ];
-        }
+        (
+          { pkgs, ... }:
+          {
+            nixpkgs.hostPlatform = system;
+            system.stateVersion = "26.05";
+            disko.devices.disk.os.device = "/dev/vda";
+            preservation.preserveAt."/persist".directories = [ "/var/lib/probe" ];
+            boot.initrd.secrets.${keyFile} = pkgs.writeText "secret.key" "secretsecret";
+          }
+        )
         extra
       ];
     };
-  probe = probeWith { fleet.encryptState = false; };
+  keyed.disko.devices.disk.os.content.partitions.state.content.settings = { inherit keyFile; };
+  probe = probeWith keyed;
   probeEsp = probeWith {
-    fleet.encryptState = false;
     fleet.esp = "/dev/vdb";
+    disko.devices.disk.os.content.settings = { inherit keyFile; };
   };
-  probeLuks = probeWith (
-    { pkgs, ... }:
-    {
-      fleet.encryptState = true;
-      disko.devices.disk.os.content.partitions.state.content.settings.keyFile = "/tmp/secret.key";
-      boot.initrd.secrets."/tmp/secret.key" = pkgs.writeText "secret.key" "secretsecret";
-    }
-  );
   probePerlless = probeWith (
     { modulesPath, ... }:
     {
       imports = [
         (modulesPath + "/profiles/perlless.nix")
+        keyed
       ];
       boot.loader.limine = {
         enable = true;
         efiInstallAsRemovable = true;
       };
-      fleet.encryptState = false;
       services.userborn.passwordFilesLocation = "/var/lib/nixos";
       users = {
         users.probe = {
@@ -76,13 +74,6 @@ in
       name = "storage";
       disko-config.disko.devices = probe.config.disko.devices;
       inherit (probe) extendModules;
-      extraTestScript = survivesReboot;
-    };
-    storage-luks = inputs.disko.lib.testLib.makeDiskoTest {
-      pkgs = inputs.nixpkgs.legacyPackages.${system};
-      name = "storage-luks";
-      disko-config.disko.devices = probeLuks.config.disko.devices;
-      inherit (probeLuks) extendModules;
       extraTestScript = ''
         machine.succeed("cryptsetup status state")
       ''
@@ -144,16 +135,12 @@ in
         mountpoint = "/boot";
         mountOptions = [ "umask=0077" ];
       };
-      state =
-        if config.fleet.encryptState then
-          {
-            type = "luks";
-            name = "state";
-            settings.allowDiscards = true;
-            content = btrfs;
-          }
-        else
-          btrfs;
+      state = {
+        type = "luks";
+        name = "state";
+        settings.allowDiscards = true;
+        content = btrfs;
+      };
     in
     {
       imports = [
@@ -161,10 +148,6 @@ in
         inputs.preservation.nixosModules.preservation
       ];
       options.fleet = {
-        encryptState = lib.mkOption {
-          type = lib.types.bool;
-          description = "Whether the state partition is LUKS, opened at boot by its TPM2 token or the passphrase.";
-        };
         esp = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = null;

@@ -27,7 +27,7 @@ kernel series the ZFS module still supports; a nixpkgs bump moves it when ZFS ca
 
 ## Boot
 
-The state partition is LUKS ([storage.nix](../../../modules/storage.nix), `fleet.encryptState`),
+The state partition is LUKS on every host ([storage.nix](../../../modules/storage.nix)),
 opened by a TPM2 token sealed to PCR 7 with the passphrase as fallback, and Limine is signed
 with the sbctl keys in `/var/lib/sbctl`, enrolled with Microsoft's CA kept (`-m`) because
 add-in option ROMs need it; PCR 7 then also matches under a Microsoft-signed loader that does
