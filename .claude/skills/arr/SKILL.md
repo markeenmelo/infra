@@ -110,7 +110,7 @@ files sit outside the share, since bastion's `postgres` must not write where the
 a link. Those old databases are left in place. The side that ran last wins: when the generation
 being replaced ran the arr apps on bastion after a handover (a move redone after a rollback, or
 an old generation booted for any reason), activation removes the marker and moves the dumps (to
-`/srv/backups/downloads-handover/replaced`) and the guest's `var.img` (to `var.img.replaced`)
+`/srv/backups/downloads-handover/replaced-TIME`) and the guest's `var.img` (to `var.img.replaced-TIME`)
 aside, so the handover starts again from bastion's databases and the guest's former ones can be
 put back by hand. A boot straight into the new generation has no previous one to look at; there
 the three are moved by hand. `arr-dumps-fresh` on bastion fails each morning, and so raises

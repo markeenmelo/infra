@@ -635,9 +635,11 @@ let
           name:
           lib.nameValuePair "arr-${name}" {
             key = "arr/${name}";
-            restartUnits = map (unit: "${unit}.service") (
-              hostUnits.${name} or [ ] ++ lib.optional (lib.elem name guestHeld) "microvm-virtiofsd@downloads"
-            );
+            restartUnits =
+              map (unit: "${unit}.service") (
+                hostUnits.${name} or [ ] ++ lib.optional (lib.elem name guestHeld) "microvm-virtiofsd@downloads"
+              )
+              ++ map (app: "seerr-${app}.timer") (lib.filter (app: name == "${app}-api-key") seerrApps);
           }
         ) (lib.unique (lib.attrNames hostUnits ++ guestHeld))
       );
@@ -713,10 +715,11 @@ let
       system.activationScripts.arr-handover.text = ''
         if [ -e /run/current-system/etc/systemd/system/${lib.head apps}.service ] &&
           [ -e ${handover}/done ]; then
-          mkdir -p ${handover}/replaced
-          mv -f ${hostDumps}/*.sql.gz ${handover}/replaced/ 2> /dev/null || true
+          stamp=$(date +%s)
+          mkdir -p ${handover}/replaced-"$stamp"
+          mv -f ${hostDumps}/*.sql.gz ${handover}/replaced-"$stamp"/ 2> /dev/null || true
           if [ -e ${config.microvm.stateDir}/downloads/var.img ]; then
-            mv -f ${config.microvm.stateDir}/downloads/var.img ${config.microvm.stateDir}/downloads/var.img.replaced
+            mv -f ${config.microvm.stateDir}/downloads/var.img ${config.microvm.stateDir}/downloads/var.img.replaced-"$stamp"
           fi
           rm -f ${handover}/done
         fi
