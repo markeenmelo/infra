@@ -31,6 +31,7 @@
       monitoring
       agents
       hermes
+      radicale
     ];
     system.stateVersion = "26.05";
   };
