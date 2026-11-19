@@ -77,6 +77,7 @@
         spectrum.follows = "";
       };
     };
+    jail-nix.url = "sourcehut:~alexdavid/jail.nix";
   };
 
   outputs =

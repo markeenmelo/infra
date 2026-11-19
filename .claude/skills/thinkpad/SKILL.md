@@ -64,7 +64,9 @@ holds a second path to the whole home. As on the mac, `nix` commands that need t
 outside Claude's sandbox.
 
 That sandbox covers Bash only, so on the Linux laptops the `claude` command itself is a jail
-(`jail` in claude.nix) around everything Claude Code starts: its own process, the MCP and language
+(`jail` in claude.nix, built with [jail.nix](https://sr.ht/~alexdavid/jail.nix/) from the `jail-nix` input, with its base
+permissions emptied so every mount is one that file lists, and pasta set as its bubblewrap
+package so the wrapper's own checks run before the network namespace exists) around everything Claude Code starts: its own process, the MCP and language
 servers, hooks and plugins. bubblewrap gives it an empty home holding only Claude's state, the Git
 identity and the working directory (the whole repository and its Git directory when it is in one,
 so subdirectories and linked worktrees keep working; a Git directory that is neither the
