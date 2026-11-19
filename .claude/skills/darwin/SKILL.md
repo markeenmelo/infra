@@ -23,7 +23,7 @@ open-source daemon on macOS cannot route through an exit node. The app's network
 the node identity across switches; its CLI is `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
 A re-enrolment uses the host's key from the [OpenTofu project](../opentofu/SKILL.md),
 `Tailscale up --auth-key file:PATH` with the key written to a private file. sops-nix on darwin decrypts with the mac's SSH host key and holds the
-GitHub and Grafana MCP tokens and the build key for bastion ([secrets skill](../secrets/SKILL.md)). Touch ID answers sudo. Claude Code's
+GitHub and Grafana MCP tokens, Claude Code's sign-in token and the build key for bastion ([secrets skill](../secrets/SKILL.md)). Touch ID answers sudo. Claude Code's
 managed sandbox ([claude.nix](../../../modules/claude.nix)) admits no network host, so nothing a
 sandboxed command reads can leave, and blocks writes to `.git/config`; git's network commands, `gh`
 and creating a branch with an upstream run outside it. The old
@@ -42,7 +42,7 @@ extension forced in Zen and pointed at the same server. The other GUI apps are H
 as flake inputs ([homebrew.nix](../../../modules/homebrew.nix)), so `brew tap` is refused and a
 cask moves with `nix flake update homebrew-cask`; whatever the Brewfile stops naming is zapped at
 activation, app data included, so preview a switch that drops a cask with
-`brew bundle cleanup --file=<(nix eval --raw .#darwinConfigurations.mac.config.homebrew.brewfile)`. Claude Code ([claude.nix](../../../modules/claude.nix)) is the HM package with the
+`brew bundle cleanup --file=<(nix eval --raw .#darwinConfigurations.mac.config.homebrew.brewfile)`. Claude Code ([claude.nix](../../../modules/claude.nix)) is the HM package, wrapped to sign in with the shared token instead of a browser sign-in, with the
 operator's settings; the sandbox and bypass lock live in the managed settings file that
 activation installs under `/Library/Application Support/ClaudeCode`, which no user setting
 overrides. The plugins it loads (`CLAUDE_CODE_PLUGIN_DIRS` in claude.nix) are `NAME.pkg.nix` pins on a

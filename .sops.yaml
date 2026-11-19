@@ -45,6 +45,14 @@ creation_rules:
           - *mac
           - *thinkpad
           - *asahi
+  - path_regex: ^secrets/shared/claude\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *bastion
+          - *mac
+          - *thinkpad
+          - *asahi
   - path_regex: ^secrets/tailscale/operator\.yaml$
     key_groups:
       - age:

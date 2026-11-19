@@ -10,6 +10,7 @@ let
   tokenNames = [
     "github-mcp-token"
     "grafana-mcp-token"
+    "claude-token"
   ];
   attribution = {
     commit = "";
@@ -17,9 +18,10 @@ let
   };
   tokens =
     owner:
-    lib.genAttrs tokenNames (_: {
+    lib.genAttrs tokenNames (name: {
       inherit owner;
-      sopsFile = ../secrets/shared/mcp.yaml;
+      sopsFile =
+        if name == "claude-token" then ../secrets/shared/claude.yaml else ../secrets/shared/mcp.yaml;
     });
   deniedDirs = [
     "/run/secrets"
@@ -265,6 +267,19 @@ in
           "NIX_PROFILES"
           "(NIX_)?SSL_CERT_FILE"
         ];
+        withToken = pkgs.symlinkJoin {
+          inherit (pkgs.claude-code) pname version meta;
+          paths = [ pkgs.claude-code ];
+          nativeBuildInputs = [ pkgs.makeWrapper ];
+          postBuild = ''
+            wrapProgram $out/bin/claude --run ${lib.escapeShellArg ''
+              if [ -z "''${CLAUDE_CODE_OAUTH_TOKEN-}" ] && [ -r ${osConfig.sops.secrets.claude-token.path} ]; then
+                exec {token}< ${osConfig.sops.secrets.claude-token.path}
+                export CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR=$token
+              fi
+            ''}
+          '';
+        };
         jailed =
           inputs.jail-nix.lib.extend
             {
@@ -278,7 +293,7 @@ in
               '';
             }
             "claude"
-            pkgs.claude-code
+            withToken
             (
               c:
               [
@@ -379,7 +394,7 @@ in
         };
         programs.claude-code = {
           enable = true;
-          package = lib.mkIf pkgs.stdenv.hostPlatform.isLinux jail;
+          package = if pkgs.stdenv.hostPlatform.isLinux then jail else withToken;
           enableMcpIntegration = true;
           lspServers = lspServers pkgs;
           settings = {

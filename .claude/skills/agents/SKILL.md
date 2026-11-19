@@ -80,14 +80,16 @@ guest itself is the boundary. Grafana's MCP server and the account's connectors 
 
 ## Credentials
 
-Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens from
-`secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by `agent`'s
+Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens, one
+from `secrets/hosts/bastion.yaml` and one from `secrets/shared/claude.yaml`, into the same
+read-only share as the tailnet key, owned by `agent`'s
 uid, which no account on bastion holds,
 and every shell in the guest exports them; a changed token restarts the guest, through `agents-restart`:
 
-- `agents/claude-token`: the token from `claude setup-token`, exported as
-  `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the guest
-  Remote Control and the account's connectors.
+- `claude-token` in `secrets/shared/claude.yaml`: the token from `claude setup-token`, exported
+  as `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the
+  guest Remote Control and the account's connectors. The workstations read the same secret
+  ([secrets skill](../secrets/SKILL.md)).
 - `agents/github-token`: a fine-grained token, exported as `GH_TOKEN` and handed to Git by `gh`,
   limited to Contents and Pull requests writes and Actions read on the repositories the agents
   work on, with the default branch protected. Never the Workflows permission, which would let a
