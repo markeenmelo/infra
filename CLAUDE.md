@@ -85,11 +85,13 @@ Permissions apply within the requested task. Continue independent safe work whil
   operator has something to run or look at. The body stays true: a later commit that changes what
   it says updates it.
 - After each push, wait for both reviewers to report on that commit, not for the CI jobs: the
-  `review` run concluded on the head commit and the Codex review names it. A reviewer that never
-  reports on the head commit is not a clean round: hold and report. Check every finding against
-  the code, an evaluation or an experiment before acting on it, the ones a reviewer marks
-  unverified included. Fix what holds, and reply on each inline finding with the commit that
-  fixed it or the reason nothing changed.
+  `review` run succeeded on the head commit and the Codex review names it. A reviewer that never
+  reports on the head commit, or whose run failed or was cancelled, is not a clean round: hold
+  and report. Check every finding against the code, an evaluation or an experiment before acting
+  on it, the ones a reviewer marks unverified included. Fix what holds, and reply on each inline
+  finding with the commit that fixed it or the evidence that nothing needs to change. A finding
+  declined that way and raised again in the next round is the operator's to settle: hold and
+  report.
 - When a round brings no new finding, and `check` passed on the head commit where CI is the only
   build of something the change affects (the `mac`, a toplevel the session could not build),
   squash-merge through the pull request, the one way an
@@ -98,9 +100,11 @@ Permissions apply within the requested task. Continue independent safe work whil
   stacked part branches from `main` once the part below it is merged.
 - Hold the merge and report instead when:
   - the pull request touches what gates agents or the fleet's trust: `CLAUDE.md`,
-    `.github/workflows/`, `flake.lock`, `modules/secrets.nix`, `.sops.yaml` or `opentofu/`. `main`
-    is what CI joins the tailnet from and what the operator deploys, and the reviewers only read
-    a diff, so these wait for the operator;
+    `.github/workflows/`, `flake.lock`, `justfile`, `.sops.yaml`, `secrets/`, `opentofu/`, or the
+    modules `secrets.nix`, `agents.nix`, `claude.nix`, `deploy.nix` and `install.nix`. `main` is
+    what CI joins the tailnet from and what the operator deploys, and the reviewers only read a
+    diff, so these wait for the operator. The skills are left out, since nearly every change
+    updates one: a skill cannot grant what this file forbids;
   - the next step needs something only the operator can do or see, such as a deploy or a log
     from a host.
 - Not waiting for CI on every merge is a limit to lift, not a preference: a
