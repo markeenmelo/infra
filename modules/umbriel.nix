@@ -137,7 +137,8 @@
               "Mod+Escape" = noctalia "panel-toggle session";
               "Mod+Slash" = "cheatsheet-toggle";
               "Mod+Space" = noctalia "panel-toggle launcher";
-              # shortcut: Umbriel cannot unbind a stock key, so the stock scratchpad binds do nothing through cheatsheet-close; drop when it can
+              # shortcut: Umbriel cannot unbind a stock key, so the stock bare-Mod launcher and scratchpad binds do nothing through cheatsheet-close; drop when it can
+              "Mod" = "cheatsheet-close";
               "Mod+Shift+Space" = "cheatsheet-close";
               "Mod+Ctrl+Space" = "cheatsheet-close";
               "Mod+Tab" = "cheatsheet-close";
