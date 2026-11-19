@@ -236,6 +236,7 @@ let
                 username = "marcos";
                 password = secret "password";
                 host_whitelist = "sabnzbd.${domain}";
+                inet_exposure = 4;
                 admin_dir = "${config.nixflix.stateDir}/sabnzbd/admin";
                 log_dir = "${config.nixflix.stateDir}/sabnzbd/logs";
                 unwanted_extensions = "exe, scr, com, bat, cmd, lnk, msi, vbs, ps1";
@@ -335,8 +336,8 @@ let
             description = "Load each arr database from its last dump while it is empty";
             requiredBy = map (name: "${name}.service") apps;
             before = map (name: "${name}.service") apps;
-            requires = [ "postgresql-setup.service" ];
-            after = [ "postgresql-setup.service" ];
+            requires = [ "postgresql-ready.target" ];
+            after = [ "postgresql-ready.target" ];
             unitConfig.RequiresMountsFor = [ guestDumps ];
             path = [
               config.services.postgresql.package
