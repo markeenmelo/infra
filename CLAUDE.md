@@ -38,14 +38,16 @@ Permissions apply within the requested task. Continue independent safe work whil
   config) or data storage and persistence.
 
 **Ask first, naming the exact target and command**
-- Any local activation (`nh os switch`), reboot or install.
+- Any local activation (`nh os switch`).
 - Any partition, format, mount, btrfs subvolume or ZFS operation.
 - `tofu apply`, state import or migration.
 - Editing secrets, decrypting beyond read-only plan and show, generating or rotating keys, enrolling devices.
 - State-changing remote commands: `sudo`, service restarts, `tailscale serve`, file changes.
 
 **Never**
-- Run `deploy`, with or without `--dry-activate` or `--boot`: only the operator deploys.
+- Run `deploy` (with or without `--dry-activate` or `--boot`), `install`, or the remote `reboot`,
+  `shutdown` and `clean HOST`: only the operator acts as the deploy account or wipes a host.
+  Prepare the command and report it.
 - Put plaintext secrets, password hashes or private keys in Git, Nix, logs or chat.
 - Invent hardware, disks, keys, addresses or UUIDs. Ask.
 - Disable magic rollback, host-key checking or deploy-rs checks; use `-force-copy`, `-lock=false` or `-reconfigure`.

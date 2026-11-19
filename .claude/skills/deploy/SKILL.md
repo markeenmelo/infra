@@ -90,7 +90,7 @@ A path that holds the only copy of a key goes in `fleet.carry` beside its owner,
 can forget it. Fleet hosts
 admit no root login and no SSH off the tailnet ([ssh.nix](../../../modules/ssh.nix)), so a
 reinstall always goes through the installer image, where root is the login. The disk is wiped;
-it is an access change and needs the operator's approval.
+it is an access change, and the operator runs it.
 
 A new host has no old disk to carry from, and its facts need three values before its
 configuration evaluates: the age recipient its secrets file is encrypted to, its tailnet address,
