@@ -38,7 +38,7 @@ Permissions apply within the requested task. Continue independent safe work whil
   config) or data storage and persistence.
 
 **Ask first, naming the exact target and command**
-- Any local activation (`nh os switch`), local reboot or power-off, `wake` and `unlock`.
+- Any local activation (`nh os switch`), local reboot or power-off, local `clean`, `wake` and `unlock`.
 - Any partition, format, mount, btrfs subvolume or ZFS operation.
 - `tofu apply`, state import or migration.
 - Editing secrets, decrypting beyond read-only plan and show, generating or rotating keys, enrolling devices.
