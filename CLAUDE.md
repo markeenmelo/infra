@@ -62,9 +62,11 @@ Permissions apply within the requested task. Continue independent safe work whil
   summarize what changed, what was validated and what remains, and ask whether to open the pull
   request. A feature that will clearly pass 500 lines is split into stacked branches at logical
   boundaries, proposed before the code is written.
-- Push a branch other than `main` once the `secrets` check passes on its head, so committed work
-  has a copy outside the machine it was written on; the repository is public, and a push cannot
-  be taken back. Open the pull request only once the operator approves: `gh pr create` with
+- Push a branch other than `main` once the `secrets` check passes on every commit the push would
+  publish (`nix build ".?rev=REV#checks.SYSTEM.secrets"` for each), so committed work has a copy
+  outside the machine it was written on. The repository is public and a push cannot be taken
+  back: a secret a later commit removes is still published, so a branch that ever held one is
+  rewritten before its first push. Open the pull request only once the operator approves: `gh pr create` with
   the body sections Summary, Hosts affected, Validation run, Risks, Rollback. Never push to `main`
   or force-push a branch someone has reviewed.
 
