@@ -753,6 +753,7 @@ let
           startLimitBurst = 15;
           serviceConfig = {
             ExecStartPre = lib.getExe (awaitProfile (lib.removePrefix "seerr-" unit));
+            RemainAfterExit = lib.mkForce false;
             Restart = "on-failure";
             RestartSec = "30s";
           };
@@ -774,8 +775,8 @@ let
             script = ''
               [ -e ${handover}/done ] || exit 0
               for db in ${lib.concatStringsSep " " apps}; do
-                [ -e ${hostDumps}/"$db.sql.gz" ] || continue
-                if [ -z "$(find ${hostDumps}/"$db.sql.gz" -mtime -2 2> /dev/null)" ]; then
+                [ -e ${hostDumps}/"$db.sql.gz" ] || [ -e ${hostDumps}/"$db.prev.sql.gz" ] || continue
+                if [ -z "$(find ${hostDumps}/"$db.sql.gz" ${hostDumps}/"$db.prev.sql.gz" -mtime -2 2> /dev/null)" ]; then
                   echo "$db has no dump newer than two days in ${hostDumps}" >&2
                   exit 1
                 fi
