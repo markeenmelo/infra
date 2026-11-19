@@ -12,10 +12,12 @@ unit is nixpkgs' sandboxed one, further limited to loopback traffic.
 
 - **Accounts:** every person in `fleet.people` ([identity skill](../identity/SKILL.md)) plus
   `hermes`, for the agent ([hermes skill](../hermes/SKILL.md)). Each signs in with HTTP basic
-  authentication against a bcrypt hash, `radicale/NAME-password-hash` in bastion's secrets
-  ([secrets skill](../secrets/SKILL.md)); the password is a long random one made for this
-  service, never a person's Authelia password, since every request carries it. Adding a person
-  to `fleet.people` requires their hash before the next build.
+  authentication. A person uses their Authelia password: Radicale checks the same argon2id
+  hash, `authelia/USER-password-hash`, so a change there applies here at the next deploy. On
+  `cal.DOMAIN` that password works alone, without the second factor, and every client stores
+  it; the operator accepted that a leaked client password is also the Authelia first factor.
+  `hermes` has its own bcrypt hash, `radicale/hermes-password-hash` in bastion's secrets
+  ([secrets skill](../secrets/SKILL.md)).
 - **Rights:** an account reads and writes its own collections and nothing of another's.
 - **The family calendar:** one collection outside every home, linked into each account's home
   as `family`, so every client discovers it beside the account's own calendars and all of them
@@ -34,13 +36,14 @@ unit is nixpkgs' sandboxed one, further limited to loopback traffic.
 - **Hermes:** the `hermes` account, over the public name, since its guest reaches nothing of
   bastion.
 
-## A new password
+## The hermes password
+
+From the dev shell:
 
 ```sh
-nix shell nixpkgs#mkpasswd nixpkgs#jq nixpkgs#openssl
 p=$(openssl rand -base64 24); printf '%s\n' "$p"
-sops set secrets/hosts/bastion.yaml '["radicale"]["NAME-password-hash"]' "$(printf '%s' "$p" | mkpasswd -m bcrypt -R 12 -s | jq -Rs 'rtrimstr("\n")')"
+printf %s "$p" | mkpasswd -m bcrypt -R 12 -s | jq -Rs 'rtrimstr("\n")' |
+  sops set --value-stdin secrets/hosts/bastion.yaml '["radicale"]["hermes-password-hash"]'; unset p
 ```
 
-The first line shows the password once, for the password manager and the client; only the
-hash is stored.
+The first line shows the password once, for Hermes's secrets; only the hash is stored.

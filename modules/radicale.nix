@@ -9,7 +9,13 @@ in
     { config, lib, ... }:
     let
       inherit (config.services.radicale) user group;
-      accounts = lib.attrNames config.fleet.people ++ [ "hermes" ];
+      hashes = lib.listToAttrs (
+        map (name: lib.nameValuePair name "authelia-${name}-password-hash") (
+          lib.attrNames config.fleet.people
+        )
+        ++ [ (lib.nameValuePair "hermes" "radicale-hermes-password-hash") ]
+      );
+      accounts = lib.attrNames hashes;
       owned = {
         inherit user group;
         mode = "0750";
@@ -19,13 +25,11 @@ in
       users.users.${user}.uid = 359;
       users.groups.${group}.gid = 359;
       sops = {
-        secrets = lib.genAttrs' accounts (
-          name: lib.nameValuePair "radicale-${name}-password-hash" { key = "radicale/${name}-password-hash"; }
-        );
+        secrets.radicale-hermes-password-hash.key = "radicale/hermes-password-hash";
         templates.radicale-users = {
-          content = lib.concatMapStrings (
-            name: "${name}:${config.sops.placeholder."radicale-${name}-password-hash"}\n"
-          ) accounts;
+          content = lib.concatStrings (
+            lib.mapAttrsToList (name: secret: "${name}:${config.sops.placeholder.${secret}}\n") hashes
+          );
           restartUnits = [ "radicale.service" ];
         };
       };
@@ -36,7 +40,7 @@ in
           auth = {
             type = "htpasswd";
             htpasswd_filename = "/run/credentials/radicale.service/users";
-            htpasswd_encryption = "bcrypt";
+            htpasswd_encryption = "autodetect";
           };
           storage.filesystem_folder = dirOf collections;
         };
