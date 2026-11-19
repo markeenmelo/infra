@@ -273,9 +273,9 @@ in
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
             wrapProgram $out/bin/claude --run ${lib.escapeShellArg ''
-              if [ -r ${osConfig.sops.secrets.claude-token.path} ]; then
-                CLAUDE_CODE_OAUTH_TOKEN=$(< ${osConfig.sops.secrets.claude-token.path})
-                export CLAUDE_CODE_OAUTH_TOKEN
+              if [ -z "''${CLAUDE_CODE_OAUTH_TOKEN-}" ] && [ -r ${osConfig.sops.secrets.claude-token.path} ]; then
+                exec {token}< ${osConfig.sops.secrets.claude-token.path}
+                export CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR=$token
               fi
             ''}
           '';
