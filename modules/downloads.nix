@@ -126,6 +126,7 @@ in
           chain forward {
             type filter hook forward priority -10; policy accept;
             iifname "${tap}" meta nfproto ipv6 drop
+            oifname "${tap}" ct state new drop
             iifname "${tap}" ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/3 } drop
             iifname "${tap}" oifname "${config.services.tailscale.interfaceName}" drop
           }

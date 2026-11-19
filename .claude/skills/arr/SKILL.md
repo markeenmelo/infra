@@ -72,7 +72,8 @@ succeeds, so one unreachable site never fails a deploy.
 agents' ([agents skill](../agents/SKILL.md)): cloud-hypervisor, a tap carrying a /24 only bastion
 and the guest sit on ([_downloads.nix](../../../modules/_downloads.nix) holds its addresses for
 both files), and the `downloads` nftables table, which masquerades the guest to the internet and
-drops what it sends to bastion, to private addresses, to the tailnet and over IPv6; replies to
+drops what it sends to bastion, to private addresses, to the tailnet and over IPv6, and new
+connections forwarded towards it from any other network; replies to
 connections bastion opens pass. The apps talk to indexers and peers, so one of them compromised
 meets a second kernel before bastion. The guest's own uplink is bastion's, not the Proton tunnel:
 it carries the tunnel's packets, and the namespace inside keeps the apps off it. The guest has no
@@ -103,6 +104,8 @@ has no table, so a failed load never replaces a good dump with an empty one. `ar
 bastion writes the first dumps, from the databases bastion's PostgreSQL still holds from before
 the move, and once only: its marker, `/srv/backups/downloads-handover/done`, and its temporary
 files sit outside the share, since bastion's `postgres` must not write where the guest can plant
-a link. Those old databases are left in place. Handing over again, after the apps went back to
-bastion, takes three removals first: the dumps in `/srv/backups/downloads`, the marker, and the
-guest's `var.img`, whose databases would otherwise still hold tables and never be loaded.
+a link. Those old databases are left in place. When the generation being replaced still ran the
+arr apps on bastion (the first move, or a move redone after a rollback), activation removes the
+dumps, the marker and the guest's `var.img`, so the handover starts again from bastion's
+databases instead of resuming on the guest's older ones. A boot straight into the new generation
+has no previous one to look at; there the three are removed by hand.

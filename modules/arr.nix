@@ -708,6 +708,11 @@ let
         }
       ];
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
+      system.activationScripts.arr-handover.text = ''
+        if [ -e /run/current-system/etc/systemd/system/${lib.head apps}.service ]; then
+          rm -f ${handover}/done ${hostDumps}/*.sql.gz ${config.microvm.stateDir}/downloads/var.img
+        fi
+      '';
       networking.nftables.tables.arr = {
         family = "inet";
         content = ''
