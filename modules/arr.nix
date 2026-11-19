@@ -610,6 +610,7 @@ let
       microvm.vms.downloads.config = {
         imports = [ guest ];
         services.postgresql.package = config.services.postgresql.package;
+        time.timeZone = config.time.timeZone;
         microvm.shares = [
           {
             proto = "virtiofs";
@@ -742,7 +743,7 @@ let
             description = "Dump the arr databases bastion still holds for the downloads guest to load";
             requiredBy = [ "microvm-virtiofsd@downloads.service" ];
             before = [ "microvm-virtiofsd@downloads.service" ];
-            requires = [ "postgresql.target" ];
+            wants = [ "postgresql.target" ];
             after = [ "postgresql.target" ];
             unitConfig.RequiresMountsFor = [ (dirOf hostDumps) ];
             path = [
@@ -760,7 +761,8 @@ let
               set -o pipefail
               [ ! -e ${handover}/done ] || exit 0
               for db in ${lib.concatStringsSep " " apps}; do
-                [ "$(psql -Atc "select count(*) from pg_database where datname = '$db'")" = 1 ] || continue
+                exists=$(psql -Atc "select count(*) from pg_database where datname = '$db'")
+                [ "$exists" = 1 ] || continue
                 pg_dump --no-owner --no-privileges "$db" | gzip > ${handover}/"$db.sql.gz"
                 mv -T ${handover}/"$db.sql.gz" ${hostDumps}/"$db.sql.gz"
               done

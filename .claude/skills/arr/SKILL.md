@@ -55,7 +55,7 @@ ProtonVPN forwards one random port, leased for 60 seconds over NAT-PMP from the 
 the tunnel. `qbittorrent-port-forward` renews it every 45 seconds, opens it in its own chain of
 the namespace's firewall, which otherwise drops unsolicited inbound traffic, and sets it as
 qBittorrent's listen port. Each qBittorrent start rewrites its config from the store and drops
-that port, so the unit is bound to qBittorrent and starts again with it. The `qbittorrent` uid is pinned to the one that owns its state.
+that port, so the unit is bound to qBittorrent and starts again with it. The `qbittorrent` uid is set to the one recorded as owning its state.
 
 The usenet indexers take their keys from `arr/INDEXER-api-key` and rank ahead of the torrent
 ones. Easynews has no Newznab API, so `easynews-indexer` serves one on the namespace's loopback
@@ -79,7 +79,7 @@ it carries the tunnel's packets, and the namespace inside keeps the apps off it.
 login, no tailnet node and no sops identity. Its journal goes to its console, which is
 `microvm@downloads`'s log on bastion, so Loki holds it; nothing on bastion sees a failed unit
 inside the guest except through that log and the exporters. Unlike the agents' guest it restarts
-whenever a deploy changes it, which stops downloads for the time of a boot.
+whenever a deploy changes it, which stops downloads for the time of a boot. Its clock is in bastion's time zone.
 
 What the guest gets from bastion, over virtiofs:
 
@@ -91,7 +91,9 @@ What the guest gets from bastion, over virtiofs:
   virtiofs daemons start. A changed secret restarts those daemons and the guest with them. Seerr's
   API key stays on bastion; the three arr API keys are on both sides, for the exporters and Seerr.
 - `/srv/backups/downloads`, where the guest's PostgreSQL dumps each arr database nightly, inside a
-  backup root ([backups skill](../backups/SKILL.md)). The restore drill does not load these dumps.
+  backup root ([backups skill](../backups/SKILL.md)). The restore drill does not load these dumps, and
+  nothing bounds what the guest writes there or into the state directories: `apps/srv` and
+  `apps/nixflix` have no quota, so a compromised guest can fill them.
 
 The guest's disk, `var.img` on `apps/agents`, holds `/var/lib`: PostgreSQL, Recyclarr and
 Decluttarr. It is neither snapshotted nor backed up, so the dumps are the databases' only copy
