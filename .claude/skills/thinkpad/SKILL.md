@@ -82,7 +82,9 @@ and the internet stay reachable; only Bash is held to the allowlist. The wrapper
 in a directory that holds or sits under a path the jail hides, resolved through symlinks. The jail
 keeps the terminal for job control, so `dev.tty.legacy_tiocsti` is 0 on these hosts (claude.nix):
 nothing inside can push input to the shell `claude` returns to. It costs what needs the session or the host's loopback: pasting an image, desktop
-notifications, the editor integrations and a browser sign-in that calls back to a local port.
+notifications, the editor integrations and a browser sign-in that calls back to a local port;
+Claude signs in instead with the workstations' shared `claude-token`
+([secrets skill](../secrets/SKILL.md)), which the jail binds read-only like the MCP tokens.
 Claude Code's Bash sandbox nests inside it, which is why the jail leaves user namespaces enabled.
 The jail has no Nix daemon either, so a `nix` command typed with `!` in Claude falls back to a
 throwaway store in the jail's home; Nix runs from a terminal outside Claude.

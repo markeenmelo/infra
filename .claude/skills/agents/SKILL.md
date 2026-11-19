@@ -87,7 +87,8 @@ and every shell in the guest exports them; a changed token restarts the guest, t
 
 - `agents/claude-token`: the token from `claude setup-token`, exported as
   `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the guest
-  Remote Control and the account's connectors.
+  Remote Control and the account's connectors. The workstations sign in with the same value
+  ([secrets skill](../secrets/SKILL.md)).
 - `agents/github-token`: a fine-grained token, exported as `GH_TOKEN` and handed to Git by `gh`,
   limited to Contents and Pull requests writes and Actions read on the repositories the agents
   work on, with the default branch protected. Never the Workflows permission, which would let a
