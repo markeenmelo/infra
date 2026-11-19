@@ -62,9 +62,10 @@ Permissions apply within the requested task. Continue independent safe work whil
   summarize what changed, what was validated and what remains, and ask whether to open the pull
   request. A feature that will clearly pass 500 lines is split into stacked branches at logical
   boundaries, proposed before the code is written.
-- Push only once the operator approves the pull request, then `gh pr create` with the body sections
-  Summary, Hosts affected, Validation run, Risks, Rollback. Never force-push a branch someone has
-  reviewed.
+- Push a branch other than `main` at any time, so committed work has a copy outside the machine
+  it was written on. Open the pull request only once the operator approves: `gh pr create` with
+  the body sections Summary, Hosts affected, Validation run, Risks, Rollback. Never push to `main`
+  or force-push a branch someone has reviewed.
 
 ## Method
 
@@ -78,7 +79,6 @@ Permissions apply within the requested task. Continue independent safe work whil
   hosts or areas CI does not cover.
 - Ask one focused question instead of guessing, above all on secrets, network exposure (the cache,
   the edge), disk layout and persistence.
-
 - Verify upstream claims (nixpkgs options at the pinned revision, flake-parts, import-tree, a CLI)
   against the nixos MCP tool, `/nix/store` sources or upstream docs, not memory. Before setting
   an option, read the module that owns it: its defaults and what else it wires (reloads, users,
@@ -87,7 +87,7 @@ Permissions apply within the requested task. Continue independent safe work whil
 - Run every shell snippet handed to the operator, or its closest local equivalent, first.
 - Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Once per
   branch, before asking to open the pull request, `nix flake check` naming every affected x86_64
-  host so its toplevel builds; a branch that changes no Nix needs only the outPath comparison.
+  host so its toplevel builds; a branch that changes only Markdown needs the outPath comparison and the `format` check.
   Where the whole check cannot run, evaluate each check on its own, leave the builds to CI and say
   so in the report. The `darwin` CI job builds
   `mac` on a macOS runner; `asahi` only evaluates in CI and builds on itself.
