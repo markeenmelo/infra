@@ -7,6 +7,7 @@ let
   edge = config.fleet.hosts.edge.tailnetAddress;
   port = config.fleet.publicPort;
   served = lib.filterAttrs (_: app: app.public) declared;
+  hostnames = map (name: "${name}.${domain}") (lib.attrNames served);
   policy =
     {
       lib,
@@ -159,7 +160,7 @@ let
         @crawler header_regexp User-Agent "(?i)(${lib.concatStringsSep "|" crawlers})"
         @robots {
           path /robots.txt
-          host ${lib.concatMapStringsSep " " (name: "${name}.${domain}") (lib.attrNames served)}
+          host ${lib.concatStringsSep " " hostnames}
         }
         @abroad {
           not remote_ip 127.0.0.0/8 ::1
@@ -285,7 +286,7 @@ in
       };
     };
     fleet.probes = lib.mapAttrs (name: _: "https://${name}.${domain}") served;
-    networking.hosts."127.0.0.1" = map (name: "${name}.${domain}") (lib.attrNames served);
+    networking.hosts."127.0.0.1" = hostnames;
     networking.firewall.allowedTCPPorts = [
       80
       443

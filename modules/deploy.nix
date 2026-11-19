@@ -112,6 +112,7 @@ in
       ...
     }:
     let
+      hostCases = lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts);
       systemctl = name: verb: description: {
         meta = { inherit description; };
         program = pkgs.writeShellApplication {
@@ -119,9 +120,7 @@ in
           runtimeInputs = [ pkgs.openssh ];
           text = ''
             case ''${1-} in
-            ${
-              lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts)
-            }  *) echo "${name}: no NixOS host named ''${1-}" >&2; exit 1 ;;
+            ${hostCases}  *) echo "${name}: no NixOS host named ''${1-}" >&2; exit 1 ;;
             esac
             ssh "deploy@$1" sudo /run/current-system/sw/bin/systemctl ${verb}
           '';
@@ -167,9 +166,7 @@ in
           text = ''
             [ $# -eq 0 ] && exec ${lib.getExe pkgs.nh} clean all --keep 2 --optimise
             case $1 in
-            ${
-              lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts)
-            }  *) echo "clean: no NixOS host named $1" >&2; exit 1 ;;
+            ${hostCases}  *) echo "clean: no NixOS host named $1" >&2; exit 1 ;;
             esac
             ssh "deploy@$1" sudo ${clean}
           '';
