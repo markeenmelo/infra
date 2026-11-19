@@ -265,7 +265,6 @@ in
           "NIX_PROFILES"
           "(NIX_)?SSL_CERT_FILE"
         ];
-        git = lib.getExe pkgs.git;
         jailed =
           inputs.jail-nix.lib.extend
             {
@@ -297,12 +296,13 @@ in
                 (c.readwrite ponytailLedger)
                 (c.set-env "CLAUDE_CONFIG_DIR" configDir)
                 (c.add-runtime ''
+                  export PATH=${lib.makeBinPath [ pkgs.git ]}:$PATH
                   dir=$(pwd -P)
                   binds=("$dir")
-                  if top=$(${git} -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
+                  if top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
                     top=$(realpath "$top")
-                    common=$(realpath "$(${git} -C "$dir" rev-parse --git-common-dir)")
-                    gitdir=$(realpath "$(${git} -C "$dir" rev-parse --git-dir)")
+                    common=$(realpath "$(git -C "$dir" rev-parse --git-common-dir)")
+                    gitdir=$(realpath "$(git -C "$dir" rev-parse --git-dir)")
                     if [[ "$common" == "$top/.git" ]] ||
                       [[ "$gitdir" == "$common/worktrees/"* && "$(realpath "$(cat "$gitdir/gitdir" 2>/dev/null)" 2>/dev/null)" == "$top/.git" ]]; then
                       binds=("$top" "$common")
