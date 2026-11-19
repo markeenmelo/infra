@@ -63,6 +63,7 @@
         packages = [
           config.formatter
           pkgs.just
+          pkgs.openssl
           pkgs.sops
         ];
       };
