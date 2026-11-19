@@ -26,7 +26,7 @@ People live in the module with their name and groups; their email and argon2 has
 `authelia/USER-email` and `authelia/USER-password-hash` in `secrets/hosts/bastion.yaml`, rendered with them into the users
 file Authelia reads read-only. So the portal offers no password reset or change: a person types
 a new password into the hash command in the operator's private terminal, and the operator
-deploys. The same hash signs the person in to the calendar ([calendar skill](../calendar/SKILL.md)).
+deploys.
 
 ```sh
 read -rs pw && printf %s "$pw" |
