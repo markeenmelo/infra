@@ -316,9 +316,9 @@ in
                 inherit (pin) hash;
               }
             } > $out
-          ${lib.optionalString (name == "apcupsd")
-            "grep -qF 'apcupsd_nominal_power_watts * apcupsd_ups_load_percent / 100' $out"
-          }
+          ${lib.optionalString (
+            name == "apcupsd"
+          ) "grep -qF 'apcupsd_nominal_power_watts * apcupsd_ups_load_percent / 100' $out"}
         ''
       ) (lib.importJSON ./grafana-dashboards.json);
     in
