@@ -15,7 +15,10 @@ module, from the `hermes-agent` flake input, pinned to a release tag in `flake.n
 new tag there, then `nix flake update hermes-agent`. The input keeps the nixpkgs upstream locked,
 the one exception to every host following one nixpkgs: upstream patches `patchelf` for that
 revision and the patch does not apply to the fleet's. The package is upstream's `messaging`
-variant, the chat gateways without the terminal UI, web and desktop parts.
+variant, the chat gateways without the terminal UI, web and desktop parts. Evaluating it reads
+its Python workspace from a filtered copy of the source, which a read-only evaluation
+(`nix flake check --no-build`, `nix eval --read-only`) cannot add to the store: evaluate the
+package once without it first, as [check.yml](../../../.github/workflows/check.yml) does.
 
 The agent runs shell commands and writes files as its own account inside the guest, and upstream
 is plain that only isolation by the operating system holds against a model that turns hostile:
