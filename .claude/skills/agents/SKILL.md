@@ -9,9 +9,15 @@ description: "The agent MicroVM on bastion: a NixOS guest under microvm.nix and 
 bastion ([microvm.nix](https://microvm-nix.github.io/microvm.nix/) host module, cloud-hypervisor).
 The guest is the boundary for unattended agents: its own kernel, no fleet secret, no route to
 the LANs or the tailnet's hosts. It is not a `fleet.hosts` entry: it builds inside bastion's
-closure and a bastion deploy that changes it restarts it, ending every session in it.
+closure. A bastion deploy installs the guest's new system but leaves the running guest alone:
+`restartIfChanged` is off, since a nixpkgs or plugin bump changes every store path in its units
+and would end every session in it on each update. `agents-restart` restarts it instead, and only
+when agents.nix itself, `restartGeneration` in it, or one of its tokens changed since the unit
+last ran; anything else, a new Claude Code included, reaches the guest at its next restart, which
+bumping `restartGeneration` forces. The system a running guest booted stays a garbage-collector
+root until then.
 `microvm@agents` requires `install-microvm-agents`, which points the guest at its new system:
-upstream only orders the two, so a switch could restart the guest before the link moved and boot
+upstream only orders the two, so a restart could boot the guest before the link moved, into
 the previous system. The guest's kernel command line in `microvm@agents`'s log names the system
 it booted.
 
@@ -77,7 +83,7 @@ guest itself is the boundary. Grafana's MCP server and the account's connectors 
 Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens from
 `secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by `agent`'s
 uid, which no account on bastion holds,
-and every shell in the guest exports them; a changed token restarts the guest:
+and every shell in the guest exports them; a changed token restarts the guest, through `agents-restart`:
 
 - `agents/claude-token`: the token from `claude setup-token`, exported as
   `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the guest

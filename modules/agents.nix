@@ -9,6 +9,7 @@ let
   guestSecrets = "/run/host-secrets";
   storeImage = "store.img";
   agentUid = 1000;
+  restartGeneration = 1;
   tokenVariables = {
     claude-token = "CLAUDE_CODE_OAUTH_TOKEN";
     github-token = "GH_TOKEN";
@@ -187,6 +188,7 @@ in
       install = lib.getExe' pkgs.coreutils "install";
       tokens = lib.attrNames tokenVariables;
       secret = name: config.sops.secrets."agents-${name}".path;
+      scope = "${toString restartGeneration} ${builtins.hashFile "sha256" ./agents.nix}";
     in
     {
       imports = [ inputs.microvm.nixosModules.host ];
@@ -197,9 +199,14 @@ in
       ];
       microvm = {
         host.installCommand = false;
-        vms.agents.config = guest;
+        vms.agents = {
+          config = guest;
+          restartIfChanged = false;
+        };
       };
       hardware.ksm.enable = false;
+      systemd.tmpfiles.settings.agents."/nix/var/nix/gcroots/agents-booted"."L+".argument =
+        "${stateDir}/agents/booted";
       security.wrappers.qemu-bridge-helper.enable = false;
 
       sops.secrets = lib.mkMerge [
@@ -209,7 +216,7 @@ in
             name:
             lib.nameValuePair "agents-${name}" {
               key = "agents/${name}";
-              restartUnits = [ "microvm@agents.service" ];
+              restartUnits = [ "agents-restart.service" ];
             }
           ) tokens
         ))
@@ -246,6 +253,25 @@ in
       };
 
       systemd.services = {
+        agents-restart = {
+          description = "Restart the agent MicroVM when its definition or a token changes";
+          wantedBy = [ "multi-user.target" ];
+          restartTriggers = [ scope ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            UMask = "0077";
+          };
+          enableStrictShellChecks = true;
+          script = ''
+            want="${scope} $(cat ${lib.concatMapStringsSep " " secret tokens} | sha256sum)"
+            seen=/run/agents-restart
+            if [ -e "$seen" ] && [ "$(cat "$seen")" != "$want" ]; then
+              systemctl try-restart --no-block microvm@agents.service
+            fi
+            printf '%s\n' "$want" > "$seen"
+          '';
+        };
         agents-state = {
           description = "Create the agent MicroVM's state directory on its dataset";
           requiredBy = [ "install-microvm-agents.service" ];
