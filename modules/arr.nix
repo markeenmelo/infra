@@ -293,9 +293,9 @@ let
           };
         }))
       ];
-      # the uid that owns qbittorrent's state, allocated by the old generation; nixflix forces the whole account, so it is restated
+      # the uid bastion allocated to qbittorrent, which owns its state; nixflix forces the whole account, so it is restated
       users.users.qbittorrent = lib.mkOverride 49 {
-        uid = 988;
+        uid = 994;
         isSystemUser = true;
         inherit (config.services.qbittorrent) group;
       };
