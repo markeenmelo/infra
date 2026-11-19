@@ -68,7 +68,9 @@ Permissions apply within the requested task. Continue independent safe work whil
   publish (`nix build ".?rev=REV#checks.SYSTEM.secrets"` for each), so committed work has a copy
   outside the machine it was written on. The repository is public and a push cannot be taken
   back: a secret a later commit removes is still published, so a branch that ever held one is
-  rewritten before its first push. Open the pull request only once the operator approves: `gh pr create` with
+  rewritten before its first push. The check matches known token shapes only, so it is necessary
+  and not sufficient: first read `git log -p` of the commits to be pushed, diffs and messages,
+  for anything credential-like, and ask when in doubt. Open the pull request only once the operator approves: `gh pr create` with
   the body sections Summary, Hosts affected, Validation run, Risks, Rollback. Never push to `main`
   or force-push a branch someone has reviewed.
 
