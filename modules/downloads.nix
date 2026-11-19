@@ -67,6 +67,7 @@ in
       inherit (config.nixflix) downloadsDir mediaDir;
       media = dirOf mediaDir;
       shared = [ media ] ++ map (name: "${config.nixflix.stateDir}/${name}") stateOf;
+      hostOptions = mount: lib.remove "nofail" config.fileSystems.${mount}.options;
     in
     {
       imports = [
@@ -84,6 +85,9 @@ in
             source = path;
             mountPoint = path;
           }) shared;
+          fileSystems = lib.genAttrs shared (path: {
+            options = hostOptions (if path == media then media else config.nixflix.stateDir);
+          });
           # shortcut: proves the shares before the apps move in, remove with the move
           systemd.services.downloads-probe = {
             description = "Check ownership and hardlinks through the shared datasets";

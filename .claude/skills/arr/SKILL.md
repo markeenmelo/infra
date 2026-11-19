@@ -73,7 +73,11 @@ peers, so that one of them compromised meets a second kernel before bastion. For
 nothing: the apps still run on bastion, and the guest only mounts what they will need over
 virtiofs, the media dataset and the state directories of Sonarr, Radarr, Prowlarr, qBittorrent and
 SABnzbd, at the paths they have on bastion. Jellyfin's and Seerr's state is not shared. The guest
-has no login, no tailnet node, no secret and no disk of its own; its root is memory. Its journal
+has no login, no tailnet node, no sops identity or credential share and no disk of its own; its
+root is memory. The shared state directories do carry the apps' credentials (API keys, usenet
+logins, the qBittorrent password hash), readable and writable by the guest's root, and until the
+apps move, what the guest writes there bastion's apps load at their next start. Each share is
+mounted with the options its dataset has on bastion (`nosuid`, `nodev`, and `noexec` on media). Its journal
 goes to its console, which is `microvm@downloads`'s log on bastion, so Loki holds it. Unlike the
 agents' guest it restarts whenever a deploy changes it. At each boot `downloads-probe` prints the
 owners of the shared directories and hardlinks a file from the downloads directory into the
