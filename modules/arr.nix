@@ -75,6 +75,10 @@ in
       sabnzbd = config.nixflix.usenetClients.sabnzbd;
       secret = name: { _secret = config.sops.secrets."arr-${name}".path; };
       appPort = name: config.nixflix.${name}.config.hostConfig.port;
+      confined = {
+        enable = true;
+        vpnNamespace = vpn;
+      };
       exporterPorts = {
         sonarr = 19708;
         radarr = 19709;
@@ -134,7 +138,7 @@ in
               };
               instances = lib.genAttrs decluttarrApps (name: [
                 {
-                  base_url = "http://${namespaceAddress}:${toString config.nixflix.${name}.config.hostConfig.port}";
+                  base_url = "http://${namespaceAddress}:${toString (appPort name)}";
                   api_key = envTag "${lib.toUpper name}_API_KEY";
                 }
               ]);
@@ -423,7 +427,7 @@ in
             ct state new oifname "${vpn}-br" meta skuid ${
               toString config.users.users.${config.nixflix.seerr.user}.uid
             } tcp dport { ${
-              lib.concatMapStringsSep ", " (name: toString config.nixflix.${name}.config.hostConfig.port) [
+              lib.concatMapStringsSep ", " (name: toString (appPort name)) [
                 "sonarr"
                 "radarr"
               ]
@@ -470,10 +474,7 @@ in
             };
           };
           prowlarr-applications.script = withoutResponseBody "applications" { };
-          recyclarr.vpnConfinement = {
-            enable = true;
-            vpnNamespace = vpn;
-          };
+          recyclarr.vpnConfinement = confined;
           decluttarr = {
             description = "Clean the arr queues and download clients, and search for missing media";
             after = map (name: "${name}.service") (
@@ -484,10 +485,7 @@ in
               ]
             );
             wantedBy = [ "multi-user.target" ];
-            vpnConfinement = {
-              enable = true;
-              vpnNamespace = vpn;
-            };
+            vpnConfinement = confined;
             enableStrictShellChecks = true;
             serviceConfig = {
               DynamicUser = true;
@@ -521,10 +519,7 @@ in
           easynews-indexer = {
             description = "Easynews search as a Newznab indexer for Prowlarr";
             wantedBy = [ "multi-user.target" ];
-            vpnConfinement = {
-              enable = true;
-              vpnNamespace = vpn;
-            };
+            vpnConfinement = confined;
             enableStrictShellChecks = true;
             serviceConfig = {
               DynamicUser = true;
