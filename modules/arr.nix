@@ -573,6 +573,27 @@ let
       hostDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
       handover = "${hostDumps}-handover";
       install = lib.getExe' pkgs.coreutils "install";
+      awaitProfile =
+        name:
+        pkgs.writeShellApplication {
+          name = "await-${name}-profile";
+          runtimeInputs = [
+            pkgs.curl
+            pkgs.jq
+          ];
+          text = ''
+            while (( SECONDS < 180 )); do
+              if curl -fsS --max-time 5 -H @<(printf 'X-Api-Key: %s' "$(< ${secret "${name}-api-key"})") \
+                http://${net.guestAddress}:${toString (appPort name)}/api/v3/qualityprofile |
+                jq -e --arg profile ${lib.escapeShellArg storageProfile} 'any(.[]; .name == $profile)' > /dev/null; then
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "${name} in the downloads guest has no profile ${storageProfile} after 3 minutes" >&2
+            exit 1
+          '';
+        };
       toGuest =
         name: uids:
         ''ct state new oifname "${net.tap}" meta skuid { ${
@@ -705,6 +726,9 @@ let
       systemd.services = lib.mkMerge [
         (lib.genAttrs (map (name: "prometheus-exportarr-${name}-exporter") apps) (_: {
           serviceConfig.DynamicUser = false;
+        }))
+        (lib.genAttrs (map (name: "seerr-${name}") seerrApps) (unit: {
+          serviceConfig.ExecStartPre = lib.getExe (awaitProfile (lib.removePrefix "seerr-" unit));
         }))
         {
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];

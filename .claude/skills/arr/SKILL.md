@@ -34,7 +34,9 @@ health issue` alert reports after an hour; a single failed import is a queue ite
 Decluttarr handles instead.
 
 Seerr takes requests at `seerr.DOMAIN`, on the LAN and the tailnet, and runs on bastion, outside the guest, because it
-needs Jellyfin; its database stays in bastion's shared PostgreSQL ([identity skill](../identity/SKILL.md)); it signs in to Jellyfin as the declared native admin to set itself up. Its login
+needs Jellyfin; its database stays in bastion's shared PostgreSQL ([identity skill](../identity/SKILL.md)); it signs in to Jellyfin as the declared native admin to set itself up, and its Sonarr and Radarr
+setup units first wait up to three minutes for the request profile to exist in the guest, since no
+unit ordering crosses into it. Its login
 takes a Jellyfin password and Seerr has no OIDC, so only accounts with a native Jellyfin password
 (the admin) sign in; people who reach Jellyfin through Authelia have none. Requests go to Sonarr and Radarr on
 `1080p Storage Efficient`, the profile Recyclarr syncs daily next to the TRaSH ones it already
@@ -99,4 +101,6 @@ has no table, so a failed load never replaces a good dump with an empty one. `ar
 bastion writes the first dumps, from the databases bastion's PostgreSQL still holds from before
 the move, and once only: its marker, `/srv/backups/downloads-handover/done`, and its temporary
 files sit outside the share, since bastion's `postgres` must not write where the guest can plant
-a link. Those old databases are left in place.
+a link. Those old databases are left in place. Handing over again, after the apps went back to
+bastion, takes three removals first: the dumps in `/srv/backups/downloads`, the marker, and the
+guest's `var.img`, whose databases would otherwise still hold tables and never be loaded.
