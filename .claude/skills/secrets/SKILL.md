@@ -32,7 +32,8 @@ rotating every value its files held.
 | `hosts/thinkpad.yaml` | operator, thinkpad | `tailscale-auth-key`, `wifi-psk` (MN-Home), `nix-build-ssh-key`, `backups/thinkpad-password` ([thinkpad skill](../thinkpad/SKILL.md)) |
 | `hosts/thinkpad-senecanet.yaml`, `hosts/asahi-senecanet.yaml` | operator, that laptop | `seneca-identity`, `seneca-password` for SenecaNET's WPA2-Enterprise profile |
 | `hosts/asahi.yaml` | operator, asahi | `tailscale-auth-key`, `wifi-psk` (MN-Home), `nix-build-ssh-key`, `backups/asahi-password` ([asahi skill](../asahi/SKILL.md)) |
-| `shared/mcp.yaml` | operator, mac, thinkpad, asahi | `github-mcp-token`, `grafana-mcp-token`, `claude-token` (below) |
+| `shared/mcp.yaml` | operator, mac, thinkpad, asahi | `github-mcp-token`, `grafana-mcp-token` (below) |
+| `shared/claude.yaml` | operator, bastion, mac, thinkpad, asahi | `claude-token` (below) |
 | `tailscale/operator.yaml` | operator | Tailscale OAuth client, tailnet name, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
 | `porkbun/api.yaml` | operator, bastion | `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` for bastion's DNS-01 ([proxy skill](../proxy/SKILL.md)) and the `tofu` app |
 | `porkbun/operator.yaml` | operator | state passphrase for the DNS records; the app adds `api.yaml` ([opentofu skill](../opentofu/SKILL.md)) |
@@ -43,9 +44,10 @@ The mac decrypts with its SSH host key like the servers do. The workstations' `g
 and `grafana-mcp-token`, read by the GitHub and Grafana MCP servers ([claude.nix](../../../modules/claude.nix)),
 are the secrets owned by the operator account instead of root, since Claude Code runs as that user.
 The workstations share one pair, so a lost laptop means rotating both tokens for every workstation.
-`claude-token` in the same file is Claude Code's own sign-in on the workstations: the token from
-`claude setup-token`, the same value as bastion's `agents/claude-token`
-([agents skill](../agents/SKILL.md)), which the `claude` wrapper exports as
+`claude-token` in `shared/claude.yaml` is Claude Code's sign-in, the token from
+`claude setup-token`, stored once for the agent guest ([agents skill](../agents/SKILL.md)) and
+the workstations, which is why bastion is a recipient of that file and of no other workstation
+secret. On the workstations the `claude` wrapper exports it as
 `CLAUDE_CODE_OAUTH_TOKEN` when the file is readable. It makes model requests only, so a
 workstation signed in this way has no Remote Control and none of the account's connectors, and
 one revocation signs out the guest and every workstation.

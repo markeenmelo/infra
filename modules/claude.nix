@@ -18,9 +18,10 @@ let
   };
   tokens =
     owner:
-    lib.genAttrs tokenNames (_: {
+    lib.genAttrs tokenNames (name: {
       inherit owner;
-      sopsFile = ../secrets/shared/mcp.yaml;
+      sopsFile =
+        if name == "claude-token" then ../secrets/shared/claude.yaml else ../secrets/shared/mcp.yaml;
     });
   deniedDirs = [
     "/run/secrets"
