@@ -9,7 +9,7 @@ let
   ];
 
   guest =
-    { config, ... }:
+    { config, pkgs, ... }:
     let
       cfg = config.services.hermes-agent;
     in
@@ -54,6 +54,7 @@ let
 
       services.hermes-agent = {
         enable = true;
+        package = inputs.hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.messaging;
         settings = {
           model = {
             provider = "openai-codex";

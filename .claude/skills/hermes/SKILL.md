@@ -12,7 +12,10 @@ only, nothing of bastion, the LANs or the tailnet reachable, no login, journal o
 and so in `microvm@hermes`'s log. Inside runs
 [Hermes Agent](https://github.com/NousResearch/hermes-agent) through upstream's own NixOS
 module, from the `hermes-agent` flake input, pinned to a release tag in `flake.nix`: a bump is a
-new tag there, then `nix flake update hermes-agent`.
+new tag there, then `nix flake update hermes-agent`. The input keeps the nixpkgs upstream locked,
+the one exception to every host following one nixpkgs: upstream patches `patchelf` for that
+revision and the patch does not apply to the fleet's. The package is upstream's `messaging`
+variant, the chat gateways without the terminal UI, web and desktop parts.
 
 The agent runs shell commands and writes files as its own account inside the guest, and upstream
 is plain that only isolation by the operating system holds against a model that turns hostile:
