@@ -168,7 +168,7 @@ in
             restic-drill-usb = {
               description = "Read a twelfth of the USB backup and test the latest database dumps";
               after = [ "restic-backups-usb.service" ];
-              unitConfig.RequiresMountsFor = [ "/mnt/backup" ];
+              unitConfig.RequiresMountsFor = jobs.usb.mounts;
               startAt = "*-*-15 12:00";
               enableStrictShellChecks = true;
               environment = {
