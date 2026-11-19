@@ -92,7 +92,8 @@ deletes the files of removed jobs.
 Provisioning never deletes a rule: a retitled or removed rule's uid goes in `deleteRules` for one deploy.
 
 Three rules watch for compromise, not failure. `Server login` fires on every SSH login to a server
-except the build account's, so it also fires on a deploy and a login at any other time stands out.
+except the build account's and a `deploy` login from a workstation's tailnet address, so a deploy
+is quiet and any other login stands out; a stolen laptop's deploy key therefore logs in unseen.
 `Unexpected certificate` is critical: the proxy's `certificate-watch` job found a certificate for the
 domain in the public logs whose key the proxy does not hold ([proxy skill](../proxy/SKILL.md)).
 `Authelia mail failing` catches a broken SMTP account, which Authelia no longer tests at start
