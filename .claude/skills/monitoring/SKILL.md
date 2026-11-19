@@ -33,7 +33,10 @@ Administration → Users while signed in through Authelia; changing the secret a
 Grafana and changes nothing. Datasources (`prometheus`, `loki`) and
 dashboards are provisioned read-only: change them in Nix, not in the UI. Dashboards are pinned
 community ones by grafana.com revision and hash, with their datasource input replaced by the
-provisioned uid; a bump is a new revision and hash.
+provisioned uid; a bump is a new revision and hash. One query is corrected on the way in: the UPS
+dashboard's wattage panel divided nominal power by the load percentage, and now multiplies. That
+figure is the draw of everything on the UPS, not of bastion alone; the workstations send no
+telemetry, so nothing shows theirs.
 
 ## Other hosts
 

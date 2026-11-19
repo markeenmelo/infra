@@ -309,12 +309,16 @@ in
       dashboards = lib.mapAttrs (
         name: pin:
         pkgs.runCommand "${name}.json" { } ''
-          sed 's/''${DS_PROMETHEUS}/prometheus/g' ${
-            pkgs.fetchurl {
-              url = "https://grafana.com/api/dashboards/${toString pin.id}/revisions/${toString pin.revision}/download";
-              inherit (pin) hash;
-            }
-          } > $out
+          sed -e 's/''${DS_PROMETHEUS}/prometheus/g' \
+            -e 's|apcupsd_nominal_power_watts / apcupsd_ups_load_percent|apcupsd_nominal_power_watts * apcupsd_ups_load_percent / 100|' ${
+              pkgs.fetchurl {
+                url = "https://grafana.com/api/dashboards/${toString pin.id}/revisions/${toString pin.revision}/download";
+                inherit (pin) hash;
+              }
+            } > $out
+          ${lib.optionalString (
+            name == "apcupsd"
+          ) "grep -qF 'apcupsd_nominal_power_watts * apcupsd_ups_load_percent / 100' $out"}
         ''
       ) (lib.importJSON ./grafana-dashboards.json);
     in
