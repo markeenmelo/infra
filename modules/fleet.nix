@@ -28,9 +28,8 @@ in
             description = "Nix system the host runs; sets `nixpkgs.hostPlatform`.";
           };
           tailnetAddress = lib.mkOption {
-            # Tailscale's CGNAT range, 100.64.0.0/10
             type = lib.types.strMatching "100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.${octet}\\.${octet}";
-            description = "The host's Tailscale IPv4 address, kept across reinstalls by its carried tailnet identity; the `tofu` app hands it to `opentofu/tailscale` as `fleet_hosts`.";
+            description = "The host's Tailscale IPv4 address, in Tailscale's 100.64.0.0/10, kept across reinstalls by its carried tailnet identity; the `tofu` app hands it to `opentofu/tailscale` as `fleet_hosts`.";
           };
           publicAddress = lib.mkOption {
             type = lib.types.nullOr ipv4;
@@ -65,7 +64,7 @@ in
               }
             );
             default = null;
-            description = "A host wired to the LAN at a fixed address; the `tofu` app hands these to `opentofu/unifi` as `fleet_lan`.";
+            description = "A host wired to the LAN at a fixed address; the `tofu` app hands these to `opentofu/unifi` and `opentofu/tailscale` as `fleet_lan`.";
           };
           telemetry = lib.mkOption {
             type = lib.types.nullOr (

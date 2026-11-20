@@ -31,7 +31,10 @@ in
         type = lib.types.attrsOf (
           lib.types.submodule {
             options = {
-              port = lib.mkOption { type = lib.types.port; };
+              port = lib.mkOption {
+                type = lib.types.port;
+                description = "Port the proxies reach the app at, on `address`.";
+              };
               address = lib.mkOption {
                 type = lib.types.str;
                 default = "127.0.0.1";

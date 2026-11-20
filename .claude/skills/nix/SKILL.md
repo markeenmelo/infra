@@ -28,7 +28,7 @@ Background: [dendritic pattern](https://github.com/mightyiam/dendritic),
 | Cross-concern facts | Typed `fleet.*` options beside their owner; never `specialArgs` or `_module.args` |
 | Package expression or pin set | `NAME.pkg.nix`, not loaded as a module; other imported Nix is `_NAME.nix` |
 | Apps, data, scripts, tests | Beside the feature they serve |
-| Dev shell | `modules/dev-shell.nix`, plain `mkShell`; `nix fmt` through treefmt |
+| Dev shell | `modules/dev-shell.nix`, plain `mkShellNoCC`; `nix fmt` through treefmt |
 
 Rules:
 - A concern sets every class it touches (`nixos`, `darwin`, `homeManager`) in one file; a

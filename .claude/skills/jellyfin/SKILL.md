@@ -45,5 +45,5 @@ accounts nor anyone's parental limits.
 ## Media and transcoding
 
 Libraries are Movies and Shows under `/srv/media/media/{movies,tv}`; the cache sits on
-`tank/media` so trickplay and transcodes survive the root rollback. Transcoding and trickplay use
+`tank/media` so transcodes survive the root rollback, and trickplay is saved beside the media. Transcoding and trickplay use
 Quick Sync on the iGPU named by `fleet.renderDevice`, the only device the unit may open.
