@@ -1,6 +1,6 @@
 ---
 name: thinkpad
-description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Umbriel, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), the link to the operator's phone (KDE Connect, adb, scrcpy, the phone as a webcam), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, umbriel.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, phone.nix, or reinstalling the laptop."
+description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Umbriel, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, umbriel.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, or reinstalling the laptop."
 ---
 
 # ThinkPad
@@ -103,34 +103,11 @@ lock screen. Shutting it suspends on
 battery only: on AC the idle timer does, since a monitor that sleeps drops off DRM and logind would
 read that as an undock.
 
-## Phone
-
-[phone.nix](../../../modules/phone.nix) links the Linux laptops to the operator's phone, `grafite`
-on the tailnet. KDE Connect listens on the tailnet interface only, so the phone is added by the
-laptop's tailnet name: its broadcast discovery does not cross the tailnet. adb reaches the phone's
-Wireless debugging over the tailnet through the grant in the
-[OpenTofu project](../opentofu/SKILL.md); the port is new each time Wireless debugging is switched
-on, so `adb connect` is repeated, while `adb pair` is once per laptop. While Wireless debugging is
-on, the laptop's adb key is a shell on the phone from anywhere on the tailnet, and the grant
-reaches every other unprivileged listener on the phone too: both accepted risks.
-
-Two v4l2loopback devices exist: one feeds the AndroidConnect panel's embedded preview, the other
-is the webcam `phone-camera` fills from the phone's camera with scrcpy, for as long as it runs.
-The module is out of tree and built against the laptop's kernel, so it can
-block a build after a kernel bump. AndroidConnect is a community Noctalia plugin with a Python
-companion; opening its panel starts mirroring, wakes the phone and forwards its audio, and its
-code needs reading on a bump ([tailnet skill](../tailnet/SKILL.md)).
-
-The adb key and the KDE Connect identity are home secrets
-([_home-secrets.nix](../../../modules/_home-secrets.nix)): out of the home backup and of Claude's
-reach, so a restored home pairs again. adb's local server answers any local process; it has no
-loopback guard because `marcos` has no pinned uid.
-
 ## Backups
 
 `restic-backups-home` sends `/home/marcos` every 6 hours, skipping a run that falls on battery, to the append-only server on bastion
 ([backups skill](../backups/SKILL.md)) with `backups/thinkpad-password`, never the household key;
-only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh, adb, KDE Connect, Claude's credentials), the keyring,
+only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh, Claude's credentials), the keyring,
 caches, the Bitwarden socket and Steam's installed games, shader caches and downloads stay out. App data stays in, browser and messenger sessions
 included, so a restore brings back a signed-in desktop, and Steam's Proton prefixes, where games
 without Steam Cloud keep their saves; bastion holds the password too, so whoever controls bastion
