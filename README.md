@@ -1,6 +1,6 @@
 # infra
 
-The whole configuration of a one-operator home fleet: the NixOS hosts, the mac on nix-darwin, the
+The whole configuration of a one-operator home fleet: the NixOS hosts, the
 Tailscale, Porkbun, UniFi and Oracle Cloud setup in OpenTofu, and their secrets as SOPS ciphertext. It is public
 to be read; nothing here is meant to be reused as is.
 
@@ -11,8 +11,6 @@ to be read; nothing here is meant to be reused as is.
 | `bastion` | x86_64-linux | Home server: LAN and public proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, MicroVMs (agents, downloads, hermes) | itself |
 | `edge` | aarch64-linux | Public HTTPS edge (Oracle Cloud instance): passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
 | `thinkpad` | x86_64-linux | Operator laptop | bastion |
-| `asahi` | aarch64-linux | Apple Silicon laptop (dual boot with `mac`) | itself |
-| `mac` | aarch64-darwin | macOS laptop, nix-darwin + Home Manager | itself |
 
 ## Quick start
 
@@ -32,8 +30,8 @@ just tofu unifi plan  # plan an OpenTofu project
 ## Layout
 
 - `flake.nix` holds only inputs and imports every file under [`modules/`](modules/) with
-  flake-parts and import-tree. Each file is one concern and sets every class it touches: NixOS,
-  nix-darwin and Home Manager. Importing a module enables it; there are no `enable` options.
+  flake-parts and import-tree. Each file is one concern and sets every class it touches: NixOS
+  and Home Manager. Importing a module enables it; there are no `enable` options.
 - [`modules/hosts/`](modules/hosts/): each host's facts, hardware, disk layout and the roles it
   imports.
 - [`opentofu/`](opentofu/): the Tailscale policy, the public DNS records, the UniFi network and the
@@ -75,7 +73,7 @@ just deploy HOST --boot    # set the boot default only; no rollback
 just reboot HOST
 just deploy-many A B       # concurrent builds, sequential activations
 just unlock edge           # send the disk passphrase to the edge waiting in its initrd
-just switch                # the mac and the laptops switch themselves
+just switch                # the laptop switches itself
 ```
 
 Who builds what, the deploy account and recovery: the [deploy skill](.claude/skills/deploy/SKILL.md).
@@ -120,11 +118,10 @@ itself, and CI builds it only once [check.yml](.github/workflows/check.yml) has 
 
 ## CI
 
-[check.yml](.github/workflows/check.yml) evaluates every system and builds the x86_64 hosts and
-the mac on `main`; a pull request builds only the checks whose derivation differs from its base
-commit's, which `main`'s run covers. The aarch64-linux hosts (`edge`, `asahi`) are
-evaluated, not built. Review bots read every diff. `gh workflow run audit.yml` audits the whole
-tree on demand and writes the report to the run's summary.
+[check.yml](.github/workflows/check.yml) evaluates every system and builds the x86_64 hosts on
+`main`; a pull request builds only the checks whose derivation differs from its base
+commit's, which `main`'s run covers. The aarch64-linux host `edge` is evaluated, not built.
+Review bots read every diff. `gh workflow run audit.yml` audits the whole tree on demand and writes the report to the run's summary.
 
 ## Security
 

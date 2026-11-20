@@ -102,13 +102,6 @@ let
   };
 in
 {
-  flake.modules.darwin.desktop.system.defaults.CustomUserPreferences."app.zen-browser.zen" =
-    lib.mkMerge
-      [
-        policies
-        { EnterprisePoliciesEnabled = true; }
-      ];
-
   flake.modules.homeManager.desktop = {
     imports = [ inputs.zen-browser.homeModules.beta ];
     programs.zen-browser = {

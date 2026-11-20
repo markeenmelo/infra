@@ -29,8 +29,6 @@ let
   };
 in
 {
-  flake.modules.darwin.desktop.homebrew.casks = [ "opencloud" ];
-
   flake.modules.homeManager.desktop =
     { pkgs, ... }:
     let

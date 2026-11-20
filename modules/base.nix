@@ -22,17 +22,6 @@ let
     };
 in
 {
-  flake.modules.darwin.base = {
-    imports = [
-      common
-      nh
-    ];
-    nix = {
-      settings.allowed-users = [ "@admin" ];
-      optimise.automatic = true;
-    };
-  };
-
   flake.modules.nixos.desktop = nh;
 
   flake.modules.nixos.base =

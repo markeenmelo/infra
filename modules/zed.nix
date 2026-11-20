@@ -19,7 +19,6 @@
       stylix.targets.zed.colors.enable = false;
       programs.zed-editor = {
         enable = true;
-        package = lib.mkDefault null;
         mutableUserSettings = false;
         extensions = [
           "nix"

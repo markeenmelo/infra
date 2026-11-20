@@ -9,7 +9,7 @@ description: "The edge host: the Oracle Cloud Ampere A1 instance, its LUKS state
 [Oracle project](../opentofu/SKILL.md#oracle) creates: one Ampere A1 core on a virtio disk, UEFI,
 `aarch64-linux`. It runs the `server` role with `telemetry`, and the public surface as a
 passthrough that forwards TLS unread to bastion and enforces bastion's bans
-([proxy skill](../proxy/SKILL.md)). Like asahi it builds its own closure on
+([proxy skill](../proxy/SKILL.md)). It builds its own closure on
 deploy, which is nearly all substitution from cache.nixos.org.
 
 The provider runs the hypervisor and can read the instance's memory, so no disk encryption hides

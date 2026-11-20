@@ -94,8 +94,8 @@ as `agent` with the same tokens a shell gets, written for it at each start to a 
 guest's firewall opens on the tailnet interface only and the tailnet policy grants to admin
 clients alone ([opentofu skill](../opentofu/SKILL.md)), and asks every client for the daemon
 password, `agents/paseo-password` in `secrets/hosts/bastion.yaml`, exported as `PASEO_PASSWORD`
-like the tokens below. The phone app connects to `agents` on that port; the desktop app as a
-Remote SSH host `ssh://agent@agents`; a browser through `ssh -N -L 6767:127.0.0.1:6767
+like the tokens below. The phone app connects to `agents` on that port; the desktop app (`paseo-desktop` in
+[desktop.nix](../../../modules/desktop.nix)) as a Remote SSH host `ssh://agent@agents`; a browser through `ssh -N -L 6767:127.0.0.1:6767
 agent@agents` and `http://localhost:6767`. The daemon accepts only `agents`, `localhost` and
 IP addresses as host names and refuses a browser origin other than `localhost`, so a web page
 cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`, lives on `home.img`.

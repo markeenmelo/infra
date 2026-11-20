@@ -25,7 +25,7 @@ holds the inter-service secrets and ids: it is not in Git or sops, so losing the
 the installation, and copying it is how a restore works. A production release is upgraded only
 forward; moving to the rolling line and back is a downgrade OpenCloud does not support.
 
-The desktop client is installed on every workstation (the `opencloud` cask on the mac). Sign-in
+The desktop client is installed on every workstation. Sign-in
 and the folder pairs are set in the client, whose token lives in the system keychain, so they are
 not declared. The desktop and mobile clients take Authelia's `sync` lifespan
 ([identity skill](../identity/SKILL.md)), so a machine that sleeps past Authelia's default refresh
