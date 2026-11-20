@@ -72,6 +72,12 @@ in
           };
           groups.deploy = { };
         };
+        system.activationScripts.diff = lib.mkIf (!config.programs.nh.enable) {
+          supportsDryActivation = true;
+          text = ''
+            [ -e /run/current-system ] && ${lib.getExe pkgs.dix} diff /run/current-system "$systemConfig" || true
+          '';
+        };
         services.openssh.settings.AllowUsers = [ "deploy" ];
         nix.settings.trusted-users = [ "deploy" ];
         security.sudo.extraRules = [
