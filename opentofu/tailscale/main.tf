@@ -134,6 +134,7 @@ locals {
     grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [for host, port in var.fleet_home_backups : { src = [host], dst = ["bastion"], ip = ["tcp:${port}"] }], [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client", "tag:agent"], ip = ["tcp:22"] },
       { src = ["tag:admin-client"], dst = ["tag:agent"], ip = ["tcp:${var.fleet_paseo_port}"] },
+      { src = ["tag:agent"], dst = ["bastion"], ip = ["tcp:443"] },
       { src = ["edge"], dst = ["bastion"], ip = ["tcp:${var.fleet_public_port}", "tcp:${var.fleet_bans_port}"] },
       { src = local.operators, dst = ["bastion"], ip = ["tcp:${var.fleet_state_port}"] },
       { src = concat(local.admin_clients, ["tag:ci"]), dst = ["bastion"], ip = ["tcp:${var.fleet_cache_port}"] },
@@ -149,7 +150,7 @@ locals {
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:${var.fleet_state_port}"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}"] },
-      { src = "tag:agent", proto = "tcp", deny = ["tag:server:22", "tag:admin-client:22", "bastion:443", "bastion:53", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
+      { src = "tag:agent", proto = "tcp", accept = ["bastion:443"], deny = ["tag:server:22", "tag:admin-client:22", "bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}", "bastion:53", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
       { src = "edge", proto = "tcp", accept = ["bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}"], deny = ["bastion:443", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
     ])
   }

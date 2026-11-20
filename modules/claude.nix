@@ -1,5 +1,9 @@
-{ lib, ... }:
+{ config, lib, ... }:
 let
+  grafana = {
+    args = [ "--disable-write" ];
+    url = "https://grafana.${config.fleet.domain}";
+  };
   attribution = {
     commit = "";
     pr = "";
@@ -116,6 +120,15 @@ in
                   args = githubMcpArgs;
                   env.GITHUB_PERSONAL_ACCESS_TOKEN = "\${GH_TOKEN:-}";
                 };
+                grafana = {
+                  type = "stdio";
+                  command = lib.getExe pkgs.mcp-grafana;
+                  inherit (grafana) args;
+                  env = {
+                    GRAFANA_URL = grafana.url;
+                    GRAFANA_SERVICE_ACCOUNT_TOKEN = "\${GRAFANA_SERVICE_ACCOUNT_TOKEN:-}";
+                  };
+                };
               };
             }
           } $out/.mcp.json
@@ -152,6 +165,11 @@ in
             github = {
               command = lib.getExe pkgs.github-mcp-server;
               args = githubMcpArgs;
+            };
+            grafana = {
+              command = lib.getExe pkgs.mcp-grafana;
+              inherit (grafana) args;
+              env.GRAFANA_URL = grafana.url;
             };
           };
         };
