@@ -92,8 +92,9 @@ every flake app, which is what runs shellcheck on them, and `format` fails on un
 `justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/` and `sketchybar.lua`, a template stylua cannot parse.
 [check.yml](../../../.github/workflows/check.yml) evaluates every system and builds the x86_64
 ones (`linux`) and the mac (`darwin`, on a macOS runner) on `main`; on a pull request it compares each
-check's derivation with the base commit's and builds only those that differ, so a red `main` hides
-nothing new but is not rebuilt. Assertions guard
+check's derivation with the base commit's and builds only those that differ, or every check when the base
+does not evaluate. A check whose derivation matches the base's is not rebuilt, so one that failed
+on `main` stays failed until a pull request changes it. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
 **Language** — `let`, never `rec`; `inherit` over repetition; conditional config through
