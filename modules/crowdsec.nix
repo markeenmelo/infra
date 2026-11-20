@@ -126,6 +126,7 @@ let
               exit 0
             fi
             cscli bouncers delete edge > /dev/null 2>&1 || true
+            # shortcut: cscli takes the key on argv only, so a local process can read it from /proc while this runs; feed it from a file once cscli can
             cscli bouncers add edge --key "$(< "$key")" > /dev/null
           '';
           serviceConfig = {
