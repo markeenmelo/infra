@@ -21,7 +21,9 @@ against a host with IPv6 off waits out a connect timeout that can outlast the ro
 the uplinks refuse IPv6 per link instead. Magic rollback and auto rollback stay on: a profile
 that breaks the SSH path reverts after the confirm timeout. `--boot` is the exception: deploy-rs
 activates it without the confirm step, so a boot that fails is recovered from the Limine menu. `nix flake check` carries the
-deploy-rs schema and activation checks per system. The `deploy` binary and the activator are
+deploy-rs schema and activation checks per system. A host without nh (bastion, edge) prints dix's
+package diff between the running and the new system at each activation, `--dry-activate`
+included, as nh does on the workstations. The `deploy` binary and the activator are
 nixpkgs' package, taken from the binary cache; the input supplies only its library.
 
 A host that runs the builder ([builder.nix](../../../modules/builder.nix)), or has another
