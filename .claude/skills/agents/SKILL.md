@@ -1,6 +1,6 @@
 ---
 name: agents
-description: "The agent MicroVM on bastion: a NixOS guest under microvm.nix and cloud-hypervisor where Claude Code runs unattended, its disks on apps/agents, its WAN-only network, its own tailnet node, the operator's SSH and Zed remote access, and the credentials it may hold. Use before touching modules/agents.nix or the microvm input, changing what the guest reaches or holds, or debugging the guest's boot, network or sign-in."
+description: "The agent MicroVM on bastion: a NixOS guest under microvm.nix and cloud-hypervisor where Claude Code runs unattended, its disks on apps/agents, its WAN-only network, its own tailnet node, the operator's SSH and Paseo access, and the credentials it may hold. Use before touching modules/agents.nix or the microvm input, changing what the guest reaches or holds, or debugging the guest's boot, network or sign-in."
 ---
 
 # Agents
@@ -60,15 +60,13 @@ Two limits of filtering by destination address:
   masqueraded as bastion: its DNS, NTP and the sign-in page of its HTTPS interface, which the
   LAN firewall ([opentofu skill](../opentofu/SKILL.md)) admits from bastion for the tailnet's
   admin clients. Accepted: the guest holds no gateway credential.
-- A tailnet peer on a home LAN cannot reach the guest directly, so its SSH and Zed sessions go
+- A tailnet peer on a home LAN cannot reach the guest directly, so its SSH and Paseo sessions go
   through a relay.
 
 ## Access
 
 `ssh agent@agents` with the operator's login key; `agent` has no sudo and the guest has no root
-login, so a change to the guest is a change to agents.nix. Sessions run in tmux. Zed on the
-workstations lists the guest as a remote project host; a workstation whose Zed matches the
-guest's nixpkgs finds its remote server linked in `~/.zed_server`, any other downloads one there.
+login, so a change to the guest is a change to agents.nix. Agent sessions run under Paseo (below).
 
 ## Claude
 

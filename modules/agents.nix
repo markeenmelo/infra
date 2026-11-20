@@ -39,7 +39,6 @@ let
       ...
     }:
     let
-      zedServer = pkgs.zed-editor.remoteServerExecutableName;
       forTokens =
         line:
         lib.concatStrings (
@@ -170,7 +169,6 @@ let
       };
       environment.systemPackages = [
         pkgs.gh
-        pkgs.tmux
         pkgs.ripgrep
         pkgs.cursor-cli
       ];
@@ -214,10 +212,6 @@ let
           );
         };
       };
-      systemd.tmpfiles.rules = [
-        "d /home/agent/.zed_server 0755 agent users -"
-        "L+ /home/agent/.zed_server/${zedServer} - - - - ${lib.getExe' pkgs.zed-editor.remote_server zedServer}"
-      ];
     };
 in
 {
@@ -226,14 +220,6 @@ in
     description = "Port on the agents guest where the Paseo daemon takes clients: it binds every interface and the guest's firewall admits the port on the tailnet interface alone; the `tofu` app hands it to `opentofu/tailscale` as `fleet_paseo_port`.";
   };
   config.fleet.paseoPort = 6767;
-
-  config.flake.modules.homeManager.base.programs.zed-editor.userSettings.ssh_connections = [
-    {
-      host = "agents";
-      username = "agent";
-      projects = [ ];
-    }
-  ];
 
   config.flake.modules.nixos.agents =
     {
