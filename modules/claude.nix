@@ -216,6 +216,41 @@ in
         };
       };
 
+    homeManager.agent-tools =
+      { pkgs, ... }:
+      {
+        programs.mcp = {
+          enable = true;
+          servers = {
+            nixos.command = lib.getExe pkgs.mcp-nixos;
+            github = {
+              command = lib.getExe pkgs.github-mcp-server;
+              args = githubMcpArgs;
+            };
+          };
+        };
+        programs.codex = {
+          enable = true;
+          enableMcpIntegration = true;
+          settings = {
+            analytics.enabled = false;
+            feedback.enabled = false;
+          };
+        };
+        programs.opencode = {
+          enable = true;
+          enableMcpIntegration = true;
+          settings = {
+            update = "disable";
+            share = "disabled";
+          };
+        };
+        programs.pi-coding-agent = {
+          enable = true;
+          settings.enableInstallTelemetry = false;
+        };
+      };
+
     homeManager.claude =
       {
         config,

@@ -1,6 +1,7 @@
 { config, inputs, ... }:
 let
   inherit (config.flake.modules.nixos) claude-agent git;
+  inherit (config.flake.modules.homeManager) agent-tools;
   box = import ./_guest.nix inputs {
     name = "agents";
     inherit
@@ -32,10 +33,21 @@ let
     }:
     let
       zedServer = pkgs.zed-editor.remoteServerExecutableName;
+      forTokens =
+        line:
+        lib.concatStrings (
+          lib.mapAttrsToList (file: variable: ''
+            if [ -r ${guestSecrets}/${file} ]; then
+              ${line variable "$(cat ${guestSecrets}/${file})"}
+            fi
+          '') tokenVariables
+        );
     in
     {
       imports = [
         box.guest
+        inputs.home-manager.nixosModules.home-manager
+        inputs.paseo.nixosModules.paseo
         claude-agent
         git
       ];
@@ -125,6 +137,15 @@ let
         uid = agentUid;
         openssh.authorizedKeys.keys = [ (import ./_operator-key.nix) ];
       };
+      home-manager = {
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        users.agent = {
+          imports = [ agent-tools ];
+          home.stateVersion = config.system.stateVersion;
+          programs.mcp.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN.file = "${guestSecrets}/github-token";
+        };
+      };
 
       nix = {
         channel.enable = false;
@@ -133,13 +154,7 @@ let
           "flakes"
         ];
       };
-      environment.extraInit = lib.concatStrings (
-        lib.mapAttrsToList (file: variable: ''
-          if [ -r ${guestSecrets}/${file} ]; then
-            export ${variable}="$(cat ${guestSecrets}/${file})"
-          fi
-        '') tokenVariables
-      );
+      environment.extraInit = forTokens (variable: value: ''export ${variable}="${value}"'');
       programs.git = {
         enable = true;
         config.credential."https://github.com".helper = "!${lib.getExe pkgs.gh} auth git-credential";
@@ -148,7 +163,38 @@ let
         pkgs.gh
         pkgs.tmux
         pkgs.ripgrep
+        pkgs.cursor-cli
       ];
+      services.paseo = {
+        enable = true;
+        package = pkgs.paseo;
+        user = "agent";
+        group = "users";
+        relay.enable = false;
+      };
+      systemd.services.paseo = {
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
+        unitConfig.RequiresMountsFor = [
+          "/home"
+          guestSecrets
+        ];
+        serviceConfig = {
+          RuntimeDirectory = "paseo";
+          EnvironmentFile = "-/run/paseo/tokens.env";
+          ExecStartPre = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "paseo-tokens";
+              text = ''
+                umask 077
+                {
+                  ${forTokens (variable: value: ''printf '%s=%s\n' ${variable} "${value}"'')}
+                } > "$RUNTIME_DIRECTORY/tokens.env"
+              '';
+            }
+          );
+        };
+      };
       systemd.tmpfiles.rules = [
         "d /home/agent/.zed_server 0755 agent users -"
         "L+ /home/agent/.zed_server/${zedServer} - - - - ${lib.getExe' pkgs.zed-editor.remote_server zedServer}"
@@ -189,6 +235,7 @@ in
 
       nixpkgs.config.allowUnfreePackages = [
         "claude-code"
+        "cursor-cli"
         "rtk"
       ];
       microvm.vms.agents = {

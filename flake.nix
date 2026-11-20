@@ -85,6 +85,10 @@
         home-manager.follows = "home-manager";
       };
     };
+    paseo = {
+      url = "github:getpaseo/paseo";
+      inputs.nixpkgs.follows = "";
+    };
   };
 
   outputs =
