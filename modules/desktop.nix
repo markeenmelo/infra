@@ -106,8 +106,6 @@ in
       ];
       programs = {
         vesktop.enable = true;
-        ghostty.package = pkgs.ghostty;
-        zed-editor.package = pkgs.zed-editor;
       };
       xdg = {
         enable = true;

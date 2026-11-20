@@ -1,9 +1,4 @@
 {
-  flake.modules.darwin.base.programs.zsh = {
-    enableGlobalCompInit = false;
-    promptInit = "";
-  };
-
   flake.modules.homeManager.base.stylix.targets.bat.enable = false;
 
   flake.modules.homeManager.base.programs = {

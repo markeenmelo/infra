@@ -12,28 +12,6 @@ let
   };
 in
 {
-  flake.modules.darwin.desktop =
-    { config, ... }:
-    {
-      system.defaults.CustomUserPreferences."app.zen-browser.zen" = zen;
-      home-manager.users.${config.system.primaryUser} =
-        { pkgs, ... }:
-        {
-          programs.rbw = {
-            enable = true;
-            settings = {
-              email = "marcosmelo@proton.me";
-              base_url = server;
-              lock_timeout = 300;
-              pinentry = pkgs.pinentry_mac;
-            };
-          };
-          programs.zsh.initContent = ''
-            [ -S ~/.bitwarden-ssh-agent.sock ] && export SSH_AUTH_SOCK=~/.bitwarden-ssh-agent.sock
-          '';
-        };
-    };
-
   flake.modules.nixos.desktop.services.gnome.gcr-ssh-agent.enable = false;
 
   flake.modules.homeManager.desktop =

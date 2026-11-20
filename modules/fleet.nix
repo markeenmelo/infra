@@ -5,9 +5,6 @@
   ...
 }:
 let
-  isDarwin = host: lib.hasSuffix "-darwin" host.system;
-  nixosHosts = lib.filterAttrs (_: host: !isDarwin host) config.fleet.hosts;
-  darwinHosts = lib.filterAttrs (_: host: isDarwin host) config.fleet.hosts;
   octet = "(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])";
   ipv4 = lib.types.strMatching "${octet}(\\.${octet}){3}";
 in
@@ -22,7 +19,6 @@ in
             type = lib.types.enum [
               "x86_64-linux"
               "aarch64-linux"
-              "aarch64-darwin"
             ];
             default = "x86_64-linux";
             description = "Nix system the host runs; sets `nixpkgs.hostPlatform`.";
@@ -125,11 +121,6 @@ in
             default = { };
             description = "Host facts, the named `flake.modules.nixos` values it imports, and host-only contributions from concerns.";
           };
-          darwin = lib.mkOption {
-            type = lib.types.deferredModuleWith { staticModules = [ { _class = "darwin"; } ]; };
-            default = { };
-            description = "nix-darwin counterpart of `module`, used when `system` is a darwin one.";
-          };
         };
       }
     );
@@ -148,38 +139,19 @@ in
           }
         ];
       }
-    ) nixosHosts;
-
-    darwinConfigurations = lib.mapAttrs (
-      name: host:
-      inputs.nix-darwin.lib.darwinSystem {
-        modules = [
-          config.flake.modules.darwin.base
-          host.darwin
-          {
-            networking.hostName = name;
-            nixpkgs.hostPlatform = host.system;
-          }
-        ];
-      }
-    ) darwinHosts;
+    ) config.fleet.hosts;
 
     checks = lib.foldlAttrs (
       acc: name: host:
       lib.recursiveUpdate acc {
         ${host.system} =
-          if !isDarwin host then
-            let
-              build = config.flake.nixosConfigurations.${name}.config.system.build;
-            in
-            {
-              "host-${name}" = build.toplevel;
-              "disko-${name}" = build.diskoScript;
-            }
-          else
-            {
-              "darwin-${name}" = config.flake.darwinConfigurations.${name}.config.system.build.toplevel;
-            };
+          let
+            build = config.flake.nixosConfigurations.${name}.config.system.build;
+          in
+          {
+            "host-${name}" = build.toplevel;
+            "disko-${name}" = build.diskoScript;
+          };
       }
     ) { } config.fleet.hosts;
   };

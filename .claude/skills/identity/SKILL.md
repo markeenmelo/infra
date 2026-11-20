@@ -34,7 +34,7 @@ read -rs pw && printf %s "$pw" |
   sops set --value-stdin secrets/hosts/bastion.yaml '["authelia"]["USER-password-hash"]'; unset pw
 ```
 
-That is Authelia's default argon2id; its own `crypto hash` command does not build on darwin.
+That is Authelia's default argon2id.
 
 Two-factor registrations, sessions and bans are in the `authelia-main` database of the shared
 [PostgreSQL](../../../modules/postgresql.nix), encrypted with `authelia/storage`; losing that key
