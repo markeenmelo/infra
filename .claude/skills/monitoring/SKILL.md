@@ -99,7 +99,10 @@ domain in the public logs whose key the proxy does not hold ([proxy skill](../pr
 `Authelia mail failing` catches a broken SMTP account, which Authelia no longer tests at start
 ([identity skill](../identity/SKILL.md)). `ZFS data errors` is critical: ZED logs a checksum, I/O
 or data error, which a scrub or a read can find while the pool stays online and `zpool scrub`
-still exits cleanly, and the nightly backups copy the damaged file until it is restored.
+still exits cleanly. A checksum or I/O error on one disk of a redundant pool is repaired from
+another copy and points at a failing disk; a `data` error is a block lost for good, which the
+nightly backups copy until the file is restored. The alert clears ten minutes after the last
+event while the damage stays, so its one notification is the signal.
 
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the tailnet;
 the `alerts` topic needs no login and describes the fleet, an accepted exposure to every client the LAN proxy admits (Home, Kids, the IoT players) and to bastion's own processes through the proxy. Everything is denied by default; `alerts` is readable by anyone who reaches
