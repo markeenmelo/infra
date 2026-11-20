@@ -12,9 +12,8 @@ the LANs or the tailnet's hosts. It is not a `fleet.hosts` entry: it builds insi
 closure. A bastion deploy installs the guest's new system but leaves the running guest alone:
 `restartIfChanged` is off, since a nixpkgs or plugin bump changes every store path in its units
 and would end every session in it on each update. `agents-restart` restarts it instead, and only
-when agents.nix itself, `restartGeneration` in it, the operator's login key, or one of its tokens changed since the unit
-last ran; anything else, a new Claude Code included, reaches the guest at its next restart, which
-bumping `restartGeneration` forces. The system a running guest booted stays a garbage-collector
+when agents.nix, the shared [_guest.nix](../../../modules/_guest.nix), the operator's login key, or one of its tokens changed since the unit
+last ran; anything else, a new Claude Code included, reaches the guest at its next restart. The system a running guest booted stays a garbage-collector
 root until then.
 `microvm@agents` requires `install-microvm-agents`, which points the guest at its new system:
 upstream only orders the two, so a restart could boot the guest before the link moved, into
@@ -37,10 +36,14 @@ the SSH host key) and `home.img` (`/home`). The root is memory and is lost on re
 
 ## Network
 
-The guest's tap carries a /24 that only bastion and the guest sit on. The `agents` nftables
-table drops everything the guest sends to bastion itself, to any private, CGNAT, link-local or
-multicast address, to the tailnet interface and over IPv6, and masquerades the rest to the
-internet. The guest resolves through the tailnet's public resolvers. `microvm@agents` requires
+The guest's network and host wiring come from [_guest.nix](../../../modules/_guest.nix), as for
+the downloads and hermes guests ([arr skill](../arr/SKILL.md)). Its tap carries a /24 that only
+bastion and the guest sit on. The `agents` nftables table drops everything the guest sends to
+bastion itself, to any private, CGNAT, link-local or multicast address, to the tailnet interface
+and over IPv6, and new connections forwarded towards it, and masquerades the rest to the
+internet. The guest resolves through the tailnet's public resolvers. Unlike the other guests it
+keeps its journal off the console (`services.journald.settings.Journal.ForwardToConsole` is
+forced off), so nothing a process in it logs lands in bastion's journal. `microvm@agents` requires
 `nftables.service`, so the guest does not run without the ruleset: a firewall that fails to load
 keeps it down, and one that is stopped or restarted takes it along. A switch reloads the ruleset
 and leaves the guest alone.
