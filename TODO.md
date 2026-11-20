@@ -2,7 +2,8 @@
 
 Work the operator wants done. An item leaves this file in the pull request that finishes it.
 
-- **Checks:** make `check.yml` fast enough for agents to wait for it on every pull request
+- **Checks:** a pull request that changes a host still builds what cache.nixos.org lacks from
+  source, since it may not read bastion's cache; make that fast enough for agents to wait for `check.yml` on every pull request
   ([CLAUDE.md](CLAUDE.md#branches-and-pull-requests)), and improve the checks themselves.
 - **Sandboxes:** tighten the isolation of apps and services, choosing per service between systemd
   sandboxing, a MicroVM and jail.nix.

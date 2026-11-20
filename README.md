@@ -121,7 +121,8 @@ itself, and CI builds it only once [check.yml](.github/workflows/check.yml) has 
 ## CI
 
 [check.yml](.github/workflows/check.yml) evaluates every system and builds the x86_64 hosts and
-the mac on each pull request and on `main`; the aarch64-linux hosts (`edge`, `asahi`) are
+the mac on `main`; a pull request builds only the checks whose derivation differs from its base
+commit's, which `main`'s run covers. The aarch64-linux hosts (`edge`, `asahi`) are
 evaluated, not built. Review bots read every diff. `gh workflow run audit.yml` audits the whole
 tree on demand and writes the report to the run's summary.
 

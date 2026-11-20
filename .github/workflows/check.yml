@@ -39,11 +39,24 @@ jobs:
             nix shell --inputs-from . nixpkgs#opentofu --command sh -c \
               'tofu -chdir="$1" init -backend=false -input=false -lockfile=readonly && tofu -chdir="$1" validate' _ "$project"
           done
-      - name: Fetch what cache.nixos.org holds
+      - name: List the checks whose derivation differs from the base commit's
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          nix eval --json .#checks.x86_64-linux --apply builtins.attrNames |
-            jq -r '.[] | ".#checks.x86_64-linux." + .' > "$RUNNER_TEMP/checks"
-          xargs -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 || true
+          drvs() { nix eval --json "$1#checks.x86_64-linux" --apply 'builtins.mapAttrs (_: check: check.drvPath)'; }
+          drvs . > "$RUNNER_TEMP/head.json"
+          if [ -n "$BASE" ]; then
+            drvs "github:$GITHUB_REPOSITORY/$BASE" > "$RUNNER_TEMP/base.json" || echo '{}' > "$RUNNER_TEMP/base.json"
+          else
+            echo '{}' > "$RUNNER_TEMP/base.json"
+          fi
+          jq -rn --slurpfile head "$RUNNER_TEMP/head.json" --slurpfile base "$RUNNER_TEMP/base.json" \
+            '$head[0] | to_entries[] | select($base[0][.key] != .value) | ".#checks.x86_64-linux." + .key' \
+            > "$RUNNER_TEMP/checks"
+          echo "$(wc -l < "$RUNNER_TEMP/checks") of $(jq length "$RUNNER_TEMP/head.json") checks to build:"
+          cat "$RUNNER_TEMP/checks"
+      - name: Fetch what cache.nixos.org holds
+        run: xargs -r -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 || true
       - uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
         id: tailnet
         if: github.event_name == 'push'
@@ -55,16 +68,19 @@ jobs:
           log-mode: quiet
       - name: Fetch what bastion's Harmonia cache holds
         if: steps.tailnet.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
         run: |
           settings=$(nix eval --json .#nixosConfigurations.thinkpad.config.nix.settings \
             --apply 's: { inherit (s) substituters trusted-public-keys; }')
-          xargs -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 \
+          xargs -r -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 \
             --option substituters "$(jq -r '.substituters | join(" ")' <<< "$settings")" \
             --option trusted-public-keys "$(jq -r '."trusted-public-keys" | join(" ")' <<< "$settings")" || true
       - name: Leave the tailnet before building
         if: steps.tailnet.outcome == 'success'
         run: sudo tailscale logout
-      - run: nix flake check --print-build-logs
+      - name: Build them
+        run: xargs -r -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --print-build-logs
 
   darwin:
     runs-on: macos-latest
@@ -78,4 +94,18 @@ jobs:
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
         with:
           nix_conf: accept-flake-config = false
-      - run: nix flake check --print-build-logs
+      - name: Build the checks whose derivation differs from the base commit's
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          drvs() { nix eval --json "$1#checks.aarch64-darwin" --apply 'builtins.mapAttrs (_: check: check.drvPath)'; }
+          drvs . > "$RUNNER_TEMP/head.json"
+          if [ -n "$BASE" ]; then
+            drvs "github:$GITHUB_REPOSITORY/$BASE" > "$RUNNER_TEMP/base.json" || echo '{}' > "$RUNNER_TEMP/base.json"
+          else
+            echo '{}' > "$RUNNER_TEMP/base.json"
+          fi
+          checks=$(jq -rn --slurpfile head "$RUNNER_TEMP/head.json" --slurpfile base "$RUNNER_TEMP/base.json" \
+            '$head[0] | to_entries[] | select($base[0][.key] != .value) | ".#checks.aarch64-darwin." + .key')
+          echo "Checks to build: ${checks:-none}"
+          [ -z "$checks" ] || nix build --no-link --keep-going --print-build-logs $checks
