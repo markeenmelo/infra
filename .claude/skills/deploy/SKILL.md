@@ -39,12 +39,7 @@ build key is root on bastion without the deploy key's Bitwarden prompt. That is 
 refuses remote builds from an untrusted user (`you are not privileged to build input-addressed
 derivations`), and the key is readable only by root on an admin client.
 `remote-builds` makes bastion's cache each workstation's first substituter, so a cleaned store
-refills from bastion instead of rebuilding. Bastion also holds, best effort, what a workstation
-of another system builds itself, since it cannot build that system: a post-build hook copies each output
-it builds over its build key, with bastion substituting what cache.nixos.org holds so only
-local builds are uploaded. A failed copy is not retried; it fails quietly after a 3-second
-connect timeout and pauses pushes for 10 minutes, so a build off the tailnet waits once, not per
-derivation. The thinkpad has no hook: bastion already built everything it uses.
+refills from bastion instead of rebuilding.
 CI on `main` reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the
 tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds
 and leaves before it builds, so tailnet minutes stay short and nothing built by CI reaches
