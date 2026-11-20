@@ -44,7 +44,7 @@ jobs:
           drvs() { nix eval --json "$1#checks.x86_64-linux" --apply 'builtins.mapAttrs (_: check: check.drvPath)'; }
           drvs . > "$RUNNER_TEMP/head.json"
           if [ -n "$BASE" ]; then
-            drvs "github:$GITHUB_REPOSITORY/$BASE" > "$RUNNER_TEMP/base.json"
+            drvs "github:$GITHUB_REPOSITORY/$BASE" > "$RUNNER_TEMP/base.json" || echo '{}' > "$RUNNER_TEMP/base.json"
           else
             echo '{}' > "$RUNNER_TEMP/base.json"
           fi
@@ -66,6 +66,8 @@ jobs:
           log-mode: quiet
       - name: Fetch what bastion's Harmonia cache holds
         if: steps.tailnet.outcome == 'success'
+        timeout-minutes: 10
+        continue-on-error: true
         run: |
           settings=$(nix eval --json .#nixosConfigurations.thinkpad.config.nix.settings \
             --apply 's: { inherit (s) substituters trusted-public-keys; }')
@@ -76,7 +78,7 @@ jobs:
         if: steps.tailnet.outcome == 'success'
         run: sudo tailscale logout
       - name: Build them
-        run: xargs -r -a "$RUNNER_TEMP/checks" nix build --no-link --print-build-logs
+        run: xargs -r -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --print-build-logs
 
   darwin:
     runs-on: macos-latest
@@ -97,11 +99,11 @@ jobs:
           drvs() { nix eval --json "$1#checks.aarch64-darwin" --apply 'builtins.mapAttrs (_: check: check.drvPath)'; }
           drvs . > "$RUNNER_TEMP/head.json"
           if [ -n "$BASE" ]; then
-            drvs "github:$GITHUB_REPOSITORY/$BASE" > "$RUNNER_TEMP/base.json"
+            drvs "github:$GITHUB_REPOSITORY/$BASE" > "$RUNNER_TEMP/base.json" || echo '{}' > "$RUNNER_TEMP/base.json"
           else
             echo '{}' > "$RUNNER_TEMP/base.json"
           fi
           checks=$(jq -rn --slurpfile head "$RUNNER_TEMP/head.json" --slurpfile base "$RUNNER_TEMP/base.json" \
             '$head[0] | to_entries[] | select($base[0][.key] != .value) | ".#checks.aarch64-darwin." + .key')
           echo "Checks to build: ${checks:-none}"
-          [ -z "$checks" ] || nix build --no-link --print-build-logs $checks
+          [ -z "$checks" ] || nix build --no-link --keep-going --print-build-logs $checks
