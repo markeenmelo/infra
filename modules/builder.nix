@@ -42,7 +42,6 @@ let
             sshKey = config.sops.secrets.nix-build-ssh-key.path;
             systems = [
               hosts.bastion.system
-              "i686-linux"
             ];
             maxJobs = 2;
             supportedFeatures = [
