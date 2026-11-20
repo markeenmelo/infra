@@ -6,7 +6,7 @@ Work the operator wants done. An item leaves this file in the pull request that 
   source, since it may not read bastion's cache; make that fast enough for agents to wait for `check.yml` on every pull request
   ([CLAUDE.md](CLAUDE.md#branches-and-pull-requests)), and improve the checks themselves.
 - **Sandboxes:** tighten the isolation of apps and services, choosing per service between systemd
-  sandboxing, a MicroVM and jail.nix.
+  sandboxing and a MicroVM.
 - **Private runners:** run CI on runners of the fleet's own.
 - **Personal project deployments:** automated deployment of personal projects, in the manner of
   Dokploy or Coolify.
