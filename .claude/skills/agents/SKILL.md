@@ -83,14 +83,19 @@ guest itself is the boundary. Grafana's MCP server and the account's connectors 
 
 ## Paseo and the other agents
 
-Codex, Cursor's CLI (`cursor-agent`) and OpenCode sit beside Claude Code, and the
+Codex, Cursor's CLI (`cursor-agent`), OpenCode and pi sit beside Claude Code. Codex, OpenCode
+and pi are configured through their Home Manager modules for `agent`, in `agent-tools` in
+[claude.nix](../../../modules/claude.nix): telemetry, sharing and self-update off, and the same
+nixos and read-only GitHub MCP servers Claude gets, the GitHub one reading the token file. The
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
 as `agent` with the same tokens a shell gets, written for it at each start to a file only
 `agent` reads, listens on the guest's loopback only, with its relay off (`--no-relay`), so it
-has no password and no tailnet port: a workstation reaches it through
-SSH, `ssh -N -L 6767:127.0.0.1:6767 agent@agents`, then opens `http://localhost:6767` or adds
-`localhost:6767` as a host in the desktop app. A phone needs a tailnet grant to a port and a
+has no password and no tailnet port: a workstation reaches it through SSH, the desktop app as a
+Remote SSH host `ssh://agent@agents`, a browser through `ssh -N -L 6767:127.0.0.1:6767
+agent@agents` and `http://localhost:6767`. The daemon refuses a browser origin other than
+`localhost`, so a web page cannot drive it through the forward; a local process can while the
+forward is open. A phone needs a tailnet grant to a port and a
 daemon password, neither of which exists. Paseo's state, `~/.paseo`, lives on `home.img`.
 
 ## Credentials
@@ -117,8 +122,9 @@ and every shell in the guest exports them; a changed token restarts the guest, t
   operator to merge are a rule the agent follows, not a control: an injected session holding this
   token can merge whatever the branch protection admits.
 
-Codex, Cursor and OpenCode hold no secret of the repository: the operator signs each in once
-over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`), and the
+Codex, Cursor, OpenCode and pi hold no secret of the repository: the operator signs each in once
+over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`, `/login` in
+`pi` for each of its providers, such as Kimi, Z.ai and MiniMax), and the
 session lands in `agent`'s home on `home.img`, where it survives restarts and is not backed up.
 Each is a whole-account session for that service, usable and leakable like the tokens above;
 revoke it from the service's own account page.

@@ -1,6 +1,7 @@
 { config, inputs, ... }:
 let
   inherit (config.flake.modules.nixos) claude-agent git;
+  inherit (config.flake.modules.homeManager) agent-tools;
   box = import ./_guest.nix inputs {
     name = "agents";
     inherit
@@ -45,6 +46,7 @@ let
     {
       imports = [
         box.guest
+        inputs.home-manager.nixosModules.home-manager
         inputs.paseo.nixosModules.paseo
         claude-agent
         git
@@ -135,6 +137,15 @@ let
         uid = agentUid;
         openssh.authorizedKeys.keys = [ (import ./_operator-key.nix) ];
       };
+      home-manager = {
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        users.agent = {
+          imports = [ agent-tools ];
+          home.stateVersion = config.system.stateVersion;
+          programs.mcp.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN.file = "${guestSecrets}/github-token";
+        };
+      };
 
       nix = {
         channel.enable = false;
@@ -152,9 +163,7 @@ let
         pkgs.gh
         pkgs.tmux
         pkgs.ripgrep
-        pkgs.codex
         pkgs.cursor-cli
-        pkgs.opencode
       ];
       services.paseo = {
         enable = true;
