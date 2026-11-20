@@ -405,10 +405,6 @@ in
               CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" (
                 agentPlugins pkgs
                 ++ map (plugin: "${(pkgs.callPackage ./trailofbits-skills.pkg.nix { }).src}/plugins/${plugin}") [
-                  "c-review"
-                  "modern-cpp"
-                  "modern-python"
-                  "rust-review"
                   "insecure-defaults"
                   "sharp-edges"
                 ]
