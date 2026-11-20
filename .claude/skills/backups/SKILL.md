@@ -26,7 +26,7 @@ monthly snapshots, grouped by host only, so snapshots from older backup paths ag
 the 15th the drill reads a twelfth of the USB repository, a different twelfth
 each month, and tests that every dump of bastion's PostgreSQL in the latest snapshot decompresses and ends with pg_dump's completion line.
 
-A laptop with a `fleet.hosts.HOST.homeBackup` fact (the ThinkPad, asahi) backs its home up to `backup-HOST`, an append-only `rclone serve restic` on
+A laptop with a `fleet.hosts.HOST.homeBackup` fact (the ThinkPad) backs its home up to `backup-HOST`, an append-only `rclone serve restic` on
 bastion's tailnet address, on the fact's port, reachable from that laptop's address only (the tailnet
 grant in the [OpenTofu project](../opentofu/SKILL.md) and an nftables rule); it has no login, so
 an nftables output rule also refuses connections to it from bastion's own processes. Append-only means a

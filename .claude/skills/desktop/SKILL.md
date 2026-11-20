@@ -1,13 +1,12 @@
 ---
 name: desktop
-description: "The workstations' look and the rules every theme follows: flat and quiet design, One Dark through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned, on the mac (AeroSpace, SketchyBar, Ghostty) and the Linux laptops (Umbriel, Noctalia). Use before touching modules/stylix.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
+description: "The workstations' look and the rules every theme follows: flat and quiet design, One Dark through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned on the Linux laptops (Umbriel, Noctalia). Use before touching modules/stylix.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
 ---
 
 # Desktop
 
-The workstations look alike: what holds on the mac holds on the thinkpad and asahi, with each
-platform's tool in its place (AeroSpace or Umbriel for windows, SketchyBar or Noctalia for the
-bar). The design is **flat and quiet**: the desktop recedes and content comes first.
+The workstation runs Umbriel for windows and Noctalia for the bar. The design is **flat and
+quiet**: the desktop recedes and content comes first.
 
 ## Theming
 
@@ -33,26 +32,22 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
 
 - **Surfaces:** app windows, terminal included, are solid, focused or not, with no blur; the border
   color alone marks focus. The desktop's own chrome (bar,
-  launcher, notifications, popups, the quick terminal) may be lightly translucent: its color at
-  90% opacity over a soft blur (Umbriel's layer rules on Noctalia's surfaces, 2 passes; SketchyBar
-  `blur_radius` 20), so
+  launcher, notifications, popups) may be lightly translucent: its color at
+  90% opacity over a soft blur (Umbriel's layer rules on Noctalia's surfaces, 2 passes), so
   text stays fully readable. A drop shadow marks a floating window only (Umbriel's window rules);
   tiled windows, the bar and popups have none.
-- **Quick terminal:** on the mac one key drops Ghostty's quick terminal over the work and hides it
-  again ([ghostty.nix](../../../modules/ghostty.nix)). The Linux laptops have none: Umbriel has no global-shortcuts portal for Ghostty's own, and
+- **Quick terminal:** none: Umbriel has no global-shortcuts portal for Ghostty's own, and
   its scratchpad is unused, the stock binds parked in [umbriel.nix](../../../modules/umbriel.nix).
 - **Launcher:** `Mod + Space` on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
   in [umbriel.nix](../../../modules/umbriel.nix) with the scratchpad binds.
 - **Motion:** none, or a fade or slide of at most 150 ms; nothing bounces or zooms.
 - **Spacing:** multiples of 2 px. Windows: 8 px between them, 6 px to the screen edge (the bar's
   edge counts as the screen's). Terminal padding 10 px across, 8 px down.
-- **Borders:** 2 px around windows; `base0D` on the focused one, `base02` on the others. On the
-  mac, JankyBorders draws them beside AeroSpace ([aerospace.nix](../../../modules/aerospace.nix)).
+- **Borders:** 2 px around windows; `base0D` on the focused one, `base02` on the others.
 - **Rounding:** 6 px on windows where the window manager controls it, 4 px on small elements
-  (bar items, buttons, notifications). The mac's own window corners stay as macOS draws them.
+  (bar items, buttons, notifications).
 - **Bar:** top, 32 px tall, `base00`, monospace semibold at 13, flush with the
-  screen edges and square, on Noctalia and SketchyBar alike; asahi's is taller, under the
-  notch. Status items are text or one
+  screen edges and square. Status items are text or one
   monochrome Nerd Font glyph each, no colored icons, no graphs; a third-party item that colors
   its text for no state is patched to the text color.
 - **Grouping:** related items share a `base01`-like pill (4 px rounding, no border), 8 px apart,
@@ -63,8 +58,7 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
   bluetooth), system (volume, battery, notifications) and time
   (agenda, weather, the clock last, as `%a %d %b %H:%M`). Noctalia holds them
   ([noctalia.nix](../../../modules/noctalia.nix)), the agenda through this repository's own plugin
-  ([agenda](../../../modules/noctalia-plugins/agenda/widget.luau)), and the
-  mac's SketchyBar its own ([sketchybar.lua](../../../modules/sketchybar.lua)). An item that holds
+  ([agenda](../../../modules/noctalia-plugins/agenda/widget.luau)). An item that holds
   more opens a `base01` popup next to
   it on click: the clock lists today's events, volume has a slider, and tailnet lists the exit
   nodes to switch to.
@@ -90,8 +84,8 @@ One accent: `base0D` (blue) marks focus, selection and the active item, and noth
 
 ## Type
 
-All set in Stylix, so every target agrees, except the bar's size and weight, which each bar's
-module sets ([noctalia.nix](../../../modules/noctalia.nix), [sketchybar.lua](../../../modules/sketchybar.lua)):
+All set in Stylix, so every target agrees, except the bar's size and weight, which the bar's
+module sets ([noctalia.nix](../../../modules/noctalia.nix)):
 
 | Use | Font | Size |
 |---|---|---|
@@ -105,13 +99,11 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
 
 ## Cursor, icons and wallpaper
 
-- **Cursor:** Bibata Modern Classic, 24 px, through Stylix on the Linux laptops; the mac keeps
-  the macOS cursor.
+- **Cursor:** Bibata Modern Classic, 24 px, through Stylix on the Linux laptops.
 - **Icons:** Papirus-Dark through Stylix for GTK and Qt apps on the Linux laptops; bar and
   status glyphs stay Nerd Font (see Rules).
-- **Wallpaper:** [wallpaper.jpg](../../../modules/wallpaper.jpg), set as Stylix's `image`, so
-  every machine shows the same one: Stylix applies it on Linux, and on the mac a Home Manager
-  activation step sets it with `desktoppr`. It is the only image in the look; nothing else is
+- **Wallpaper:** [wallpaper.jpg](../../../modules/wallpaper.jpg), set as Stylix's `image`, which
+  applies it. It is the only image in the look; nothing else is
   derived from it, since the colors come from One Dark, not from the picture.
 - **Lock screen:** the wallpaper, blurred, with the clock in NotoSans Nerd Font Propo and the password field on a
   `base01` 4 px rounded surface.
@@ -120,7 +112,6 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
 
 - **GTK and Qt:** themed by Stylix (adw-gtk3 dark for GTK, Qt following it), never a second
   theme engine; dark mode is on everywhere it can be asked for.
-- **Sound:** no event or notification sounds; alerts are visual. On the mac that means no alert
-  beep, interface sounds or startup chime ([macos.nix](../../../modules/macos.nix)).
-- **System accent:** where the OS has one, it is blue (macOS `AppleAccentColor` 4), matching
+- **Sound:** no event or notification sounds; alerts are visual.
+- **System accent:** where the OS has one, it is blue, matching
   `base0D`.

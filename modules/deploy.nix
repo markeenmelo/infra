@@ -5,7 +5,7 @@
   ...
 }:
 let
-  hosts = lib.filterAttrs (_: host: !lib.hasSuffix "-darwin" host.system) config.fleet.hosts;
+  inherit (config.fleet) hosts;
   systems = lib.unique (lib.mapAttrsToList (_: host: host.system) hosts);
   clean = "/run/current-system/sw/bin/clean-generations";
   deployLib =

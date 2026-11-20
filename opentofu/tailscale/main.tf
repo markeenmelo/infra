@@ -98,8 +98,6 @@ locals {
   operators     = var.fleet_operators
   enrollment = {
     thinkpad  = ["tag:admin-client"]
-    asahi     = ["tag:admin-client"]
-    mac       = ["tag:admin-client"]
     edge      = ["tag:server"]
     bastion   = ["tag:server", "tag:bastion"]
     proton-ca = ["tag:proton-exit"]

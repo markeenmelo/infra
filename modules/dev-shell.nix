@@ -18,7 +18,6 @@
         settings = {
           excludes = [
             "secrets/*"
-            "modules/sketchybar.lua"
           ];
           formatter = {
             tofu = {

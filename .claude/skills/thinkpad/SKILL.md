@@ -1,6 +1,6 @@
 ---
 name: thinkpad
-description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Umbriel, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), the eGPU gaming session (Steam in gamescope on a second seat), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, umbriel.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, gaming.nix, or reinstalling the laptop, and when the gaming session, the eGPU or the NVIDIA driver misbehaves."
+description: "The thinkpad host: the operator's Linux laptop, its LUKS disk with TPM2 unlock and Limine Secure Boot, power and battery policy, the Linux desktop role it runs (Umbriel, Noctalia, Home Manager, Wi-Fi, printing, the desk monitor), its home backups to bastion, remote builds on bastion, and how it is reinstalled. Use before touching modules/hosts/thinkpad, modules/desktop.nix, umbriel.nix, noctalia.nix, wifi.nix, printing.nix, odyssey.nix, or reinstalling the laptop."
 ---
 
 # ThinkPad
@@ -51,7 +51,7 @@ advertise, so the laptop's own LAN stays on-link and only the printer, on the Io
 through bastion. Bitwarden's desktop app is the SSH agent
 (`~/.bitwarden-ssh-agent.sock`), started at login ([bitwarden.nix](../../../modules/bitwarden.nix)).
 
-Claude Code runs under the same managed settings as the mac ([claude.nix](../../../modules/claude.nix)),
+Claude Code runs under the managed settings of [claude.nix](../../../modules/claude.nix),
 written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. Claude Code's
 seccomp helper (`apply-seccomp`, the first process of every Bash command) refuses a command any
 new Unix socket, but it is Claude Code's to ship or drop, so the managed `filesystem.denyRead` in
@@ -60,7 +60,7 @@ claude.nix also hides the sockets one by one: `/run/user` (the session D-Bus, th
 resolve any name outside the network namespace, tailscaled, CUPS, Xwayland, Bitwarden's agent
 and the Nix daemon, whose fixed-output builds reach the network outside the sandbox. It is a deny
 list, so a daemon added later needs its socket added there. `/persist` is hidden too, since it
-holds a second path to the whole home. As on the mac, `nix` commands that need the daemon run
+holds a second path to the whole home. `nix` commands that need the daemon run
 outside Claude's sandbox.
 
 That sandbox covers Bash only, so on the Linux laptops the `claude` command itself is a jail
@@ -103,56 +103,13 @@ lock screen. Shutting it suspends on
 battery only: on AC the idle timer does, since a monitor that sleeps drops off DRM and logind would
 read that as an undock.
 
-## Gaming
-
-[gaming.nix](../../../modules/gaming.nix) runs Steam's Deck interface in gamescope on an NVIDIA
-card in a Thunderbolt enclosure, beside the Umbriel session instead of in it. The card, and while
-gaming the Keychron receivers, belong to a second logind seat, so Umbriel never opens the card and
-keeps the built-in panel, keyboard and trackpad. `gaming.service` is that session; `gaming`,
-`Mod + G`, Noctalia's session entry and Steam's Switch to Desktop all only start or stop it;
-the unit's own stop asks Steam to shut down and waits for it, so a running game is not cut off
-mid-save. A reboot or poweroff is the exception: logind stops the session's processes at the same
-time as the unit, so leave the session first.
-Its handover moves the monitor to DisplayPort over DDC and back to whatever input was active,
-holds the performance profile and a sleep inhibitor, and runs `scx_lavd`.
-
-It starts only from an unlocked session, never on plug: the unit runs as `marcos` without a login,
-so starting on plug would hand an unlocked session to whoever holds the enclosure. For the same
-reason a running session is unlocked: the idle lock covers the Umbriel seat only, and it fires
-during play because that seat sees no input. Leaving the desk means leaving the session first.
-
-The NVIDIA driver freezes the kernel when the card leaves while it is bound, even idle, and a
-frozen removal blocks every rescan and the next shutdown; only a forced reboot clears it. So the
-card sits on the PCI bus only while the session runs: a udev rule removes it whenever it appears
-otherwise, the handover rescans on start, and on stop it detaches the card and unloads the NVIDIA
-modules. The cable is safe to pull whenever no session runs, and never during one. For the same
-reason the Umbriel session loads Mesa only: a desktop program that opens the NVIDIA device nodes
-keeps the old card alive and the next start fails with `Failed to allocate NvKmsKapiDevice`.
-
-gamescope gets the card and the mode by argument, since it otherwise picks the Intel Vulkan device
-and a lower mode; adaptive sync is off because it glitched on this card, and HDR is off because the driver
-flickers with it above 2560x1440@120 and 10-bit at this mode does not fit the DisplayPort link
-uncompressed. Every Proton game inherits the unit's DLSS settings: the game's DLSS is replaced
-by the current one and pinned to the transformer preset the card affords, since the newer
-presets cost a 30-series card far more. gamescope's
-own output is filed under the session scope, not the unit: read a start with
-`journalctl -b --since -1min`, not `-u gaming.service`. The proprietary NVIDIA module and the
-`SIGKILL` on stop are `shortcut:` entries in the module. MangoHud draws frame rate,
-frame times, load, temperatures and memory on every game through the unit's environment; gamescope's mangoapp overlay did not draw
-on this card.
-
-bastion builds Steam's 32-bit closure, so it is advertised as an `i686-linux` builder
-([builder.nix](../../../modules/builder.nix)). The NVIDIA module is built against the laptop's
-kernel, the newest nixpkgs has, so a kernel the driver does not build against yet blocks every
-thinkpad build until the kernel is held back.
 
 ## Backups
 
 `restic-backups-home` sends `/home/marcos` every 6 hours, skipping a run that falls on battery, to the append-only server on bastion
 ([backups skill](../backups/SKILL.md)) with `backups/thinkpad-password`, never the household key;
 only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh, Claude's credentials), the keyring,
-caches and the Bitwarden socket stay out, and so do Steam's installed games, shader caches and
-downloads, which Steam fetches again. App data stays in, browser and messenger sessions
+caches, the Bitwarden socket and Steam's installed games, shader caches and downloads stay out. App data stays in, browser and messenger sessions
 included, so a restore brings back a signed-in desktop, and Steam's Proton prefixes, where games
 without Steam Cloud keep their saves; bastion holds the password too, so whoever controls bastion
 can read those sessions.

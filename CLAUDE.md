@@ -93,7 +93,7 @@ Permissions apply within the requested task. Continue independent safe work whil
   it, the ones a reviewer marks unverified included. Fix what holds, and reply on each inline
   finding with the commit that fixed it or the evidence that nothing needs to change.
 - When a round brings no new finding, and `check` passed on the head commit where CI is the only
-  build of something the change affects (the `mac`, a toplevel the session could not build),
+  build of something the change affects (a toplevel the session could not build),
   squash-merge through the pull request, the one way an
   agent's work reaches `main`, naming the reviewed commit
   (`gh pr merge --squash --match-head-commit SHA`) so a head that moved is not merged unread, and
@@ -148,8 +148,7 @@ Permissions apply within the requested task. Continue independent safe work whil
   branch, before opening the pull request, `nix flake check` naming every affected x86_64
   host so its toplevel builds; a branch that changes only Markdown needs the outPath comparison and the `format` and `secrets` checks.
   Where the whole check cannot run, evaluate each check on its own, leave the builds to CI and say
-  so in the report. The `darwin` CI job builds
-  `mac` on a macOS runner; `asahi` only evaluates in CI and builds on itself.
+  so in the report.
 - A refactor keeps every host's outPath identical (`nix` skill).
 - Report exactly what passed, failed and is unknown. A build proves evaluation and closure, not
   boot, networking, credentials or backups. Never report green from a partial run. A report ends

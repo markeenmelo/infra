@@ -21,7 +21,7 @@ laptops' grant to the state port is repaired in the admin console (lifting
 [check.yml](../../../.github/workflows/check.yml) runs `tofu validate` on each project.
 
 ```sh
-nix run .#tofu -- tailscale providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64  # provider change
+nix run .#tofu -- tailscale providers lock -platform=linux_amd64 -platform=linux_arm64  # provider change
 nix run .#tofu -- tailscale init                 # once per checkout, and after providers lock
 nix run .#tofu -- tailscale plan                 # Claude reviews the pasted plan
 nix run .#tofu -- tailscale apply                # operator only, after approval

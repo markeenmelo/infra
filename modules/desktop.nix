@@ -102,12 +102,11 @@ in
         pkgs.whatsapp-electron
         pkgs.spotify
         pkgs.bruno
+        pkgs.paseo-desktop
         pkgs.wl-clipboard
       ];
       programs = {
         vesktop.enable = true;
-        ghostty.package = pkgs.ghostty;
-        zed-editor.package = pkgs.zed-editor;
       };
       xdg = {
         enable = true;

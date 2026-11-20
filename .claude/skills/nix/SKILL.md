@@ -9,7 +9,7 @@ description: "How this flake is organized (dendritic flake-parts + import-tree):
 file under `modules/` is a flake-parts module for one concern, and nothing Nix lives elsewhere.
 [flake-parts.nix](../../../modules/flake-parts.nix) lists the systems and loads the flake module
 that makes `flake.modules.*` exist. [base.nix](../../../modules/base.nix) is what a host gets
-before any role. Every host, the mac included: flakes with a short connect timeout and a fallback
+before any role. Every host: flakes with a short connect timeout and a fallback
 to building, and nh cleaning old
 generations on the workstations. Every NixOS host: Limine as the loader, the kernel and sysctl
 hardening, no core dumps, and a capped journal kept under `/persist` unless a host makes it volatile.
@@ -21,8 +21,7 @@ Background: [dendritic pattern](https://github.com/mightyiam/dendritic),
 | Contribution | Owner |
 |---|---|
 | Every host / role / service | `flake.modules.nixos.base` / `server`, `desktop` / `flake.modules.nixos.SERVICE` |
-| Operator user settings | `flake.modules.homeManager.base` on every workstation; `homeManager.desktop` for the Linux desktop; mac-only ones in the darwin module's `home-manager.users` |
-| nix-darwin base / role | `flake.modules.darwin.base` / `desktop`, in the same file as the NixOS counterpart |
+| Operator user settings | `flake.modules.homeManager.base` on every workstation; `homeManager.desktop` for the Linux desktop |
 | Host facts (system, addresses, keys, role flags) and imports | `modules/hosts/HOST/host.nix`; the files of `modules/hosts/HOST/` are the only writers of `fleet.hosts.HOST` |
 | Hardware, disko, networking, host-only data | `modules/hosts/HOST/` |
 | Cross-concern facts | Typed `fleet.*` options beside their owner; never `specialArgs` or `_module.args` |
@@ -31,7 +30,7 @@ Background: [dendritic pattern](https://github.com/mightyiam/dendritic),
 | Dev shell | `modules/dev-shell.nix`, plain `mkShellNoCC`; `nix fmt` through treefmt |
 
 Rules:
-- A concern sets every class it touches (`nixos`, `darwin`, `homeManager`) in one file; a
+- A concern sets every class it touches (`nixos`, `homeManager`) in one file; a
   directory is organization only. Extend an existing owner before adding a file.
 - Import = enable. No `enable` option, no `mkIf cfg.enable`, no wrapper over an upstream option.
 - A `fleet.*` option exists only when two consumers set it differently. It is typed and has no
@@ -86,12 +85,12 @@ one that needs only tools stays in `perSystem`. A check made for every NixOS hos
 service goes through [_host-checks.nix](../../../modules/_host-checks.nix) (name, enabled predicate, derivation). Prefer `runCommand` assertions on generated config
 over `nixosTest`; one VM test, `storage` in [storage.nix](../../../modules/storage.nix), installs
 the disk layout with disko's test library, the state partition opened with a key file, reboots, and asserts the root subvolume was recreated
-while preserved paths and the machine id survived (`storage-perlless` and `storage-esp` cover the edge's and asahi's
-variants); they need KVM, which the linux CI job enables. The `apps` check builds
+while preserved paths and the machine id survived (`storage-perlless` covers the edge's
+variant); they need KVM, which the linux CI job enables. The `apps` check builds
 every flake app, which is what runs shellcheck on them, and `format` fails on unformatted Nix, OpenTofu, Luau, shell, TOML, JSON, YAML or
-`justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/` and `sketchybar.lua`, a template stylua cannot parse.
+`justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/`.
 [check.yml](../../../.github/workflows/check.yml) evaluates every system and builds the x86_64
-ones (`linux`) and the mac (`darwin`, on a macOS runner) on `main`; on a pull request it compares each
+ones (`linux`) on `main`; on a pull request it compares each
 check's derivation with the base commit's and builds only those that differ, or every check when the base
 does not evaluate. A check whose derivation matches the base's is not rebuilt, so one that failed
 on `main` stays failed until a pull request changes it. Assertions guard
@@ -146,4 +145,4 @@ tree, and the two files must be identical:
 nix eval --json .#nixosConfigurations --apply 'builtins.mapAttrs (_: h: h.config.system.build.toplevel.outPath)'
 ```
 
-(`darwinConfigurations` likewise.) Write the output outside the checkout.
+Write the output outside the checkout.

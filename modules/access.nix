@@ -1,16 +1,4 @@
 {
-  flake.modules.darwin.base = {
-    system.primaryUser = "marcos";
-    users.users.marcos = {
-      home = "/Users/marcos";
-      description = "Marcos Melo";
-    };
-    security.pam.services.sudo_local = {
-      touchIdAuth = true;
-      reattach = true;
-    };
-  };
-
   flake.modules.nixos.base = {
     users = {
       mutableUsers = false;
