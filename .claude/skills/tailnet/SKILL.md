@@ -1,6 +1,6 @@
 ---
 name: tailnet
-description: "Tailscale on every host: how a host joins and stays joined, which traffic the tailnet admits (SSH, KDE Connect on the Linux laptops), the auth key secret and the tag it needs, recovery after reinstall. Use before touching modules/tailscale.nix, tailscale0 firewall rules, or when a host must join or rejoin the tailnet."
+description: "Tailscale on every host: how a host joins and stays joined, which traffic the tailnet admits (SSH), the auth key secret and the tag it needs, recovery after reinstall. Use before touching modules/tailscale.nix, tailscale0 firewall rules, or when a host must join or rejoin the tailnet."
 ---
 
 # Tailnet
@@ -8,8 +8,7 @@ description: "Tailscale on every host: how a host joins and stays joined, which 
 [tailscale.nix](../../../modules/tailscale.nix) joins every NixOS host with the auth key in
 `secrets/hosts/HOST.yaml` (`tailscale-auth-key`, [secrets skill](../secrets/SKILL.md)) and
 keeps `/var/lib/tailscale` under `/persist`, so a host authenticates once and survives reboots
-and deploys. SSH is admitted only on the tailnet interface ([ssh.nix](../../../modules/ssh.nix)),
-and so is KDE Connect on the Linux laptops ([phone.nix](../../../modules/phone.nix)).
+and deploys. SSH is admitted only on the tailnet interface ([ssh.nix](../../../modules/ssh.nix)).
 
 ## Auth key
 

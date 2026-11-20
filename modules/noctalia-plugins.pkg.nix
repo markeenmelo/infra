@@ -1,7 +1,6 @@
 { fetchgit, stdenvNoCC }:
 let
   plugins = [
-    "androidconnect"
     "claudecode"
     "github-prs"
     "tailnet"
@@ -13,7 +12,7 @@ stdenvNoCC.mkDerivation {
   src = fetchgit {
     url = "https://github.com/noctalia-dev/community-plugins";
     rev = "bccbc7f0f0c888814e506aa0ce48cbc8d90c91f0";
-    hash = "sha256-pUKvJRn9k4YkrFihEdBc1HBILqPC8ILDzLdS9Q/9HVY=";
+    hash = "sha256-TlfHhIv0Nr6ntUyuq22L+tlk1xmoZH3qmnJmC6kYrqs=";
     sparseCheckout = map (plugin: "/${plugin}") plugins;
   };
   postPatch = ''

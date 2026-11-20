@@ -143,7 +143,6 @@
                     "tailnet"
                     "network"
                     "bluetooth"
-                    "phone"
                   ];
                   system = [
                     "volume"
