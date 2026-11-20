@@ -5,6 +5,7 @@ inputs:
   hostAddress,
   guestAddress,
   mac,
+  cid,
 }:
 {
   guest = {
@@ -12,6 +13,7 @@ inputs:
 
     microvm = {
       hypervisor = "cloud-hypervisor";
+      vsock.cid = cid;
       interfaces = [
         {
           type = "tap";

@@ -78,7 +78,10 @@ and the guest sit on ([_downloads.nix](../../../modules/_downloads.nix) holds it
 both files), and the `downloads` nftables table, which masquerades the guest to the internet and
 drops what it sends to bastion, to private addresses, to the tailnet and over IPv6, and new
 connections forwarded towards it from any other network; replies to
-connections bastion opens pass. The apps talk to indexers and peers, so one of them compromised
+connections bastion opens pass. Each guest has a vsock address (`cid` beside its addresses)
+for one purpose: its systemd reports boot completion to `microvm@NAME`, which counts as started
+only then and fails when the guest does not boot within microvm.nix's startup timeout; the
+agents' guest keeps vsock off. The apps talk to indexers and peers, so one of them compromised
 meets a second kernel before bastion. The guest's own uplink is bastion's, not the Proton tunnel:
 it carries the tunnel's packets, and the namespace inside keeps the apps off it. The guest has no
 login, no tailnet node and no sops identity. Its journal goes to its console, which is
