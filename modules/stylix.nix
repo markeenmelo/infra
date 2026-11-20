@@ -48,7 +48,6 @@ in
       home-manager.users.${config.system.primaryUser} =
         { lib, ... }:
         {
-          stylix.targets.rofi.enable = false;
           home.activation.wallpaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             run ${lib.getExe pkgs.desktoppr} ${config.stylix.image} || echo "warning: could not set the wallpaper" >&2
           '';
@@ -79,7 +78,6 @@ in
       home-manager.sharedModules = [
         {
           stylix.targets = {
-            rofi.enable = false;
             zen-browser.profileNames = [ "default" ];
           };
         }
