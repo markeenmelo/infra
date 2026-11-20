@@ -9,7 +9,12 @@ let
   ];
 
   guest =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       cfg = config.services.hermes-agent;
     in
@@ -63,6 +68,10 @@ let
           unauthorized_dm_behavior = "ignore";
           auth.adopt_external_logins = false;
           updates.check = false;
+          browser = {
+            executable_path = lib.getExe pkgs.chromium;
+            user_data_dir = "${cfg.stateDir}/.hermes/browser-profile";
+          };
         };
         environmentFiles = [ "${guestSecrets}/env" ];
       };
