@@ -132,5 +132,6 @@ loopback guard because `marcos` has no pinned uid.
 ([backups skill](../backups/SKILL.md)) with `backups/thinkpad-password`, never the household key;
 only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh, adb, KDE Connect, Claude's credentials), the keyring,
 caches, the Bitwarden socket and Steam's installed games, shader caches and downloads stay out. App data stays in, browser and messenger sessions
-included, so a restore brings back a signed-in desktop; bastion holds the password too, so whoever controls bastion
+included, so a restore brings back a signed-in desktop, and Steam's Proton prefixes, where games
+without Steam Cloud keep their saves; bastion holds the password too, so whoever controls bastion
 can read those sessions.
