@@ -8,7 +8,7 @@ fmt:
 [doc("Evaluate every host and every system's checks, building nothing")]
 check:
     nix eval --raw .#nixosConfigurations.bastion.config.microvm.vms.hermes.config.config.services.hermes-agent.package.drvPath > /dev/null
-    nix flake check --no-build --all-systems
+    nix flake check --no-build --all-systems --option allow-import-from-derivation false
 
 [arg("args", pattern='--?[a-z-]+')]
 [arg("host", pattern='[a-z0-9-]+')]
