@@ -103,7 +103,6 @@ lock screen. Shutting it suspends on
 battery only: on AC the idle timer does, since a monitor that sleeps drops off DRM and logind would
 read that as an undock.
 
-
 ## Backups
 
 `restic-backups-home` sends `/home/marcos` every 6 hours, skipping a run that falls on battery, to the append-only server on bastion
