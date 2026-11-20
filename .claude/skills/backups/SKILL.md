@@ -20,11 +20,11 @@ the drill then tests. The roots are `/srv`,
 Immich, OpenCloud, the arr state and
 each laptop's repository; an assertion fails the build when
 Immich's or OpenCloud's data falls outside them. Media, Frigate recordings, PostgreSQL's live files,
-Immich's thumbnails and transcodes, logs, caches and every identity (host and SSH keys,
+Immich's thumbnails and transcodes, the journal and `/var/log`, caches and every identity (host and SSH keys,
 `/persist/zfs`, sbctl, tailscale, machine-id) stay out. Each repository keeps 7 daily, 4 weekly and 6
 monthly snapshots, grouped by host only, so snapshots from older backup paths age out too. Each pCloud run checks a random 1% of its data, which bounds the download. On
 the 15th the drill reads a twelfth of the USB repository, a different twelfth
-each month, and tests that every dump in the latest snapshot decompresses and ends with pg_dump's completion line.
+each month, and tests that every dump of bastion's PostgreSQL in the latest snapshot decompresses and ends with pg_dump's completion line.
 
 A laptop with a `fleet.hosts.HOST.homeBackup` fact (the ThinkPad, asahi) backs its home up to `backup-HOST`, an append-only `rclone serve restic` on
 bastion's tailnet address, on the fact's port, reachable from that laptop's address only (the tailnet

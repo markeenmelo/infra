@@ -8,7 +8,7 @@ to be read; nothing here is meant to be reused as is.
 
 | Host | System | Role | Builds on |
 |---|---|---|---|
-| `bastion` | x86_64-linux | Home server: LAN and public proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, agent MicroVM | itself |
+| `bastion` | x86_64-linux | Home server: LAN and public proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, MicroVMs (agents, downloads, hermes) | itself |
 | `edge` | aarch64-linux | Public HTTPS edge (Oracle Cloud instance): passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
 | `thinkpad` | x86_64-linux | Operator laptop | bastion |
 | `asahi` | aarch64-linux | Apple Silicon laptop (dual boot with `mac`) | itself |
