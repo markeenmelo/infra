@@ -405,14 +405,12 @@ in
               CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" (
                 agentPlugins pkgs
                 ++ map (plugin: "${(pkgs.callPackage ./trailofbits-skills.pkg.nix { }).src}/plugins/${plugin}") [
-                  "agentic-actions-auditor"
                   "c-review"
                   "modern-cpp"
                   "modern-python"
                   "rust-review"
                   "insecure-defaults"
                   "sharp-edges"
-                  "supply-chain-risk-auditor"
                 ]
                 ++
                   map (plugin: "${(pkgs.callPackage ./claude-plugins-official.pkg.nix { }).src}/plugins/${plugin}")
