@@ -31,40 +31,20 @@ rotating every value its files held.
 | `hosts/HOST.yaml` | operator, HOST | `tailscale-auth-key` ([tailnet skill](../tailnet/SKILL.md)); on the edge also `crowdsec-bouncer-key`, the same value as bastion's `crowdsec/edge-bouncer-key`, which only reads ban decisions ([proxy skill](../proxy/SKILL.md)); on bastion also `authelia/{jwt,storage,smtp-password,USER-email,USER-password-hash,oidc-hmac,oidc-signing-key,ID-client-secret-hash}` ([identity skill](../identity/SKILL.md)) and each OIDC app's `APP/oidc-client-secret`, Grafana's `grafana/{secret-key,admin-password,heartbeat-url}` and ntfy's `ntfy/{publisher-hash,publisher-token}` ([monitoring skill](../monitoring/SKILL.md)), Jellyfin's `jellyfin/{api-key,password,ian-password}` ([jellyfin skill](../jellyfin/SKILL.md)), the arr apps' `arr/{sonarr,radarr,prowlarr}-api-key`, `arr/password`, `arr/qbittorrent-password{,-hash}`, `arr/proton-wireguard`, `arr/sabnzbd-{api,nzb}-key`, `arr/{newshosting,tweaknews}-username`, `arr/newshosting-password`, `arr/easynews-{password,api-key}` and `arr/{ninjacentral,nzbgeek,althub}-api-key`, `arr/seerr-api-key` ([arr skill](../arr/SKILL.md)), the restic passwords `backups/{restic,thinkpad}-password` and pCloud's rclone config `backups/rclone-pcloud` ([backups skill](../backups/SKILL.md)), the camera stream URLs `frigate-main`, `frigate-sub` ([frigate skill](../frigate/SKILL.md)), and the cache signing key `harmonia-sign-key`, whose public half is `cacheKey` in [builder.nix](../../../modules/builder.nix), trusted by every workstation ([deploy skill](../deploy/SKILL.md)), and per Proton exit node `proton-exit/{ca,us,br}` (its WireGuard config) and `proton-exit/{ca,us,br}-auth-key` ([tailnet skill](../tailnet/SKILL.md)), and the agent MicroVM's `agents/{tailscale-auth-key,github-token,paseo-password}` ([agents skill](../agents/SKILL.md)) and the Hermes MicroVM's `hermes/{env,auth}` ([hermes skill](../hermes/SKILL.md)) |
 | `hosts/thinkpad.yaml` | operator, thinkpad | `tailscale-auth-key`, `wifi-psk` (MN-Home), `nix-build-ssh-key`, `backups/thinkpad-password` ([thinkpad skill](../thinkpad/SKILL.md)) |
 | `hosts/thinkpad-senecanet.yaml` | operator, thinkpad | `seneca-identity`, `seneca-password` for SenecaNET's WPA2-Enterprise profile |
-| `shared/mcp.yaml` | operator, thinkpad | `github-mcp-token`, `grafana-mcp-token` (below) |
-| `shared/claude.yaml` | operator, bastion, thinkpad | `claude-token` (below) |
+| `shared/claude.yaml` | operator, bastion | `claude-token` (below) |
 | `tailscale/operator.yaml` | operator | Tailscale OAuth client, tailnet name, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
 | `porkbun/api.yaml` | operator, bastion | `PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY` for bastion's DNS-01 ([proxy skill](../proxy/SKILL.md)) and the `tofu` app |
 | `porkbun/operator.yaml` | operator | state passphrase for the DNS records; the app adds `api.yaml` ([opentofu skill](../opentofu/SKILL.md)) |
 | `oracle/operator.yaml` | operator | `TF_VAR_tenancy_ocid`, `TF_VAR_user_ocid`, `TF_VAR_fingerprint`, `TF_VAR_private_key` (the API signing key, PEM), `TF_VAR_region` (the home region), `TF_VAR_alert_email` (where the spend alert goes), state passphrase ([opentofu skill](../opentofu/SKILL.md)); the `wake` app starts an instance with the same key ([wake.nix](../../../modules/wake.nix)) |
 | `unifi/operator.yaml` | operator | `UNIFI_API_KEY` for the gateway, the Wi-Fi passphrases by SSID, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
 
-The workstations' `github-mcp-token`
-and `grafana-mcp-token`, read by the GitHub and Grafana MCP servers ([claude.nix](../../../modules/claude.nix)),
-are the secrets owned by the operator account instead of root, since Claude Code runs as that user.
-The workstations share one pair, so a lost laptop means rotating both tokens for every workstation.
-`claude-token` in `shared/claude.yaml` is Claude Code's sign-in, the token from
-`claude setup-token`, stored once for the agent guest ([agents skill](../agents/SKILL.md)) and
-the workstations, which is why bastion is a recipient of that file and of no other workstation
-secret. On the workstations the `claude` wrapper opens the file and hands Claude the descriptor
-(`CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR`), so the value is never in an environment a command,
-hook or server Claude starts could read; a hook or MCP server, which run outside the Bash
-sandbox, can still read the file by its path. The Linux jail clears the environment, so the
-secret is always used. It
-makes model requests only, so a
-workstation signed in this way has no Remote Control and none of the account's connectors, and
-one revocation signs out the guest and every workstation.
-The Grafana one is a Viewer service account's token, and the server runs with `--disable-write`.
+`claude-token` in `shared/claude.yaml` is Claude Code's sign-in for the agent guest
+([agents skill](../agents/SKILL.md)), the token from `claude setup-token`, which is why bastion
+is a recipient of that file. It makes model requests only, so the guest has no Remote Control
+and none of the account's connectors, and one revocation signs it out.
 The identity keys in the home folder (SSH, GnuPG, the keyring, sops, gh, Claude's credentials,
 Bitwarden's agent socket) are one list, [_home-secrets.nix](../../../modules/_home-secrets.nix),
-which both Claude's `Read` denies and the laptop backup's excludes read. The secret directories outside home are one
-list in claude.nix feeding both the `Read` denies, which guard Claude's built-in tools, and the
-managed sandbox's `filesystem.denyRead`, which guards Bash and anything it starts: Claude Code
-copies home-relative `Read(~/…)` denies into the sandbox but not absolute `//` ones, so an
-absolute secret path needs both. The running server still holds the token in its environment,
-which another process of the same user may read; that is why it is a fine-grained token limited
-to this repository with read-only Contents, Pull requests, Actions and Metadata, which the
-server's `--read-only` mode never uses to write.
+which the laptop backup's excludes read.
 
 ## Delivery
 

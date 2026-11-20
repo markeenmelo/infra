@@ -135,10 +135,7 @@
                 })
                 {
                   tray = [ "tray" ];
-                  work = [
-                    "pull_requests"
-                    "claude"
-                  ];
+                  work = [ "pull_requests" ];
                   connectivity = [
                     "tailnet"
                     "network"
@@ -181,7 +178,6 @@
               type = "raycursive/github-prs:bar";
               hide_when_zero = true;
             };
-            claude.type = "jrohland/claudecode:pill";
           };
           weather = {
             enabled = true;
@@ -197,7 +193,6 @@
           };
           plugins = {
             enabled = [
-              "jrohland/claudecode"
               "raycursive/github-prs"
               "rylos/tailnet"
               "marcos/agenda"

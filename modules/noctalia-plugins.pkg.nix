@@ -1,7 +1,6 @@
 { fetchgit, stdenvNoCC }:
 let
   plugins = [
-    "claudecode"
     "github-prs"
     "tailnet"
   ];
@@ -12,7 +11,7 @@ stdenvNoCC.mkDerivation {
   src = fetchgit {
     url = "https://github.com/noctalia-dev/community-plugins";
     rev = "bccbc7f0f0c888814e506aa0ce48cbc8d90c91f0";
-    hash = "sha256-TlfHhIv0Nr6ntUyuq22L+tlk1xmoZH3qmnJmC6kYrqs=";
+    hash = "sha256-G/fzi7vfHwwOu/lXa0DZh+5MLxmLMJTywkmiTBsHNw8=";
     sparseCheckout = map (plugin: "/${plugin}") plugins;
   };
   postPatch = ''
