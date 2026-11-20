@@ -468,6 +468,24 @@
         "type": "github"
       }
     },
+    "paseo": {
+      "inputs": {
+        "nixpkgs": []
+      },
+      "locked": {
+        "lastModified": 1795178708,
+        "narHash": "sha256-JYRV3eZOeL7zVIcUnOALzMse6BIPHDOSQtRlgLVkgW8=",
+        "owner": "getpaseo",
+        "repo": "paseo",
+        "rev": "c853f98b906523328de1af2a96932cba565077f5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "getpaseo",
+        "repo": "paseo",
+        "type": "github"
+      }
+    },
     "preservation": {
       "locked": {
         "lastModified": 1792953443,
@@ -550,6 +568,7 @@
         "nixflix": "nixflix",
         "nixos-apple-silicon": "nixos-apple-silicon",
         "nixpkgs": "nixpkgs_2",
+        "paseo": "paseo",
         "preservation": "preservation",
         "sops-nix": "sops-nix",
         "stylix": "stylix",

@@ -81,6 +81,18 @@ levels, set through their environment variables, which unlike the workstations' 
 also turns caveman on in headless runs. The guest has no jail and no Bash sandbox: the
 guest itself is the boundary. Grafana's MCP server and the account's connectors stay out.
 
+## Paseo and the other agents
+
+Codex, Cursor's CLI (`cursor-agent`) and OpenCode sit beside Claude Code, and the
+[Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
+through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
+as `agent` with the same tokens a shell gets, written for it at each start to a file only
+`agent` reads, listens on the guest's loopback only, with its relay off (`--no-relay`), so it
+has no password and no tailnet port: a workstation reaches it through
+SSH, `ssh -N -L 6767:127.0.0.1:6767 agent@agents`, then opens `http://localhost:6767` or adds
+`localhost:6767` as a host in the desktop app. A phone needs a tailnet grant to a port and a
+daemon password, neither of which exists. Paseo's state, `~/.paseo`, lives on `home.img`.
+
 ## Credentials
 
 Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens, one
@@ -104,6 +116,12 @@ and every shell in the guest exports them; a changed token restarts the guest, t
   which only read the diff, are the gate before `main`. The changes CLAUDE.md keeps for the
   operator to merge are a rule the agent follows, not a control: an injected session holding this
   token can merge whatever the branch protection admits.
+
+Codex, Cursor and OpenCode hold no secret of the repository: the operator signs each in once
+over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`), and the
+session lands in `agent`'s home on `home.img`, where it survives restarts and is not backed up.
+Each is a whole-account session for that service, usable and leakable like the tokens above;
+revoke it from the service's own account page.
 
 Commits made in the guest carry the operator's Git identity, which
 [git.nix](../../../modules/git.nix) gives the guest and the workstations alike, and no Claude
