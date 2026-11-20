@@ -90,18 +90,20 @@ nixos and read-only GitHub MCP servers Claude gets, the GitHub one reading the t
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
 as `agent` with the same tokens a shell gets, written for it at each start to a file only
-`agent` reads, listens on the guest's loopback only, with its relay off (`--no-relay`), so it
-has no password and no tailnet port: a workstation reaches it through SSH, the desktop app as a
-Remote SSH host `ssh://agent@agents`, a browser through `ssh -N -L 6767:127.0.0.1:6767
-agent@agents` and `http://localhost:6767`. The daemon refuses a browser origin other than
-`localhost`, so a web page cannot drive it through the forward; a local process can while the
-forward is open. A phone needs a tailnet grant to a port and a
-daemon password, neither of which exists. Paseo's state, `~/.paseo`, lives on `home.img`.
+`agent` reads, with its relay off (`--no-relay`). It listens on `fleet.paseoPort`, which the
+guest's firewall opens on the tailnet interface only and the tailnet policy grants to admin
+clients alone ([opentofu skill](../opentofu/SKILL.md)), and asks every client for the daemon
+password, `agents/paseo-password` in `secrets/hosts/bastion.yaml`, exported as `PASEO_PASSWORD`
+like the tokens below. The phone app connects to `agents` on that port; the desktop app as a
+Remote SSH host `ssh://agent@agents`; a browser through `ssh -N -L 6767:127.0.0.1:6767
+agent@agents` and `http://localhost:6767`. The daemon accepts only `agents`, `localhost` and
+IP addresses as host names and refuses a browser origin other than `localhost`, so a web page
+cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`, lives on `home.img`.
 
 ## Credentials
 
-Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens, one
-from `secrets/hosts/bastion.yaml` and one from `secrets/shared/claude.yaml`, into the same
+Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens and the Paseo password, the password and one token
+from `secrets/hosts/bastion.yaml` and one token from `secrets/shared/claude.yaml`, into the same
 read-only share as the tailnet key, owned by `agent`'s
 uid, which no account on bastion holds,
 and every shell in the guest exports them; a changed token restarts the guest, through `agents-restart`:

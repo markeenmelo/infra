@@ -1,5 +1,11 @@
-{ config, inputs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 let
+  paseoPort = config.fleet.paseoPort;
   inherit (config.flake.modules.nixos) claude-agent git;
   inherit (config.flake.modules.homeManager) agent-tools;
   box = import ./_guest.nix inputs {
@@ -22,6 +28,7 @@ let
   tokenVariables = {
     claude-token = "CLAUDE_CODE_OAUTH_TOKEN";
     github-token = "GH_TOKEN";
+    paseo-password = "PASEO_PASSWORD";
   };
 
   guest =
@@ -100,7 +107,8 @@ let
       services.journald.settings.Journal.ForwardToConsole = lib.mkForce false;
 
       networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts =
-        config.services.openssh.ports;
+        config.services.openssh.ports
+        ++ [ paseoPort ];
 
       services.tailscale = {
         enable = true;
@@ -171,6 +179,9 @@ let
         user = "agent";
         group = "users";
         relay.enable = false;
+        listenAddress = "0.0.0.0";
+        port = paseoPort;
+        hostnames = [ "agents" ];
       };
       systemd.services.paseo = {
         wants = [ "network-online.target" ];
@@ -202,7 +213,13 @@ let
     };
 in
 {
-  flake.modules.homeManager.base.programs.zed-editor.userSettings.ssh_connections = [
+  options.fleet.paseoPort = lib.mkOption {
+    type = lib.types.port;
+    description = "Port on the agents guest where the Paseo daemon takes clients, on loopback and the guest's tailnet interface; the `tofu` app hands it to `opentofu/tailscale` as `fleet_paseo_port`.";
+  };
+  config.fleet.paseoPort = 6767;
+
+  config.flake.modules.homeManager.base.programs.zed-editor.userSettings.ssh_connections = [
     {
       host = "agents";
       username = "agent";
@@ -210,7 +227,7 @@ in
     }
   ];
 
-  flake.modules.nixos.agents =
+  config.flake.modules.nixos.agents =
     {
       config,
       lib,

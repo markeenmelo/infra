@@ -95,6 +95,7 @@ in
             export TF_VAR_fleet_cache_port=${toString config.fleet.cachePort}
             export TF_VAR_fleet_public_port=${toString config.fleet.publicPort}
             export TF_VAR_fleet_bans_port=${toString config.fleet.bansPort}
+            export TF_VAR_fleet_paseo_port=${toString config.fleet.paseoPort}
             export TF_VAR_fleet_home_backups=${lib.escapeShellArg (builtins.toJSON homeBackups)}
             export TF_VAR_fleet_operators=${lib.escapeShellArg (builtins.toJSON operatorNames)}
             export TF_VAR_fleet_state_port=${toString statePort}
