@@ -62,8 +62,7 @@ from how long it keeps what it stored). A sender's Alloy state is under `/persis
 from its journal position after a reboot instead of shipping the last 12 h again, but still skips
 lines older than 12 h, so a laptop rebooted after more than 12 h away loses the lines it never
 sent. Each metrics sender also gets a `Logs silent HOST` alert once Loki has taken nothing from it
-for 45 minutes, which catches a push that retries forever on a batch Loki keeps refusing. The mac ships nothing:
-macOS has no journal and nix-darwin no Alloy module.
+for 45 minutes, which catches a push that retries forever on a batch Loki keeps refusing.
 Bastion's own Alloy probes `https://auth.DOMAIN` through the gateway's wildcard record, so the
 LAN proxy's certificate and reachability get the same `Public endpoint down` and `Certificate
 expiring` alerts as the edge's. It also probes `auth.DOMAIN` at each `fleet.hosts.HOST.publicAddress`
@@ -109,7 +108,7 @@ event while the damage stays, so its one notification is the signal.
 the `alerts` topic needs no login and describes the fleet, an accepted exposure to every client the LAN proxy admits (Home, Kids, the IoT players) and to bastion's own processes through the proxy. Everything is denied by default; `alerts` is readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
 a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. Each workstation subscribes
-itself: `ntfy-alerts`, a Home Manager user service (a launchd agent on the mac), shows each alert
+itself: `ntfy-alerts`, a Home Manager user service, shows each alert
 as a notification, critical from priority 4 on Linux, and only while the tailnet is up, so alerts
 sent while the laptop was off or away reach only the phone.
 

@@ -128,27 +128,6 @@ let
 in
 {
   flake.modules = {
-    darwin.desktop.homebrew.casks = [ "claude" ];
-
-    darwin.base =
-      { config, pkgs, ... }:
-      {
-        home-manager.users.${config.system.primaryUser}.imports = [ claude ];
-        sops.secrets = tokens config.system.primaryUser;
-        nixpkgs.config.allowUnfreePackages = [
-          "claude-code"
-          "rtk"
-        ];
-        system.activationScripts.postActivation.text = ''
-          install -d -m 0755 "/Library/Application Support/ClaudeCode"
-          ln -sfn ${
-            pkgs.writeText "claude-managed-settings.json" (
-              managedSettings config.users.users.${config.system.primaryUser}.home
-            )
-          } "/Library/Application Support/ClaudeCode/managed-settings.json"
-        '';
-      };
-
     nixos.desktop =
       { config, pkgs, ... }:
       {
@@ -473,11 +452,6 @@ in
                 ++ [
                   "~/.claude.json"
                   "~/${lib.removePrefix "${home}/" configDir}/.claude.json"
-                  "~/Library/Keychains/**"
-                  "~/Library/Application Support/sops/**"
-                  "~/Library/Application Support/Bitwarden/**"
-                  "~/Library/Application Support/Zen/**"
-                  "~/Library/Application Support/Claude/**"
                   "~/.config/Bitwarden/**"
                   "~/.zen/**"
                   "~/.config/zen/**"

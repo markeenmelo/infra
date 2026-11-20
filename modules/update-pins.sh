@@ -43,7 +43,7 @@ update_providers() {
       grep -qF "version = \"~> $latest\"" "$main"
     done <<< "$sources"
     [ "$(cat "$main")" = "$before" ] || rm -f "$lock"
-    if ! tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64 ||
+    if ! tofu -chdir="$project" providers lock -platform=linux_amd64 -platform=linux_arm64 ||
       ! tofu -chdir="$project" init -backend=false -input=false -lockfile=readonly ||
       ! tofu -chdir="$project" validate; then
       cp "$saved/main.tf" "$main"

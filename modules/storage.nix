@@ -26,10 +26,6 @@ let
     };
   keyed.disko.devices.disk.os.content.partitions.state.content.settings = { inherit keyFile; };
   probe = probeWith keyed;
-  probeEsp = probeWith {
-    fleet.esp = "/dev/vdb";
-    disko.devices.disk.os.content.settings = { inherit keyFile; };
-  };
   probePerlless = probeWith (
     { modulesPath, ... }:
     {
@@ -95,19 +91,6 @@ in
         assert machine.succeed("id -u probe") == probe_id, "an account's id changed across a reboot"
       '';
     };
-    storage-esp = inputs.disko.lib.testLib.makeDiskoTest {
-      pkgs = inputs.nixpkgs.legacyPackages.${system};
-      name = "storage-esp";
-      disko-config.disko.devices = probeEsp.config.disko.devices;
-      inherit (probeEsp) extendModules;
-      testBoot = false;
-      postMount = ''
-        machine.succeed("touch /mnt/boot/owned-by-macos")
-      '';
-      postDisko = ''
-        machine.succeed("test -e /mnt/boot/owned-by-macos")
-      '';
-    };
   };
 
   flake.modules.nixos.storage =
@@ -147,37 +130,19 @@ in
         inputs.disko.nixosModules.disko
         inputs.preservation.nixosModules.preservation
       ];
-      options.fleet = {
-        esp = lib.mkOption {
-          type = lib.types.nullOr lib.types.str;
-          default = null;
-          description = "An ESP another OS created and owns, mounted at /boot and never formatted; when set, `disko.devices.disk.os.device` is the state partition itself and nothing is partitioned.";
-        };
-      };
       config = {
-        disko.devices.disk = {
-          os.content =
-            if config.fleet.esp == null then
-              {
-                type = "gpt";
-                partitions = {
-                  boot = {
-                    type = lib.mkDefault "EF00";
-                    size = lib.mkDefault "2G";
-                    content = esp;
-                  };
-                  state = {
-                    size = "100%";
-                    content = state;
-                  };
-                };
-              }
-            else
-              state;
-          esp = lib.mkIf (config.fleet.esp != null) {
-            device = config.fleet.esp;
-            destroy = false;
-            content = esp;
+        disko.devices.disk.os.content = {
+          type = "gpt";
+          partitions = {
+            boot = {
+              type = lib.mkDefault "EF00";
+              size = lib.mkDefault "2G";
+              content = esp;
+            };
+            state = {
+              size = "100%";
+              content = state;
+            };
           };
         };
         fileSystems."/persist".neededForBoot = true;

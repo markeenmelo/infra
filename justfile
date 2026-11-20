@@ -46,9 +46,9 @@ unlock host:
 clean host="":
     nix run .#clean -- {{ host }}
 
-[doc("Switch the machine you are on to this checkout: the mac, the thinkpad or asahi")]
+[doc("Switch the machine you are on to this checkout")]
 switch:
-    nh {{ if os() == "macos" { "darwin" } else { "os" } }} switch .
+    nh os switch .
 
 [doc("Run OpenTofu in opentofu/PROJECT, e.g. `just tofu unifi plan`")]
 [positional-arguments]

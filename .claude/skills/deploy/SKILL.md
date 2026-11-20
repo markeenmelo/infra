@@ -28,7 +28,7 @@ nixpkgs' package, taken from the binary cache; the input supplies only its libra
 
 A host that runs the builder ([builder.nix](../../../modules/builder.nix)), or has another
 system than bastion, builds itself; every other host is built on the deploying machine, which
-hands the build to bastion when it imports `remote-builds` (the mac, the thinkpad and asahi). The deploying
+hands the build to bastion when it imports `remote-builds` (the thinkpad). The deploying
 machine receives the whole closure back from bastion; deploy-rs then pushes it with
 `--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
 Bastion trusts the admin clients' build keys alone: the edge builds itself, and the tailnet
@@ -39,9 +39,9 @@ build key is root on bastion without the deploy key's Bitwarden prompt. That is 
 refuses remote builds from an untrusted user (`you are not privileged to build input-addressed
 derivations`), and the key is readable only by root on an admin client.
 `remote-builds` makes bastion's cache each workstation's first substituter, so a cleaned store
-refills from bastion instead of rebuilding. Bastion also holds, best effort, what the mac and
-asahi build themselves, since it cannot build their systems: a post-build hook copies each output
-they build over their build key, with bastion substituting what cache.nixos.org holds so only
+refills from bastion instead of rebuilding. Bastion also holds, best effort, what a workstation
+of another system builds itself, since it cannot build that system: a post-build hook copies each output
+it builds over its build key, with bastion substituting what cache.nixos.org holds so only
 local builds are uploaded. A failed copy is not retried; it fails quietly after a 3-second
 connect timeout and pauses pushes for 10 minutes, so a build off the tailnet waits once, not per
 derivation. The thinkpad has no hook: bastion already built everything it uses.
@@ -121,7 +121,6 @@ asks for the new passphrase on the terminal.
 
 ADDRESS is the host's public or LAN address, not its MagicDNS name, since the tailnet node is replaced
 during the install. The installer presents its own host key, so `ssh-keygen -R ADDRESS` first
-and accept the new one; the carried key returns with the installed system. From the mac the
-closure builds on the target, inside the installer's memory-backed store. Rotate the host's auth key first ([tailnet skill](../tailnet/SKILL.md)) in
+and accept the new one; the carried key returns with the installed system. Rotate the host's auth key first ([tailnet skill](../tailnet/SKILL.md)) in
 case the carried state is rejected; the key in the host file is only read when
 `/var/lib/tailscale` holds no login.

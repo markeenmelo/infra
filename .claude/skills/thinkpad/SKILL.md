@@ -51,7 +51,7 @@ advertise, so the laptop's own LAN stays on-link and only the printer, on the Io
 through bastion. Bitwarden's desktop app is the SSH agent
 (`~/.bitwarden-ssh-agent.sock`), started at login ([bitwarden.nix](../../../modules/bitwarden.nix)).
 
-Claude Code runs under the same managed settings as the mac ([claude.nix](../../../modules/claude.nix)),
+Claude Code runs under the managed settings of [claude.nix](../../../modules/claude.nix),
 written to `/etc/claude-code`, with its Bash sandbox on bubblewrap and socat. Claude Code's
 seccomp helper (`apply-seccomp`, the first process of every Bash command) refuses a command any
 new Unix socket, but it is Claude Code's to ship or drop, so the managed `filesystem.denyRead` in
@@ -60,7 +60,7 @@ claude.nix also hides the sockets one by one: `/run/user` (the session D-Bus, th
 resolve any name outside the network namespace, tailscaled, CUPS, Xwayland, Bitwarden's agent
 and the Nix daemon, whose fixed-output builds reach the network outside the sandbox. It is a deny
 list, so a daemon added later needs its socket added there. `/persist` is hidden too, since it
-holds a second path to the whole home. As on the mac, `nix` commands that need the daemon run
+holds a second path to the whole home. `nix` commands that need the daemon run
 outside Claude's sandbox.
 
 That sandbox covers Bash only, so on the Linux laptops the `claude` command itself is a jail
