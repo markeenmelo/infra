@@ -145,18 +145,7 @@ let
       '';
       extraConfig = ''
         import porkbun
-        header {
-          Strict-Transport-Security "max-age=63072000; includeSubDomains"
-          X-Content-Type-Options nosniff
-          Referrer-Policy no-referrer
-          X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
-          ?X-Frame-Options SAMEORIGIN
-          ?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
-          ?Cross-Origin-Opener-Policy same-origin-allow-popups
-          -Server
-          -Via
-          -X-Powered-By
-        }
+        import headers
         @crawler header_regexp User-Agent "(?i)(${lib.concatStringsSep "|" crawlers})"
         @robots {
           path /robots.txt

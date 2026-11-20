@@ -23,6 +23,7 @@ in
           (lib.mkBefore ''
             import porkbun
             import identity
+            import headers
           '')
           (lib.concatStrings (
             lib.mapAttrsToList (name: app: ''
