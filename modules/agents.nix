@@ -106,6 +106,7 @@ let
       ];
       services.journald.settings.Journal.ForwardToConsole = lib.mkForce false;
 
+      networking.firewall.enable = true;
       networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts =
         config.services.openssh.ports
         ++ [ paseoPort ];
@@ -192,14 +193,21 @@ let
         ];
         serviceConfig = {
           RuntimeDirectory = "paseo";
-          EnvironmentFile = "-/run/paseo/tokens.env";
+          EnvironmentFile = "/run/paseo/tokens.env";
           ExecStartPre = lib.getExe (
             pkgs.writeShellApplication {
               name = "paseo-tokens";
               text = ''
                 umask 077
+                password=$(cat ${guestSecrets}/paseo-password) || password=
+                case $password in
+                  "" | *"'"*)
+                    echo "paseo-tokens: the Paseo password is missing, empty or holds a single quote; refusing to serve the tailnet without it" >&2
+                    exit 1
+                    ;;
+                esac
                 {
-                  ${forTokens (variable: value: ''printf '%s=%s\n' ${variable} "${value}"'')}
+                  ${forTokens (variable: value: ''printf "%s='%s'\n" ${variable} "${value}"'')}
                 } > "$RUNTIME_DIRECTORY/tokens.env"
               '';
             }
@@ -215,7 +223,7 @@ in
 {
   options.fleet.paseoPort = lib.mkOption {
     type = lib.types.port;
-    description = "Port on the agents guest where the Paseo daemon takes clients, on loopback and the guest's tailnet interface; the `tofu` app hands it to `opentofu/tailscale` as `fleet_paseo_port`.";
+    description = "Port on the agents guest where the Paseo daemon takes clients: it binds every interface and the guest's firewall admits the port on the tailnet interface alone; the `tofu` app hands it to `opentofu/tailscale` as `fleet_paseo_port`.";
   };
   config.fleet.paseoPort = 6767;
 
