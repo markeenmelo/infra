@@ -91,8 +91,8 @@ nixos and read-only GitHub MCP servers Claude gets, the GitHub one reading the t
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
 as `agent` with the same tokens a shell gets, written for it at each start to a file only
 `agent` reads, listens on the guest's loopback only, with its relay off (`--no-relay`), so it
-has no password and no tailnet port: a workstation reaches it through SSH, the desktop app as a
-Remote SSH host `ssh://agent@agents`, a browser through `ssh -N -L 6767:127.0.0.1:6767
+has no password and no tailnet port: a workstation reaches it through SSH, the desktop app (`paseo-desktop` in
+[desktop.nix](../../../modules/desktop.nix)) as a Remote SSH host `ssh://agent@agents`, a browser through `ssh -N -L 6767:127.0.0.1:6767
 agent@agents` and `http://localhost:6767`. The daemon refuses a browser origin other than
 `localhost`, so a web page cannot drive it through the forward; a local process can while the
 forward is open. A phone needs a tailnet grant to a port and a

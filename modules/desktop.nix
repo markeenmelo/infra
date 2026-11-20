@@ -102,6 +102,7 @@ in
         pkgs.whatsapp-electron
         pkgs.spotify
         pkgs.bruno
+        pkgs.paseo-desktop
         pkgs.wl-clipboard
       ];
       programs = {
