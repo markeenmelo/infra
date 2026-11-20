@@ -49,8 +49,11 @@ keeps it down, and one that is stopped or restarted takes it along. A switch rel
 and leaves the guest alone.
 
 The guest joins the tailnet as `tag:agent`
-([main.tf](../../../opentofu/tailscale/main.tf)): admin clients reach its port 22 and the tag is
-the source of no grant. Its key is `agents/tailscale-auth-key` in `secrets/hosts/bastion.yaml`,
+([main.tf](../../../opentofu/tailscale/main.tf)): admin clients reach its port 22 and the Paseo port, and the tag's one
+grant is bastion's port 443, for Grafana: the guest resolves `grafana.DOMAIN` to bastion's
+tailnet address through its hosts file. That port is the LAN proxy, which routes by host name,
+so the guest reaches the sign-in page of every app it serves; each app's own login is the gate,
+and the tailnet policy's tests keep the cache, the state database and bastion's DNS out. Its key is `agents/tailscale-auth-key` in `secrets/hosts/bastion.yaml`,
 moved from the `enrollment_keys` output like a host's ([tailnet skill](../tailnet/SKILL.md)) and
 read once, when `state.img` holds no login, so a refreshed key does not restart the guest.
 
@@ -73,18 +76,19 @@ login, so a change to the guest is a change to agents.nix. Agent sessions run un
 `nixos.claude-agent` in [claude.nix](../../../modules/claude.nix) gives the guest's Claude Code
 the caveman, ponytail and cache-tax plugins, Trail of Bits' `insecure-defaults` and
 `sharp-edges`, the official `skill-creator` and `claude-md-management`, the language servers,
-the rtk hook, and the nixos and GitHub MCP servers, the GitHub one read-only on the token `gh`
-uses. They arrive as managed settings and one generated plugin, so nothing depends on the
+the rtk hook, and the nixos, GitHub and Grafana MCP servers: the GitHub one read-only on the
+token `gh` uses, the Grafana one with `--disable-write` on `agents/grafana-token`, a Viewer
+service account's token. They arrive as managed settings and one generated plugin, so nothing depends on the
 agent's home. caveman and ponytail start at their levels through their environment variables,
 which also turns caveman on in headless runs. The guest has no Bash sandbox: the guest itself
-is the boundary. Grafana's MCP server and the account's connectors stay out.
+is the boundary. The account's connectors stay out.
 
 ## Paseo and the other agents
 
 Codex, Cursor's CLI (`cursor-agent`), OpenCode and pi sit beside Claude Code. Codex, OpenCode
 and pi are configured through their Home Manager modules for `agent`, in `agent-tools` in
 [claude.nix](../../../modules/claude.nix): telemetry, sharing and self-update off, and the same
-nixos and read-only GitHub MCP servers Claude gets, the GitHub one reading the token file. The
+nixos, read-only GitHub and Grafana MCP servers Claude gets, each token read from its file. The
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
 as `agent` with the same tokens a shell gets, written for it at each start to a file only
@@ -101,7 +105,7 @@ cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Pas
 
 ## Credentials
 
-Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts two tokens and the Paseo password, the password and one token
+Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts three tokens and the Paseo password, the password and two tokens
 from `secrets/hosts/bastion.yaml` and one token from `secrets/shared/claude.yaml`, into the same
 read-only share as the tailnet key, owned by `agent`'s
 uid, which no account on bastion holds,

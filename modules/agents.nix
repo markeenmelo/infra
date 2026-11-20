@@ -6,6 +6,8 @@
 }:
 let
   paseoPort = config.fleet.paseoPort;
+  bastion = config.fleet.hosts.bastion.tailnetAddress;
+  grafana = "grafana.${config.fleet.domain}";
   inherit (config.flake.modules.nixos) claude-agent git;
   inherit (config.flake.modules.homeManager) agent-tools;
   box = import ./_guest.nix inputs {
@@ -29,6 +31,7 @@ let
     claude-token = "CLAUDE_CODE_OAUTH_TOKEN";
     github-token = "GH_TOKEN";
     paseo-password = "PASEO_PASSWORD";
+    grafana-token = "GRAFANA_SERVICE_ACCOUNT_TOKEN";
   };
 
   guest =
@@ -106,6 +109,7 @@ let
       services.journald.settings.Journal.ForwardToConsole = lib.mkForce false;
 
       networking.firewall.enable = true;
+      networking.hosts.${bastion} = [ grafana ];
       networking.firewall.interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts =
         config.services.openssh.ports
         ++ [ paseoPort ];
@@ -152,6 +156,8 @@ let
           imports = [ agent-tools ];
           home.stateVersion = config.system.stateVersion;
           programs.mcp.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN.file = "${guestSecrets}/github-token";
+          programs.mcp.servers.grafana.env.GRAFANA_SERVICE_ACCOUNT_TOKEN.file =
+            "${guestSecrets}/grafana-token";
         };
       };
 
