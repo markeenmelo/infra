@@ -671,6 +671,14 @@ in
                         summary = "ZFS pool {{ $labels.zpool }} on {{ $labels.instance }} is not online";
                       }
                       {
+                        title = "ZFS data errors";
+                        datasource = "loki";
+                        expr = "sum by (pool, class) (count_over_time({host=\"${host}\", syslog_identifier=\"zed\"} |~ `class=(checksum|io|data) ` | regexp `class=(?P<class>\\S+) pool='(?P<pool>[^']*)'` [10m]))";
+                        for = "0s";
+                        severity = "critical";
+                        summary = "ZFS reported {{ $labels.class }} errors on pool {{ $labels.pool }}; `zpool status -v` shows the failing device and any damaged files, which the backups can no longer read: restore those from a snapshot older than the error";
+                      }
+                      {
                         title = "UPS on battery";
                         expr = "apcupsd_battery_time_on_seconds";
                         for = "1m";

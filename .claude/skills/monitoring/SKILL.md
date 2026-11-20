@@ -97,7 +97,13 @@ is quiet and any other login stands out; a stolen laptop's deploy key therefore 
 `Unexpected certificate` is critical: the proxy's `certificate-watch` job found a certificate for the
 domain in the public logs whose key the proxy does not hold ([proxy skill](../proxy/SKILL.md)).
 `Authelia mail failing` catches a broken SMTP account, which Authelia no longer tests at start
-([identity skill](../identity/SKILL.md)).
+([identity skill](../identity/SKILL.md)). `ZFS data errors` is critical: ZED logs a checksum, I/O
+or data error, which a scrub or a read can find while the pool stays online and `zpool scrub`
+still exits cleanly. A checksum or I/O error on one disk of a redundant pool is repaired from
+another copy and points at a failing disk; a `data` error is a block lost for good: reading the
+file fails, so the nightly backup leaves it out and fails (`Unit failed`), and its last good copy
+ages out of retention unless it is restored first. The alert clears ten minutes after the last
+event while the damage stays, so its one notification is the signal.
 
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the tailnet;
 the `alerts` topic needs no login and describes the fleet, an accepted exposure to every client the LAN proxy admits (Home, Kids, the IoT players) and to bastion's own processes through the proxy. Everything is denied by default; `alerts` is readable by anyone who reaches
