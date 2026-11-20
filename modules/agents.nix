@@ -193,7 +193,7 @@ let
         ];
         serviceConfig = {
           RuntimeDirectory = "paseo";
-          EnvironmentFile = "/run/paseo/tokens.env";
+          EnvironmentFile = "-/run/paseo/tokens.env";
           ExecStartPre = lib.getExe (
             pkgs.writeShellApplication {
               name = "paseo-tokens";
