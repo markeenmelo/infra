@@ -41,7 +41,7 @@ is no third tier. That includes ntfy, whose `alerts` topic describes the fleet a
 without a login.
 
 Every forwarded request loses the `Remote-*` and `X-Forwarded-*` identity headers, so only
-Authelia on bastion can set them, and every response gets the security headers in the site's `header` block: the ones marked `?` are defaults an app's own value replaces, and there is no Content-Security-Policy, since one policy cannot fit every app. Each app's
+Authelia on bastion can set them, and every response, from both listeners, gets the security headers in the `headers` snippet of [caddy.nix](../../../modules/caddy.nix): the ones marked `?` are defaults an app's own value replaces, and there is no Content-Security-Policy, since one policy cannot fit every app. Each app's
 admin paths (Jellyfin's, including password changes, Immich's admin areas, and OpenCloud's user,
 group and role management) are
 answered 404 by the public listener as defence in depth, each app's own authorization being the primary control:
