@@ -43,7 +43,7 @@ under `/persist`. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tun
 whose handshake is older than five minutes, and starts its exit node again each time it comes up. Choosing
 an exit node is done on the client: on the Linux laptops the bar's tailnet panel picks one. On the Linux laptops `marcos`
 is the Tailscale operator ([noctalia.nix](../../../modules/noctalia.nix)), an accepted risk: every
-process of `marcos` outside the Claude jail ([claude.nix](../../../modules/claude.nix)), the Noctalia plugins included, holds the whole LocalAPI (`up`, `down`, `set`,
+process of `marcos`, the Noctalia plugins included, holds the whole LocalAPI (`up`, `down`, `set`,
 `serve`, `logout`) without a password, so a bump of those plugins needs their code read, not just
 the hash. Every host's auto-connect `tailscale up` carries `--reset`
 ([desktop.nix](../../../modules/desktop.nix), [server.nix](../../../modules/server.nix)), since `up` refuses stored non-default settings it is

@@ -73,6 +73,7 @@ in
           "kernel.unprivileged_bpf_disabled" = 1;
           "net.core.bpf_jit_harden" = 2;
           "dev.tty.ldisc_autoload" = 0;
+          "dev.tty.legacy_tiocsti" = 0;
           "net.ipv4.tcp_rfc1337" = 1;
         };
       };

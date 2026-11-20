@@ -25,11 +25,6 @@ creation_rules:
       - age:
           - *operator
           - *thinkpad
-  - path_regex: ^secrets/shared/mcp\.yaml$
-    key_groups:
-      - age:
-          - *operator
-          - *thinkpad
   - path_regex: ^secrets/shared/claude\.yaml$
     key_groups:
       - age:

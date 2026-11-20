@@ -72,14 +72,14 @@ guest's nixpkgs finds its remote server linked in `~/.zed_server`, any other dow
 
 ## Claude
 
-`nixos.claude-agent` in [claude.nix](../../../modules/claude.nix) gives the guest the parts of
-the workstations' Claude Code that need no workstation secret: the caveman, ponytail and
-cache-tax plugins, the language servers, the rtk hook, and the nixos and GitHub MCP servers, the
-GitHub one read-only on the token `gh` uses. They arrive as managed settings and one generated
-plugin, so nothing depends on the agent's home. caveman and ponytail start at the workstations'
-levels, set through their environment variables, which unlike the workstations' config files
-also turns caveman on in headless runs. The guest has no jail and no Bash sandbox: the
-guest itself is the boundary. Grafana's MCP server and the account's connectors stay out.
+`nixos.claude-agent` in [claude.nix](../../../modules/claude.nix) gives the guest's Claude Code
+the caveman, ponytail and cache-tax plugins, Trail of Bits' `insecure-defaults` and
+`sharp-edges`, the official `skill-creator` and `claude-md-management`, the language servers,
+the rtk hook, and the nixos and GitHub MCP servers, the GitHub one read-only on the token `gh`
+uses. They arrive as managed settings and one generated plugin, so nothing depends on the
+agent's home. caveman and ponytail start at their levels through their environment variables,
+which also turns caveman on in headless runs. The guest has no Bash sandbox: the guest itself
+is the boundary. Grafana's MCP server and the account's connectors stay out.
 
 ## Paseo and the other agents
 
@@ -111,8 +111,7 @@ and every shell in the guest exports them; a changed token restarts the guest, t
 
 - `claude-token` in `secrets/shared/claude.yaml`: the token from `claude setup-token`, exported
   as `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the
-  guest Remote Control and the account's connectors. The workstations read the same secret
-  ([secrets skill](../secrets/SKILL.md)).
+  guest Remote Control and the account's connectors.
 - `agents/github-token`: a fine-grained token, exported as `GH_TOKEN` and handed to Git by `gh`,
   limited to Contents and Pull requests writes and Actions read on the repositories the agents
   work on, with the default branch protected. Never the Workflows permission, which would let a
@@ -134,7 +133,7 @@ revoke it from the service's own account page.
 
 Commits made in the guest carry the operator's Git identity, which
 [git.nix](../../../modules/git.nix) gives the guest and the workstations alike, and no Claude
-attribution, which the managed settings blank as the workstations' settings do.
+attribution, which the managed settings blank.
 
 The share holds nothing else of bastion's. No sops identity, deploy key, build key or cache write
 access goes in.
