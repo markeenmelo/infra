@@ -72,8 +72,8 @@ succeeds, so one unreachable site never fails a deploy.
 
 [downloads.nix](../../../modules/downloads.nix) is the MicroVM, `downloads`, built like the
 agents' ([agents skill](../agents/SKILL.md)) from [_guest.nix](../../../modules/_guest.nix), the
-network and host wiring a guest of bastion needs given its name and addresses, which the agents'
-guest predates and does not use yet: cloud-hypervisor, a tap carrying a /24 only bastion
+network and host wiring a guest of bastion needs given its name and addresses, shared with the agents' and
+hermes guests: cloud-hypervisor, a tap carrying a /24 only bastion
 and the guest sit on ([_downloads.nix](../../../modules/_downloads.nix) holds its addresses for
 both files), and the `downloads` nftables table, which masquerades the guest to the internet and
 drops what it sends to bastion, to private addresses, to the tailnet and over IPv6, and new
