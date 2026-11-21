@@ -32,6 +32,7 @@
       agents
       hermes
       radicale
+      dorian
     ];
     system.stateVersion = "26.05";
   };
