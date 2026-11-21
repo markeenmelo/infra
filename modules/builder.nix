@@ -64,7 +64,23 @@ in
   config.flake.modules.nixos.builder =
     { config, ... }:
     {
-      sops.secrets.harmonia-sign-key.restartUnits = [ "harmonia.service" ];
+      sops.secrets = {
+        harmonia-sign-key.restartUnits = [ "harmonia.service" ];
+        nix-github-private-password = {
+          key = "nix-github-private-password";
+          restartUnits = [ "nix-daemon.service" ];
+        };
+      };
+      sops.templates."nix-github-private.env" = {
+        content = ''
+          NIX_GITHUB_PRIVATE_USERNAME=markeenmelo
+          NIX_GITHUB_PRIVATE_PASSWORD=${config.sops.placeholder.nix-github-private-password}
+        '';
+        restartUnits = [ "nix-daemon.service" ];
+      };
+      systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
+        config.sops.templates."nix-github-private.env".path
+      ];
       services.harmonia.cache = {
         enable = true;
         signKeyPaths = [ config.sops.secrets.harmonia-sign-key.path ];
