@@ -9,4 +9,5 @@ the settings with Immich's own schema and fails if setup is still offered.
 
 Originals, thumbnails and encoded video live on `tank/immich` at `/srv/immich/library`, and the
 server refuses to start without that mount; the `immich` uid and gid are pinned to the ids that
-own the dataset, since a reinstall would otherwise allocate new ones.
+own the dataset, since a reinstall would otherwise allocate new ones. The database is `immich` in the shared PostgreSQL, with the VectorChord extension
+the upstream module adds to the cluster, so the PostgreSQL dumps and a restore cover it.

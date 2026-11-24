@@ -10,7 +10,7 @@ on, and refuses the gateway's syslog port to every local sender; otherwise
 any service on bastion could read the whole journal through Loki or push data under another host's name. Exporter ports sit at 19xxx,
 clear of OpenCloud's internal block from 9100; CrowdSec's own metrics listener keeps 6060.
 Alloy ships bastion's journal to Loki and drops lines older than 12 h.
-Their data lives under `/persist` and stays out of the backups ([backups skill](../backups/SKILL.md)):
+Prometheus's and Loki's data lives under `/persist` and stays out of the backups ([backups skill](../backups/SKILL.md)):
 losing it costs history, nothing else. Alloy keeps no journal position across reboots, so
 the last 12 h may be shipped twice after one. On a host with a `fleet.hosts.HOST.lan` fact, Alloy
 also takes the UniFi gateway's syslog (firewall blocks, IPS detections, admin activity) over UDP
