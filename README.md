@@ -127,7 +127,8 @@ the tailnet to read bastion's cache. The aarch64-linux host `edge` is evaluated,
 Changes reach `main` in two steps: agents and the operator open pull requests into `dev`, which
 [guard.yml](.github/workflows/guard.yml), `eval` and the review bot gate, and files in
 [CODEOWNERS](.github/CODEOWNERS) wait for the operator's review; the operator then approves and
-merges a pull request from `dev` into `main`, where `linux` builds what changed; `main` is what gets deployed.
+merges a pull request from `dev` into `main`, where `linux` builds what changed; `main` is what gets deployed. The
+GitHub rulesets require `guard`, `eval` and `claude-code (fable)` on `dev`, plus `linux` on `main`.
 
 ## Security
 
