@@ -64,8 +64,3 @@ until = "2027-05-24"
 cve = ["CVE-2025-8220", "CVE-2026-2750"]
 comment = "hermes-agent's web UI; the CVEs are Engeman Web's and Centreon Web's"
 until = "2027-05-24"
-
-["brotli-1.2.0"]
-cve = ["CVE-2026-111497"]
-comment = "accepted: hermes-agent's own nixpkgs, which it keeps for its patchelf patch; fixed once hermes-agent moves to a nixpkgs with brotli 1.2.1"
-until = "2026-12-24"
