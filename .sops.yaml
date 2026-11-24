@@ -15,7 +15,7 @@ creation_rules:
       - age:
           - *operator
           - *bastion
-  - path_regex: ^secrets/hosts/thinkpad(-senecanet)?\.yaml$
+  - path_regex: ^secrets/hosts/thinkpad\.yaml$
     key_groups:
       - age:
           - *operator
@@ -25,11 +25,6 @@ creation_rules:
       - age:
           - *operator
           - *thinkpad
-  - path_regex: ^secrets/shared/claude\.yaml$
-    key_groups:
-      - age:
-          - *operator
-          - *bastion
   - path_regex: ^secrets/shared/crowdsec\.yaml$
     key_groups:
       - age:
