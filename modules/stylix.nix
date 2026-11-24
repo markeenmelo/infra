@@ -14,10 +14,6 @@ let
         polarity = "dark";
         image = ./wallpaper.jpg;
         overlays.enable = false;
-        opacity = {
-          desktop = 0.9;
-          popups = 0.9;
-        };
         fonts = {
           sizes = {
             terminal = 12;
