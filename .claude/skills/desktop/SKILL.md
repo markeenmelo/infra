@@ -33,7 +33,7 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
 
 - **Surfaces:** every surface is opaque and solid, focused or not, with no blur and no drop shadow:
   app windows, the bar, the launcher, notifications and popups alike; the border color alone marks
-  focus.
+  focus. The lock screen's blurred wallpaper is the only blur.
 - **Quick terminal:** none: Umbriel has no global-shortcuts portal for Ghostty's own, and
   its scratchpad is unused, the stock binds parked in [umbriel.nix](../../../modules/umbriel.nix).
 - **Launcher:** `Mod + Space` or the bar's launcher button, on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
@@ -45,7 +45,8 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
   screen's). Terminal padding 10 px across, 8 px down.
 - **Borders:** 2 px around windows; `base0D` on the focused one, `base02` on the others. Umbriel
   takes one color per border, so focus is a solid accent, not a gradient.
-- **Rounding:** none on windows and bar items.
+- **Rounding:** none: windows, bar items, buttons, notifications and popups are square (Noctalia's
+  `corner_radius_scale = 0`). Only the lock screen's login box keeps Noctalia's own radii.
 - **Bar:** top, 32 px tall, `base00`, monospace semibold at 13, flush with the
   screen edges and square. Status items are text or one
   monochrome Nerd Font glyph each, no colored icons, no graphs; a third-party item that colors
@@ -61,7 +62,7 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
   more opens a `base01` popup next to
   it on click: the clock lists today's events, volume has a slider, and tailnet lists the exit
   nodes to switch to.
-- **Notifications:** top right, `base01` background, 4 px rounding, a 2 px `base0D` border, or
+- **Notifications:** top right, `base01` background, a 2 px `base0D` border, or
   `base08` for critical ones.
 - **Icons:** Nerd Font glyphs in the text color; color only where it carries state.
 
@@ -105,7 +106,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
   applies it. It is the only image in the look; nothing else is
   derived from it, since the colors come from Tokyo Night, not from the picture.
 - **Lock screen:** the wallpaper, blurred, with the clock in NotoSans Nerd Font Propo and the password field on a
-  `base01` 4 px rounded surface.
+  `base01` surface with Noctalia's own radii.
 
 ## Toolkits and sound
 
