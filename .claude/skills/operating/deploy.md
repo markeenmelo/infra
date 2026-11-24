@@ -10,7 +10,7 @@ on bastion and the workstations with the login key (`operator-login` in [access.
 shared password, so root there needs either the deploy key with its Bitwarden prompt or the login key plus the
 password. Edge has no `marcos`: `deploy` is the only account it admits.
 [server.nix](../../../modules/server.nix) sets `security.sudo.execWheelOnly`, so no service account can run
-sudo on a server; `deploy` is in `wheel` on every host (the thinkpad too, where that option is off) only to run the wrapper, and since `wheel`'s own rule asks for a
+sudo on a server; `deploy` is in `wheel` there only to run the wrapper, and since `wheel`'s own rule asks for a
 password `deploy` does not have, it still runs only the commands listed below. IPv6 stays on host-wide, also for the
 sake of deploys: MagicDNS answers with each node's tailnet IPv6 address, and a peer that tries it first
 against a host with IPv6 off waits out a connect timeout that can outlast the rollback confirm;

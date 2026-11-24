@@ -67,6 +67,7 @@
         ssh.systemd-ssh-proxy.enable = false;
       };
       security.sudo.execWheelOnly = true;
+      users.users.deploy.extraGroups = [ "wheel" ];
       security.wrappers =
         lib.genAttrs
           [
