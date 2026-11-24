@@ -87,6 +87,17 @@
               just --fmt --check
               touch $out
             '';
+        links = pkgs.runCommand "links" { } ''
+          cd ${../.}
+          status=0
+          while IFS= read -r -d "" f; do
+            for l in $(grep -oE '\]\([^)#[:space:]]+' "$f" | cut -c3- | grep -vE '^[a-z]+:'); do
+              [ -e "$(dirname "$f")/$l" ] || { echo "$f: broken link $l" >&2; status=1; }
+            done
+          done < <(find . -name '*.md' -print0)
+          [ "$status" -eq 0 ]
+          touch $out
+        '';
       };
     };
 }

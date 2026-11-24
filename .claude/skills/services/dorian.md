@@ -1,8 +1,3 @@
----
-name: dorian
-description: "Dorian on bastion: the Call of Cthulhu 7e Discord dice roller bot from markeenmelo/Cthulu-Dice-Roller, its Discord token, and how the package is pinned. Use before touching modules/dorian.nix or modules/dorian.pkg.nix, rotating the bot token, or debugging the bot not answering."
----
-
 # Dorian
 
 [dorian.nix](../../../modules/dorian.nix) runs the Discord slash-command bot

@@ -22,10 +22,12 @@ docs that describe it in the same commit; a doc that no longer matches the code 
 
 ## Autonomy
 
-Permissions apply within the requested task.
+Permissions apply within the requested task. Continue independent safe work while an approval is
+pending.
 
 **Do without asking:** read files without decrypting secrets; edit non-secret files; run
-formatters, linters, offline tests and `nix flake check`; query live state read-only through the
+formatters, linters, offline tests and `nix flake check` (if Bash cannot run `nix`, prepare the
+exact command and ask for its output); query live state read-only through the
 Grafana, GitHub and nixos MCP tools; commit in small Conventional Commits (`type(scope): summary`,
 the body saying what changed and why), refactors and features apart; push branches, open pull
 requests into `dev`, answer reviewers and merge a clean round; prepare `deploy .#HOST` of a
@@ -67,7 +69,8 @@ service restarts, `tailscale serve`, file changes).
   Rollback, and After deploying when the operator has something to run. The body stays true as
   commits land.
 - After each push, wait for `claude-code (fable)` to succeed on the head commit with its summary
-  updated after it; read any Codex review too. A reviewer that failed, was skipped or cut its
+  updated after it; read any Codex review too. Codex reviews only pull requests a person opens,
+  so on one the App opened it reviews only when the operator comments `@codex review`. A reviewer that failed, was skipped or cut its
   coverage short is not a clean round: report it. Check every finding against the code, an
   evaluation or an experiment; fix what holds and reply on each with the fixing commit or the
   evidence that nothing needs to change.
@@ -77,7 +80,8 @@ service restarts, `tailscale serve`, file changes).
   red: two green pull requests can combine into a red `dev`. A
   finding declined rather than fixed, or a file in [CODEOWNERS](.github/CODEOWNERS), waits for
   the operator. So does a skill edit that removes or loosens a rule instead of describing the
-  code it lands with.
+  code it lands with, and a change whose next step needs something only the operator can do or
+  see, such as a deploy or a log from a host.
 - `dev` reaches `main` only by a pull request from `dev` that the operator approves and merges.
   Open it when `dev` holds a finished change, listing the pull requests it promotes and what the
   operator deploys after.
@@ -108,8 +112,9 @@ service restarts, `tailscale serve`, file changes).
   new-service checklist.
 - Run every shell snippet handed to the operator, or its closest local equivalent, first.
 - Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Before
-  opening the pull request, `nix flake check` naming every affected x86_64 host; where it cannot
-  run, evaluate each check on its own, leave the builds to CI and say so.
+  opening the pull request, `nix flake check` naming every affected x86_64 host; a branch that
+  changes only Markdown needs the outPath comparison and the `format`, `secrets` and `links` checks. Where
+  the whole check cannot run, evaluate each check on its own, leave the builds to CI and say so.
 - Report exactly what passed, failed and is unknown, and never report green from a partial run. A
   build proves evaluation and closure, not boot, networking, credentials or backups. End with what was not checked and what the operator
   runs next, as exact commands.

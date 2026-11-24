@@ -37,7 +37,7 @@ the SSH host key) and `home.img` (`/home`). The root is memory and is lost on re
 ## Network
 
 The guest's network and host wiring come from [_guest.nix](../../../modules/_guest.nix), as for
-the downloads and hermes guests ([arr skill](../arr/SKILL.md)). Its tap carries a /24 that only
+the downloads and hermes guests ([services: arr](../services/arr.md)). Its tap carries a /24 that only
 bastion and the guest sit on. The `agents` nftables table drops everything the guest sends to
 bastion itself, to any private, CGNAT, link-local or multicast address, to the tailnet interface
 and over IPv6, and new connections forwarded towards it, and masquerades the rest to the
@@ -53,7 +53,7 @@ The guest joins the tailnet as `tag:agent`
 grant is bastion's port 443, for Grafana: the guest resolves `grafana.DOMAIN` to bastion's
 tailnet address through its hosts file. That port is the LAN proxy, which routes by host name,
 so the guest reaches the sign-in page of every app it serves; each app's own login is the gate,
-except ntfy's `alerts` topic, which needs none ([monitoring skill](../monitoring/SKILL.md)),
+except ntfy's `alerts` topic, which needs none ([services: monitoring](../services/monitoring.md)),
 and the tailnet policy's tests keep the cache, the state database and bastion's DNS out. Its key is `agents/tailscale-auth-key` in `secrets/hosts/bastion.yaml`,
 moved from the `enrollment_keys` output like a host's ([tailnet skill](../tailnet/SKILL.md)) and
 read once, when `state.img` holds no login, so a refreshed key does not restart the guest.

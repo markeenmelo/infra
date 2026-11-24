@@ -88,7 +88,7 @@ the disk layout with disko's test library, the state partition opened with a key
 while preserved paths and the machine id survived (`storage-perlless` covers the edge's
 variant); they need KVM, which the linux CI job enables. The `apps` check builds
 every flake app, which is what runs shellcheck on them, and `format` fails on unformatted Nix, OpenTofu, Luau, shell, TOML, JSON, YAML or
-`justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/`.
+`justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/`. `links` fails on a relative Markdown link whose target is missing.
 [check.yml](../../../.github/workflows/check.yml) evaluates every system and builds the x86_64
 ones (`linux`) on `main`; on a push to `dev` it compares each check's derivation with the
 commit before it, and on a pull request with the base commit's, and builds only those that differ, or every check when the base

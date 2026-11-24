@@ -28,7 +28,7 @@ past the firewall: the server role turns that off and the host blacklists the tr
 no Perl: `/etc` is an overlay and userborn makes the accounts, their files under the preserved
 `/var/lib/nixos`, a layout the `storage-perlless` check boots; bastion cannot follow, since sanoid
 and Immich's ExifTool are Perl. It keeps no log on disk either: the journal lives in memory and Loki on
-bastion is the record ([monitoring skill](../monitoring/SKILL.md)), so what was not shipped before a
+bastion is the record ([services: monitoring](../services/monitoring.md)), so what was not shipped before a
 reboot is lost and a failed boot is read from the provider's console history.
 
 ## Unlock
@@ -51,7 +51,7 @@ impersonate the prompt and capture the passphrase. `unlock.hostKey` pins its pub
 `unlock` app, which refuses any other key. A reboot the operator did not start (a crash,
 provider maintenance) leaves the host down until someone unlocks it; nothing on the host can.
 Bastion's `Host silent` alert is the signal for that
-([monitoring skill](../monitoring/SKILL.md)).
+([services: monitoring](../services/monitoring.md)).
 
 Oracle goes on calling an instance running after the host powered itself off, as `shutdown`
 does, so `wake` starts a stopped instance and, after asking, resets a running one, and refuses the reset while
