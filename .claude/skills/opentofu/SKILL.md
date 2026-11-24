@@ -53,7 +53,7 @@ from `fleet.domain` as `TF_VAR_fleet_domain`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
 
 - `grafite` is the operator's phone, an admin client outside the fleet.
-- Auth keys recreate on apply once invalid; the [operating: tailnet](../operating/tailnet.md) moves one
+- Auth keys recreate on apply once invalid; [operating: tailnet](../operating/tailnet.md) moves one
   into `secrets/hosts/HOST.yaml`.
 - A host enrolled by key carries the key's tag; retagging it is a re-enrollment.
 - Approval (`autoApprovers`) is not retroactive: apply a new route or exit node approver before

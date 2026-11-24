@@ -23,7 +23,7 @@ header:
 sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 --tpm2-with-pin=yes /dev/disk/by-partlabel/disk-os-state
 ```
 
-A reinstall follows the [operating: deploy](../operating/deploy.md#install), opening the old LUKS partition
+A reinstall follows [operating: deploy](../operating/deploy.md#install), opening the old LUKS partition
 first; wiping it destroys the old LUKS header and with it everything the old install held.
 
 ## Backups

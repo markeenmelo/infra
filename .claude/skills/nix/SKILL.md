@@ -9,10 +9,7 @@ description: "How this flake is organized (dendritic flake-parts + import-tree):
 file under `modules/` is a flake-parts module for one concern, and nothing Nix lives elsewhere.
 [flake-parts.nix](../../../modules/flake-parts.nix) lists the systems and loads the flake module
 that makes `flake.modules.*` exist. [base.nix](../../../modules/base.nix) is what a host gets
-before any role. Every host: flakes with a short connect timeout and a fallback
-to building, and nh cleaning old
-generations on the workstations. Every NixOS host: Limine as the loader, the kernel and sysctl
-hardening, no core dumps, and a capped journal kept under `/persist` unless a host makes it volatile.
+before any role.
 Background: [dendritic pattern](https://github.com/mightyiam/dendritic),
 [module semantics](https://nixos.org/manual/nixos/stable/#sec-writing-modules).
 
@@ -83,17 +80,12 @@ logic beyond picking the platform's switch.
 **Checks** — a check that needs a host's `pkgs` sits under `flake.checks.${fleet.hosts.HOST.system}`;
 one that needs only tools stays in `perSystem`. A check made for every NixOS host that runs a
 service goes through [_host-checks.nix](../../../modules/_host-checks.nix) (name, enabled predicate, derivation). Prefer `runCommand` assertions on generated config
-over `nixosTest`; one VM test, `storage` in [storage.nix](../../../modules/storage.nix), installs
-the disk layout with disko's test library, the state partition opened with a key file, reboots, and asserts the root subvolume was recreated
-while preserved paths and the machine id survived (`storage-perlless` covers the edge's
-variant); they need KVM, which the linux CI job enables. The `apps` check builds
+over `nixosTest`; the VM tests, `storage` in [storage.nix](../../../modules/storage.nix) (`storage-perlless` for the
+edge), need KVM, which the linux CI job enables. The `apps` check builds
 every flake app, which is what runs shellcheck on them, and `format` fails on unformatted Nix, OpenTofu, Luau, shell, TOML, JSON, YAML or
 `justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/`. `links` fails on a relative Markdown link whose target is missing.
-[check.yml](../../../.github/workflows/check.yml) evaluates every system and builds the x86_64
-ones (`linux`) on `main`; on a push to `dev` it compares each check's derivation with the
-commit before it, and on a pull request with the base commit's, and builds only those that differ, or every check when the base
-does not evaluate. A check whose derivation matches the base's is not rebuilt, so one that failed
-on its branch stays failed until a pull request changes it, and a later run on `dev` does not show it: the `dev` → `main` pull request, compared with `main`, rebuilds it. Assertions guard
+What CI builds when is in [README.md](../../../README.md#ci) and [check.yml](../../../.github/workflows/check.yml), which builds every check when the base does not evaluate. A check whose derivation matches the base's is
+not rebuilt, so one that failed on its branch stays failed until a pull request changes it, and a later run on `dev` does not show it: the `dev` → `main` pull request, compared with `main`, rebuilds it. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
 **Language** — `let`, never `rec`; `inherit` over repetition; conditional config through
@@ -127,10 +119,8 @@ resolves a locked input by `narHash` before `rev`, so a revision bump without it
 old tree where cached and fails elsewhere; `nix flake update INPUT` instead. Each pin keeps its
 own version literal so only that line is rewritten.
 
-[vulnix.yml](../../../.github/workflows/vulnix.yml) builds each x86_64 host weekly and matches
-its runtime closure against NIST's CVEs, listing the matches in the run summary; the run fails
-while an unwhitelisted match scores CVSS 9 or higher; a match NIST has not scored yet counts as
-10, so a fresh one fails until it is scored or whitelisted. vulnix matches by name and version, so most matches are
+[vulnix.yml](../../../.github/workflows/vulnix.yml) scans each x86_64 host's runtime closure
+weekly against NIST's CVEs; the workflow says what fails a run. vulnix matches by name and version, so most matches are
 another project with the same name or a CVE nixpkgs already patches. A confirmed false positive
 or an accepted risk goes in [vulnix.toml](../../../vulnix.toml) as a section per package with
 `cve`, `comment` and an `until` date, so it comes back for review; a real one is fixed by the
@@ -138,8 +128,8 @@ update that carries the patch.
 
 ## Refactor check
 
-A refactor must not change what the hosts build. The operator runs, from `HEAD` and the working
-tree, and the two files must be identical:
+A refactor must not change what the hosts build. Run this at the base and on the branch; the two
+outputs must be identical:
 
 ```sh
 nix eval --json .#nixosConfigurations --apply 'builtins.mapAttrs (_: h: h.config.system.build.toplevel.outPath)'
