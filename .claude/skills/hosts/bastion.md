@@ -1,8 +1,3 @@
----
-name: bastion
-description: "The bastion host: UGREEN DXP4800 Plus hardware, LUKS state partition with TPM2 unlock and Limine Secure Boot, the hand-made ZFS pools and their declared mounts, snapshots, the kernel ZFS allows, LAN subnet routes, power and UPS, firmware settings. Use before touching modules/hosts/bastion, any ZFS pool or dataset, Secure Boot or TPM enrollment, or bastion's firmware."
----
-
 # Bastion
 
 [modules/hosts/bastion/](../../../modules/hosts/bastion/) is a UGREEN DXP4800 Plus (Pentium

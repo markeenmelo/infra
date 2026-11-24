@@ -22,7 +22,7 @@ and the decisions taken against.
 
 The rules apps share live elsewhere: reach through the proxies in the
 [proxy skill](../proxy/SKILL.md), sign-in and the shared PostgreSQL in [identity.md](identity.md),
-datasets and pinned ids in the [bastion skill](../bastion/SKILL.md), backup roots in the
+datasets and pinned ids in the [hosts: bastion](../hosts/bastion.md), backup roots in the
 [backups skill](../backups/SKILL.md), and how a unit reads a secret in the
 [secrets skill](../secrets/SKILL.md). Not every app follows them: Frigate, the arr apps and
 SABnzbd keep their own logins, Radicale is reached with OpenCloud app tokens, Dorian serves

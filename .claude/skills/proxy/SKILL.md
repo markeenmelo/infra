@@ -6,7 +6,7 @@ description: "The public edge: the passthrough on the edge host that forwards TL
 # Edge proxy
 
 [edge.nix](../../../modules/edge.nix) is the whole public surface, in two halves, so that the
-cloud host never reads what it carries ([edge skill](../edge/SKILL.md)).
+cloud host never reads what it carries ([hosts: edge](../hosts/edge.md)).
 
 The `passthrough` role on the edge host is nginx: the stream module forwards TCP 443 to bastion
 over the tailnet with PROXY protocol, and port 80 only redirects to https; there is no HTTP/3,

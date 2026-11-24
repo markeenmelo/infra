@@ -1,15 +1,10 @@
----
-name: hermes
-description: "The Hermes MicroVM on bastion: Nous Research's Hermes Agent as a long-lived assistant reached through a Telegram bot, its model from the operator's ChatGPT subscription, the guest that confines it, the two secrets it holds and how its sign-in is renewed. Use before touching modules/hermes.nix or the hermes-agent input, changing the model, who may talk to the bot or what the guest reaches, or debugging the bot not answering."
----
-
 # Hermes
 
 [hermes.nix](../../../modules/hermes.nix) runs a third guest on bastion, `hermes`, from
 [_guest.nix](../../../modules/_guest.nix) like the downloads guest ([services: arr](../services/arr.md)):
 cloud-hypervisor, its own /24 on a tap ([_hermes.nix](../../../modules/_hermes.nix)), internet
 only, nothing of bastion, the LANs or the tailnet reachable but the home gateway's public address
-([agents skill](../agents/SKILL.md) names that limit), no login, journal on the console
+([agents.md](agents.md) names that limit), no login, journal on the console
 and so in `microvm@hermes`'s log. Inside runs
 [Hermes Agent](https://github.com/NousResearch/hermes-agent) through upstream's own NixOS
 module, from the `hermes-agent` flake input, pinned to a release tag in `flake.nix`: a bump is a

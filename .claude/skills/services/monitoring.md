@@ -100,7 +100,7 @@ ages out of retention unless it is restored first. The alert clears ten minutes 
 event while the damage stays, so its one notification is the signal.
 
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the tailnet;
-the `alerts` topic needs no login and describes the fleet, an accepted exposure to every client the LAN proxy admits (Home, Kids, the IoT players), to the agents guest ([agents skill](../agents/SKILL.md)) and to bastion's own processes through the proxy. Everything is denied by default; `alerts` is readable by anyone who reaches
+the `alerts` topic needs no login and describes the fleet, an accepted exposure to every client the LAN proxy admits (Home, Kids, the IoT players), to the agents guest ([guests: agents](../guests/agents.md)) and to bastion's own processes through the proxy. Everything is denied by default; `alerts` is readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
 a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. Each workstation subscribes
 itself: `ntfy-alerts`, a Home Manager user service, shows each alert

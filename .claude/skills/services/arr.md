@@ -66,7 +66,7 @@ succeeds, so one unreachable site never fails a deploy.
 ## The downloads guest
 
 [downloads.nix](../../../modules/downloads.nix) is the MicroVM, `downloads`, built like the
-agents' ([agents skill](../agents/SKILL.md)) from [_guest.nix](../../../modules/_guest.nix), the
+agents' ([guests: agents](../guests/agents.md)) from [_guest.nix](../../../modules/_guest.nix), the
 network and host wiring a guest of bastion needs given its name and addresses, shared with the agents' and
 hermes guests: cloud-hypervisor, a tap carrying a /24 only bastion
 and the guest sit on ([_downloads.nix](../../../modules/_downloads.nix) holds its addresses for
@@ -74,7 +74,7 @@ both files), and the `downloads` nftables table, which masquerades the guest to 
 drops what it sends to bastion, to private addresses, to the tailnet and over IPv6, and new
 connections forwarded towards it from any other network; replies to
 connections bastion opens pass; the home gateway's public address stays reachable, the limit the
-[agents skill](../agents/SKILL.md) names. The apps talk to indexers and peers, so one of them compromised
+[guests: agents](../guests/agents.md) names. The apps talk to indexers and peers, so one of them compromised
 meets a second kernel before bastion. The guest's own uplink is bastion's, not the Proton tunnel:
 it carries the tunnel's packets, and the namespace inside keeps the apps off it. The guest has no
 login, no tailnet node and no sops identity. Its journal goes to its console, which is
