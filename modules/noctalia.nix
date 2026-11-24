@@ -181,7 +181,6 @@
             ];
           };
           lockscreen.transition = [ ];
-          osd.background_opacity = 1;
           nightlight.enabled = true;
           idle.behavior = {
             lock = {
