@@ -119,7 +119,6 @@
             center = [ ];
             end = [
               "group:tray"
-              "group:work"
               "group:connectivity"
               "group:system"
               "group:time"
@@ -135,7 +134,6 @@
                 })
                 {
                   tray = [ "tray" ];
-                  work = [ "pull_requests" ];
                   connectivity = [
                     "tailnet"
                     "network"
@@ -174,10 +172,6 @@
               show_count = false;
             };
             agenda.type = "marcos/agenda:bar";
-            pull_requests = {
-              type = "raycursive/github-prs:bar";
-              hide_when_zero = true;
-            };
           };
           weather = {
             enabled = true;
@@ -193,7 +187,6 @@
           };
           plugins = {
             enabled = [
-              "raycursive/github-prs"
               "rylos/tailnet"
               "marcos/agenda"
             ];

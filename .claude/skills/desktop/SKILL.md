@@ -51,10 +51,10 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
   monochrome Nerd Font glyph each, no colored icons, no graphs; a third-party item that colors
   its text for no state is patched to the text color.
 - **Grouping:** related items share a `base01`-like pill (4 px rounding, no border), 8 px apart,
-  4 px between items inside one. An item shows only while it carries news (open pull requests, an
+  4 px between items inside one. An item shows only while it carries news (an
   event within two hours); a steady "all fine" state stays out of the bar and in its tooltip.
 - **Bar items:** on the left the workspaces, each a pill of its apps' monochrome icons, and media;
-  on the right the tray, then work (pull requests), connectivity (tailnet, network,
+  on the right the tray, then connectivity (tailnet, network,
   bluetooth), system (volume, battery, notifications) and time
   (agenda, weather, the clock last, as `%a %d %b %H:%M`). Noctalia holds them
   ([noctalia.nix](../../../modules/noctalia.nix)), the agenda through this repository's own plugin
