@@ -9,7 +9,7 @@ description: "bastion's backups: the nightly restic runs to the USB disk and to 
 (ext4, automounted, [data.nix](../../../modules/hosts/bastion/data.nix)) every night at 02:30.
 Before each run it dumps every database of bastion's PostgreSQL to
 `/srv/backups/postgresql` (the arr databases live in the downloads guest, which dumps them at 01:15
-into `/srv/backups/downloads`, [arr skill](../arr/SKILL.md)), snapshots `/srv` and each backup root as `@restic-usb`, and takes a
+into `/srv/backups/downloads`, [services: arr](../services/arr.md)), snapshots `/srv` and each backup root as `@restic-usb`, and takes a
 read-only btrfs snapshot of `/persist`; at 04:00, after the USB run, the `pcloud` job does the
 same under `@restic-pcloud` into `pcloud:bastion/restic`, the repository the old generation
 filled. restic reads those snapshots, so each dataset is
@@ -40,8 +40,8 @@ file, which the laptop cannot forge, as the `HOST` success clock, alerted on aft
 rather than 30 hours since the laptop is often off.
 
 The household repository opens with `backups/restic-password`, each laptop's with
-`backups/HOST-password` ([secrets skill](../secrets/SKILL.md)), so the household key can
-change without a laptop ever learning it. Each repository is its own dataset, `apps/backup-HOST`, created by hand before the deploy that declares it ([bastion skill](../bastion/SKILL.md)). bastion reaches pCloud directly with
+`backups/HOST-password` ([operating: secrets](../operating/secrets.md)), so the household key can
+change without a laptop ever learning it. Each repository is its own dataset, `apps/backup-HOST`, created by hand before the deploy that declares it ([hosts: bastion](../hosts/bastion.md)). bastion reaches pCloud directly with
 `backups/rclone-pcloud`, a full rclone config, so a compromised bastion can delete the off-site
 copies too; the operator accepted that over an append-only proxy on another host. Restore with
 `restic -r /mnt/backup/restic snapshots` and `restic restore`, run as root on bastion; for

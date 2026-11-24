@@ -1,8 +1,3 @@
----
-name: jellyfin
-description: "Jellyfin on bastion through nixflix: the media server at jellyfin.DOMAIN, its Authelia sign-in through the K0lin SSO plugin, the native admin, Quick Connect for TV and mobile apps, parental controls, Quick Sync transcoding, the media and state datasets, and the nixflix input shared with the arr apps. Use before touching modules/jellyfin.nix, modules/nixflix.nix or modules/jellyfin-sso.pkg.nix, adding a person or a child account, or debugging playback, transcoding or sign-in."
----
-
 # Jellyfin
 
 [jellyfin.nix](../../../modules/jellyfin.nix) runs Jellyfin from the nixflix module
@@ -22,7 +17,7 @@ trusts `X-Forwarded-For` only from loopback, where both proxies run.
 People sign in through Authelia with the K0lin SSO plugin, pinned in
 [jellyfin-sso.pkg.nix](../../../modules/jellyfin-sso.pkg.nix) because nixflix's plugin manifest
 has no Jellyfin 12 build of it. The client is confidential (`client_secret_post`); its secret
-reaches the plugin from sops and Authelia holds the digest ([identity skill](../identity/SKILL.md)).
+reaches the plugin from sops and Authelia holds the digest ([identity](identity.md)).
 Membership of `jellyfin` lets a person in and `jellyfin-admins` makes them an admin; the plugin
 rewrites admin status from those groups at every login. The login page's button starts the flow at
 `/sso/OID/start/authelia`. Pushed authorization is off as a `shortcut:` in the module.

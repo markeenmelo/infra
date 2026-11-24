@@ -1,8 +1,3 @@
----
-name: identity
-description: "Authelia on bastion: the sign-in portal at auth.DOMAIN, the people and their password hashes, two-factor and its database, the SMTP notifier, and the shared PostgreSQL on /srv/postgresql. Use before touching modules/authelia.nix or modules/postgresql.nix, adding or removing a person, changing a password, or debugging sign-in."
----
-
 # Identity
 
 [authelia.nix](../../../modules/authelia.nix) runs the portal every app's single sign-on

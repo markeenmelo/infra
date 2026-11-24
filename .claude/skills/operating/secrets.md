@@ -1,8 +1,3 @@
----
-name: secrets
-description: "SOPS and sops-nix: which file and recipients hold a key, how a unit receives a secret, adding a host or rotating a key, the secrets check. Use before touching secrets/, .sops.yaml, sops.secrets or any credential, and when asked where a credential lives."
----
-
 # Secrets
 
 Only ciphertext enters Git; `.sops.yaml` owns the recipients, one exact rule per file. Claude
@@ -20,7 +15,7 @@ rotating every value its files held.
 - **Hosts**: derived from the SSH host key, `ssh-to-age <<< "$(cat /etc/ssh/ssh_host_ed25519_key.pub)"`.
   [secrets.nix](../../../modules/secrets.nix) reads `/persist/etc/ssh/ssh_host_ed25519_key`
   directly, since activation decrypts before tmpfiles links `/etc/ssh`. A reinstall keeps the key: the
-  `install` app carries `/persist/etc/ssh` over ([deploy skill](../deploy/SKILL.md#install)); a new key is a new
+  `install` app carries `/persist/etc/ssh` over ([deploy.md](deploy.md#install)); a new key is a new
   recipient and `sops updatekeys` on every file whose rule names the host.
 
 ## Files
@@ -28,8 +23,8 @@ rotating every value its files held.
 | File | Recipients | Keys |
 |---|---|---|
 | `shared/login.yaml` | operator, thinkpad | `marcos-password-hash` ([access.nix](../../../modules/access.nix)), for the Linux workstations' login; the servers have no `marcos` account and are not recipients |
-| `hosts/HOST.yaml` | operator, HOST | `tailscale-auth-key` ([tailnet skill](../tailnet/SKILL.md)); on the edge also `crowdsec-bouncer-key`, the same value as bastion's `crowdsec/edge-bouncer-key`, which only reads ban decisions ([proxy skill](../proxy/SKILL.md)); on bastion also `authelia/{jwt,storage,smtp-password,USER-email,USER-password-hash,oidc-hmac,oidc-signing-key,ID-client-secret-hash}` ([identity skill](../identity/SKILL.md)) and each OIDC app's `APP/oidc-client-secret`, Grafana's `grafana/{secret-key,admin-password,heartbeat-url}` and ntfy's `ntfy/{publisher-hash,publisher-token}` ([monitoring skill](../monitoring/SKILL.md)), Jellyfin's `jellyfin/{api-key,password,ian-password}` ([jellyfin skill](../jellyfin/SKILL.md)), the arr apps' `arr/{sonarr,radarr,prowlarr}-api-key`, `arr/password`, `arr/qbittorrent-password{,-hash}`, `arr/proton-wireguard`, `arr/sabnzbd-{api,nzb}-key`, `arr/{newshosting,tweaknews}-username`, `arr/newshosting-password`, `arr/easynews-{password,api-key}` and `arr/{ninjacentral,nzbgeek,althub}-api-key`, `arr/seerr-api-key` ([arr skill](../arr/SKILL.md)), the restic passwords `backups/{restic,thinkpad}-password` and pCloud's rclone config `backups/rclone-pcloud` ([backups skill](../backups/SKILL.md)), the camera stream URLs `frigate-main`, `frigate-sub` ([frigate skill](../frigate/SKILL.md)), and the cache signing key `harmonia-sign-key`, whose public half is `cacheKey` in [builder.nix](../../../modules/builder.nix), trusted by every workstation ([deploy skill](../deploy/SKILL.md)), `nix-github-private-password` (a fine-grained PAT with Contents: Read on private sources bastion's nix-daemon fetches via `fetchFromGitHub { private = true; }`; username is fixed as `markeenmelo` in the rendered env file), and per Proton exit node `proton-exit/{ca,us,br}` (its WireGuard config) and `proton-exit/{ca,us,br}-auth-key` ([tailnet skill](../tailnet/SKILL.md)), and the agent MicroVM's `agents/{tailscale-auth-key,github-api-key,paseo-password,grafana-token}` (`github-api-key` is the GitHub App's private key, which stays on bastion) ([agents skill](../agents/SKILL.md)) and the Hermes MicroVM's `hermes/{env,auth}` ([hermes skill](../hermes/SKILL.md)), and Dorian's `dorian/token` ([dorian skill](../dorian/SKILL.md)) |
-| `hosts/thinkpad.yaml` | operator, thinkpad | `tailscale-auth-key`, `wifi-psk` (MN-Home), `nix-build-ssh-key`, `backups/thinkpad-password` ([thinkpad skill](../thinkpad/SKILL.md)) |
+| `hosts/HOST.yaml` | operator, HOST | `tailscale-auth-key` ([tailnet.md](tailnet.md)); on the edge also `crowdsec-bouncer-key`, the same value as bastion's `crowdsec/edge-bouncer-key`, which only reads ban decisions ([proxy skill](../proxy/SKILL.md)); on bastion also `authelia/{jwt,storage,smtp-password,USER-email,USER-password-hash,oidc-hmac,oidc-signing-key,ID-client-secret-hash}` ([services: identity](../services/identity.md)) and each OIDC app's `APP/oidc-client-secret`, Grafana's `grafana/{secret-key,admin-password,heartbeat-url}` and ntfy's `ntfy/{publisher-hash,publisher-token}` ([services: monitoring](../services/monitoring.md)), Jellyfin's `jellyfin/{api-key,password,ian-password}` ([services: jellyfin](../services/jellyfin.md)), the arr apps' `arr/{sonarr,radarr,prowlarr}-api-key`, `arr/password`, `arr/qbittorrent-password{,-hash}`, `arr/proton-wireguard`, `arr/sabnzbd-{api,nzb}-key`, `arr/{newshosting,tweaknews}-username`, `arr/newshosting-password`, `arr/easynews-{password,api-key}` and `arr/{ninjacentral,nzbgeek,althub}-api-key`, `arr/seerr-api-key` ([services: arr](../services/arr.md)), the restic passwords `backups/{restic,thinkpad}-password` and pCloud's rclone config `backups/rclone-pcloud` ([backups skill](../backups/SKILL.md)), the camera stream URLs `frigate-main`, `frigate-sub` ([services: frigate](../services/frigate.md)), and the cache signing key `harmonia-sign-key`, whose public half is `cacheKey` in [builder.nix](../../../modules/builder.nix), trusted by every workstation ([deploy.md](deploy.md)), `nix-github-private-password` (a fine-grained PAT with Contents: Read on private sources bastion's nix-daemon fetches via `fetchFromGitHub { private = true; }`; username is fixed as `markeenmelo` in the rendered env file), and per Proton exit node `proton-exit/{ca,us,br}` (its WireGuard config) and `proton-exit/{ca,us,br}-auth-key` ([tailnet.md](tailnet.md)), and the agent MicroVM's `agents/{tailscale-auth-key,github-api-key,paseo-password,grafana-token}` (`github-api-key` is the GitHub App's private key, which stays on bastion) ([guests: agents](../guests/agents.md)) and the Hermes MicroVM's `hermes/{env,auth}` ([guests: hermes](../guests/hermes.md)), and Dorian's `dorian/token` ([services: dorian](../services/dorian.md)) |
+| `hosts/thinkpad.yaml` | operator, thinkpad | `tailscale-auth-key`, `wifi-psk` (MN-Home), `nix-build-ssh-key`, `backups/thinkpad-password` ([hosts: thinkpad](../hosts/thinkpad.md)) |
 | `hosts/thinkpad-senecanet.yaml` | operator, thinkpad | `seneca-identity`, `seneca-password` for SenecaNET's WPA2-Enterprise profile |
 | `shared/claude.yaml` | operator, bastion | `claude-token` (below) |
 | `tailscale/operator.yaml` | operator | Tailscale OAuth client, tailnet name, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
@@ -39,7 +34,7 @@ rotating every value its files held.
 | `unifi/operator.yaml` | operator | `UNIFI_API_KEY` for the gateway, the Wi-Fi passphrases by SSID, state passphrase ([opentofu skill](../opentofu/SKILL.md)) |
 
 `claude-token` in `shared/claude.yaml` is Claude Code's sign-in for the agent guest
-([agents skill](../agents/SKILL.md)), the token from `claude setup-token`, which is why bastion
+([guests: agents](../guests/agents.md)), the token from `claude setup-token`, which is why bastion
 is a recipient of that file. It makes model requests only, so the guest has no Remote Control
 and none of the account's connectors, and one revocation signs it out.
 The identity keys in the home folder (SSH, GnuPG, the keyring, sops, gh, Claude's credentials,

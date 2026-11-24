@@ -1,8 +1,3 @@
----
-name: monitoring
-description: "Monitoring on bastion: Prometheus and the exporters it scrapes, Loki and the Alloy journal shipper, Grafana at grafana.DOMAIN with its Authelia sign-in, datasources and dashboards, the alert rules and where they go (ntfy, email, the healthchecks.io heartbeat), and ntfy at ntfy.DOMAIN. Use before touching modules/monitoring.nix or modules/ntfy.nix, adding a scrape target, exporter, dashboard or alert, subscribing a device, or debugging missing metrics, logs, alerts or Grafana sign-in."
----
-
 # Monitoring
 
 [monitoring.nix](../../../modules/monitoring.nix) runs the stack on bastion, every port on loopback except the ones Alloy takes other hosts' telemetry and the gateway's syslog on.
@@ -26,7 +21,7 @@ from the gateway alone and stores the lines unparsed under `host="gateway"`
 
 Grafana sits behind the LAN proxy at `grafana.`, on the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)).
 People sign in through Authelia; membership of `grafana-admins` makes them Grafana admins and
-everyone else is refused ([identity skill](../identity/SKILL.md)). The local `admin` with
+everyone else is refused ([identity](identity.md)). The local `admin` with
 `grafana/admin-password` is the break-glass login. Grafana reads that secret only when it creates
 its database, so rotating it also means setting the new value on the `admin` user under
 Administration → Users while signed in through Authelia; changing the secret alone restarts
@@ -96,7 +91,7 @@ is quiet and any other login stands out; a stolen laptop's deploy key therefore 
 `Unexpected certificate` is critical: the proxy's `certificate-watch` job found a certificate for the
 domain in the public logs whose key the proxy does not hold ([proxy skill](../proxy/SKILL.md)).
 `Authelia mail failing` catches a broken SMTP account, which Authelia no longer tests at start
-([identity skill](../identity/SKILL.md)). `ZFS data errors` is critical: ZED logs a checksum, I/O
+([identity](identity.md)). `ZFS data errors` is critical: ZED logs a checksum, I/O
 or data error, which a scrub or a read can find while the pool stays online and `zpool scrub`
 still exits cleanly. A checksum or I/O error on one disk of a redundant pool is repaired from
 another copy and points at a failing disk; a `data` error is a block lost for good: reading the
@@ -105,14 +100,14 @@ ages out of retention unless it is restored first. The alert clears ten minutes 
 event while the damage stays, so its one notification is the signal.
 
 [ntfy.nix](../../../modules/ntfy.nix) serves `ntfy.` through the LAN proxy to the LAN and the tailnet;
-the `alerts` topic needs no login and describes the fleet, an accepted exposure to every client the LAN proxy admits (Home, Kids, the IoT players), to the agents guest ([agents skill](../agents/SKILL.md)) and to bastion's own processes through the proxy. Everything is denied by default; `alerts` is readable by anyone who reaches
+the `alerts` topic needs no login and describes the fleet, an accepted exposure to every client the LAN proxy admits (Home, Kids, the IoT players), to the agents guest ([guests: agents](../guests/agents.md)) and to bastion's own processes through the proxy. Everything is denied by default; `alerts` is readable by anyone who reaches
 it, and only the `publisher` user (its token in `ntfy/publisher-token`) may publish. Subscribe on
 a phone or desktop to `https://ntfy.DOMAIN/alerts` with no login. Each workstation subscribes
 itself: `ntfy-alerts`, a Home Manager user service, shows each alert
 as a notification, critical from priority 4 on Linux, and only while the tailnet is up, so alerts
 sent while the laptop was off or away reach only the phone.
 
-Bastion admits no login ([deploy skill](../deploy/SKILL.md)), so debug the stack through Grafana's
+Bastion admits no login ([operating: deploy](../operating/deploy.md)), so debug the stack through Grafana's
 Explore or the Grafana MCP tools: `up` in Prometheus lists every scrape target and its health,
 `node_systemd_unit_state{instance="bastion",name=~"(prometheus|loki|alloy|grafana).service",state="active"}`
 the stack's units, and `{host="bastion",unit="alloy.service"}` in Loki answers only while Loki is ready.

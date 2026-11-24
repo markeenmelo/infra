@@ -6,7 +6,7 @@ description: "The public edge: the passthrough on the edge host that forwards TL
 # Edge proxy
 
 [edge.nix](../../../modules/edge.nix) is the whole public surface, in two halves, so that the
-cloud host never reads what it carries ([edge skill](../edge/SKILL.md)).
+cloud host never reads what it carries ([hosts: edge](../hosts/edge.md)).
 
 The `passthrough` role on the edge host is nginx: the stream module forwards TCP 443 to bastion
 over the tailnet with PROXY protocol, and port 80 only redirects to https; there is no HTTP/3,
@@ -77,7 +77,7 @@ backend of every host ([caddy.nix](../../../modules/caddy.nix)), before they cro
 Bastion runs no bouncer of its own, since every public connection reaches it from the edge's
 address. The bouncer's key is one value under two names, `crowdsec-bouncer-key` in the edge's
 secrets file and `crowdsec/edge-bouncer-key` in bastion's
-([secrets skill](../secrets/SKILL.md)), and reads decisions only; bastion registers it whenever
+([operating: secrets](../operating/secrets.md)), and reads decisions only; bastion registers it whenever
 the API does not accept it, so a rotated key needs no command and an unchanged one leaves no
 moment in which the edge is refused. The edge's bouncer restarts on failure, so it comes back by
 itself after bastion was away, and a deploy of the edge does not hinge on bastion answering.
@@ -110,4 +110,4 @@ issued for the domain and its subdomains, and counts those from the last week wh
 not the one the proxy serves, read from its own listener on loopback so that neither the edge nor
 DNS can answer for it; Caddy makes a new key at each renewal, so its own older certificates
 fall outside the week. The query names the domain to that service. A failed query changes nothing
-and fails no unit; the metric going stale has its own alert ([monitoring skill](../monitoring/SKILL.md)).
+and fails no unit; the metric going stale has its own alert ([services: monitoring](../services/monitoring.md)).

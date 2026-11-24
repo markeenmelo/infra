@@ -1,8 +1,3 @@
----
-name: edge
-description: "The edge host: the Oracle Cloud Ampere A1 instance, its LUKS state partition with no TPM, the initrd that takes the passphrase over SSH on its public address, the unlock, wake and install apps for it, what it holds that the provider could read, how it boots, reaches the network and builds itself. Use before touching modules/hosts/edge or modules/unlock.nix, rebooting or reinstalling the instance, changing the unlock port or the initrd host key, or debugging a boot that never reaches the tailnet."
----
-
 # Edge
 
 [modules/hosts/edge/](../../../modules/hosts/edge/) is the instance the
@@ -28,7 +23,7 @@ past the firewall: the server role turns that off and the host blacklists the tr
 no Perl: `/etc` is an overlay and userborn makes the accounts, their files under the preserved
 `/var/lib/nixos`, a layout the `storage-perlless` check boots; bastion cannot follow, since sanoid
 and Immich's ExifTool are Perl. It keeps no log on disk either: the journal lives in memory and Loki on
-bastion is the record ([monitoring skill](../monitoring/SKILL.md)), so what was not shipped before a
+bastion is the record ([services: monitoring](../services/monitoring.md)), so what was not shipped before a
 reboot is lost and a failed boot is read from the provider's console history.
 
 ## Unlock
@@ -51,7 +46,7 @@ impersonate the prompt and capture the passphrase. `unlock.hostKey` pins its pub
 `unlock` app, which refuses any other key. A reboot the operator did not start (a crash,
 provider maintenance) leaves the host down until someone unlocks it; nothing on the host can.
 Bastion's `Host silent` alert is the signal for that
-([monitoring skill](../monitoring/SKILL.md)).
+([services: monitoring](../services/monitoring.md)).
 
 Oracle goes on calling an instance running after the host powered itself off, as `shutdown`
 does, so `wake` starts a stopped instance and, after asking, resets a running one, and refuses the reset while
@@ -75,7 +70,7 @@ again.
 ## Install
 
 A new instance starts from the provider's stock image. `enroll` makes its identity first and
-`install` takes that directory as ROOT ([deploy skill](../deploy/SKILL.md#install)); the border
+`install` takes that directory as ROOT ([operating: deploy](../operating/deploy.md#install)); the border
 admits the installer's port 22, and the instance has the installer's memory, only for that
 apply. disko asks for the passphrase on the terminal, and the host then waits in its initrd for
 `unlock`. The apply that ends the install shrinks the instance again, which reboots it, so it is

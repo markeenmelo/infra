@@ -8,7 +8,7 @@ description: "OpenTofu projects under opentofu/ (Tailscale: tailnet policy, devi
 [opentofu/PROJECT/](../../../opentofu/) is operator-only; no host reads it. The `tofu` app
 ([opentofu.nix](../../../modules/opentofu.nix)) runs any OpenTofu command inside a project with the
 credentials from `secrets/PROJECT/operator.yaml`, plus `secrets/PROJECT/api.yaml` when the
-project shares a credential with a host ([secrets skill](../secrets/SKILL.md)), and the
+project shares a credential with a host ([operating: secrets](../operating/secrets.md)), and the
 state in schema `PROJECT` of the `tofu` database on bastion's PostgreSQL, which only the
 operator laptops reach over the tailnet, locked per run and encrypted with
 `TF_VAR_state_passphrase` from the same file. State is never in Git; a lost state is recovery,
@@ -53,7 +53,7 @@ from `fleet.domain` as `TF_VAR_fleet_domain`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
 
 - `grafite` is the operator's phone, an admin client outside the fleet.
-- Auth keys recreate on apply once invalid; the [tailnet skill](../tailnet/SKILL.md) moves one
+- Auth keys recreate on apply once invalid; [operating: tailnet](../operating/tailnet.md) moves one
   into `secrets/hosts/HOST.yaml`.
 - A host enrolled by key carries the key's tag; retagging it is a re-enrollment.
 - Approval (`autoApprovers`) is not retroactive: apply a new route or exit node approver before
@@ -132,7 +132,7 @@ address, and the host is installed again.
 
 [main.tf](../../../opentofu/unifi/main.tf) owns the gateway's LAN side: the VLANs, Wi-Fi networks,
 fixed client addresses, the LAN wildcard record that points the domain at bastion, IPS and
-controller settings, remote syslog to bastion ([monitoring skill](../monitoring/SKILL.md)) and
+controller settings, remote syslog to bastion ([services: monitoring](../services/monitoring.md)) and
 the firewall. Bastion's LAN address, MAC, gateway and syslog port come from `fleet.hosts.*.lan`
 as `fleet_lan`. Plan and apply from the LAN or through bastion's subnet route to the gateway;
 apply a network or Wi-Fi change from a wired client, since it can cut the route mid-apply.
