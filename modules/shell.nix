@@ -79,6 +79,8 @@
       enable = true;
       config.theme = "OneHalfDark";
     };
+    btop.enable = true;
+    lazygit.enable = true;
     fd.enable = true;
     ripgrep.enable = true;
   };
