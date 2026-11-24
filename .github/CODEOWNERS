@@ -3,7 +3,6 @@
 /AGENTS.md @markeenmelo
 /.claude/ @markeenmelo
 /.claude/skills/
-/.greptile/ @markeenmelo
 /.mcp.json @markeenmelo
 /justfile @markeenmelo
 /.envrc @markeenmelo
