@@ -6,6 +6,11 @@ let
       stylix = {
         enable = true;
         base16Scheme = "${inputs.stylix.inputs.tinted-schemes}/base16/tokyo-night-terminal-dark.yaml";
+        override = {
+          base03 = "565F89";
+          base05 = "A9B1D6";
+          base0B = "9ECE6A";
+        };
         polarity = "dark";
         image = ./wallpaper.jpg;
         overlays.enable = false;

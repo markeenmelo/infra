@@ -24,7 +24,8 @@
                   colors.bg_float = '${c.base01}'
                   colors.bg_sidebar = '${c.base00}'
                   colors.bg_statusline = '${c.base01}'
-                  colors.bg_highlight = '${c.base01}'
+                  colors.bg_highlight = '${c.base02}'
+                  colors.bg_popup = '${c.base01}'
                 end,
               })
               vim.cmd.colorscheme('tokyonight')

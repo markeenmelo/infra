@@ -11,7 +11,8 @@ quiet**: the desktop recedes and content comes first.
 ## Theming
 
 [stylix.nix](../../../modules/stylix.nix) sets the one scheme, Tokyo Night (`tokyo-night-terminal-dark`,
-whose base16 slots keep red, yellow and blue in the roles below, unlike `tokyo-night-dark`), dark
+whose base16 slots keep red, yellow and blue in the roles below, unlike `tokyo-night-dark`, with
+the text, muted text and success slots overridden to Tokyo Night's own so every role holds), dark
 polarity, and the fonts; every app that Stylix can theme takes its colors and fonts from it. An
 app is then hand-tuned in its own module to the rules below, reading `config.lib.stylix.colors`
 (base16 names) and `config.stylix.fonts`, never a hex or font literal, so a scheme or font change
@@ -19,7 +20,7 @@ reaches it. An app Stylix cannot theme gets the same treatment by hand.
 
 An app that ships its own Tokyo Night uses it for syntax instead of Stylix's base16 colors, while
 its fonts still come from Stylix: its target is disabled and the native theme is selected, with its
-background and surfaces overridden from `base00`–`base01` so it sits on the same black as the rest.
+background and surfaces overridden from `base00`–`base02` so it sits on the same black as the rest.
 Only Neovim does (`tokyonight-nvim`, style `night`, in [neovim.nix](../../../modules/neovim.nix));
 Zed and bat, which ship no Tokyo Night, take Stylix's.
 
