@@ -15,6 +15,7 @@
   fleet.hosts.bastion.module = {
     imports = with config.flake.modules.nixos; [
       server
+      operator-login
       lan-proxy
       public-proxy
       crowdsec-engine

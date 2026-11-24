@@ -6,8 +6,9 @@ Nix trusted user so unsigned closures can be copied in, and sudo lets it run any
 `activate-rs`, remove the rollback canary, run `clean-generations`, reboot and power off. Its key is therefore a root key on every host and is not the
 operator's login key ([_operator-key.nix](../../../modules/_operator-key.nix)): its private half lives only in the operator's
 Bitwarden SSH agent, which asks before each use. The other path to root is `marcos`, who logs in
-on every host with the login key ([access.nix](../../../modules/access.nix)) and runs sudo with the shared password,
-so root needs either the deploy key with its Bitwarden prompt or the login key plus the password.
+on bastion and the workstations with the login key (`operator-login` in [access.nix](../../../modules/access.nix)) and runs sudo with the
+shared password, so root there needs either the deploy key with its Bitwarden prompt or the login key plus the
+password. Edge has no `marcos`: `deploy` is the only account it admits.
 [server.nix](../../../modules/server.nix) sets `security.sudo.execWheelOnly`, so no service account can run
 sudo on a server; `deploy` is in `wheel` on every host (the thinkpad too, where that option is off) only to run the wrapper, and since `wheel`'s own rule asks for a
 password `deploy` does not have, it still runs only the commands listed below. IPv6 stays on host-wide, also for the
