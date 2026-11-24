@@ -59,7 +59,7 @@ sops updatekeys -y secrets/shared/login.yaml   # after a .sops.yaml rule change
 A unit's secret is declared as `sops.secrets.NAME` beside the unit that reads it, in the same
 commit as the ciphertext. The `secrets` check fails on plaintext or on recipients that differ from
 the rule. Which file holds which key, delivery and rotation: the
-[secrets skill](.claude/skills/secrets/SKILL.md).
+[secrets skill](.claude/skills/operating/secrets.md).
 
 ## Deploying
 
@@ -76,7 +76,7 @@ just unlock edge           # send the disk passphrase to the edge waiting in its
 just switch                # the laptop switches itself
 ```
 
-Who builds what, the deploy account and recovery: the [deploy skill](.claude/skills/deploy/SKILL.md).
+Who builds what, the deploy account and recovery: the [deploy skill](.claude/skills/operating/deploy.md).
 
 ## Bootstrap
 
@@ -90,7 +90,7 @@ just install HOST USER@ADDRESS IDENTITY   # a new host, with the directory enrol
 just install HOST root@ADDRESS /mnt/old/persist   # a reinstall, identity carried off the old disk
 ```
 
-The steps around these commands: the [deploy skill](.claude/skills/deploy/SKILL.md#install); the
+The steps around these commands: the [deploy skill](.claude/skills/operating/deploy.md#install); the
 [hosts skill](.claude/skills/hosts/SKILL.md) covers each host's hardware ([edge](.claude/skills/hosts/edge.md) also
 resizes its instance for the install).
 
@@ -101,12 +101,12 @@ resizes its instance for the install).
 2. `just enroll HOST` prints the three facts its configuration needs: the age recipient, the
    tailnet address and the initrd host key.
 3. Add the recipient and a `hosts/HOST.yaml` rule to `.sops.yaml`
-   ([secrets skill](.claude/skills/secrets/SKILL.md#new-host)), then create the file with the
+   ([secrets skill](.claude/skills/operating/secrets.md#new-host)), then create the file with the
    `tailscale-auth-key` every NixOS host declares
-   ([tailnet skill](.claude/skills/tailnet/SKILL.md#auth-key)). The key `enroll` spent will do,
+   ([tailnet skill](.claude/skills/operating/tailnet.md#auth-key)). The key `enroll` spent will do,
    since it is ignored once the node is logged in, but it is no fallback if the host rejects its
    enrolled login on first boot: rotate the key first to have one
-   ([deploy skill](.claude/skills/deploy/SKILL.md#install)).
+   ([deploy skill](.claude/skills/operating/deploy.md#install)).
 4. Write `modules/hosts/HOST/`: `host.nix` (facts and the roles it imports), `hardware.nix` and
    `disko.nix`, `git add` them, and `just check`.
 5. Install as in [Bootstrap](#bootstrap), add the host to the table above, and delete the identity

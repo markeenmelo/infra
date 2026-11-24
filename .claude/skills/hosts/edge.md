@@ -70,7 +70,7 @@ again.
 ## Install
 
 A new instance starts from the provider's stock image. `enroll` makes its identity first and
-`install` takes that directory as ROOT ([deploy skill](../deploy/SKILL.md#install)); the border
+`install` takes that directory as ROOT ([operating: deploy](../operating/deploy.md#install)); the border
 admits the installer's port 22, and the instance has the installer's memory, only for that
 apply. disko asks for the passphrase on the terminal, and the host then waits in its initrd for
 `unlock`. The apply that ends the install shrinks the instance again, which reboots it, so it is

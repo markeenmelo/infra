@@ -1,12 +1,7 @@
----
-name: tailnet
-description: "Tailscale on every host: how a host joins and stays joined, which traffic the tailnet admits (SSH), the auth key secret and the tag it needs, recovery after reinstall. Use before touching modules/tailscale.nix, tailscale0 firewall rules, or when a host must join or rejoin the tailnet."
----
-
 # Tailnet
 
 [tailscale.nix](../../../modules/tailscale.nix) joins every NixOS host with the auth key in
-`secrets/hosts/HOST.yaml` (`tailscale-auth-key`, [secrets skill](../secrets/SKILL.md)) and
+`secrets/hosts/HOST.yaml` (`tailscale-auth-key`, [secrets.md](secrets.md)) and
 keeps `/var/lib/tailscale` under `/persist`, so a host authenticates once and survives reboots
 and deploys. SSH is admitted only on the tailnet interface ([ssh.nix](../../../modules/ssh.nix)).
 
@@ -21,7 +16,7 @@ nix run .#tofu -- tailscale output -json enrollment_keys | jq .HOST |
   sops set --value-stdin secrets/hosts/HOST.yaml '["tailscale-auth-key"]'
 ```
 
-The key is spent by `enroll` for a new host ([deploy skill](../deploy/SKILL.md#install)), or on
+The key is spent by `enroll` for a new host ([deploy.md](deploy.md#install)), or on
 the first boot of a host whose `/var/lib/tailscale` holds no login, and ignored once the node is logged in, so it only
 matters at install time: an expired key in Git blocks nothing until a reinstall, when the operator
 applies and copies again.
@@ -29,7 +24,7 @@ applies and copies again.
 ## Reinstall
 
 The `install` app carries `/persist/var/lib/tailscale` with `/persist/etc/ssh` (both in
-`fleet.carry`, [deploy skill](../deploy/SKILL.md#install)), so the node keeps its identity; otherwise it joins as a new node under the
+`fleet.carry`, [deploy.md](deploy.md#install)), so the node keeps its identity; otherwise it joins as a new node under the
 same name and the old one is removed in the admin console. Never `tailscale logout` a live host.
 
 ## Proton exit nodes

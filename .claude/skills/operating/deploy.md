@@ -1,8 +1,3 @@
----
-name: deploy
-description: "deploy-rs: how a host's committed configuration is activated over the tailnet with magic rollback, the deploy account and what it may run, the deploy checks, and the nixos-anywhere install app that carries a host's SSH and tailnet identity over. Use before touching modules/deploy.nix or modules/install.nix, the deploy account or sudo rules, and before preparing any deploy or install command."
----
-
 # Deploy
 
 [deploy.nix](../../../modules/deploy.nix) turns every `fleet.hosts` entry into a deploy-rs node
@@ -98,10 +93,10 @@ configuration evaluates: the age recipient its secrets file is encrypted to, its
 and the host key its initrd presents. The `enroll` app in install.nix makes that identity on the
 operator's machine and prints the three: it generates the SSH host key and a separate initrd host
 key, then logs a throwaway userspace `tailscaled` into the tailnet under the host's name with
-the host's enrollment key ([tailnet skill](../tailnet/SKILL.md)), which spends the key, and stops
+the host's enrollment key ([tailnet.md](tailnet.md)), which spends the key, and stops
 it. The directory it names holds the private halves laid out under `persist/`, so the node key
 and host key never touch the provider's stock image. It sits beside the operator's sops key,
-under a path the home backup excludes ([secrets skill](../secrets/SKILL.md)),
+under a path the home backup excludes ([secrets.md](secrets.md)),
 since it is the only copy until the host has booted. The install takes it as ROOT and leaves it
 in place, since a finished install proves nothing about the first boot; the operator deletes it
 once the host answers on the tailnet. Losing it before then means enrolling again and changing
@@ -120,6 +115,6 @@ asks for the new passphrase on the terminal.
 
 ADDRESS is the host's public or LAN address, not its MagicDNS name, since the tailnet node is replaced
 during the install. The installer presents its own host key, so `ssh-keygen -R ADDRESS` first
-and accept the new one; the carried key returns with the installed system. Rotate the host's auth key first ([tailnet skill](../tailnet/SKILL.md)) in
+and accept the new one; the carried key returns with the installed system. Rotate the host's auth key first ([tailnet.md](tailnet.md)) in
 case the carried state is rejected; the key in the host file is only read when
 `/var/lib/tailscale` holds no login.
