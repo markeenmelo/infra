@@ -13,7 +13,15 @@ concurrency:
 
 jobs:
   scan:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            system: x86_64-linux
+          - runner: ubuntu-24.04-arm
+            system: aarch64-linux
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     permissions:
       contents: read
@@ -24,8 +32,11 @@ jobs:
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
         with:
           nix_conf: accept-flake-config = false
-      - name: Scan each x86_64 host's runtime closure
+      - name: Scan the runtime closure of each host this runner can build
+        env:
+          SYSTEM: ${{ matrix.system }}
         run: |
+          set -o pipefail
           # shortcut: vulnix reads only the last six yearly NVD feeds, so older CVEs never match; merge older years into the oldest served file if that coverage matters
           feeds=$RUNNER_TEMP/nvd
           mkdir -p "$feeds"
@@ -38,7 +49,9 @@ jobs:
           done
           python3 -m http.server 8765 --bind 127.0.0.1 --directory "$feeds" > /dev/null 2>&1 &
           curl -fsS --retry 10 --retry-connrefused --retry-delay 1 -o /dev/null http://127.0.0.1:8765/
-          hosts=$(nix eval --raw .#nixosConfigurations --apply 'cs: builtins.concatStringsSep " " (builtins.filter (n: cs.${n}.pkgs.stdenv.hostPlatform.system == "x86_64-linux") (builtins.attrNames cs))')
+          hosts=$(nix eval --json .#nixosConfigurations --apply 'builtins.mapAttrs (_: c: c.pkgs.stdenv.hostPlatform.system)' |
+            jq -r --arg system "$SYSTEM" 'to_entries[] | select(.value == $system) | .key')
+          [ -n "$hosts" ] || { echo "no $SYSTEM host to scan" >&2; exit 1; }
           found=0
           for host in $hosts; do
             out=$(nix build --no-link --print-out-paths ".#nixosConfigurations.$host.config.system.build.toplevel")

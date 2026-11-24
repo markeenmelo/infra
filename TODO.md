@@ -12,7 +12,6 @@ Work the operator wants done. An item leaves this file in the pull request that 
   Dokploy or Coolify.
 - **pr-agent:** run it as a pull request reviewer on the ChatGPT Plus subscription.
 - **Automatic server deploys:** servers deploy without the operator running the command.
-- **CVE scanning:** better than the weekly vulnix run.
 - **Personal Git instance:** maybe.
 - **Workstation ricing:** a better look on the workstations.
 - **Cleanup.**
