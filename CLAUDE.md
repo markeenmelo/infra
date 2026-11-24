@@ -22,6 +22,8 @@ docs that describe it in the same commit; a doc that no longer matches the code 
 
 ## Autonomy
 
+Permissions apply within the requested task.
+
 **Do without asking:** read files without decrypting secrets; edit non-secret files; run
 formatters, linters, offline tests and `nix flake check`; query live state read-only through the
 Grafana, GitHub and nixos MCP tools; commit in small Conventional Commits (`type(scope): summary`,
@@ -52,7 +54,7 @@ service restarts, `tailscale serve`, file changes).
   change (moving a module, renaming an option, changing the layout) gets its own pull request.
   [guard.yml](.github/workflows/guard.yml) holds the size limit and which branch goes where; a
   feature that will pass it is split into stacked pull requests at logical boundaries, proposed
-  before the code is written.
+  before the code is written; a stacked part branches from `dev` once the part below it is merged.
 - A change that cannot be run where it is written (a guest, a boot path, a move of live data) is
   split so the first pull request proves the unknowns on the host without touching what runs,
   logging what it found, and the second does the move.
@@ -70,7 +72,9 @@ service restarts, `tailscale serve`, file changes).
   evaluation or an experiment; fix what holds and reply on each with the fixing commit or the
   evidence that nothing needs to change.
 - When a round brings no new finding and every required check passes, squash-merge naming the
-  reviewed commit (`gh pr merge --squash --match-head-commit SHA`) and delete the branch. A
+  reviewed commit (`gh pr merge --squash --match-head-commit SHA`) and delete the branch. Read the
+  `check` run that merge starts on `dev` before merging the next one, and fix or revert when it is
+  red: two green pull requests can combine into a red `dev`. A
   finding declined rather than fixed, or a file in [CODEOWNERS](.github/CODEOWNERS), waits for
   the operator. So does a skill edit that removes or loosens a rule instead of describing the
   code it lands with.
@@ -106,8 +110,8 @@ service restarts, `tailscale serve`, file changes).
 - Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Before
   opening the pull request, `nix flake check` naming every affected x86_64 host; where it cannot
   run, evaluate each check on its own, leave the builds to CI and say so.
-- Report exactly what passed, failed and is unknown. A build proves evaluation and closure, not
-  boot, networking, credentials or backups. End with what was not checked and what the operator
+- Report exactly what passed, failed and is unknown, and never report green from a partial run. A
+  build proves evaluation and closure, not boot, networking, credentials or backups. End with what was not checked and what the operator
   runs next, as exact commands.
 - Git flakes ignore untracked files: stage new files before any check.
 
