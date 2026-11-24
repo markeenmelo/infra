@@ -10,7 +10,9 @@ consumes Frigate's events.
 
 The Tapo C120 sits on the Cameras VLAN, which bastion may reach on RTSP and ONVIF and which has
 no internet. go2rtc pulls its main and sub streams once and restreams them on loopback; Frigate
-records the main stream and detects on the sub stream.
+records the main stream and detects on the sub stream. The stream URLs carry the camera's
+credentials: `frigate-main` and `frigate-sub` in `secrets/hosts/bastion.yaml`, so rotating the
+camera's password means updating both.
 
 No object filter is set; the knobs for false positives are person object
 filters (`min_area`, `min_ratio`/`max_ratio`, `threshold`) and zone `inertia`. Recordings,
