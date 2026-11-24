@@ -38,7 +38,10 @@ jobs:
                 fail "only dev is promoted to main; open this pull request against dev"
               exit 0
               ;;
-            dev) ;;
+            dev)
+              [ "$HEAD_REPO" = "$GITHUB_REPOSITORY" ] ||
+                fail "pull requests into dev come from branches of this repository"
+              ;;
             *) fail "pull requests target dev, not $BASE" ;;
           esac
           lines=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$NUMBER/files" |
