@@ -5,7 +5,7 @@ let
     {
       stylix = {
         enable = true;
-        base16Scheme = "${inputs.stylix.inputs.tinted-schemes}/base16/onedark-dark.yaml";
+        base16Scheme = "${inputs.stylix.inputs.tinted-schemes}/base16/tokyo-night-terminal-dark.yaml";
         polarity = "dark";
         image = ./wallpaper.jpg;
         overlays.enable = false;

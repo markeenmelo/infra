@@ -1,13 +1,7 @@
 {
   flake.modules.homeManager.base =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+    { lib, pkgs, ... }:
     let
-      c = config.lib.stylix.colors.withHashtag;
       server = package: args: {
         binary = {
           path = lib.getExe package;
@@ -16,7 +10,6 @@
       };
     in
     {
-      stylix.targets.zed.colors.enable = false;
       programs.zed-editor = {
         enable = true;
         mutableUserSettings = false;
@@ -37,24 +30,6 @@
           }
         ];
         userSettings = {
-          theme = "One Dark";
-          theme_overrides."One Dark" = {
-            "editor.background" = c.base00;
-            "editor.gutter.background" = c.base00;
-            "terminal.background" = c.base00;
-            "tab.active_background" = c.base00;
-            "background" = c.base01;
-            "title_bar.background" = c.base01;
-            "status_bar.background" = c.base01;
-            "panel.background" = c.base01;
-            "tab_bar.background" = c.base01;
-            "tab.inactive_background" = c.base01;
-            "toolbar.background" = c.base00;
-            "surface.background" = c.base01;
-            "elevated_surface.background" = c.base01;
-            "editor.active_line.background" = c.base01;
-            "border" = c.base02;
-          };
           icon_theme = {
             mode = "dark";
             dark = "Material Icon Theme";

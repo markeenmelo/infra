@@ -1,6 +1,6 @@
 ---
 name: desktop
-description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: flat and quiet design, One Dark through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
+description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: flat and quiet design, Tokyo Night through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
 ---
 
 # Desktop
@@ -10,19 +10,19 @@ quiet**: the desktop recedes and content comes first.
 
 ## Theming
 
-[stylix.nix](../../../modules/stylix.nix) sets the one scheme, One Dark, dark polarity, and the
-fonts; every app that Stylix can theme takes its colors and fonts from it. An app is then
-hand-tuned in its own module to the rules below, reading `config.lib.stylix.colors` (base16 names)
-and `config.stylix.fonts`, never a hex or font literal, so a scheme or font change reaches it. An
-app Stylix cannot theme gets the same treatment by hand.
+[stylix.nix](../../../modules/stylix.nix) sets the one scheme, Tokyo Night (`tokyo-night-terminal-dark`,
+whose base16 slots keep red, yellow and blue in the roles below, unlike `tokyo-night-dark`), dark
+polarity, and the fonts; every app that Stylix can theme takes its colors and fonts from it. An
+app is then hand-tuned in its own module to the rules below, reading `config.lib.stylix.colors`
+(base16 names) and `config.stylix.fonts`, never a hex or font literal, so a scheme or font change
+reaches it. An app Stylix cannot theme gets the same treatment by hand.
 
-An app that ships its own One Dark uses it for syntax instead of Stylix's base16 colors, while its
-fonts still come from Stylix: its target's `colors.enable` is false (or the whole target when it
-only sets colors) and the native theme is selected. This holds where the native theme is clearly
-richer, as in editors (Zed's `One Dark` in [zed.nix](../../../modules/zed.nix), Neovim's `onedark-nvim` in
-[neovim.nix](../../../modules/neovim.nix)) and bat (`OneHalfDark`). The
-native theme's background and surfaces are overridden from `base00`–`base02` so it sits on the same
-black as the rest, since `onedark-dark` is darker than the classic One Dark these themes ship.
+An app that ships its own Tokyo Night uses it for syntax instead of Stylix's base16 colors, while
+its fonts still come from Stylix: its target is disabled and the native theme is selected, with its
+background and surfaces overridden from `base00`–`base01` so it sits on the same black as the rest.
+Only Neovim does (`tokyonight-nvim`, style `night`, in [neovim.nix](../../../modules/neovim.nix));
+Zed and bat, which ship no Tokyo Night, take Stylix's.
+
 Terminals and desktop chrome stay on Stylix. [tmux.nix](../../../modules/tmux.nix) draws its status
 line and pane borders from the same palette (prefix `C-a`, vi keys, sessions restored by
 resurrect and continuum), and Ghostty attaches to its session `main`. Zed's settings file is
@@ -104,7 +104,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
   status glyphs stay Nerd Font (see Rules).
 - **Wallpaper:** [wallpaper.jpg](../../../modules/wallpaper.jpg), set as Stylix's `image`, which
   applies it. It is the only image in the look; nothing else is
-  derived from it, since the colors come from One Dark, not from the picture.
+  derived from it, since the colors come from Tokyo Night, not from the picture.
 - **Lock screen:** the wallpaper, blurred, with the clock in NotoSans Nerd Font Propo and the password field on a
   `base01` 4 px rounded surface.
 
