@@ -62,10 +62,10 @@ read-only for all of these; `acls_externally_managed_on` says so.
 - CI joins as `tag:ci` through a federated identity that accepts GitHub's OIDC token from
   `check.yml` on `main` in this repository, so no secret is stored. Only pushes to `main` join:
   a pull request would otherwise run its own edits to `check.yml` and its
-  bumped inputs' evaluation on the tailnet, so pull requests fetch from cache.nixos.org only. An agent's
-  merge is a push to `main` too, so [CLAUDE.md](../../../CLAUDE.md#branches-and-pull-requests) keeps
-  changes to workflows, the flake's inputs and pins, and this project for the operator to merge; any other Nix an
-  agent merges is still evaluated on that run, which the policy lets reach bastion's cache port
+  bumped inputs' evaluation on the tailnet, so pull requests fetch from cache.nixos.org only. Agents merge into `dev`, whose
+  push run never joins; `main` takes only the operator's merge of `dev`, and
+  [CODEOWNERS](../../../.github/CODEOWNERS) holds workflows, the flake's inputs and pins, and this project for the
+  operator's review on the way. Any other Nix that reaches `main` is still evaluated on that run, which the policy lets reach bastion's cache port
   and nothing else. Like the OAuth client, it is a trust credential made in the admin console, since the OAuth
   client lacks the scope to create one: issuer GitHub, subject
   `repo:markeenmelo@8158196/infra@1445093287:*` (GitHub puts the owner's and repository's ids in
