@@ -159,10 +159,6 @@ let
         users.marcos = {
           imports = [ agent-tools ];
           home.stateVersion = config.system.stateVersion;
-          programs.mcp.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN.file =
-            "${guestSecrets}/${githubToken}";
-          programs.mcp.servers.grafana.env.GRAFANA_SERVICE_ACCOUNT_TOKEN.file =
-            "${guestSecrets}/grafana-token";
         };
       };
 

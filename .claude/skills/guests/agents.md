@@ -83,10 +83,9 @@ is the boundary. The account's connectors stay out.
 
 ## Paseo and the other agents
 
-Codex, Cursor's CLI (`cursor-agent`), OpenCode and pi sit beside Claude Code. Codex, OpenCode
-and pi are configured through their Home Manager modules for `marcos`, in `agent-tools` in
-[claude.nix](../../../modules/claude.nix): telemetry, sharing and self-update off, and the same
-nixos, read-only GitHub and Grafana MCP servers Claude gets, each token read from its file. The
+Cursor's CLI (`cursor-agent`) and pi sit beside Claude Code; no other coding agent is installed.
+pi is configured through its Home Manager module for `marcos`, in `agent-tools` in
+[claude.nix](../../../modules/claude.nix), with install telemetry off. The
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
 as `marcos` with the same tokens a shell gets, written for it at each start to a file only
@@ -114,8 +113,8 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
   never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
-  the file on each call and Git goes through `gh`. Every GitHub MCP server (Claude Code's, and
-  the Home Manager ones Codex and OpenCode read) takes the token once when it starts, so it loses
+  the file on each call and Git goes through `gh`. Claude Code's GitHub MCP server takes the token
+  once when it starts, so it loses
   GitHub within the hour while `gh` and Git keep working. The App acts as `NAME[bot]`, not as the
   operator: it holds Contents and Pull requests writes, Issues write for comments in a pull
   request's conversation, and Actions, Checks and Commit statuses reads, never Workflows or
@@ -126,8 +125,8 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
   change the code a pull-request workflow runs, so the App is installed only on repositories
   whose pull-request workflows hold no secret that such code can reach.
 
-Codex, Cursor, OpenCode and pi hold no secret of the repository: the operator signs each in once
-over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`, `/login` in
+Cursor and pi hold no secret of the repository: the operator signs each in once
+over SSH (`cursor-agent login`, `/login` in
 `pi` for each of its providers, such as Kimi, Z.ai and MiniMax), and the
 session lands in `marcos`'s home, `/home/marcos` on `home.img`, where it survives restarts and is not backed up.
 Each is a whole-account session for that service, usable and leakable like the tokens above;
