@@ -27,6 +27,8 @@ jobs:
       - name: Copy the Hermes source into the store, which the read-only evaluation below reads and cannot add
         run: nix eval --raw .#nixosConfigurations.bastion.config.microvm.vms.hermes.config.config.services.hermes-agent.package.drvPath
       - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
+      - name: Build the cheap checks
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.format .#checks.x86_64-linux.secrets .#checks.x86_64-linux.links
       - name: Validate the OpenTofu projects against their locked providers
         run: |
           for project in opentofu/*/; do
