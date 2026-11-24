@@ -7,6 +7,7 @@
         caddy = [ "--version=skip" ];
         caveman = [ "--version=branch" ];
         decluttarr = [ ];
+        dorian = [ "--version=branch" ];
         claude-plugins-official = [ "--version=branch" ];
         trailofbits-skills = [ "--version=branch" ];
         easynews-indexer = [ "--version=branch" ];
