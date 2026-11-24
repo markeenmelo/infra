@@ -103,13 +103,18 @@ cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Pas
 ## Credentials
 
 Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts the Paseo password,
-the Grafana token and the Claude token from `secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by uid 1000,
+the Grafana token, the Claude token and pi's three provider keys from `secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by uid 1000,
 the uid of `marcos` in the guest and on bastion ([agents.nix](../../../modules/agents.nix) pins both), and every shell in the guest exports them; a changed token
 restarts the guest, through `agents-restart`. The GitHub token is minted on bastion, below.
 
 - `agents/claude-token`: the token from `claude setup-token`, exported
   as `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the
   guest Remote Control and the account's connectors.
+- `agents/{zai,kimi,minimax}-api-key`: pi's keys for the Z.ai Coding Plan, Kimi For Coding and
+  MiniMax, exported as `ZAI_API_KEY`, `KIMI_API_KEY` and `MINIMAX_API_KEY`, which pi's built-in
+  `zai`, `kimi-coding` and `minimax` providers read. A `/login` credential pi stored in
+  `~/.pi/agent/auth.json` wins over these variables; `pi auth logout PROVIDER` drops it. Each is a subscription key that can spend
+  that plan's quota; revoke it in that provider's console.
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
   never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
@@ -125,12 +130,10 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
   change the code a pull-request workflow runs, so the App is installed only on repositories
   whose pull-request workflows hold no secret that such code can reach.
 
-Cursor and pi hold no secret of the repository: the operator signs each in once
-over SSH (`cursor-agent login`, `/login` in
-`pi` for each of its providers, such as Kimi, Z.ai and MiniMax), and the
-session lands in `marcos`'s home, `/home/marcos` on `home.img`, where it survives restarts and is not backed up.
-Each is a whole-account session for that service, usable and leakable like the tokens above;
-revoke it from the service's own account page.
+Cursor's CLI holds no secret of the repository: the operator signs it in once over SSH
+(`cursor-agent login`), and the session lands in `marcos`'s home, `/home/marcos` on `home.img`,
+where it survives restarts and is not backed up. It is a whole-account session for that service,
+usable and leakable like the tokens above; revoke it from the service's own account page.
 
 Commits made in the guest carry the operator's Git identity, which
 [git.nix](../../../modules/git.nix) gives the guest and the workstations alike, and no Claude
