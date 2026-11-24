@@ -24,6 +24,12 @@ while read -r name; do
   mv "$dashboards.new" "$dashboards"
 done <<< "$names"
 
+hermes=$(curl -fsS ${github_token:+-H "Authorization: Bearer $github_token"} https://api.github.com/repos/NousResearch/hermes-agent/releases/latest | jq -er .tag_name)
+[[ $hermes =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+sed -i "s|\"github:NousResearch/hermes-agent/v[^\"]*\"|\"github:NousResearch/hermes-agent/$hermes\"|" flake.nix
+grep -qF "\"github:NousResearch/hermes-agent/$hermes\"" flake.nix
+nix flake update hermes-agent
+
 GITHUB_TOKEN=$github_token pinact run --update
 
 update_providers() {

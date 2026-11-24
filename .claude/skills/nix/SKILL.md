@@ -107,7 +107,7 @@ repository's. Comments follow [CLAUDE.md](../../../CLAUDE.md).
 `just update` is the only updater: it runs `nix flake update`, then the `update-pins` app
 ([pins.nix](../../../modules/pins.nix)). nix-update bumps each `NAME.pkg.nix` in `pins` with its
 hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
-(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, each OpenTofu
+(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, the `hermes-agent` release tag, each OpenTofu
 provider's constraint and lock, the SHA-pinned actions through pinact). The operator reads the
 diff before committing, above all action, `flake.lock` and plugin moves: actions run with secrets,
 the inputs on every host, the Noctalia plugins as `marcos` with the Tailscale operator, and the
