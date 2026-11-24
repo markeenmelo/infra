@@ -46,7 +46,7 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
 - **Borders:** 2 px around windows; `base0D` on the focused one, `base02` on the others. Umbriel
   takes one color per border, so focus is a solid accent, not a gradient.
 - **Rounding:** none: windows, bar items, buttons, notifications and popups are square (Noctalia's
-  `corner_radius_scale = 0`). Only the lock screen's login box keeps Noctalia's own radii.
+  `corner_radius_scale = 0`). Only the lock screen's password field keeps a radius, Noctalia's 6 px `input_radius`, which the scale does not reach.
 - **Bar:** top, 32 px tall, `base00`, monospace semibold at 13, flush with the
   screen edges and square. Status items are text or one
   monochrome Nerd Font glyph each, no colored icons, no graphs; a third-party item that colors
@@ -106,7 +106,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
   applies it. It is the only image in the look; nothing else is
   derived from it, since the colors come from Tokyo Night, not from the picture.
 - **Lock screen:** the wallpaper, blurred, with the clock in NotoSans Nerd Font Propo and the password field on a
-  `base01` surface with Noctalia's own radii.
+  square `base01` panel.
 
 ## Toolkits and sound
 

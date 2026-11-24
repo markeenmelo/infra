@@ -110,6 +110,7 @@
               gap = 10;
             };
             window_rule = [ { blur = false; } ];
+            layer_rule = [ { blur = false; } ];
           }
           {
             include.files = [ "${osConfig.programs.umbriel.package}/share/umbriel/config.toml" ];
