@@ -1,6 +1,6 @@
 ---
 name: services
-description: "The apps on bastion: Authelia and the shared PostgreSQL, OpenCloud, Radicale calendars, Immich, Jellyfin, the arr apps and their downloads MicroVM, Frigate, the Dorian bot, and monitoring (Prometheus, Loki, Grafana, alerts, ntfy). Use before touching one of their modules, adding a person or an app, or debugging an app's sign-in, data, alerts or downloads."
+description: "The apps on bastion: Authelia and the shared PostgreSQL, OpenCloud, Radicale calendars and contacts, Immich, Jellyfin and nixflix, the arr apps with their Proton VPN namespace and downloads MicroVM, Frigate cameras, the Dorian bot, and monitoring (Prometheus, Loki, Alloy, Grafana, alerts, ntfy). Use before touching modules/{authelia,postgresql,opencloud,radicale,immich,jellyfin,nixflix,arr,downloads,vpn-watch,frigate,dorian,monitoring,ntfy}.nix or their *.pkg.nix pins, adding a person or an app, rotating an app credential, or debugging sign-in, sync, transcoding, downloads, cameras, alerts or notifications."
 ---
 
 # Services
@@ -20,17 +20,11 @@ and the decisions taken against.
 | [dorian.md](dorian.md) | Dorian Discord dice bot | `dorian.nix`, `dorian.pkg.nix` |
 | [monitoring.md](monitoring.md) | Prometheus, Loki, Alloy, Grafana, alerts, ntfy | `monitoring.nix`, `ntfy.nix` |
 
-What every app shares:
-
-- **Reach:** a public app goes through both proxies with its admin paths denied at the edge, so
-  it is administered from the LAN or the tailnet; a private one only through the LAN proxy
-  ([proxy skill](../proxy/SKILL.md)).
-- **Sign-in:** through Authelia, the client declared in `fleet.oidc.clients.ID` and roles taken
-  from the `groups` claim ([identity.md](identity.md)).
-- **Data:** on a declared dataset whose unit refuses to start without the mount, owned by a
-  pinned uid so a reinstall keeps it ([bastion skill](../bastion/SKILL.md)); databases in the
-  shared PostgreSQL; what is worth keeping sits under a backup root
-  ([backups skill](../backups/SKILL.md)).
-- **Secrets:** from `secrets/hosts/bastion.yaml`, read through `LoadCredential` or a `*File`
-  option ([secrets skill](../secrets/SKILL.md)).
-- **GPU:** only the iGPU named by `fleet.renderDevice`.
+The rules apps share live elsewhere: reach through the proxies in the
+[proxy skill](../proxy/SKILL.md), sign-in and the shared PostgreSQL in [identity.md](identity.md),
+datasets and pinned ids in the [bastion skill](../bastion/SKILL.md), backup roots in the
+[backups skill](../backups/SKILL.md), and how a unit reads a secret in the
+[secrets skill](../secrets/SKILL.md). Not every app follows them: Frigate, the arr apps and
+SABnzbd keep their own logins, Radicale is reached with OpenCloud app tokens, Dorian serves
+nothing, OpenCloud keeps its own secrets in a generated config, and the arr databases live in the
+downloads guest's PostgreSQL. Each file says where its app differs.
