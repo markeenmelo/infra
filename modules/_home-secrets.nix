@@ -1,9 +1,0 @@
-[
-  ".ssh"
-  ".gnupg"
-  ".local/share/keyrings"
-  ".config/sops"
-  ".config/gh"
-  ".claude/.credentials.json"
-  ".bitwarden-ssh-agent.sock"
-]

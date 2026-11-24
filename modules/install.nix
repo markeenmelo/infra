@@ -1,14 +1,7 @@
 { config, lib, ... }:
 let
   carry = lib.mapAttrs (_: nixos: nixos.config.fleet.carry) config.flake.nixosConfigurations;
-  identities =
-    let
-      path = ".config/sops/enroll";
-    in
-    assert lib.assertMsg (lib.any (secret: lib.hasPrefix "${secret}/" path) (
-      import ./_home-secrets.nix
-    )) "enroll keeps private keys in ~/${path}, which must sit under a path in _home-secrets.nix";
-    path;
+  identities = ".config/sops/enroll";
 in
 {
   flake.modules.nixos.base = {

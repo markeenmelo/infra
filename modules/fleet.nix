@@ -80,24 +80,6 @@ in
             default = null;
             description = "Ports a host that imports `telemetry` or `logs` pushes to; bastion's Alloy listens on each, stamps the host label and admits only that host's tailnet address.";
           };
-          homeBackup = lib.mkOption {
-            type = lib.types.nullOr (
-              lib.types.submodule {
-                options = {
-                  port = lib.mkOption {
-                    type = lib.types.port;
-                    description = "Port on bastion's tailnet address where this host's append-only restic server listens; the `tofu` app hands these to `opentofu/tailscale` as `fleet_home_backups`.";
-                  };
-                  uid = lib.mkOption {
-                    type = lib.types.ints.positive;
-                    description = "Id of the bastion account and group that own this host's repository, pinned so a reinstall of bastion keeps the owner.";
-                  };
-                };
-              }
-            );
-            default = null;
-            description = "A workstation that imports `backup-home`; bastion keeps an append-only restic repository for its home.";
-          };
           unlock = lib.mkOption {
             type = lib.types.nullOr (
               lib.types.submodule {
