@@ -27,9 +27,10 @@ let
   guestSecrets = "/run/host-secrets";
   storeImage = "store.img";
   agentUid = 1000;
+  githubAppId = "5897261";
+  githubToken = "github-token";
   tokenVariables = {
     claude-token = "CLAUDE_CODE_OAUTH_TOKEN";
-    github-token = "GH_TOKEN";
     paseo-password = "PASEO_PASSWORD";
     grafana-token = "GRAFANA_SERVICE_ACCOUNT_TOKEN";
   };
@@ -42,6 +43,9 @@ let
       ...
     }:
     let
+      gh = pkgs.writeShellScriptBin "gh" ''
+        GH_TOKEN=$(cat ${guestSecrets}/${githubToken}) exec ${lib.getExe pkgs.gh} "$@"
+      '';
       forTokens =
         line:
         lib.concatStrings (
@@ -155,7 +159,8 @@ let
         users.agent = {
           imports = [ agent-tools ];
           home.stateVersion = config.system.stateVersion;
-          programs.mcp.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN.file = "${guestSecrets}/github-token";
+          programs.mcp.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN.file =
+            "${guestSecrets}/${githubToken}";
           programs.mcp.servers.grafana.env.GRAFANA_SERVICE_ACCOUNT_TOKEN.file =
             "${guestSecrets}/grafana-token";
         };
@@ -171,10 +176,10 @@ let
       environment.extraInit = forTokens (variable: value: ''export ${variable}="${value}"'');
       programs.git = {
         enable = true;
-        config.credential."https://github.com".helper = "!${lib.getExe pkgs.gh} auth git-credential";
+        config.credential."https://github.com".helper = "!${lib.getExe gh} auth git-credential";
       };
       environment.systemPackages = [
-        pkgs.gh
+        gh
         pkgs.ripgrep
         pkgs.cursor-cli
       ];
@@ -263,7 +268,10 @@ in
         "${stateDir}/agents/booted";
 
       sops.secrets = lib.mkMerge [
-        { agents-tailscale-auth-key.key = "agents/tailscale-auth-key"; }
+        {
+          agents-tailscale-auth-key.key = "agents/tailscale-auth-key";
+          agents-github-app-key.key = "agents/github-api-key";
+        }
         (lib.listToAttrs (
           map (
             name:
@@ -310,6 +318,35 @@ in
           name: "${install} -o ${toString agentUid} -m 0400 ${secret name} ${hostSecrets}/${name}"
         ) tokens;
         "microvm@agents".serviceConfig.ExecStartPre = "${lib.getExe' pkgs.coreutils "rm"} -f ${storeImage}";
+        agents-github-token = {
+          description = "Mint the agent guest's one-hour GitHub App installation token";
+          wantedBy = [ "microvm-virtiofsd@agents.service" ];
+          after = [
+            "microvm-virtiofsd@agents.service"
+            "network-online.target"
+          ];
+          wants = [ "network-online.target" ];
+          serviceConfig = {
+            Type = "oneshot";
+            UMask = "0077";
+            Restart = "on-failure";
+            RestartSec = "1min";
+            LoadCredential = "key:${config.sops.secrets.agents-github-app-key.path}";
+          };
+          enableStrictShellChecks = true;
+          script = ''
+            ${lib.getExe pkgs.gh-token} generate --key "$CREDENTIALS_DIRECTORY/key" --app-id ${githubAppId} --token-only > ${hostSecrets}/.${githubToken}
+            chown ${toString agentUid} ${hostSecrets}/.${githubToken}
+            mv ${hostSecrets}/.${githubToken} ${hostSecrets}/${githubToken}
+          '';
+        };
+      };
+      systemd.timers.agents-github-token = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnActiveSec = "1s";
+          OnCalendar = "*:00/30";
+        };
       };
     };
 }

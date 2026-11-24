@@ -10,7 +10,7 @@ jobs:
   claude:
     name: claude-code (fable)
     if: >-
-      github.event.sender.type != 'Bot' && !github.event.pull_request.draft &&
+      (github.event.sender.type != 'Bot' || github.event.sender.login == 'markeenmelo-agents[bot]') && !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository
     concurrency:
       group: review-fable-${{ github.event.pull_request.number }}
@@ -38,6 +38,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          allowed_bots: markeenmelo-agents[bot]
           classify_inline_comments: "false"
           settings: '{"permissions":{"deny":["Read(//proc/**)","Read(~/.claude/**)","Read(.git/**)"],"blockReadsOutsideWorkingDirectories":true}}'
           prompt: |
