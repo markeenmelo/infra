@@ -1,13 +1,8 @@
----
-name: arr
-description: "Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr and Decluttarr on bastion through nixflix: their logins and databases, the Proton WireGuard namespace they run in, ProtonVPN port forwarding, the firewall around the namespace, their web UIs on the LAN and the tailnet, the torrent and usenet indexers, the Easynews bridge, the usenet servers, media requests and the quality profile. Use before touching modules/arr.nix, modules/downloads.nix, modules/easynews-indexer.pkg.nix or modules/decluttarr.pkg.nix, changing indexers, servers, quality profiles or download limits, rotating the WireGuard config or a provider credential, or debugging downloads, imports or the VPN."
----
-
 # Arr apps
 
 [arr.nix](../../../modules/arr.nix) runs Sonarr, Radarr, Prowlarr, qBittorrent and SABnzbd from
 nixflix inside the `downloads` MicroVM on bastion (below), on the media datasets shared with
-Jellyfin ([jellyfin skill](../jellyfin/SKILL.md)), the arr databases in a PostgreSQL of the
+Jellyfin ([jellyfin](jellyfin.md)), the arr databases in a PostgreSQL of the
 guest's own over its socket. The file has two halves: `guest`, what runs in the MicroVM, and
 `host`, what bastion keeps (the secrets, Seerr, the exporters, the proxy entries, the firewall).
 nixflix wires Prowlarr to Sonarr and Radarr and both to qBittorrent and SABnzbd from the declared
@@ -34,7 +29,7 @@ health issue` alert reports after an hour; a single failed import is a queue ite
 Decluttarr handles instead.
 
 Seerr takes requests at `seerr.DOMAIN`, on the LAN and the tailnet, and runs on bastion, outside the guest, because it
-needs Jellyfin; its database stays in bastion's shared PostgreSQL ([identity skill](../identity/SKILL.md)); it signs in to Jellyfin as the declared native admin to set itself up, and its Sonarr and Radarr
+needs Jellyfin; its database stays in bastion's shared PostgreSQL ([identity](identity.md)); it signs in to Jellyfin as the declared native admin to set itself up, and its Sonarr and Radarr
 setup units start from a timer a minute after boot or a deploy that changes them, outside the
 switch, and retry until
 the request profile exists in the guest, giving up after fifteen tries in an hour, since no
@@ -117,5 +112,5 @@ an old generation booted for any reason), activation removes the marker and move
 aside, so the handover starts again from bastion's databases and the guest's former ones can be
 put back by hand. A boot straight into the new generation has no previous one to look at; there
 the three are moved by hand. `arr-dumps-fresh` on bastion fails each morning, and so raises
-`Unit failed` ([monitoring skill](../monitoring/SKILL.md)), while a database has no dump, current
+`Unit failed` ([monitoring](monitoring.md)), while a database has no dump, current
 or previous, newer than two days.

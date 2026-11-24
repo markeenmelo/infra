@@ -1,8 +1,3 @@
----
-name: frigate
-description: "Frigate on bastion: the NVR at frigate.DOMAIN, the Tapo camera and its RTSP secrets, go2rtc restreaming, OpenVINO detection on the iGPU, recordings on scratch/frigate. Use before touching modules/frigate.nix, adding a camera, tuning detection, or debugging streams or recordings."
----
-
 # Frigate
 
 [frigate.nix](../../../modules/frigate.nix) serves the NVR at `frigate.` through the LAN proxy

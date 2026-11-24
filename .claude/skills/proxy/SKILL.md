@@ -110,4 +110,4 @@ issued for the domain and its subdomains, and counts those from the last week wh
 not the one the proxy serves, read from its own listener on loopback so that neither the edge nor
 DNS can answer for it; Caddy makes a new key at each renewal, so its own older certificates
 fall outside the week. The query names the domain to that service. A failed query changes nothing
-and fails no unit; the metric going stale has its own alert ([monitoring skill](../monitoring/SKILL.md)).
+and fails no unit; the metric going stale has its own alert ([services: monitoring](../services/monitoring.md)).

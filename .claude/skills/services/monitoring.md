@@ -1,8 +1,3 @@
----
-name: monitoring
-description: "Monitoring on bastion: Prometheus and the exporters it scrapes, Loki and the Alloy journal shipper, Grafana at grafana.DOMAIN with its Authelia sign-in, datasources and dashboards, the alert rules and where they go (ntfy, email, the healthchecks.io heartbeat), and ntfy at ntfy.DOMAIN. Use before touching modules/monitoring.nix or modules/ntfy.nix, adding a scrape target, exporter, dashboard or alert, subscribing a device, or debugging missing metrics, logs, alerts or Grafana sign-in."
----
-
 # Monitoring
 
 [monitoring.nix](../../../modules/monitoring.nix) runs the stack on bastion, every port on loopback except the ones Alloy takes other hosts' telemetry and the gateway's syslog on.
@@ -26,7 +21,7 @@ from the gateway alone and stores the lines unparsed under `host="gateway"`
 
 Grafana sits behind the LAN proxy at `grafana.`, on the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)).
 People sign in through Authelia; membership of `grafana-admins` makes them Grafana admins and
-everyone else is refused ([identity skill](../identity/SKILL.md)). The local `admin` with
+everyone else is refused ([identity](identity.md)). The local `admin` with
 `grafana/admin-password` is the break-glass login. Grafana reads that secret only when it creates
 its database, so rotating it also means setting the new value on the `admin` user under
 Administration → Users while signed in through Authelia; changing the secret alone restarts
@@ -96,7 +91,7 @@ is quiet and any other login stands out; a stolen laptop's deploy key therefore 
 `Unexpected certificate` is critical: the proxy's `certificate-watch` job found a certificate for the
 domain in the public logs whose key the proxy does not hold ([proxy skill](../proxy/SKILL.md)).
 `Authelia mail failing` catches a broken SMTP account, which Authelia no longer tests at start
-([identity skill](../identity/SKILL.md)). `ZFS data errors` is critical: ZED logs a checksum, I/O
+([identity](identity.md)). `ZFS data errors` is critical: ZED logs a checksum, I/O
 or data error, which a scrub or a read can find while the pool stays online and `zpool scrub`
 still exits cleanly. A checksum or I/O error on one disk of a redundant pool is repaired from
 another copy and points at a failing disk; a `data` error is a block lost for good: reading the

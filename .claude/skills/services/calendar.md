@@ -1,12 +1,7 @@
----
-name: calendar
-description: "Radicale on bastion: the household's CalDAV calendars and CardDAV contacts behind OpenCloud's sign-in at cloud.DOMAIN/caldav and /carddav, the app tokens clients use, the family calendar every account shares, where the collections live and how phones connect. Use before touching modules/radicale.nix, OpenCloud's app tokens, sharing another calendar, or debugging calendar or contact sync."
----
-
 # Calendar
 
 [radicale.nix](../../../modules/radicale.nix) runs Radicale on bastion's loopback behind
-OpenCloud's proxy ([opencloud skill](../opencloud/SKILL.md)), the way upstream's own deployment
+OpenCloud's proxy ([opencloud](opencloud.md)), the way upstream's own deployment
 does: the proxy serves `/caldav/`, `/carddav/` and their `/.well-known` names on
 `cloud.DOMAIN`, signs the request in, and hands Radicale the account's OpenCloud id in
 `X-Remote-User`. Radicale trusts that header, so a loopback guard lets only OpenCloud's account
