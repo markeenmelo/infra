@@ -1,19 +1,16 @@
 {
   flake.modules.nixos.desktop =
     { config, ... }:
-    let
-      seneca = ../secrets/hosts/${config.networking.hostName}-senecanet.yaml;
-    in
     {
       sops = {
         secrets = {
           wifi-psk.restartUnits = [ "NetworkManager-ensure-profiles.service" ];
           seneca-identity = {
-            sopsFile = seneca;
+            key = "seneca/identity";
             restartUnits = [ "NetworkManager-ensure-profiles.service" ];
           };
           seneca-password = {
-            sopsFile = seneca;
+            key = "seneca/password";
             restartUnits = [ "NetworkManager-ensure-profiles.service" ];
           };
         };

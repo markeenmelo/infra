@@ -4,7 +4,7 @@
 ([nixflix.nix](../../../modules/nixflix.nix)), which every media app imports once: it sets nixflix's
 state on `apps/nixflix` at `/srv/nixflix-state` and its media and downloads on `tank/media`, and
 holds its directory setup until both are mounted. nixflix pins the users and groups the datasets
-already belong to (`jellyfin` 146, `media` 169, and the arr apps' own), so a reinstall keeps them.
+already belong to, so a reinstall keeps them.
 Settings, libraries, plugins and users are applied by nixflix's oneshot units through Jellyfin's
 API after every start; configuration lives in Nix, not in the dashboard.
 
@@ -40,5 +40,4 @@ accounts nor anyone's parental limits.
 ## Media and transcoding
 
 Libraries are Movies and Shows under `/srv/media/media/{movies,tv}`; the cache sits on
-`tank/media` so transcodes survive the root rollback, and trickplay is saved beside the media. Transcoding and trickplay use
-Quick Sync on the iGPU named by `fleet.renderDevice`, the only device the unit may open.
+`tank/media` so transcodes survive the root rollback, and trickplay is saved beside the media.

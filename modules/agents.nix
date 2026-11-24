@@ -275,18 +275,10 @@ in
         (lib.listToAttrs (
           map (
             name:
-            lib.nameValuePair "agents-${name}" (
-              lib.mkMerge [
-                {
-                  key = lib.mkDefault "agents/${name}";
-                  restartUnits = [ "agents-restart.service" ];
-                }
-                (lib.mkIf (name == "claude-token") {
-                  key = name;
-                  sopsFile = ../secrets/shared/claude.yaml;
-                })
-              ]
-            )
+            lib.nameValuePair "agents-${name}" {
+              key = "agents/${name}";
+              restartUnits = [ "agents-restart.service" ];
+            }
           ) tokens
         ))
       ];

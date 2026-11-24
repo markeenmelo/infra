@@ -98,7 +98,11 @@ let
         };
       };
       fleet.scrapeTargets.crowdsec = cfg.settings.config.prometheus.listen_port;
-      sops.secrets."crowdsec/edge-bouncer-key".restartUnits = [ "crowdsec-edge-bouncer.service" ];
+      sops.secrets."crowdsec/edge-bouncer-key" = {
+        sopsFile = ../secrets/shared/crowdsec.yaml;
+        key = "edge-bouncer-key";
+        restartUnits = [ "crowdsec-edge-bouncer.service" ];
+      };
       systemd.services = {
         crowdsec = {
           after = [ "caddy.service" ];
@@ -162,7 +166,11 @@ in
   config.flake.modules.nixos.crowdsec-bouncer =
     { config, ... }:
     {
-      sops.secrets.crowdsec-bouncer-key.restartUnits = [ "crowdsec-firewall-bouncer.service" ];
+      sops.secrets.crowdsec-bouncer-key = {
+        sopsFile = ../secrets/shared/crowdsec.yaml;
+        key = "edge-bouncer-key";
+        restartUnits = [ "crowdsec-firewall-bouncer.service" ];
+      };
       services.crowdsec-firewall-bouncer = {
         enable = true;
         secrets.apiKeyPath = config.sops.secrets.crowdsec-bouncer-key.path;
