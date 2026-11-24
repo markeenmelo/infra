@@ -1,6 +1,6 @@
 ---
 name: operating
-description: "Running the fleet: deploy-rs with magic rollback over the tailnet, the deploy account and its sudo rules, the deploy checks and the nixos-anywhere install that carries a host's SSH and tailnet identity; SOPS and sops-nix, which file and recipients hold a key, how a unit receives a secret, rotating a key, the secrets check; Tailscale on every host, joining and rejoining, the auth key and its tag, the Proton exit nodes. Use before touching modules/{deploy,install,secrets,tailscale,proton-exit}.nix, secrets/, .sops.yaml or tailscale0 firewall rules, before preparing a deploy or install command, and when asked where a credential lives or how a host joins the tailnet."
+description: "Running the fleet: deploy-rs with magic rollback over the tailnet, the deploy account and its sudo rules, the deploy checks and the nixos-anywhere install that carries a host's SSH and tailnet identity; SOPS and sops-nix, which file and recipients hold a key, how a unit receives a secret, rotating a key, the secrets check; Tailscale on every host, joining and rejoining, the auth key and its tag, the Proton exit nodes. Use before touching modules/{deploy,install,secrets,tailscale,proton-exit}.nix, secrets/, .sops.yaml, sops.secrets, any credential or tailscale0 firewall rules, before preparing a deploy or install command, and when asked where a credential lives or how a host joins the tailnet."
 ---
 
 # Operating
