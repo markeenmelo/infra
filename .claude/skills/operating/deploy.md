@@ -43,10 +43,6 @@ bastion. Pull requests never join ([opentofu skill](../opentofu/SKILL.md)).
 The tailnet policy decides who reaches 5005; bastion's firewall admits it from any tailnet peer.
 What bastion built for another host stays until its store runs low on space: bastion collects
 garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).
-Bastion's nix-daemon also gets `NIX_GITHUB_PRIVATE_USERNAME` / `NIX_GITHUB_PRIVATE_PASSWORD` from
-sops (`nix-github-private-password`) so `fetchFromGitHub { private = true; }` can read private
-GitHub sources during builds; CI does not, so a host that needs a private fetch still fails there
-until the source is public or CI has the same credentials.
 
 ```sh
 nix run .#deploy -- .#HOST          # after checks pass on the committed revision
