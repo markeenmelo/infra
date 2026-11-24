@@ -67,5 +67,5 @@ until = "2027-05-24"
 
 ["brotli-1.2.0"]
 cve = ["CVE-2026-111497"]
-comment = "accepted: hermes-agent v0.23.4 still locks a nixpkgs with brotli 1.2.0, kept for its patchelf patch; drop once a hermes-agent release moves to brotli 1.2.1"
+comment = "accepted: hermes-agent's locked nixpkgs, kept for its patchelf patch, still has brotli 1.2.0; drop once a hermes-agent release moves to brotli 1.2.1"
 until = "2026-12-24"
