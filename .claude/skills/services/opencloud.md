@@ -3,8 +3,8 @@
 [opencloud.nix](../../../modules/opencloud.nix) runs the production line of OpenCloud (files
 only) and publishes `cloud.` through both proxies ([proxy skill](../proxy/SKILL.md)). Its
 proxy speaks plain HTTP behind Caddy and its built-in identity provider is off: everyone signs in
-through Authelia ([identity](identity.md)), whose clients use OpenCloud's default client ids, which the
-apps expect, so they cannot be renamed. A first sign-in creates the account; the role comes from the person's Authelia groups
+through Authelia ([identity](identity.md)), whose clients use OpenCloud's default client ids. A
+first sign-in creates the account; the role comes from the person's Authelia groups
 (`opencloudAdmin`, `opencloudUser`), and someone with no such group cannot sign in. App tokens
 are on (the `auth-app` service and the proxy's app auth), for the calendar and contacts clients,
 which cannot do OpenID Connect ([calendar](calendar.md)). A token signs in
