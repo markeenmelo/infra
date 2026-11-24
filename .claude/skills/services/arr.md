@@ -23,7 +23,7 @@ the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)); the arr apps and SAB
 nixflix's port mappings forward the guest's address to the apps for bastion alone, the one
 address the namespace routes back outside the tunnel. On bastion the `arr` nftables table lets
 only root and Caddy open new connections to the guest, and Seerr only to Sonarr and Radarr, and
-the `exportarr` user (uid 357) only to the three arr apps. One exportarr exporter per app publishes its
+the `exportarr` user only to the three arr apps. One exportarr exporter per app publishes its
 health checks (indexers, download clients, root folders, remote path mappings), which the `Arr
 health issue` alert reports after an hour; a single failed import is a queue item, which
 Decluttarr handles instead.
@@ -37,7 +37,7 @@ unit ordering crosses into it. Its login
 takes a Jellyfin password and Seerr has no OIDC, so only accounts with a native Jellyfin password
 (the admin) sign in; people who reach Jellyfin through Authelia have none. Requests go to Sonarr and Radarr on
 `1080p Storage Efficient`, the profile Recyclarr syncs daily next to the TRaSH ones it already
-manages. Its size caps (31.7 MB per minute) are Sonarr's and Radarr's quality definitions, which
+manages. Its size caps are Sonarr's and Radarr's quality definitions, which
 every profile shares, so they cap 1080p in all of them. Recyclarr and Decluttarr talk only to the
 apps, so they run in the namespace. Decluttarr clears stalled, slow, failed and finished downloads
 from the queues, qBittorrent and SABnzbd, and searches for missing media, every 10 minutes at its

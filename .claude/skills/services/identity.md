@@ -2,8 +2,7 @@
 
 [authelia.nix](../../../modules/authelia.nix) runs the portal every app's single sign-on
 redirects to. Both of bastion's proxies forward `auth.` to its port on loopback
-([proxy skill](../proxy/SKILL.md)), and the firewall opens that port on no interface. Access control denies by default
-and the portal needs two factors, WebAuthn first.
+([proxy skill](../proxy/SKILL.md)), and the firewall opens that port on no interface.
 
 Authelia is also the OIDC provider. An app module declares its client in `fleet.oidc.clients.ID`
 (Authelia's client schema); every client gets the `people` policy (two factors, only the people

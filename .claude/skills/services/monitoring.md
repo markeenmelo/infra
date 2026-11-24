@@ -9,9 +9,7 @@ stack's own users (pinned uids) to Loki's ports, every `fleet.scrapeTargets` por
 on, and refuses the gateway's syslog port to every local sender; otherwise
 any service on bastion could read the whole journal through Loki or push data under another host's name. Exporter ports sit at 19xxx,
 clear of OpenCloud's internal block from 9100; CrowdSec's own metrics listener keeps 6060.
-Prometheus scrapes its own exporters (node with the systemd collector, itself) every 60 s and keeps
-30 days, capped at 20 GB. Alloy ships bastion's journal to Loki with `host`, `unit`,
-`syslog_identifier` and `level` labels, dropping lines older than 12 h; Loki keeps 30 days.
+Alloy ships bastion's journal to Loki and drops lines older than 12 h.
 Their data lives under `/persist` and stays out of the backups ([backups skill](../backups/SKILL.md)):
 losing it costs history, nothing else. Alloy keeps no journal position across reboots, so
 the last 12 h may be shipped twice after one. On a host with a `fleet.hosts.HOST.lan` fact, Alloy
