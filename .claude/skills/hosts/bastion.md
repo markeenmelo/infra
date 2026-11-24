@@ -8,8 +8,8 @@ change needs [approval](../../../CLAUDE.md#autonomy); **never** touch `tank`, `a
 
 ## Pools
 
-`tank` (Immich, OpenCloud, media), `apps` (`/srv`, PostgreSQL, nixflix state, the laptops'
-backups, the agent guest's disks) and `scratch` (Frigate, rebuildable) are encrypted with key files under `/persist/zfs`,
+`tank` (Immich, OpenCloud, media), `apps` (`/srv`, PostgreSQL, nixflix state,
+the agent guest's disks) and `scratch` (Frigate, rebuildable) are encrypted with key files under `/persist/zfs`,
 which the install carries and backups exclude; the password-manager copy beside the LUKS
 passphrase is the only other one. Topology, quotas and key locations are not declared: the
 operator pastes `zpool status` and `zfs get quota,keylocation`. The import units are not
