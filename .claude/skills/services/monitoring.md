@@ -105,7 +105,7 @@ itself: `ntfy-alerts`, a Home Manager user service, shows each alert
 as a notification, critical from priority 4 on Linux, and only while the tailnet is up, so alerts
 sent while the laptop was off or away reach only the phone.
 
-Bastion admits no login ([operating: deploy](../operating/deploy.md)), so debug the stack through Grafana's
-Explore or the Grafana MCP tools: `up` in Prometheus lists every scrape target and its health,
+Debug the stack through Grafana's Explore or the Grafana MCP tools first, since an SSH login as
+`marcos` raises the `Server login` alert by design: `up` in Prometheus lists every scrape target and its health,
 `node_systemd_unit_state{instance="bastion",name=~"(prometheus|loki|alloy|grafana).service",state="active"}`
 the stack's units, and `{host="bastion",unit="alloy.service"}` in Loki answers only while Loki is ready.

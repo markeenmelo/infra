@@ -66,8 +66,10 @@
         bash.completion.enable = false;
         ssh.systemd-ssh-proxy.enable = false;
       };
-      security.wrappers = lib.mkMerge [
-        (lib.genAttrs
+      security.sudo.execWheelOnly = true;
+      users.users.deploy.extraGroups = [ "wheel" ];
+      security.wrappers =
+        lib.genAttrs
           [
             "mount"
             "newgidmap"
@@ -80,15 +82,7 @@
           ]
           (_: {
             enable = false;
-          })
-        )
-        {
-          sudo = {
-            group = lib.mkForce "deploy";
-            permissions = lib.mkForce "u+rx,g+x";
-          };
-        }
-      ];
+          });
       services = {
         getty.enable = false;
         logrotate.enable = true;
