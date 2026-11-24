@@ -74,6 +74,8 @@
       icons = "auto";
     };
     bat.enable = true;
+    btop.enable = true;
+    lazygit.enable = true;
     fd.enable = true;
     ripgrep.enable = true;
   };
