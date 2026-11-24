@@ -13,20 +13,22 @@
         vimAlias = true;
         plugins = [
           {
-            plugin = pkgs.vimPlugins.onedark-nvim;
+            plugin = pkgs.vimPlugins.tokyonight-nvim;
             type = "lua";
             config = ''
-              require('onedark').setup({
-                style = 'dark',
-                colors = {
-                  bg0 = '${c.base00}',
-                  bg1 = '${c.base01}',
-                  bg2 = '${c.base02}',
-                  bg3 = '${c.base02}',
-                  bg_d = '${c.base00}',
-                },
+              require('tokyonight').setup({
+                style = 'night',
+                on_colors = function(colors)
+                  colors.bg = '${c.base00}'
+                  colors.bg_dark = '${c.base00}'
+                  colors.bg_float = '${c.base01}'
+                  colors.bg_sidebar = '${c.base00}'
+                  colors.bg_statusline = '${c.base01}'
+                  colors.bg_highlight = '${c.base02}'
+                  colors.bg_popup = '${c.base01}'
+                end,
               })
-              require('onedark').load()
+              vim.cmd.colorscheme('tokyonight')
             '';
           }
         ];

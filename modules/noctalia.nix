@@ -96,6 +96,7 @@
             umbriel_overview_type_to_launch_enabled = true;
             umbriel_overview_close_on_launch_enabled = true;
             popup_shadows = false;
+            corner_radius_scale = 0;
             panel = {
               open_near_click_control_center = true;
               open_near_click_session = true;
@@ -109,62 +110,36 @@
             font_weight = 600;
             background_opacity = config.stylix.opacity.desktop;
             radius = 0;
-            capsule_radius = 4;
+            capsule_radius = 0;
             shadow = false;
             widget_spacing = 8;
             start = [
-              "taskbar"
-              "media"
+              "launcher"
+              "workspaces"
             ];
-            center = [ ];
+            center = [
+              "clock"
+              "agenda"
+              "weather"
+            ];
             end = [
-              "group:tray"
-              "group:connectivity"
-              "group:system"
-              "group:time"
+              "tray"
+              "tailnet"
+              "bluetooth"
+              "volume"
+              "network"
+              "sysmon"
+              "battery"
+              "notifications"
             ];
-            capsule_group =
-              lib.mapAttrsToList
-                (id: members: {
-                  inherit id members;
-                  fill = "surface_container";
-                  radius = 4;
-                  padding = 8;
-                  widget_spacing = 4;
-                })
-                {
-                  tray = [ "tray" ];
-                  connectivity = [
-                    "tailnet"
-                    "network"
-                    "bluetooth"
-                  ];
-                  system = [
-                    "volume"
-                    "battery"
-                    "notifications"
-                  ];
-                  time = [
-                    "agenda"
-                    "weather"
-                    "clock"
-                  ];
-                };
           };
           widget = {
-            clock.format = "{:%a %d %b %H:%M}";
-            taskbar = {
-              group_by_workspace = true;
-              hide_empty_workspaces = true;
-              group_single_icon_per_app = true;
-              prefer_symbolic_icons = true;
-              workspace_label_placement = "inside";
+            clock.format = "{:%A %H:%M}";
+            workspaces = {
+              style = "minimal";
               focused_output_only = true;
             };
-            media = {
-              hide_when_no_media = true;
-              max_length = 160;
-            };
+            sysmon.visualization = "none";
             weather.show_condition = false;
             network.show_label = false;
             tailnet = {
