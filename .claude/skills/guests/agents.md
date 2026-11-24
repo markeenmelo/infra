@@ -112,7 +112,8 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
   guest Remote Control and the account's connectors.
 - `agents/{zai,kimi,minimax}-api-key`: pi's keys for the Z.ai Coding Plan, Kimi For Coding and
   MiniMax, exported as `ZAI_API_KEY`, `KIMI_API_KEY` and `MINIMAX_API_KEY`, which pi's built-in
-  `zai`, `kimi-coding` and `minimax` providers read. Each is a subscription key that can spend
+  `zai`, `kimi-coding` and `minimax` providers read. A `/login` credential pi stored in
+  `~/.pi/agent/auth.json` wins over these variables; `pi auth logout PROVIDER` drops it. Each is a subscription key that can spend
   that plan's quota; revoke it in that provider's console.
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
