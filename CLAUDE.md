@@ -75,9 +75,9 @@ service restarts, `tailscale serve`, file changes).
   evaluation or an experiment; fix what holds and reply on each with the fixing commit or the
   evidence that nothing needs to change.
 - When a round brings no new finding and every required check passes, squash-merge naming the
-  reviewed commit (`gh pr merge --squash --match-head-commit SHA`) and delete the branch. Read the
-  `check` run that merge starts on `dev` before merging the next one, and fix or revert when it is
-  red: two green pull requests can combine into a red `dev`. A
+  reviewed commit (`gh pr merge --squash --match-head-commit SHA`) and delete the branch. Builds run
+  only on the `dev` → `main` pull request and on `main`, so a build that breaks there is fixed or
+  reverted on `dev` before the promotion merges. A
   finding declined rather than fixed, or a file in [CODEOWNERS](.github/CODEOWNERS), waits for
   the operator. So does a skill edit that removes or loosens a rule instead of describing the
   code it lands with, and a change whose next step needs something only the operator can do or
@@ -114,7 +114,9 @@ service restarts, `tailscale serve`, file changes).
 - Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Before
   opening the pull request, `nix flake check` naming every affected x86_64 host; a branch that
   changes only Markdown needs the outPath comparison and the `format`, `secrets` and `links` checks. Where
-  the whole check cannot run, evaluate each check on its own, leave the builds to CI and say so.
+  the whole check cannot run, evaluate each check on its own, build the ones that can run here and say
+  which were not built: CI builds hosts and VM tests only on the `dev` → `main` pull request, so an
+  unbuilt change reaches `dev` unproven.
 - Report exactly what passed, failed and is unknown, and never report green from a partial run. A
   build proves evaluation and closure, not boot, networking, credentials or backups. End with what was not checked and what the operator
   runs next, as exact commands.

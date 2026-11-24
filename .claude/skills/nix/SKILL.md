@@ -85,7 +85,8 @@ edge), need KVM, which the linux CI job enables. The `apps` check builds
 every flake app, which is what runs shellcheck on them, and `format` fails on unformatted Nix, OpenTofu, Luau, shell, TOML, JSON, YAML or
 `justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/`. `links` fails on a relative Markdown link whose target is missing.
 What CI builds when is in [README.md](../../../README.md#ci) and [check.yml](../../../.github/workflows/check.yml), which builds every check when the base does not evaluate. A check whose derivation matches the base's is
-not rebuilt, so one that failed on its branch stays failed until a pull request changes it, and a later run on `dev` does not show it: the `dev` → `main` pull request, compared with `main`, rebuilds it. Assertions guard
+not rebuilt: a pull request into `main` builds what differs from `main`, and a push to `main` builds everything.
+A pull request into any other branch only evaluates and builds the cheap `format`, `secrets` and `links` checks. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
 **Language** — `let`, never `rec`; `inherit` over repetition; conditional config through

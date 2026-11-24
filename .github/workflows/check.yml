@@ -3,7 +3,7 @@ name: check
 on:
   pull_request:
   push:
-    branches: [main, dev]
+    branches: [main]
 
 permissions: {}
 
@@ -12,7 +12,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+        with:
+          nix_conf: accept-flake-config = false
+      - name: Copy the Hermes source into the store, which the read-only evaluation below reads and cannot add
+        run: nix eval --raw .#nixosConfigurations.bastion.config.microvm.vms.hermes.config.config.services.hermes-agent.package.drvPath
+      - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
+      - name: Build the cheap checks
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.format .#checks.x86_64-linux.secrets .#checks.x86_64-linux.links
+      - name: Validate the OpenTofu projects against their locked providers
+        run: |
+          for project in opentofu/*/; do
+            nix shell --inputs-from . nixpkgs#opentofu --command sh -c \
+              'tofu -chdir="$1" init -backend=false -input=false -lockfile=readonly && tofu -chdir="$1" validate' _ "$project"
+          done
+
   linux:
+    needs: eval
+    if: github.event_name == 'push' || github.base_ref == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -30,18 +56,9 @@ jobs:
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
         with:
           nix_conf: accept-flake-config = false
-      - name: Copy the Hermes source into the store, which the read-only evaluation below reads and cannot add
-        run: nix eval --raw .#nixosConfigurations.bastion.config.microvm.vms.hermes.config.config.services.hermes-agent.package.drvPath
-      - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
-      - name: Validate the OpenTofu projects against their locked providers
-        run: |
-          for project in opentofu/*/; do
-            nix shell --inputs-from . nixpkgs#opentofu --command sh -c \
-              'tofu -chdir="$1" init -backend=false -input=false -lockfile=readonly && tofu -chdir="$1" validate' _ "$project"
-          done
       - name: List the checks whose derivation differs from the base commit's
         env:
-          BASE: ${{ github.event.pull_request.base.sha || (github.ref == 'refs/heads/dev' && github.event.before) || '' }}
+          BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           drvs() { nix eval --json "$1#checks.x86_64-linux" --apply 'builtins.mapAttrs (_: check: check.drvPath)'; }
           drvs . > "$RUNNER_TEMP/head.json"
