@@ -1,6 +1,4 @@
 {
-  flake.modules.homeManager.base.stylix.targets.bat.enable = false;
-
   flake.modules.homeManager.base.programs = {
     zsh = {
       enable = true;
@@ -75,10 +73,7 @@
       enable = true;
       icons = "auto";
     };
-    bat = {
-      enable = true;
-      config.theme = "OneHalfDark";
-    };
+    bat.enable = true;
     btop.enable = true;
     lazygit.enable = true;
     fd.enable = true;
