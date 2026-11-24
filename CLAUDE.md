@@ -71,8 +71,9 @@ service restarts, `tailscale serve`, file changes).
 - After each push, wait for `claude-code (fable)` to succeed on the head commit with its summary
   updated after it; read any Codex review too. Codex reviews only pull requests a person opens,
   so on one the App opened it reviews only when the operator comments `@codex review`. Greptile
-  reviews only pull requests into `main` ([config](.greptile/config.json)): read its review on the
-  promotion too. A reviewer that failed, was skipped or cut its
+  reviews only pull requests into `main`, once when one opens ([config](.greptile/config.json)):
+  read its review on the promotion and handle its findings like the others; commits added later
+  get no Greptile review, and a missing Greptile review is reported, not waited on. A reviewer that failed, was skipped or cut its
   coverage short is not a clean round: report it. Check every finding against the code, an
   evaluation or an experiment; fix what holds and reply on each with the fixing commit or the
   evidence that nothing needs to change.
