@@ -61,7 +61,6 @@ in
       home-manager.sharedModules = [
         {
           stylix.targets = {
-            wayprompt.enable = false;
             zen-browser.profileNames = [ "default" ];
           };
         }

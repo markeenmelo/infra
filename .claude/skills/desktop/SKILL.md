@@ -16,9 +16,6 @@ hand-tuned in its own module to the rules below, reading `config.lib.stylix.colo
 and `config.stylix.fonts`, never a hex or font literal, so a scheme or font change reaches it. An
 app Stylix cannot theme gets the same treatment by hand.
 
-`stylix.targets.wayprompt` is off: home-manager removed `programs.wayprompt` with the nixpkgs
-package, while Stylix still writes that option when the target is on.
-
 An app that ships its own One Dark uses it for syntax instead of Stylix's base16 colors, while its
 fonts still come from Stylix: its target's `colors.enable` is false (or the whole target when it
 only sets colors) and the native theme is selected. This holds where the native theme is clearly
