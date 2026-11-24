@@ -36,6 +36,7 @@ jobs:
         env:
           SYSTEM: ${{ matrix.system }}
         run: |
+          set -o pipefail
           # shortcut: vulnix reads only the last six yearly NVD feeds, so older CVEs never match; merge older years into the oldest served file if that coverage matters
           feeds=$RUNNER_TEMP/nvd
           mkdir -p "$feeds"
@@ -50,6 +51,7 @@ jobs:
           curl -fsS --retry 10 --retry-connrefused --retry-delay 1 -o /dev/null http://127.0.0.1:8765/
           hosts=$(nix eval --json .#nixosConfigurations --apply 'builtins.mapAttrs (_: c: c.pkgs.stdenv.hostPlatform.system)' |
             jq -r --arg system "$SYSTEM" 'to_entries[] | select(.value == $system) | .key')
+          [ -n "$hosts" ] || { echo "no $SYSTEM host to scan" >&2; exit 1; }
           found=0
           for host in $hosts; do
             out=$(nix build --no-link --print-out-paths ".#nixosConfigurations.$host.config.system.build.toplevel")
