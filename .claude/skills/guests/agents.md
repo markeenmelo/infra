@@ -102,8 +102,8 @@ cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Pas
 ## Credentials
 
 Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts the Paseo password,
-the Grafana token and the Claude token from `secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by `agent`'s
-uid, which no account on bastion holds, and every shell in the guest exports them; a changed token
+the Grafana token and the Claude token from `secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by uid 1000,
+which is `agent` in the guest and `marcos` on bastion ([agents.nix](../../../modules/agents.nix) pins it), and every shell in the guest exports them; a changed token
 restarts the guest, through `agents-restart`. The GitHub token is minted on bastion, below.
 
 - `agents/claude-token`: the token from `claude setup-token`, exported
