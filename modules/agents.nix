@@ -141,7 +141,7 @@ let
           PasswordAuthentication = false;
           KbdInteractiveAuthentication = false;
           PermitRootLogin = "no";
-          AllowUsers = [ "agent" ];
+          AllowUsers = [ "marcos" ];
         };
         hostKeys = [
           {
@@ -151,7 +151,7 @@ let
         ];
       };
 
-      users.users.agent = {
+      users.users.marcos = {
         isNormalUser = true;
         uid = agentUid;
         openssh.authorizedKeys.keys = [ (import ./_operator-key.nix) ];
@@ -159,13 +159,9 @@ let
       home-manager = {
         useGlobalPkgs = true;
         useUserPackages = true;
-        users.agent = {
+        users.marcos = {
           imports = [ agent-tools ];
           home.stateVersion = config.system.stateVersion;
-          programs.mcp.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN.file =
-            "${guestSecrets}/${githubToken}";
-          programs.mcp.servers.grafana.env.GRAFANA_SERVICE_ACCOUNT_TOKEN.file =
-            "${guestSecrets}/grafana-token";
         };
       };
 
@@ -189,12 +185,58 @@ let
       services.paseo = {
         enable = true;
         package = pkgs.paseo;
-        user = "agent";
+        user = "marcos";
         group = "users";
         relay.enable = false;
         listenAddress = "0.0.0.0";
         port = paseoPort;
         hostnames = [ "agents" ];
+      };
+      # shortcut: /home/agent stays a symlink so the absolute paths in Paseo's and the Nix profile's state still resolve; drop it with this unit once nothing under /home/marcos names /home/agent
+      systemd.services.home-move = {
+        description = "Move the operator's home from /home/agent to /home/marcos, finishing an interrupted move";
+        wantedBy = [ "sysinit.target" ];
+        requiredBy = [
+          "home-manager-marcos.service"
+          "paseo.service"
+        ];
+        before = [
+          "systemd-tmpfiles-setup.service"
+          "sysinit.target"
+          "sshd.service"
+          "paseo.service"
+          "home-manager-marcos.service"
+        ];
+        after = [ "local-fs.target" ];
+        unitConfig = {
+          DefaultDependencies = false;
+          RequiresMountsFor = "/home";
+        };
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        enableStrictShellChecks = true;
+        script = ''
+          projects=/home/marcos/.claude/projects
+          if [ -d /home/agent ] && [ ! -L /home/agent ]; then
+            if [ -e /home/marcos ]; then
+              rmdir /home/marcos
+            fi
+            mv /home/agent /home/marcos
+          fi
+          if [ ! -e /home/agent ] && [ ! -L /home/agent ]; then
+            ln -s marcos /home/agent
+          fi
+          for project in "$projects/-home-agent" "$projects"/-home-agent-*; do
+            [ -e "$project" ] || continue
+            target="$projects/-home-marcos''${project#"$projects"/-home-agent}"
+            if [ -e "$target" ]; then echo "home-move: $target exists, leaving $project" >&2; else mv -- "$project" "$target"; fi
+          done
+          if [ -f /home/marcos/.claude.json ]; then
+            sed -i -E 's#/home/agent([/"])#/home/marcos\1#g' /home/marcos/.claude.json
+          fi
+        '';
       };
       systemd.services.paseo = {
         wants = [ "network-online.target" ];

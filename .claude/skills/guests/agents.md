@@ -27,7 +27,9 @@ The guest's Nix store is a read-only image built with bastion, under a writable 
 ([data.nix](../../../modules/hosts/bastion/data.nix)), neither snapshotted nor backed up: work
 that matters is pushed. Three images live there: `store.img` (the overlay, deleted before every
 start because the guest's Nix database starts empty), `state.img` (`/var/lib`: the tailnet node,
-the SSH host key) and `home.img` (`/home`). The root is memory and is lost on restart.
+the SSH host key) and `home.img` (`/home`). `/home/agent` is a symlink to `/home/marcos`, left by the
+`home-move` unit when the user was renamed, so old absolute paths in tool state still resolve; the
+unit runs on every boot and redoes only what an interrupted move left undone. The root is memory and is lost on restart.
 
 ## Network
 
@@ -64,7 +66,7 @@ Two limits of filtering by destination address:
 
 ## Access
 
-`ssh agent@agents` with the operator's login key; `agent` has no sudo and the guest has no root
+`ssh marcos@agents` with the operator's login key; `marcos` has no sudo and the guest has no root
 login, so a change to the guest is a change to agents.nix. Agent sessions run under Paseo (below).
 
 ## Claude
@@ -81,21 +83,20 @@ is the boundary. The account's connectors stay out.
 
 ## Paseo and the other agents
 
-Codex, Cursor's CLI (`cursor-agent`), OpenCode and pi sit beside Claude Code. Codex, OpenCode
-and pi are configured through their Home Manager modules for `agent`, in `agent-tools` in
-[claude.nix](../../../modules/claude.nix): telemetry, sharing and self-update off, and the same
-nixos, read-only GitHub and Grafana MCP servers Claude gets, each token read from its file. The
+Cursor's CLI (`cursor-agent`) and pi sit beside Claude Code; no other coding agent is installed.
+pi is configured through its Home Manager module for `marcos`, in `agent-tools` in
+[claude.nix](../../../modules/claude.nix), with install telemetry off. The
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
-as `agent` with the same tokens a shell gets, written for it at each start to a file only
-`agent` reads, with its relay off (`--no-relay`). It listens on `fleet.paseoPort`, which the
+as `marcos` with the same tokens a shell gets, written for it at each start to a file only
+`marcos` reads, with its relay off (`--no-relay`). It listens on `fleet.paseoPort`, which the
 guest's firewall opens on the tailnet interface only and the tailnet policy grants to admin
 clients alone ([opentofu skill](../opentofu/SKILL.md)), and asks every client for the daemon
 password, `agents/paseo-password` in `secrets/hosts/bastion.yaml`, exported as `PASEO_PASSWORD`
 like the tokens below; it may not hold a single quote, and the token script fails the unit, so the daemon does not
 start, without it. The phone app connects to `agents` on that port; the desktop app (`paseo-desktop` in
-[desktop.nix](../../../modules/desktop.nix)) as a Remote SSH host `ssh://agent@agents`; a browser through `ssh -N -L 6767:127.0.0.1:6767
-agent@agents` and `http://localhost:6767`. The daemon accepts only `agents`, `localhost` and
+[desktop.nix](../../../modules/desktop.nix)) as a Remote SSH host `ssh://marcos@agents`; a browser through `ssh -N -L 6767:127.0.0.1:6767
+marcos@agents` and `http://localhost:6767`. The daemon accepts only `agents`, `localhost` and
 IP addresses as host names and refuses a browser origin other than `localhost`, so a web page
 cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`, lives on `home.img`.
 
@@ -103,7 +104,7 @@ cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Pas
 
 Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts the Paseo password,
 the Grafana token, the Claude token and pi's three provider keys from `secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by uid 1000,
-which is `agent` in the guest and `marcos` on bastion ([agents.nix](../../../modules/agents.nix) pins it), and every shell in the guest exports them; a changed token
+the uid of `marcos` in the guest and on bastion ([agents.nix](../../../modules/agents.nix) pins both), and every shell in the guest exports them; a changed token
 restarts the guest, through `agents-restart`. The GitHub token is minted on bastion, below.
 
 - `agents/claude-token`: the token from `claude setup-token`, exported
@@ -116,8 +117,8 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
   never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
-  the file on each call and Git goes through `gh`. Every GitHub MCP server (Claude Code's, and
-  the Home Manager ones Codex and OpenCode read) takes the token once when it starts, so it loses
+  the file on each call and Git goes through `gh`. Claude Code's GitHub MCP server takes the token
+  once when it starts, so it loses
   GitHub within the hour while `gh` and Git keep working. The App acts as `NAME[bot]`, not as the
   operator: it holds Contents and Pull requests writes, Issues write for comments in a pull
   request's conversation, and Actions, Checks and Commit statuses reads, never Workflows or
@@ -128,11 +129,10 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
   change the code a pull-request workflow runs, so the App is installed only on repositories
   whose pull-request workflows hold no secret that such code can reach.
 
-Codex, Cursor and OpenCode hold no secret of the repository: the operator signs each in once
-over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`), and the
-session lands in `agent`'s home on `home.img`, where it survives restarts and is not backed up.
-Each is a whole-account session for that service, usable and leakable like the tokens above;
-revoke it from the service's own account page.
+Cursor's CLI holds no secret of the repository: the operator signs it in once over SSH
+(`cursor-agent login`), and the session lands in `marcos`'s home, `/home/marcos` on `home.img`,
+where it survives restarts and is not backed up. It is a whole-account session for that service,
+usable and leakable like the tokens above; revoke it from the service's own account page.
 
 Commits made in the guest carry the operator's Git identity, which
 [git.nix](../../../modules/git.nix) gives the guest and the workstations alike, and no Claude
