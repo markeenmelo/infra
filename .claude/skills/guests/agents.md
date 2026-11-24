@@ -102,13 +102,17 @@ cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Pas
 ## Credentials
 
 Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts the Paseo password,
-the Grafana token and the Claude token from `secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by uid 1000,
+the Grafana token, the Claude token and pi's three provider keys from `secrets/hosts/bastion.yaml` into the same read-only share as the tailnet key, owned by uid 1000,
 which is `agent` in the guest and `marcos` on bastion ([agents.nix](../../../modules/agents.nix) pins it), and every shell in the guest exports them; a changed token
 restarts the guest, through `agents-restart`. The GitHub token is minted on bastion, below.
 
 - `agents/claude-token`: the token from `claude setup-token`, exported
   as `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the
   guest Remote Control and the account's connectors.
+- `agents/{zai,kimi,minimax}-api-key`: pi's keys for the Z.ai Coding Plan, Kimi For Coding and
+  MiniMax, exported as `ZAI_API_KEY`, `KIMI_API_KEY` and `MINIMAX_API_KEY`, which pi's built-in
+  `zai`, `kimi-coding` and `minimax` providers read. Each is a subscription key that can spend
+  that plan's quota; revoke it in that provider's console.
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
   never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
@@ -124,9 +128,8 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
   change the code a pull-request workflow runs, so the App is installed only on repositories
   whose pull-request workflows hold no secret that such code can reach.
 
-Codex, Cursor, OpenCode and pi hold no secret of the repository: the operator signs each in once
-over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`, `/login` in
-`pi` for each of its providers, such as Kimi, Z.ai and MiniMax), and the
+Codex, Cursor and OpenCode hold no secret of the repository: the operator signs each in once
+over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`), and the
 session lands in `agent`'s home on `home.img`, where it survives restarts and is not backed up.
 Each is a whole-account session for that service, usable and leakable like the tokens above;
 revoke it from the service's own account page.

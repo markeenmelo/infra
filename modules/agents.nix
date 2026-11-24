@@ -33,6 +33,9 @@ let
     claude-token = "CLAUDE_CODE_OAUTH_TOKEN";
     paseo-password = "PASEO_PASSWORD";
     grafana-token = "GRAFANA_SERVICE_ACCOUNT_TOKEN";
+    zai-api-key = "ZAI_API_KEY";
+    kimi-api-key = "KIMI_API_KEY";
+    minimax-api-key = "MINIMAX_API_KEY";
   };
 
   guest =
