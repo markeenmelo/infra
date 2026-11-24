@@ -114,7 +114,7 @@ in
                   type = "stdio";
                   command = lib.getExe pkgs.mcp-nixos;
                 };
-                # shortcut: every GitHub MCP server reads the one-hour App token once, so a session loses GitHub MCP within an hour while gh and git keep working; upgrade when github-mcp-server rereads a token
+                # shortcut: the GitHub MCP server reads the one-hour App token once, so a session loses GitHub MCP within an hour while gh and git keep working; upgrade when github-mcp-server rereads a token
                 github = {
                   type = "stdio";
                   command = lib.getExe pkgs.bash;
@@ -160,44 +160,9 @@ in
         };
       };
 
-    homeManager.agent-tools =
-      { pkgs, ... }:
-      {
-        programs.mcp = {
-          enable = true;
-          servers = {
-            nixos.command = lib.getExe pkgs.mcp-nixos;
-            github = {
-              command = lib.getExe pkgs.github-mcp-server;
-              args = githubMcpArgs;
-            };
-            grafana = {
-              command = lib.getExe pkgs.mcp-grafana;
-              inherit (grafana) args;
-              env.GRAFANA_URL = grafana.url;
-            };
-          };
-        };
-        programs.codex = {
-          enable = true;
-          enableMcpIntegration = true;
-          settings = {
-            analytics.enabled = false;
-            feedback.enabled = false;
-          };
-        };
-        programs.opencode = {
-          enable = true;
-          enableMcpIntegration = true;
-          settings = {
-            update = "disable";
-            share = "disabled";
-          };
-        };
-        programs.pi-coding-agent = {
-          enable = true;
-          settings.enableInstallTelemetry = false;
-        };
-      };
+    homeManager.agent-tools.programs.pi-coding-agent = {
+      enable = true;
+      settings.enableInstallTelemetry = false;
+    };
   };
 }
