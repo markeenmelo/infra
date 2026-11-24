@@ -29,7 +29,7 @@ formatters, linters, offline tests and `nix flake check`; query live state read-
 Grafana, GitHub and nixos MCP tools; commit in small Conventional Commits (`type(scope): summary`,
 the body saying what changed and why), refactors and features apart; push branches, open pull
 requests into `dev`, answer reviewers and merge a clean round; prepare `deploy .#HOST` of a
-revision on `main` and report the command, saying when it changes remote access (SSH, firewall,
+revision on `main` whose `check` run passed and report the command, saying when it changes remote access (SSH, firewall,
 Tailscale, users, sudo, deploy config) or data storage and persistence.
 
 **Ask first, naming the exact target and command:** any local activation, reboot, power-off,

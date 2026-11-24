@@ -93,7 +93,7 @@ every flake app, which is what runs shellcheck on them, and `format` fails on un
 ones (`linux`) on `main`; on a push to `dev` it compares each check's derivation with the
 commit before it, and on a pull request with the base commit's, and builds only those that differ, or every check when the base
 does not evaluate. A check whose derivation matches the base's is not rebuilt, so one that failed
-on its branch stays failed until a pull request changes it. Assertions guard
+on its branch stays failed until a pull request changes it, and a later run on `dev` does not show it: the `dev` → `main` pull request, compared with `main`, rebuilds it. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
 **Language** — `let`, never `rec`; `inherit` over repetition; conditional config through
