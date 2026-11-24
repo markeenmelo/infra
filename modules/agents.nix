@@ -195,7 +195,7 @@ let
       };
       # shortcut: /home/agent stays a symlink so the absolute paths in Paseo's and the Nix profile's state still resolve; drop it with this unit once nothing under /home/marcos names /home/agent
       systemd.services.home-move = {
-        description = "Move the operator's home from /home/agent to /home/marcos";
+        description = "Move the operator's home from /home/agent to /home/marcos, finishing an interrupted move";
         wantedBy = [ "sysinit.target" ];
         requiredBy = [
           "home-manager-marcos.service"

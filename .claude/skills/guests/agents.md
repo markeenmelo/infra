@@ -28,7 +28,8 @@ The guest's Nix store is a read-only image built with bastion, under a writable 
 that matters is pushed. Three images live there: `store.img` (the overlay, deleted before every
 start because the guest's Nix database starts empty), `state.img` (`/var/lib`: the tailnet node,
 the SSH host key) and `home.img` (`/home`). `/home/agent` is a symlink to `/home/marcos`, left by the
-one-time `home-move` unit when the user was renamed, so old absolute paths in tool state still resolve. The root is memory and is lost on restart.
+`home-move` unit when the user was renamed, so old absolute paths in tool state still resolve; the
+unit runs on every boot and redoes only what an interrupted move left undone. The root is memory and is lost on restart.
 
 ## Network
 
