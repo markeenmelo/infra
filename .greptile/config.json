@@ -1,0 +1,5 @@
+{
+  "includeBranches": ["main"],
+  "autoReview": ["open", "push"],
+  "instructions": "Follow the Review guidelines section of CLAUDE.md at the repository root."
+}

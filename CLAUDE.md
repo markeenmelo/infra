@@ -70,7 +70,9 @@ service restarts, `tailscale serve`, file changes).
   commits land.
 - After each push, wait for `claude-code (fable)` to succeed on the head commit with its summary
   updated after it; read any Codex review too. Codex reviews only pull requests a person opens,
-  so on one the App opened it reviews only when the operator comments `@codex review`. A reviewer that failed, was skipped or cut its
+  so on one the App opened it reviews only when the operator comments `@codex review`. Greptile
+  reviews only pull requests into `main` ([config](.greptile/config.json)): read its review on the
+  promotion too. A reviewer that failed, was skipped or cut its
   coverage short is not a clean round: report it. Check every finding against the code, an
   evaluation or an experiment; fix what holds and reply on each with the fixing commit or the
   evidence that nothing needs to change.
@@ -124,8 +126,8 @@ service restarts, `tailscale serve`, file changes).
 
 ## Review guidelines
 
-Pull request reviewers (claude-code-action in [review.yml](.github/workflows/review.yml) and
-Codex, which reads this file as `AGENTS.md`) review the whole diff, including cross-file
+Pull request reviewers (claude-code-action in [review.yml](.github/workflows/review.yml), Greptile
+and Codex, which reads this file as `AGENTS.md`) review the whole diff, including cross-file
 interactions; every diff reaches those vendors, accepted for a public repository whose secrets are
 ciphertext. Prioritize correctness, security and trust boundaries, edge cases, concurrency, data
 loss and persistence, error handling, performance regressions, missing tests, and a fix that adds
