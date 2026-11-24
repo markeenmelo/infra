@@ -89,6 +89,7 @@
             '';
         links = pkgs.runCommand "links" { } ''
           cd ${../.}
+          set -f
           status=0
           while IFS= read -r -d "" f; do
             for l in $(grep -oE '\]\([^)#[:space:]]+' "$f" | cut -c3- | grep -vE '^[a-z]+:'); do
