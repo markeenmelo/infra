@@ -1,14 +1,11 @@
+{ config, ... }:
 {
-  flake.modules.nixos.base = {
-    users = {
-      mutableUsers = false;
-      users.root.hashedPassword = "!";
-    };
+  flake.modules.nixos.base.users = {
+    mutableUsers = false;
+    users.root.hashedPassword = "!";
   };
 
-  flake.modules.nixos.server.users.allowNoPasswordLogin = true;
-
-  flake.modules.nixos.desktop =
+  flake.modules.nixos.operator-login =
     { config, ... }:
     {
       sops.secrets.marcos-password-hash = {
@@ -32,4 +29,6 @@
         }
       ];
     };
+
+  flake.modules.nixos.desktop.imports = [ config.flake.modules.nixos.operator-login ];
 }

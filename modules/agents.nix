@@ -255,6 +255,8 @@ in
     {
       imports = [ box.host ];
 
+      users.users.marcos.uid = agentUid;
+
       nixpkgs.config.allowUnfreePackages = [
         "claude-code"
         "cursor-cli"

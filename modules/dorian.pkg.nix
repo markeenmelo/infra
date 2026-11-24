@@ -12,7 +12,6 @@ let
     repo = "Cthulu-Dice-Roller";
     rev = "970ffcce274857e73743710d7d3ebdc966152c3e";
     hash = "sha256-TjWlhQXNXyRk+u89kdUZGn8zsVIHZH8c0YQPtYhP+lI=";
-    private = true;
   };
   py-cord = python3.pkgs.buildPythonPackage rec {
     pname = "py-cord";
