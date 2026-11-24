@@ -80,11 +80,11 @@ logic beyond picking the platform's switch.
 **Checks** — a check that needs a host's `pkgs` sits under `flake.checks.${fleet.hosts.HOST.system}`;
 one that needs only tools stays in `perSystem`. A check made for every NixOS host that runs a
 service goes through [_host-checks.nix](../../../modules/_host-checks.nix) (name, enabled predicate, derivation). Prefer `runCommand` assertions on generated config
-over `nixosTest`; the one VM test, `storage` in [storage.nix](../../../modules/storage.nix) (`storage-perlless` for the
+over `nixosTest`; the VM tests, `storage` in [storage.nix](../../../modules/storage.nix) (`storage-perlless` for the
 edge), needs KVM, which the linux CI job enables. The `apps` check builds
 every flake app, which is what runs shellcheck on them, and `format` fails on unformatted Nix, OpenTofu, Luau, shell, TOML, JSON, YAML or
 `justfile` ([dev-shell.nix](../../../modules/dev-shell.nix)), leaving out `secrets/`. `links` fails on a relative Markdown link whose target is missing.
-What CI builds when is in [README.md](../../../README.md#ci). A check whose derivation matches the base's is
+What CI builds when is in [README.md](../../../README.md#ci) and [check.yml](../../../.github/workflows/check.yml), which builds every check when the base does not evaluate. A check whose derivation matches the base's is
 not rebuilt, so one that failed on its branch stays failed until a pull request changes it, and a later run on `dev` does not show it: the `dev` → `main` pull request, compared with `main`, rebuilds it. Assertions guard
 independently contributed policy, never a value against the expression that produced it.
 
