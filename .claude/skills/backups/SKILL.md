@@ -40,7 +40,7 @@ file, which the laptop cannot forge, as the `HOST` success clock, alerted on aft
 rather than 30 hours since the laptop is often off.
 
 The household repository opens with `backups/restic-password`, each laptop's with
-`backups/HOST-password` ([secrets skill](../secrets/SKILL.md)), so the household key can
+`backups/HOST-password` ([operating: secrets](../operating/secrets.md)), so the household key can
 change without a laptop ever learning it. Each repository is its own dataset, `apps/backup-HOST`, created by hand before the deploy that declares it ([hosts: bastion](../hosts/bastion.md)). bastion reaches pCloud directly with
 `backups/rclone-pcloud`, a full rclone config, so a compromised bastion can delete the off-site
 copies too; the operator accepted that over an append-only proxy on another host. Restore with

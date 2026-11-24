@@ -11,10 +11,13 @@ The host table and where each builds are in [README.md](../../../README.md#hosts
 | File | Host | Modules |
 |---|---|---|
 | [bastion.md](bastion.md) | Home server: NAS hardware, ZFS pools, TPM2 unlock, UPS | `modules/hosts/bastion/` |
-| [edge.md](edge.md) | Oracle Cloud instance: initrd SSH unlock, wake, install | `modules/hosts/edge/`, `unlock.nix`, `wake.nix` |
+| [edge.md](edge.md) | Oracle Cloud instance: initrd SSH unlock, wake, install | `modules/hosts/edge/`, `unlock.nix` |
 | [thinkpad.md](thinkpad.md) | Operator laptop: disk, unlock, boot, home backups | `modules/hosts/thinkpad/` |
+
+`wake.nix` powers on bastion by Wake-on-LAN, from home only, and edge through the Oracle API; the
+command is in [operating: deploy](../operating/deploy.md).
 
 What runs on a host lives elsewhere: bastion's apps in the [services skill](../services/SKILL.md),
 its MicroVMs in the [guests skill](../guests/SKILL.md), the laptop's desktop role in the
 [desktop skill](../desktop/SKILL.md), deploys and installs in the
-[deploy skill](../deploy/SKILL.md).
+[operating: deploy](../operating/deploy.md).

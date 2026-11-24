@@ -214,7 +214,7 @@ resource "tailscale_tailnet_key" "enrollment" {
 }
 
 output "enrollment_keys" {
-  description = "Pre-authorized auth key per host; the tailnet skill says how one reaches secrets/hosts/HOST.yaml."
+  description = "Pre-authorized auth key per host; the operating skill (tailnet.md) says how one reaches secrets/hosts/HOST.yaml."
   value       = { for host, key in tailscale_tailnet_key.enrollment : host => key.key }
   sensitive   = true
 }

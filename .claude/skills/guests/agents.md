@@ -50,7 +50,7 @@ tailnet address through its hosts file. That port is the LAN proxy, which routes
 so the guest reaches the sign-in page of every app it serves; each app's own login is the gate,
 except ntfy's `alerts` topic, which needs none ([services: monitoring](../services/monitoring.md)),
 and the tailnet policy's tests keep the cache, the state database and bastion's DNS out. Its key is `agents/tailscale-auth-key` in `secrets/hosts/bastion.yaml`,
-moved from the `enrollment_keys` output like a host's ([tailnet skill](../tailnet/SKILL.md)) and
+moved from the `enrollment_keys` output like a host's ([operating: tailnet](../operating/tailnet.md)) and
 read once, when `state.img` holds no login, so a refreshed key does not restart the guest.
 
 Two limits of filtering by destination address:

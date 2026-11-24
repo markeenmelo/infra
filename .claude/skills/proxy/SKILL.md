@@ -77,7 +77,7 @@ backend of every host ([caddy.nix](../../../modules/caddy.nix)), before they cro
 Bastion runs no bouncer of its own, since every public connection reaches it from the edge's
 address. The bouncer's key is one value under two names, `crowdsec-bouncer-key` in the edge's
 secrets file and `crowdsec/edge-bouncer-key` in bastion's
-([secrets skill](../secrets/SKILL.md)), and reads decisions only; bastion registers it whenever
+([operating: secrets](../operating/secrets.md)), and reads decisions only; bastion registers it whenever
 the API does not accept it, so a rotated key needs no command and an unchanged one leaves no
 moment in which the edge is refused. The edge's bouncer restarts on failure, so it comes back by
 itself after bastion was away, and a deploy of the edge does not hinge on bastion answering.
