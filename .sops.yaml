@@ -30,6 +30,18 @@ creation_rules:
       - age:
           - *operator
           - *bastion
+  - path_regex: ^secrets/shared/crowdsec\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *bastion
+          - *edge
+  - path_regex: ^secrets/shared/home-backup-thinkpad\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *bastion
+          - *thinkpad
   - path_regex: ^secrets/tailscale/operator\.yaml$
     key_groups:
       - age:
