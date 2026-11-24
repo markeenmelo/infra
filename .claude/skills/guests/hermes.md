@@ -7,8 +7,8 @@ only, nothing of bastion, the LANs or the tailnet reachable but the home gateway
 ([agents.md](agents.md) names that limit), no login, journal on the console
 and so in `microvm@hermes`'s log. Inside runs
 [Hermes Agent](https://github.com/NousResearch/hermes-agent) through upstream's own NixOS
-module, from the `hermes-agent` flake input, pinned to a release tag in `flake.nix`: a bump is a
-new tag there, then `nix flake update hermes-agent`. The input keeps the nixpkgs upstream locked,
+module, from the `hermes-agent` flake input, pinned to a release tag in `flake.nix`, which `just update` moves to the latest
+release ([nix skill](../nix/SKILL.md)). The input keeps the nixpkgs upstream locked,
 the one exception to every host following one nixpkgs: upstream patches `patchelf` for that
 revision and the patch does not apply to the fleet's. The package is upstream's `messaging`
 variant, the chat gateways without the terminal UI, web and desktop parts. Evaluating it reads
