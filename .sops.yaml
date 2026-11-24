@@ -25,7 +25,6 @@ creation_rules:
       - age:
           - *operator
           - *bastion
-          - *edge
           - *thinkpad
   - path_regex: ^secrets/shared/crowdsec\.yaml$
     key_groups:
