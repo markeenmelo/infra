@@ -75,9 +75,9 @@ service restarts, `tailscale serve`, file changes).
   evaluation or an experiment; fix what holds and reply on each with the fixing commit or the
   evidence that nothing needs to change.
 - When a round brings no new finding and every required check passes, squash-merge naming the
-  reviewed commit (`gh pr merge --squash --match-head-commit SHA`) and delete the branch. Read the
-  `check` run that merge starts on `dev` before merging the next one, and fix or revert when it is
-  red: two green pull requests can combine into a red `dev`. A
+  reviewed commit (`gh pr merge --squash --match-head-commit SHA`) and delete the branch. Builds run
+  only on the `dev` → `main` pull request and on `main`, so a build that breaks there is fixed or
+  reverted on `dev` before the promotion merges. A
   finding declined rather than fixed, or a file in [CODEOWNERS](.github/CODEOWNERS), waits for
   the operator. So does a skill edit that removes or loosens a rule instead of describing the
   code it lands with, and a change whose next step needs something only the operator can do or

@@ -118,15 +118,16 @@ itself, and CI builds it only once [check.yml](.github/workflows/check.yml) has 
 
 ## CI
 
-[check.yml](.github/workflows/check.yml) evaluates every system and builds every x86_64 check on a
-push to `main`; a push to `dev` builds only the checks whose derivation differs from the commit
-before it, and a pull request only those that differ from its base commit. Only `main`'s run joins the tailnet to read
-bastion's cache. The aarch64-linux host `edge` is evaluated, not built.
+[check.yml](.github/workflows/check.yml) has two jobs. `eval` runs on every pull request and on `main`: every
+system and check evaluates with nothing built, and the OpenTofu projects validate. `linux` runs
+only on pull requests into `main` and pushes to `main`: on a push it builds every x86_64 check, on
+a pull request only those whose derivation differs from the base commit's. Only `main`'s run joins
+the tailnet to read bastion's cache. The aarch64-linux host `edge` is evaluated, not built.
 
 Changes reach `main` in two steps: agents and the operator open pull requests into `dev`, which
-[guard.yml](.github/workflows/guard.yml), `check` and the review bot gate, and files in
+[guard.yml](.github/workflows/guard.yml), `eval` and the review bot gate, and files in
 [CODEOWNERS](.github/CODEOWNERS) wait for the operator's review; the operator then approves and
-merges a pull request from `dev` into `main`, which is what gets deployed.
+merges a pull request from `dev` into `main`, where `linux` builds what changed; `main` is what gets deployed.
 
 ## Security
 
