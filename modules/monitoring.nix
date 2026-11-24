@@ -583,14 +583,6 @@ in
                   ];
                 }
               ];
-              # shortcut: Grafana keeps a provisioned rule that leaves the file; name a removed host here until one deploy has deleted its rules
-              rules.settings.deleteRules = lib.concatMap (
-                sender:
-                map (kind: { uid = "${kind}-silent-${sender}"; }) [
-                  "host"
-                  "logs"
-                ]
-              ) [ "racknerd" ];
               rules.settings.groups = [
                 {
                   orgId = 1;
