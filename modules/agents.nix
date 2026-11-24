@@ -228,7 +228,7 @@ let
           for project in "$projects/-home-agent" "$projects"/-home-agent-*; do
             [ -e "$project" ] || continue
             target="$projects/-home-marcos''${project#"$projects"/-home-agent}"
-            [ -e "$target" ] || mv -- "$project" "$target"
+            if [ -e "$target" ]; then echo "home-move: $target exists, leaving $project" >&2; else mv -- "$project" "$target"; fi
           done
           if [ -f /home/marcos/.claude.json ]; then
             sed -i -E 's#/home/agent([/"])#/home/marcos\1#g' /home/marcos/.claude.json
