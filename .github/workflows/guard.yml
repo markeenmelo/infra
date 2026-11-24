@@ -1,0 +1,48 @@
+name: guard
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
+
+permissions: {}
+
+concurrency:
+  group: guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check the base branch and the size
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          MAX_LINES: 400
+        run: |
+          set -euo pipefail
+          fail() {
+            echo "::error::$1"
+            exit 1
+          }
+          case $BASE in
+            main)
+              [ "$HEAD" = dev ] && [ "$HEAD_REPO" = "$GITHUB_REPOSITORY" ] ||
+                fail "only dev is promoted to main; open this pull request against dev"
+              exit 0
+              ;;
+            dev) ;;
+            *) fail "pull requests target dev, not $BASE" ;;
+          esac
+          lines=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$NUMBER/files" |
+            jq -s '[add[] | select(.filename | test("(^|/)flake\\.lock$|\\.lock\\.hcl$") | not) | .additions + .deletions] | add // 0')
+          echo "$lines changed lines without lock files (limit $MAX_LINES)"
+          [ "$lines" -le "$MAX_LINES" ] ||
+            fail "$lines changed lines, over the limit of $MAX_LINES: split it, or the operator merges it"
