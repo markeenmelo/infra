@@ -113,7 +113,7 @@ service restarts, `tailscale serve`, file changes).
 - Run every shell snippet handed to the operator, or its closest local equivalent, first.
 - Edit, run the narrowest check that can fail on the change, fix, repeat, then commit. Before
   opening the pull request, `nix flake check` naming every affected x86_64 host; a branch that
-  changes only Markdown needs the outPath comparison and the `format` and `secrets` checks. Where
+  changes only Markdown needs the outPath comparison and the `format`, `secrets` and `links` checks. Where
   the whole check cannot run, evaluate each check on its own, leave the builds to CI and say so.
 - Report exactly what passed, failed and is unknown, and never report green from a partial run. A
   build proves evaluation and closure, not boot, networking, credentials or backups. End with what was not checked and what the operator
