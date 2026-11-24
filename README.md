@@ -119,10 +119,14 @@ itself, and CI builds it only once [check.yml](.github/workflows/check.yml) has 
 ## CI
 
 [check.yml](.github/workflows/check.yml) evaluates every system and builds the x86_64 hosts on
-`main`; a pull request builds only the checks whose derivation differs from its base
-commit's, which `main`'s run covers. The aarch64-linux host `edge` is evaluated, not built.
-Review bots read every diff. `gh workflow run audit.yml` audits the whole tree on demand and writes the report to the run's summary.
+pushes to `dev` and `main`; a pull request builds only the checks whose derivation differs from
+its base commit's, which the base's push run covers. Only `main`'s run joins the tailnet to read
+bastion's cache. The aarch64-linux host `edge` is evaluated, not built.
 
+Changes reach `main` in two steps: agents and the operator open pull requests into `dev`, which
+[guard.yml](.github/workflows/guard.yml), `check` and the review bot gate, and files in
+[CODEOWNERS](.github/CODEOWNERS) wait for the operator's review; the operator then approves and
+merges a pull request from `dev` into `main`, which is what gets deployed.
 ## Security
 
 See [SECURITY.md](SECURITY.md) for what is in scope and how to report a vulnerability.
