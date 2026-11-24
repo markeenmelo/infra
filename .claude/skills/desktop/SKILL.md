@@ -36,7 +36,7 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
   focus.
 - **Quick terminal:** none: Umbriel has no global-shortcuts portal for Ghostty's own, and
   its scratchpad is unused, the stock binds parked in [umbriel.nix](../../../modules/umbriel.nix).
-- **Launcher:** `Mod + Space` on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
+- **Launcher:** `Mod + Space` or the bar's launcher button, on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
   in [umbriel.nix](../../../modules/umbriel.nix) with the scratchpad binds.
 - **Motion:** quick ease-out with no bounce: windows pop in from 87% over 300 ms and pop out over
   120 ms, other transitions take 300 ms, and switching workspaces is instant
