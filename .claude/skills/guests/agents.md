@@ -128,7 +128,7 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
 Codex, Cursor, OpenCode and pi hold no secret of the repository: the operator signs each in once
 over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`, `/login` in
 `pi` for each of its providers, such as Kimi, Z.ai and MiniMax), and the
-session lands in `marcos`'s home, `/home/marcos` on `home.img`,, where it survives restarts and is not backed up.
+session lands in `marcos`'s home, `/home/marcos` on `home.img`, where it survives restarts and is not backed up.
 Each is a whole-account session for that service, usable and leakable like the tokens above;
 revoke it from the service's own account page.
 

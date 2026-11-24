@@ -195,18 +195,23 @@ let
       };
       # shortcut: /home/agent stays a symlink so the absolute paths in Paseo's and the Nix profile's state still resolve; drop it with this unit once nothing under /home/marcos names /home/agent
       systemd.services.home-move = {
-        description = "Move the operator's home from /home/agent to /home/marcos once";
-        wantedBy = [ "multi-user.target" ];
+        description = "Move the operator's home from /home/agent to /home/marcos";
+        wantedBy = [ "sysinit.target" ];
+        requiredBy = [
+          "home-manager-marcos.service"
+          "paseo.service"
+        ];
         before = [
+          "systemd-tmpfiles-setup.service"
+          "sysinit.target"
           "sshd.service"
           "paseo.service"
           "home-manager-marcos.service"
-          "systemd-user-sessions.service"
         ];
+        after = [ "local-fs.target" ];
         unitConfig = {
+          DefaultDependencies = false;
           RequiresMountsFor = "/home";
-          ConditionPathIsSymbolicLink = "!/home/agent";
-          ConditionPathIsDirectory = "/home/agent";
         };
         serviceConfig = {
           Type = "oneshot";
@@ -214,17 +219,23 @@ let
         };
         enableStrictShellChecks = true;
         script = ''
-          if [ -e /home/marcos ]; then
-            rmdir /home/marcos
+          projects=/home/marcos/.claude/projects
+          if [ -d /home/agent ] && [ ! -L /home/agent ]; then
+            if [ -e /home/marcos ]; then
+              rmdir /home/marcos
+            fi
+            mv /home/agent /home/marcos
           fi
-          mv /home/agent /home/marcos
-          ln -s marcos /home/agent
-          for project in /home/marcos/.claude/projects/-home-agent*; do
+          if [ ! -e /home/agent ] && [ ! -L /home/agent ]; then
+            ln -s marcos /home/agent
+          fi
+          for project in "$projects/-home-agent" "$projects"/-home-agent-*; do
             [ -e "$project" ] || continue
-            mv -- "$project" "/home/marcos/.claude/projects/-home-marcos''${project#/home/marcos/.claude/projects/-home-agent}"
+            target="$projects/-home-marcos''${project#"$projects"/-home-agent}"
+            [ -e "$target" ] || mv -- "$project" "$target"
           done
           if [ -f /home/marcos/.claude.json ]; then
-            sed -i 's#/home/agent#/home/marcos#g' /home/marcos/.claude.json
+            sed -i -E 's#/home/agent([/"])#/home/marcos\1#g' /home/marcos/.claude.json
           fi
         '';
       };
