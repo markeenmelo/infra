@@ -138,7 +138,7 @@ let
           PasswordAuthentication = false;
           KbdInteractiveAuthentication = false;
           PermitRootLogin = "no";
-          AllowUsers = [ "agent" ];
+          AllowUsers = [ "marcos" ];
         };
         hostKeys = [
           {
@@ -148,7 +148,7 @@ let
         ];
       };
 
-      users.users.agent = {
+      users.users.marcos = {
         isNormalUser = true;
         uid = agentUid;
         openssh.authorizedKeys.keys = [ (import ./_operator-key.nix) ];
@@ -156,7 +156,7 @@ let
       home-manager = {
         useGlobalPkgs = true;
         useUserPackages = true;
-        users.agent = {
+        users.marcos = {
           imports = [ agent-tools ];
           home.stateVersion = config.system.stateVersion;
           programs.mcp.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN.file =
@@ -186,12 +186,47 @@ let
       services.paseo = {
         enable = true;
         package = pkgs.paseo;
-        user = "agent";
+        user = "marcos";
         group = "users";
         relay.enable = false;
         listenAddress = "0.0.0.0";
         port = paseoPort;
         hostnames = [ "agents" ];
+      };
+      # shortcut: /home/agent stays a symlink so the absolute paths in Paseo's and the Nix profile's state still resolve; drop it with this unit once nothing under /home/marcos names /home/agent
+      systemd.services.home-move = {
+        description = "Move the operator's home from /home/agent to /home/marcos once";
+        wantedBy = [ "multi-user.target" ];
+        before = [
+          "sshd.service"
+          "paseo.service"
+          "home-manager-marcos.service"
+          "systemd-user-sessions.service"
+        ];
+        unitConfig = {
+          RequiresMountsFor = "/home";
+          ConditionPathIsSymbolicLink = "!/home/agent";
+          ConditionPathIsDirectory = "/home/agent";
+        };
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        enableStrictShellChecks = true;
+        script = ''
+          if [ -e /home/marcos ]; then
+            rmdir /home/marcos
+          fi
+          mv /home/agent /home/marcos
+          ln -s marcos /home/agent
+          for project in /home/marcos/.claude/projects/-home-agent*; do
+            [ -e "$project" ] || continue
+            mv -- "$project" "/home/marcos/.claude/projects/-home-marcos''${project#/home/marcos/.claude/projects/-home-agent}"
+          done
+          if [ -f /home/marcos/.claude.json ]; then
+            sed -i 's#/home/agent#/home/marcos#g' /home/marcos/.claude.json
+          fi
+        '';
       };
       systemd.services.paseo = {
         wants = [ "network-online.target" ];
