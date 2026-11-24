@@ -580,8 +580,6 @@ in
                   ];
                 }
               ];
-              # shortcut: Grafana keeps a provisioned rule that leaves the file; drop this once one deploy has deleted it
-              rules.settings.deleteRules = [ { uid = "laptop-backup-stale"; } ];
               rules.settings.groups = [
                 {
                   orgId = 1;
