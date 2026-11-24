@@ -106,26 +106,25 @@ cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Pas
 
 ## Credentials
 
-Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts three tokens and the Paseo password, the password and two tokens
-from `secrets/hosts/bastion.yaml` and one token from `secrets/shared/claude.yaml`, into the same
-read-only share as the tailnet key, owned by `agent`'s
-uid, which no account on bastion holds,
-and every shell in the guest exports them; a changed token restarts the guest, through `agents-restart`:
+Whatever the guest holds, an injected prompt can use or leak. Bastion decrypts the Paseo password
+and the Grafana token from `secrets/hosts/bastion.yaml` and the Claude token from
+`secrets/shared/claude.yaml` into the same read-only share as the tailnet key, owned by `agent`'s
+uid, which no account on bastion holds, and every shell in the guest exports them; a changed token
+restarts the guest, through `agents-restart`. The GitHub token is minted on bastion, below.
 
 - `claude-token` in `secrets/shared/claude.yaml`: the token from `claude setup-token`, exported
   as `CLAUDE_CODE_OAUTH_TOKEN`. It makes model requests only. `/login` instead would hand the
   guest Remote Control and the account's connectors.
-- `agents/github-token`: a fine-grained token, exported as `GH_TOKEN` and handed to Git by `gh`,
-  limited to Contents and Pull requests writes and Actions read on the repositories the agents
-  work on, with the default branch protected. Never the Workflows permission, which would let a
-  push rewrite the workflows themselves. Contents write alone still lets a pushed branch change
-  the code a pull-request workflow runs, so the token covers only repositories whose
-  pull-request workflows hold no secret that such code can reach. It also merges: an agent
-  squash-merges its own pull request once the reviewers find nothing
-  ([CLAUDE.md](../../../CLAUDE.md#branches-and-pull-requests)), so for those the two reviewers,
-  which only read the diff, are the gate before `main`. The changes CLAUDE.md keeps for the
-  operator to merge are a rule the agent follows, not a control: an injected session holding this
-  token can merge whatever the branch protection admits.
+- `github-token`: a one-hour installation token of the operator's GitHub App, which
+  `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
+  never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
+  the file on each call, Git goes through `gh`, and Claude Code's GitHub MCP server reads it once
+  when a session starts, so it loses GitHub within the hour. The App acts as `NAME[bot]`, not as
+  the operator: it holds Contents, Pull requests and Issues writes and Actions, Checks and
+  Commit statuses reads, never Workflows or Administration, and is not a ruleset bypass actor, so
+  the rulesets bind it. Contents write still lets a pushed branch change the code a
+  pull-request workflow runs, so the App is installed only on repositories whose pull-request
+  workflows hold no secret that such code can reach.
 
 Codex, Cursor, OpenCode and pi hold no secret of the repository: the operator signs each in once
 over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`, `/login` in
