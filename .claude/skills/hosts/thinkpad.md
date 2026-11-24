@@ -29,7 +29,7 @@ first; wiping it destroys the old LUKS header and with it everything the old ins
 ## Backups
 
 `restic-backups-home` sends `/home/marcos` every 6 hours, skipping a run that falls on battery, to the append-only server on bastion
-([backups skill](../backups/SKILL.md)) with `backups/thinkpad-password`, never the household key;
+([backups skill](../backups/SKILL.md)) with `password` in `secrets/shared/home-backup-thinkpad.yaml`, never the household key;
 only root on the laptop may reach that port. Identity keys (SSH, GnuPG, sops, gh, Claude's credentials), the keyring,
 caches, the Bitwarden socket and Steam's installed games, shader caches and downloads stay out. App data stays in, browser and messenger sessions
 included, so a restore brings back a signed-in desktop, and Steam's Proton prefixes, where games

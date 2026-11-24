@@ -2,6 +2,10 @@
 let
   inherit (config.fleet) hosts;
   laptops = lib.filterAttrs (_: host: host.homeBackup != null) hosts;
+  homeBackupSecret = host: {
+    sopsFile = ../secrets/shared/home-backup-${host}.yaml;
+    key = "password";
+  };
 in
 {
   flake.modules.nixos.backups =
@@ -81,18 +85,15 @@ in
       restic = lib.getExe pkgs.restic;
     in
     {
-      sops.secrets =
-        lib.genAttrs
-          (
-            [
-              "backups-restic-password"
-              "backups-rclone-pcloud"
-            ]
-            ++ map (name: "backups-${name}-password") (lib.attrNames laptops)
-          )
-          (name: {
-            key = lib.replaceStrings [ "backups-" ] [ "backups/" ] name;
-          });
+      sops.secrets = lib.mkMerge [
+        {
+          backups-restic-password.key = "backups/restic-password";
+          backups-rclone-pcloud.key = "backups/rclone-pcloud";
+        }
+        (lib.mapAttrs' (
+          name: _: lib.nameValuePair "backups-${name}-password" (homeBackupSecret name)
+        ) laptops)
+      ];
       assertions =
         map
           (path: {
@@ -393,7 +394,7 @@ in
       home = config.users.users.marcos.home;
     in
     {
-      sops.secrets.${password}.key = "backups/${host}-password";
+      sops.secrets.${password} = homeBackupSecret host;
       services.restic.backups.home = {
         repository = "rest:http://${hosts.bastion.tailnetAddress}:${toString port}/";
         passwordFile = config.sops.secrets.${password}.path;
