@@ -1,8 +1,3 @@
----
-name: agents
-description: "The agent MicroVM on bastion: a NixOS guest under microvm.nix and cloud-hypervisor where Claude Code runs unattended, its disks on apps/agents, its WAN-only network, its own tailnet node, the operator's SSH and Paseo access, and the credentials it may hold. Use before touching modules/agents.nix or the microvm input, changing what the guest reaches or holds, or debugging the guest's boot, network or sign-in."
----
-
 # Agents
 
 [agents.nix](../../../modules/agents.nix) runs one guest, `agents`, as `microvm@agents` on

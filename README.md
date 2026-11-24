@@ -91,7 +91,7 @@ just install HOST root@ADDRESS /mnt/old/persist   # a reinstall, identity carrie
 ```
 
 The steps around these commands: the [deploy skill](.claude/skills/deploy/SKILL.md#install); each
-host's own skill covers its hardware (the [edge](.claude/skills/edge/SKILL.md) also resizes its
+host's own skill covers its hardware (the [edge](.claude/skills/hosts/edge.md) also resizes its
 instance for the install).
 
 ## Adding a host or a system

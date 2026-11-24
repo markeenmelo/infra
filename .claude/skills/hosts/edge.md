@@ -1,8 +1,3 @@
----
-name: edge
-description: "The edge host: the Oracle Cloud Ampere A1 instance, its LUKS state partition with no TPM, the initrd that takes the passphrase over SSH on its public address, the unlock, wake and install apps for it, what it holds that the provider could read, how it boots, reaches the network and builds itself. Use before touching modules/hosts/edge or modules/unlock.nix, rebooting or reinstalling the instance, changing the unlock port or the initrd host key, or debugging a boot that never reaches the tailnet."
----
-
 # Edge
 
 [modules/hosts/edge/](../../../modules/hosts/edge/) is the instance the

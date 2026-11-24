@@ -1,6 +1,6 @@
 ---
 name: desktop
-description: "The workstations' look and the rules every theme follows: flat and quiet design, One Dark through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned on the Linux laptops (Umbriel, Noctalia). Use before touching modules/stylix.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
+description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: flat and quiet design, One Dark through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
 ---
 
 # Desktop
@@ -118,3 +118,37 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
 - **Sound:** no event or notification sounds; alerts are visual.
 - **System accent:** where the OS has one, it is blue, matching
   `base0D`.
+
+## The Linux desktop role
+
+The role is one file per concern, each setting its NixOS and Home Manager halves: the base in
+[desktop.nix](../../../modules/desktop.nix) (Home Manager as a NixOS module, NetworkManager,
+Bluetooth, PipeWire, UPower, the apps), [umbriel.nix](../../../modules/umbriel.nix)
+(the compositor session from nixpkgs' module, and `programs.umbriel.settings`, a config layered
+over Umbriel's packaged `config.toml`: tables merge by key and the last file wins, so only changes
+to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists the keybinds),
+[noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the polkit agent, the greeter,
+whose output layout is derived from Umbriel's positions; apps it launches run as their own systemd
+units, so a shell restart does not take them down; the `desktop-config-HOST` check fails on any
+key either program's validator rejects or warns about),
+[wifi.nix](../../../modules/wifi.nix), [printing.nix](../../../modules/printing.nix) and
+[odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). The tailnet client accepts bastion's subnet routes
+so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
+advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
+through bastion. Bitwarden's desktop app is the SSH agent
+(`~/.bitwarden-ssh-agent.sock`), started at login ([bitwarden.nix](../../../modules/bitwarden.nix)).
+
+Idle locks, turns the screen off and suspends on the timers in
+[noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
+does while a video plays; on battery two earlier timers there turn the screen off and suspend
+sooner. On battery `power-profile-ac` switches to
+power-saver and caps the panel brightness, and restores the previous profile and brightness on AC;
+the battery charges to 90% and resumes at
+85%. The home backup ([backups.nix](../../../modules/backups.nix)) and the btrfs scrub
+([desktop.nix](../../../modules/desktop.nix)) start on AC only. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move
+to another display until it opens; undocked on AC that leaves no display until the lid opens or the
+idle timer suspends, and the idle lock still engages with no output, so opening the lid shows the
+lock screen. Shutting it suspends on
+battery only: on AC the idle timer does, since a monitor that sleeps drops off DRM and logind would
+read that as an undock.
+
