@@ -41,7 +41,7 @@ jobs:
           done
       - name: List the checks whose derivation differs from the base commit's
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
+          BASE: ${{ github.event.pull_request.base.sha || (github.ref == 'refs/heads/dev' && github.event.before) || '' }}
         run: |
           drvs() { nix eval --json "$1#checks.x86_64-linux" --apply 'builtins.mapAttrs (_: check: check.drvPath)'; }
           drvs . > "$RUNNER_TEMP/head.json"
