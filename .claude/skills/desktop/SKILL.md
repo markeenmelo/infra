@@ -1,12 +1,12 @@
 ---
 name: desktop
-description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: flat and quiet design, Tokyo Night through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
+description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Tokyo Night through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
 ---
 
 # Desktop
 
-The workstation runs Umbriel for windows and Noctalia for the bar. The design is **flat and
-quiet**: the desktop recedes and content comes first.
+The workstation runs Umbriel for windows and Noctalia for the bar. The design follows **Omarchy**:
+square, opaque and gapped, Tokyo Night throughout, on this stack instead of Hyprland.
 
 ## Theming
 
@@ -31,39 +31,38 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
 
 ## Rules
 
-- **Surfaces:** app windows, terminal included, are solid, focused or not, with no blur; the border
-  color alone marks focus. The desktop's own chrome (bar,
-  launcher, notifications, popups) may be lightly translucent: its color at
-  90% opacity over a soft blur (Umbriel's layer rules on Noctalia's surfaces, 2 passes), so
-  text stays fully readable. A drop shadow marks a floating window only (Umbriel's window rules);
-  tiled windows, the bar and popups have none.
+- **Surfaces:** every surface is opaque and solid, focused or not, with no blur and no drop shadow:
+  app windows, the bar, the launcher, notifications and popups alike; the border color alone marks
+  focus. The lock screen's blurred wallpaper is the only blur.
 - **Quick terminal:** none: Umbriel has no global-shortcuts portal for Ghostty's own, and
   its scratchpad is unused, the stock binds parked in [umbriel.nix](../../../modules/umbriel.nix).
-- **Launcher:** `Mod + Space` on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
+- **Launcher:** `Mod + Space` or the bar's launcher button, on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
   in [umbriel.nix](../../../modules/umbriel.nix) with the scratchpad binds.
-- **Motion:** none, or a fade or slide of at most 150 ms; nothing bounces or zooms.
-- **Spacing:** multiples of 2 px. Windows: 8 px between them, 6 px to the screen edge (the bar's
-  edge counts as the screen's). Terminal padding 10 px across, 8 px down.
-- **Borders:** 2 px around windows; `base0D` on the focused one, `base02` on the others.
-- **Rounding:** 6 px on windows where the window manager controls it, 4 px on small elements
-  (bar items, buttons, notifications).
+- **Motion:** quick ease-out with no bounce: windows pop in from 87% over 300 ms and pop out over
+  120 ms, other transitions take 300 ms, and switching workspaces is instant
+  ([umbriel.nix](../../../modules/umbriel.nix)).
+- **Spacing:** 10 px between windows and to the screen edge (the bar's edge counts as the
+  screen's). Terminal padding 10 px across, 8 px down.
+- **Borders:** 2 px around windows; `base0D` on the focused one, `base02` on the others. Umbriel
+  takes one color per border, so focus is a solid accent, not a gradient.
+- **Rounding:** none: windows, bar items, buttons, notifications and popups are square (Noctalia's
+  `corner_radius_scale = 0`). Only the lock screen's password field keeps a radius, Noctalia's 6 px `input_radius`, which the scale does not reach.
 - **Bar:** top, 32 px tall, `base00`, monospace semibold at 13, flush with the
   screen edges and square. Status items are text or one
   monochrome Nerd Font glyph each, no colored icons, no graphs; a third-party item that colors
   its text for no state is patched to the text color.
-- **Grouping:** related items share a `base01`-like pill (4 px rounding, no border), 8 px apart,
-  4 px between items inside one. An item shows only while it carries news (an
-  event within two hours); a steady "all fine" state stays out of the bar and in its tooltip.
-- **Bar items:** on the left the workspaces, each a pill of its apps' monochrome icons, and media;
-  on the right the tray, then connectivity (tailnet, network,
-  bluetooth), system (volume, battery, notifications) and time
-  (agenda, weather, the clock last, as `%a %d %b %H:%M`). Noctalia holds them
+- **Grouping:** none: items sit flat on the bar, 8 px apart. An item shows only while it carries
+  news (an event within two hours); a steady "all fine" state stays out of the bar and in its
+  tooltip; only the CPU load always shows, as Omarchy's monitor does.
+- **Bar items:** on the left the launcher and the workspaces as plain numbers; in the center the
+  clock (`%A %H:%M`), agenda and weather; on the right the tray, tailnet, bluetooth, volume,
+  network, CPU (as text), battery and notifications. Noctalia holds them
   ([noctalia.nix](../../../modules/noctalia.nix)), the agenda through this repository's own plugin
   ([agenda](../../../modules/noctalia-plugins/agenda/widget.luau)). An item that holds
   more opens a `base01` popup next to
   it on click: the clock lists today's events, volume has a slider, and tailnet lists the exit
   nodes to switch to.
-- **Notifications:** top right, `base01` background, 4 px rounding, a 2 px `base0D` border, or
+- **Notifications:** top right, `base01` background, a 2 px `base0D` border, or
   `base08` for critical ones.
 - **Icons:** Nerd Font glyphs in the text color; color only where it carries state.
 
@@ -107,7 +106,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
   applies it. It is the only image in the look; nothing else is
   derived from it, since the colors come from Tokyo Night, not from the picture.
 - **Lock screen:** the wallpaper, blurred, with the clock in NotoSans Nerd Font Propo and the password field on a
-  `base01` 4 px rounded surface.
+  square `base01` panel.
 
 ## Toolkits and sound
 

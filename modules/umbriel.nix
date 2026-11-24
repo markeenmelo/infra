@@ -64,23 +64,30 @@
                   "windows_resize"
                   "workspaces"
                 ]
-                (_: {
+                (event: {
                   curve = "easeout";
-                  duration_ms = 150;
+                  duration_ms = if event == "windows_out" then 120 else 300;
                 });
           }
           {
             animation = {
               curve = "easeout";
-              duration_ms = 150;
+              duration_ms = 300;
               overview.workspace_curve = "easeout";
-              windows_in.style = "fade";
-              windows_out.style = "fade";
+              windows_in = {
+                style = "popin";
+                scale = 0.87;
+              };
+              windows_out = {
+                style = "popin";
+                scale = 0.87;
+              };
+              workspaces.enabled = false;
             };
             general.show_cheatsheet = false;
             appearance = {
-              corner_radius = 6;
-              shadow.enabled = true;
+              corner_radius = 0;
+              shadow.enabled = false;
             };
             colors.border = {
               focused = color "base0D";
@@ -100,26 +107,10 @@
                 0.5
                 0.667
               ];
-              struts = lib.genAttrs [ "top" "bottom" "left" "right" ] (_: -2);
+              gap = 10;
             };
-            window_rule = [
-              { blur = false; }
-              {
-                match.is_floating = false;
-                shadow = false;
-              }
-            ];
-            layer_rule = [
-              {
-                match.namespace = "^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$";
-                blur = true;
-                blur_ignore_alpha = 0.6;
-              }
-              {
-                match.namespace = "^noctalia-(notification|dock|panel|attached-panel|osd)$";
-                blur_optimized = false;
-              }
-            ];
+            window_rule = [ { blur = false; } ];
+            layer_rule = [ { blur = false; } ];
           }
           {
             include.files = [ "${osConfig.programs.umbriel.package}/share/umbriel/config.toml" ];
