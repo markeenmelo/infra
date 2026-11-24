@@ -90,9 +90,9 @@ just install HOST USER@ADDRESS IDENTITY   # a new host, with the directory enrol
 just install HOST root@ADDRESS /mnt/old/persist   # a reinstall, identity carried off the old disk
 ```
 
-The steps around these commands: the [deploy skill](.claude/skills/deploy/SKILL.md#install); each
-host's own skill covers its hardware (the [edge](.claude/skills/hosts/edge.md) also resizes its
-instance for the install).
+The steps around these commands: the [deploy skill](.claude/skills/deploy/SKILL.md#install); the
+[hosts skill](.claude/skills/hosts/SKILL.md) covers each host's hardware ([edge](.claude/skills/hosts/edge.md) also
+resizes its instance for the install).
 
 ## Adding a host or a system
 

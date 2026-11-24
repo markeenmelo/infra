@@ -151,4 +151,3 @@ idle timer suspends, and the idle lock still engages with no output, so opening 
 lock screen. Shutting it suspends on
 battery only: on AC the idle timer does, since a monitor that sleeps drops off DRM and logind would
 read that as an undock.
-
