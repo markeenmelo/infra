@@ -9,9 +9,6 @@ let
   ) hosts;
   metricSenders = lib.filterAttrs (_: host: host.telemetry.metrics != null) senders;
   senderPorts = telemetry: lib.remove null (lib.attrValues telemetry);
-  laptops = lib.concatStringsSep "|" (
-    lib.attrNames (lib.filterAttrs (_: host: host.homeBackup != null) hosts)
-  );
   journal = forward: labels: ''
     loki.relabel "journal" {
       forward_to = []
@@ -583,14 +580,8 @@ in
                   ];
                 }
               ];
-              # shortcut: Grafana keeps a provisioned rule that leaves the file; name a removed host here until one deploy has deleted its rules
-              rules.settings.deleteRules = lib.concatMap (
-                sender:
-                map (kind: { uid = "${kind}-silent-${sender}"; }) [
-                  "host"
-                  "logs"
-                ]
-              ) [ "racknerd" ];
+              # shortcut: Grafana keeps a provisioned rule that leaves the file; drop this once one deploy has deleted it
+              rules.settings.deleteRules = [ { uid = "laptop-backup-stale"; } ];
               rules.settings.groups = [
                 {
                   orgId = 1;
@@ -687,15 +678,9 @@ in
                       }
                       {
                         title = "Backup stale";
-                        expr = "time() - restic_last_success_timestamp_seconds{backup!~\"drill-usb|${laptops}\"}";
+                        expr = "time() - restic_last_success_timestamp_seconds{backup!=\"drill-usb\"}";
                         threshold = 30 * 3600;
                         summary = "The {{ $labels.backup }} backup on {{ $labels.instance }} has not succeeded for over 30 hours";
-                      }
-                      {
-                        title = "Laptop backup stale";
-                        expr = "time() - restic_last_success_timestamp_seconds{backup=~\"${laptops}\"}";
-                        threshold = 3 * 86400;
-                        summary = "{{ $labels.backup }} has not uploaded a home backup to {{ $labels.instance }} for over 3 days";
                       }
                       {
                         title = "Restore drill stale";

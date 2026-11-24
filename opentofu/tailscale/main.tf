@@ -76,11 +76,6 @@ variable "fleet_state_port" {
   type        = number
 }
 
-variable "fleet_home_backups" {
-  description = "Bastion port of each laptop's restic server, by host, from fleet.hosts.*.homeBackup; the tofu app sets it."
-  type        = map(number)
-}
-
 variable "fleet_operators" {
   description = "Fleet hosts the operator runs OpenTofu from, which reach the state database; the tofu app sets it."
   type        = list(string)
@@ -131,7 +126,7 @@ locals {
       exitNode = ["tag:proton-exit"]
       routes   = { for lan in values(var.fleet_routes) : lan => ["tag:bastion"] }
     }
-    grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [for host, port in var.fleet_home_backups : { src = [host], dst = ["bastion"], ip = ["tcp:${port}"] }], [
+    grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client", "tag:agent"], ip = ["tcp:22"] },
       { src = ["tag:admin-client"], dst = ["tag:agent"], ip = ["tcp:${var.fleet_paseo_port}"] },
       { src = ["tag:agent"], dst = ["bastion"], ip = ["tcp:443"] },

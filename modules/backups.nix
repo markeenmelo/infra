@@ -1,12 +1,3 @@
-{ config, lib, ... }:
-let
-  inherit (config.fleet) hosts;
-  laptops = lib.filterAttrs (_: host: host.homeBackup != null) hosts;
-  homeBackupSecret = host: {
-    sopsFile = ../secrets/shared/home-backup-${host}.yaml;
-    key = "password";
-  };
-in
 {
   flake.modules.nixos.backups =
     {
@@ -39,11 +30,7 @@ in
         "/srv/immich"
         "/srv/opencloud"
         "/srv/nixflix-state"
-      ]
-      ++ map laptopRepo (lib.attrNames laptops);
-      laptopRepo = name: "/srv/backup-${name}";
-      perLaptop = f: lib.mkMerge (lib.mapAttrsToList f laptops);
-      listen = hosts.${config.networking.hostName}.tailnetAddress;
+      ];
       datasets = map (root: config.fileSystems.${root}.device) roots;
       inSnapshot =
         name: root: path:
@@ -55,7 +42,7 @@ in
             > ${config.fleet.metricsDir}/restic-${name}.prom.tmp
           ${lib.getExe' pkgs.coreutils "mv"} ${config.fleet.metricsDir}/restic-${name}.prom.tmp ${config.fleet.metricsDir}/restic-${name}.prom
         '';
-      recorded = lib.attrNames jobs ++ [ "drill-usb" ] ++ lib.attrNames laptops;
+      recorded = lib.attrNames jobs ++ [ "drill-usb" ];
       dumps = config.services.postgresqlBackup;
       dumpDir = dumps.location;
       databases = config.services.postgresql.ensureDatabases;
@@ -85,15 +72,10 @@ in
       restic = lib.getExe pkgs.restic;
     in
     {
-      sops.secrets = lib.mkMerge [
-        {
-          backups-restic-password.key = "backups/restic-password";
-          backups-rclone-pcloud.key = "backups/rclone-pcloud";
-        }
-        (lib.mapAttrs' (
-          name: _: lib.nameValuePair "backups-${name}-password" (homeBackupSecret name)
-        ) laptops)
-      ];
+      sops.secrets = {
+        backups-restic-password.key = "backups/restic-password";
+        backups-rclone-pcloud.key = "backups/rclone-pcloud";
+      };
       assertions =
         map
           (path: {
@@ -228,103 +210,6 @@ in
               '';
             };
           }
-          (perLaptop (
-            name: laptop:
-            let
-              repo = laptopRepo name;
-              account = "backup-${name}";
-            in
-            {
-              ${account} = {
-                description = "Append-only restic server for ${name}'s home backups";
-                after = [ "tailscaled.service" ];
-                wantedBy = [ "multi-user.target" ];
-                unitConfig.RequiresMountsFor = [ repo ];
-                serviceConfig = {
-                  User = account;
-                  Group = account;
-                  ExecStartPre = "+${lib.getExe' pkgs.coreutils "install"} -d -o ${account} -g ${account} -m 0700 ${repo}";
-                  ExecStart = "${lib.getExe pkgs.rclone} serve restic --append-only --addr ${listen}:${toString laptop.homeBackup.port} ${repo}";
-                  Restart = "on-failure";
-                  RestartSec = "10s";
-                  ProtectSystem = "strict";
-                  ProtectHome = true;
-                  ReadWritePaths = [ repo ];
-                  NoNewPrivileges = true;
-                  PrivateTmp = true;
-                };
-              };
-              "${account}-freshness" = {
-                description = "Record when ${name} last uploaded a snapshot";
-                startAt = "hourly";
-                unitConfig.RequiresMountsFor = [
-                  repo
-                  config.fleet.metricsDir
-                ];
-                enableStrictShellChecks = true;
-                path = [
-                  pkgs.coreutils
-                  pkgs.findutils
-                ];
-                serviceConfig = {
-                  Type = "oneshot";
-                  ProtectSystem = "strict";
-                  ProtectHome = true;
-                  ReadWritePaths = [ config.fleet.metricsDir ];
-                };
-                script = ''
-                  newest=$(find ${repo}/snapshots -type f -printf '%T@\n' 2> /dev/null | sort -n | tail -n 1 || true)
-                  [ -n "$newest" ] || exit 0
-                  printf 'restic_last_success_timestamp_seconds{backup="${name}"} %s\n' "''${newest%.*}" \
-                    > ${config.fleet.metricsDir}/restic-${name}.prom.tmp
-                  mv ${config.fleet.metricsDir}/restic-${name}.prom.tmp ${config.fleet.metricsDir}/restic-${name}.prom
-                '';
-              };
-              "${account}-retention" = {
-                description = "Prune and check ${name}'s backups unless a snapshot carries a forged date";
-                conflicts = [ "${account}.service" ];
-                after = [ "${account}.service" ];
-                unitConfig.RequiresMountsFor = [ repo ];
-                startAt = "Sun 05:00";
-                enableStrictShellChecks = true;
-                path = [
-                  pkgs.jq
-                  pkgs.coreutils
-                ];
-                environment = {
-                  RESTIC_REPOSITORY = repo;
-                  RESTIC_PASSWORD_FILE = "%d/password";
-                };
-                serviceConfig = {
-                  Type = "oneshot";
-                  User = account;
-                  Group = account;
-                  LoadCredential = [ "password:${config.sops.secrets."backups-${name}-password".path}" ];
-                  CacheDirectory = account;
-                  Environment = "RESTIC_CACHE_DIR=%C/${account}";
-                  ExecStopPost = "+${pkgs.systemd}/bin/systemctl start --no-block ${account}.service";
-                  ProtectSystem = "strict";
-                  ProtectHome = true;
-                  ReadWritePaths = [ repo ];
-                };
-                script = ''
-                  set -o pipefail
-                  now=$(date +%s)
-                  ${restic} snapshots --json --retry-lock 30m | jq -r '.[] | "\(.id) \(.time)"' |
-                    while read -r id time; do
-                      claimed=$(date -d "$time" +%s)
-                      uploaded=$(stat -c %Y "$RESTIC_REPOSITORY/snapshots/$id")
-                      if [ "$claimed" -gt $((now + 3600)) ] || [ "$uploaded" -gt $((claimed + 8 * 86400)) ]; then
-                        echo "Snapshot $id claims $time but was uploaded $(date -d "@$uploaded"); not pruning."
-                        exit 1
-                      fi
-                    done
-                  ${restic} forget --prune --retry-lock 30m --keep-within 14d --keep-daily 7 --keep-weekly 5 --keep-monthly 12
-                  ${restic} check --retry-lock 30m --read-data-subset=5%
-                '';
-              };
-            }
-          ))
           (lib.genAttrs (map (db: "postgresqlBackup-${db}") databases) (_: {
             unitConfig.RequiresMountsFor = [
               "/srv"
@@ -332,27 +217,12 @@ in
             ];
           }))
         ];
-        timers = lib.mkMerge [
-          {
-            restic-drill-usb.timerConfig = {
-              RandomizedDelaySec = "2h";
-              Persistent = true;
-            };
-          }
-          (perLaptop (name: _: { "backup-${name}-retention".timerConfig.Persistent = true; }))
-        ];
+        timers.restic-drill-usb.timerConfig = {
+          RandomizedDelaySec = "2h";
+          Persistent = true;
+        };
       };
 
-      users = perLaptop (
-        name: laptop: {
-          users."backup-${name}" = {
-            isSystemUser = true;
-            inherit (laptop.homeBackup) uid;
-            group = "backup-${name}";
-          };
-          groups."backup-${name}".gid = laptop.homeBackup.uid;
-        }
-      );
       preservation.preserveAt."/persist".directories =
         map
           (directory: {
@@ -362,85 +232,6 @@ in
           (
             map (name: "/var/cache/restic-backups-${name}") (lib.attrNames jobs)
             ++ [ "/var/cache/restic-drill-usb" ]
-          )
-        ++ map (name: {
-          directory = "/var/cache/backup-${name}";
-          user = "backup-${name}";
-          group = "backup-${name}";
-          mode = "0700";
-        }) (lib.attrNames laptops);
-
-      networking.firewall.extraInputRules = lib.concatStrings (
-        lib.mapAttrsToList (_: laptop: ''
-          iifname "${config.services.tailscale.interfaceName}" ip saddr ${laptop.tailnetAddress} tcp dport ${toString laptop.homeBackup.port} accept
-        '') laptops
-      );
-      fleet.loopbackGuards = perLaptop (
-        name: laptop: {
-          "backup-${name}" = {
-            ports = [ laptop.homeBackup.port ];
-            users = [ ];
-          };
-        }
-      );
-    };
-
-  flake.modules.nixos.backup-home =
-    { config, ... }:
-    let
-      host = config.networking.hostName;
-      inherit (hosts.${host}.homeBackup) port;
-      password = "backups-${host}-password";
-      home = config.users.users.marcos.home;
-    in
-    {
-      sops.secrets.${password} = homeBackupSecret host;
-      services.restic.backups.home = {
-        repository = "rest:http://${hosts.bastion.tailnetAddress}:${toString port}/";
-        passwordFile = config.sops.secrets.${password}.path;
-        initialize = true;
-        paths = [ home ];
-        exclude =
-          map (path: "${home}/${path}") (
-            import ./_home-secrets.nix
-            ++ [
-              ".cache"
-              ".gvfs"
-              ".local/share/Trash"
-              ".local/share/Steam/steamapps/common"
-              ".local/share/Steam/steamapps/shadercache"
-              ".local/share/Steam/steamapps/downloading"
-              ".local/share/Steam/steamapps/temp"
-            ]
-          )
-          ++ [ "**/node_modules" ];
-        extraBackupArgs = [ "--exclude-caches" ];
-        timerConfig = {
-          OnCalendar = "00/6:00";
-          RandomizedDelaySec = "30m";
-          Persistent = true;
-        };
-      };
-      systemd.services.restic-backups-home = {
-        wants = [ "tailscaled.service" ];
-        after = [ "tailscaled.service" ];
-        conflicts = [ "sleep.target" ];
-        before = [ "sleep.target" ];
-        unitConfig.ConditionACPower = true;
-        serviceConfig = {
-          Restart = "on-failure";
-          RestartSec = "1h";
-        };
-      };
-      preservation.preserveAt."/persist".directories = [ "/var/cache/restic-backups-home" ];
-      networking.nftables.tables.backup-home = {
-        family = "inet";
-        content = ''
-          chain output {
-            type filter hook output priority -150; policy accept;
-            ip daddr ${hosts.bastion.tailnetAddress} tcp dport ${toString port} meta skuid != 0 reject
-          }
-        '';
-      };
+          );
     };
 }

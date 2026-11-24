@@ -141,8 +141,8 @@ does while a video plays; on battery two earlier timers there turn the screen of
 sooner. On battery `power-profile-ac` switches to
 power-saver and caps the panel brightness, and restores the previous profile and brightness on AC;
 the battery charges to 90% and resumes at
-85%. The home backup ([backups.nix](../../../modules/backups.nix)) and the btrfs scrub
-([desktop.nix](../../../modules/desktop.nix)) start on AC only. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move
+85%. The btrfs scrub
+([desktop.nix](../../../modules/desktop.nix)) starts on AC only. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move
 to another display until it opens; undocked on AC that leaves no display until the lid opens or the
 idle timer suspends, and the idle lock still engages with no output, so opening the lid shows the
 lock screen. Shutting it suspends on

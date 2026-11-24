@@ -32,9 +32,6 @@ let
     lib.concatStringsSep "\n" keys;
   operatorNames = [ "thinkpad" ];
   operators = map (name: config.fleet.hosts.${name}.tailnetAddress) operatorNames;
-  homeBackups = lib.mapAttrs (_: host: host.homeBackup.port) (
-    lib.filterAttrs (_: host: host.homeBackup != null) config.fleet.hosts
-  );
 in
 {
   flake.modules.nixos.opentofu-state =
@@ -92,7 +89,6 @@ in
             export TF_VAR_fleet_public_port=${toString config.fleet.publicPort}
             export TF_VAR_fleet_bans_port=${toString config.fleet.bansPort}
             export TF_VAR_fleet_paseo_port=${toString config.fleet.paseoPort}
-            export TF_VAR_fleet_home_backups=${lib.escapeShellArg (builtins.toJSON homeBackups)}
             export TF_VAR_fleet_operators=${lib.escapeShellArg (builtins.toJSON operatorNames)}
             export TF_VAR_fleet_state_port=${toString statePort}
             export TF_VAR_fleet_tailscale_port=${toString tailscalePort}
