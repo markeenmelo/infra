@@ -120,8 +120,8 @@ resolves a locked input by `narHash` before `rev`, so a revision bump without it
 old tree where cached and fails elsewhere; `nix flake update INPUT` instead. Each pin keeps its
 own version literal so only that line is rewritten.
 
-[vulnix.yml](../../../.github/workflows/vulnix.yml) scans each x86_64 host's runtime closure
-weekly against NIST's CVEs; the workflow says what fails a run. vulnix matches by name and version, so most matches are
+[vulnix.yml](../../../.github/workflows/vulnix.yml) scans each host's runtime closure on a runner
+of its architecture (`ubuntu-24.04-arm` for edge) weekly against NIST's CVEs; the workflow says what fails a run. vulnix matches by name and version, so most matches are
 another project with the same name or a CVE nixpkgs already patches. A confirmed false positive
 or an accepted risk goes in [vulnix.toml](../../../vulnix.toml) as a section per package with
 `cve`, `comment` and an `until` date, so it comes back for review; a real one is fixed by the
