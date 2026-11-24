@@ -114,13 +114,13 @@ in
                   type = "stdio";
                   command = lib.getExe pkgs.mcp-nixos;
                 };
-                # shortcut: the server reads the one-hour App token once, so a session loses GitHub MCP within an hour while gh and git keep working; upgrade when github-mcp-server rereads a token
+                # shortcut: every GitHub MCP server reads the one-hour App token once, so a session loses GitHub MCP within an hour while gh and git keep working; upgrade when github-mcp-server rereads a token
                 github = {
                   type = "stdio";
                   command = lib.getExe pkgs.bash;
                   args = [
                     "-c"
-                    ''GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token) exec ${lib.getExe pkgs.github-mcp-server} "$@"''
+                    ''GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token) || exit 1; export GITHUB_PERSONAL_ACCESS_TOKEN; exec ${lib.getExe pkgs.github-mcp-server} "$@"''
                     "github-mcp-server"
                   ]
                   ++ githubMcpArgs;

@@ -118,13 +118,17 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
   never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
-  the file on each call, Git goes through `gh`, and Claude Code's GitHub MCP server reads it once
-  when a session starts, so it loses GitHub within the hour. The App acts as `NAME[bot]`, not as
-  the operator: it holds Contents, Pull requests and Issues writes and Actions, Checks and
-  Commit statuses reads, never Workflows or Administration, and is not a ruleset bypass actor, so
-  the rulesets bind it. Contents write still lets a pushed branch change the code a
-  pull-request workflow runs, so the App is installed only on repositories whose pull-request
-  workflows hold no secret that such code can reach.
+  the file on each call and Git goes through `gh`. Every GitHub MCP server (Claude Code's, and
+  the Home Manager ones Codex and OpenCode read) takes the token once when it starts, so it loses
+  GitHub within the hour while `gh` and Git keep working. The App acts as `NAME[bot]`, not as the
+  operator: it holds Contents and Pull requests writes, Issues write for comments in a pull
+  request's conversation, and Actions, Checks and Commit statuses reads, never Workflows or
+  Administration, and is not a ruleset bypass actor, so the rulesets bind it. It still merges
+  whatever the rulesets admit: the changes CLAUDE.md keeps for the operator are a control only
+  where a ruleset requires the operator's approval, and otherwise a rule the agent follows, which
+  an injected session holding the token can ignore. Contents write still lets a pushed branch
+  change the code a pull-request workflow runs, so the App is installed only on repositories
+  whose pull-request workflows hold no secret that such code can reach.
 
 Codex, Cursor, OpenCode and pi hold no secret of the repository: the operator signs each in once
 over SSH (`codex login --device-auth`, `cursor-agent login`, `opencode auth login`, `/login` in

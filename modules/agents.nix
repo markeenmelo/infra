@@ -329,6 +329,8 @@ in
           serviceConfig = {
             Type = "oneshot";
             UMask = "0077";
+            Restart = "on-failure";
+            RestartSec = "1min";
             LoadCredential = "key:${config.sops.secrets.agents-github-app-key.path}";
           };
           enableStrictShellChecks = true;
@@ -341,7 +343,10 @@ in
       };
       systemd.timers.agents-github-token = {
         wantedBy = [ "timers.target" ];
-        timerConfig.OnCalendar = "*:00/30";
+        timerConfig = {
+          OnActiveSec = "1s";
+          OnCalendar = "*:00/30";
+        };
       };
     };
 }
