@@ -69,6 +69,12 @@ in
       networking.nftables.tables.vpn-exit = {
         family = "ip";
         content = ''
+          chain forward {
+            type filter hook forward priority filter; policy accept;
+            ip saddr { ${
+              lib.concatMapStringsSep ", " (ns: config.vpnNamespaces.${ns}.namespaceAddress) namespaces
+            } } ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/3 } drop
+          }
           chain postrouting {
             type nat hook postrouting priority srcnat; policy accept;
             ${lib.concatMapStrings (
