@@ -187,7 +187,6 @@ let
     {
       imports = [ nixflix ];
       vpnNamespaces.${config.nixflix.vpn.namespace}.piaRegion = "ca";
-      fleet.piaCredentials = lib.genAttrs [ "username" "password" ] (field: "${secretDir}/pia-${field}");
       nixflix = lib.mkMerge [
         {
           postgres.enable = true;
@@ -440,8 +439,8 @@ let
               UMask = "0077";
               LoadCredential = [
                 "password:${secretDir}/qbittorrent-password"
-                "pia-username:${secretDir}/pia-username"
-                "pia-password:${secretDir}/pia-password"
+                "pia-username:${config.sops.secrets.pia-username.path}"
+                "pia-password:${config.sops.secrets.pia-password.path}"
               ];
             };
             script = ''
@@ -586,20 +585,6 @@ let
               ++ map (app: "seerr-${app}.timer") (lib.filter (app: name == "${app}-api-key") seerrApps);
           }
         ) (lib.unique (lib.attrNames hostUnits ++ appHeld))
-        ++
-          map
-            (
-              field:
-              lib.nameValuePair "pia-${field}" {
-                key = "pia/${field}";
-                path = "${secretDir}/pia-${field}";
-                restartUnits = [ "${vpn}.service" ];
-              }
-            )
-            [
-              "username"
-              "password"
-            ]
       );
 
       nixflix.seerr = lib.mkMerge [

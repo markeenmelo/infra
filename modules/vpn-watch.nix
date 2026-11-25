@@ -24,6 +24,9 @@
                 && (unit.serviceConfig.Type or "simple") != "oneshot"
               ) config.systemd.services
             );
+          piaNamespaces = lib.attrNames (
+            lib.filterAttrs (_: namespace: namespace.enable && namespace.piaRegion != null) config.vpnNamespaces
+          );
           perNamespace =
             f:
             lib.mkMerge (
@@ -69,13 +72,6 @@
         in
         {
           options = {
-            fleet.piaCredentials = lib.genAttrs [ "username" "password" ] (
-              field:
-              lib.mkOption {
-                type = lib.types.str;
-                description = "File holding the Private Internet Access ${field} every PIA tunnel of the host signs in with.";
-              }
-            );
             vpnNamespaces = lib.mkOption {
               type = lib.types.attrsOf (
                 lib.types.submodule (
@@ -94,6 +90,12 @@
           };
 
           config = {
+            sops.secrets = lib.mkIf (piaNamespaces != [ ]) (
+              lib.genAttrs [ "pia-username" "pia-password" ] (name: {
+                key = "pia/${lib.removePrefix "pia-" name}";
+                restartUnits = map (namespace: "${namespace}.service") piaNamespaces;
+              })
+            );
             systemd.services = perNamespace (
               namespace:
               let
@@ -115,7 +117,10 @@
                       RestartMaxDelaySec = "30min";
                       RuntimeDirectory = "pia-${namespace}";
                       RuntimeDirectoryMode = "0700";
-                      LoadCredential = lib.mapAttrsToList (field: file: "${field}:${file}") config.fleet.piaCredentials;
+                      LoadCredential = map (field: "${field}:${config.sops.secrets."pia-${field}".path}") [
+                        "username"
+                        "password"
+                      ];
                     })
                   ];
                 };
