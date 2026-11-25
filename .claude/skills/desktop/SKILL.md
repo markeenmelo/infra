@@ -40,8 +40,7 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
 - **Launcher:** `Mod + Space` or the bar's launcher button, on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
   in [umbriel.nix](../../../modules/umbriel.nix) with the scratchpad binds.
 - **Motion:** Omarchy's curves and timings, quick ease-out with no bounce: windows pop in from
-  87% over about 330 ms and pop out linearly over about 120 ms, other transitions take about
-  300 ms, and switching workspaces is instant
+  87% and pop out faster, and switching workspaces is instant
   ([umbriel.nix](../../../modules/umbriel.nix)).
 - **Spacing:** 10 px between windows and to the screen edge (the bar's edge counts as the
   screen's). Terminal padding 10 px across, 8 px down.
