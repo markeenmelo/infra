@@ -29,6 +29,9 @@ in
       tailscale = lib.getExe config.services.tailscale.package;
       socket = country: "/run/tailscale-${country}/tailscaled.sock";
       perCountry = f: lib.mkMerge (lib.mapAttrsToList f countries);
+      namespaces = map (country: "pv${country}") (lib.attrNames countries);
+      # tailscaled marks its own sockets (control, DERP, peers) with this fwmark, tsconst.LinuxBypassMarkNum under its 0xff0000 mask
+      bypassMark = "0x80000/0xff0000";
     in
     {
       imports = [ vpn-watch ];
@@ -62,12 +65,60 @@ in
         }
       );
 
-      # shortcut: tailscaled's own control, DERP and peer traffic also leaves through PIA, so peers mostly relay over DERP; route its fwmark over the bridge if throughput matters
+      networking.nftables.tables.vpn-exit = {
+        family = "ip";
+        content = ''
+          chain postrouting {
+            type nat hook postrouting priority srcnat; policy accept;
+            ${lib.concatMapStrings (
+              ns:
+              let
+                inherit (config.vpnNamespaces.${ns}) namespaceAddress;
+              in
+              "ip saddr ${namespaceAddress} oifname != \"${ns}-br\" masquerade\n"
+            ) namespaces}
+          }
+        '';
+      };
+
       systemd.services = perCountry (
         country: _: {
+          "pv${country}-bypass" = {
+            description = "Send the ${country} exit node's own tailnet traffic around the tunnel";
+            wantedBy = [ "pv${country}.service" ];
+            partOf = [ "pv${country}.service" ];
+            after = [ "pv${country}.service" ];
+            path = [
+              pkgs.iproute2
+              pkgs.iptables
+              pkgs.procps
+            ];
+            enableStrictShellChecks = true;
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+            };
+            script =
+              let
+                ns = "pv${country}";
+              in
+              ''
+                mark=${bypassMark}
+                ip -n ${ns} rule del priority 5200 2> /dev/null || true
+                ip -n ${ns} rule add priority 5200 fwmark "$mark" lookup 5200
+                ip -n ${ns} route replace default via ${
+                  config.vpnNamespaces.${ns}.bridgeAddress
+                } dev veth-${ns} table 5200
+                ip netns exec ${ns} sysctl -qw net.ipv4.conf.veth-${ns}.rp_filter=2
+                ip netns exec ${ns} iptables -C OUTPUT -o veth-${ns} -m mark --mark "$mark" -j ACCEPT 2> /dev/null ||
+                  ip netns exec ${ns} iptables -I OUTPUT 1 -o veth-${ns} -m mark --mark "$mark" -j ACCEPT
+              '';
+          };
           "tailscaled-${country}" = {
             description = "Tailscale exit node through PIA (${country})";
             wantedBy = [ "multi-user.target" ];
+            requires = [ "pv${country}-bypass.service" ];
+            after = [ "pv${country}-bypass.service" ];
             vpnConfinement = {
               enable = true;
               vpnNamespace = "pv${country}";
