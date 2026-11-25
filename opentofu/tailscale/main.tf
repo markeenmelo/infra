@@ -175,11 +175,11 @@ resource "tailscale_dns_configuration" "fleet" {
   override_local_dns = true
   nameservers {
     address            = "76.76.2.2"
-    use_with_exit_node = true
+    use_with_exit_node = false
   }
   nameservers {
     address            = "76.76.10.2"
-    use_with_exit_node = true
+    use_with_exit_node = false
   }
   split_dns {
     domain = local.domain
