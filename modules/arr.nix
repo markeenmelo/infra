@@ -534,6 +534,8 @@ let
       ];
       guestDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
       returned = "${guestDumps}-handover/returned";
+      # shortcut: drops the downloads guest's tap until arr-return stops it, since the guest's own table goes in the same switch, delete with _downloads.nix
+      guestTap = (import ./_downloads.nix).tap;
       guestUnits = [
         "microvm@downloads.service"
         "microvm-virtiofsd@downloads.service"
@@ -666,10 +668,12 @@ let
             type filter hook forward priority -200; policy accept;
             oifname "${vpn}-br" drop
             iifname "${vpn}-br" drop
+            iifname "${guestTap}" drop
           }
           chain input {
             type filter hook input priority -200; policy accept;
             iifname "${vpn}-br" ct state new drop
+            iifname "${guestTap}" drop
           }
           chain output {
             type filter hook output priority -150; policy accept;
