@@ -27,8 +27,9 @@ the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)); the arr apps and SAB
 `marcos` with `arr/password`. The `arr` nftables table drops
 anything forwarded through the namespace's bridge and lets only root and Caddy open new
 connections into the namespace, Seerr only to Sonarr and Radarr, and the `exportarr` user only
-to the three arr apps. Nothing filters what the namespace opens towards bastion itself over its
-bridge, so the apps reach bastion's own listeners. One exportarr exporter per app publishes its
+to the three arr apps. It also drops every new connection the namespace
+opens towards bastion itself, so the apps reach none of bastion's listeners; replies to bastion's
+own connections pass. One exportarr exporter per app publishes its
 health checks (indexers, download clients, root folders, remote path mappings), which the `Arr
 health issue` alert reports after an hour; a single failed import is a queue item, which
 Decluttarr handles instead.

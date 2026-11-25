@@ -667,6 +667,10 @@ let
             oifname "${vpn}-br" drop
             iifname "${vpn}-br" drop
           }
+          chain input {
+            type filter hook input priority -200; policy accept;
+            iifname "${vpn}-br" ct state new drop
+          }
           chain output {
             type filter hook output priority -150; policy accept;
             ${toApps seerrApps config.users.users.${config.nixflix.seerr.user}.uid}
