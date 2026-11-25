@@ -162,7 +162,11 @@ in
 
     homeManager.agent-tools.programs.pi-coding-agent = {
       enable = true;
-      settings.enableInstallTelemetry = false;
+      settings = {
+        enableInstallTelemetry = false;
+        defaultProvider = "kimi-coding";
+        defaultModel = "k3.1-pro";
+      };
     };
   };
 }

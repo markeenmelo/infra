@@ -85,7 +85,11 @@ is the boundary. The account's connectors stay out.
 
 Cursor's CLI (`cursor-agent`) and pi sit beside Claude Code; no other coding agent is installed.
 pi is configured through its Home Manager module for `marcos`, in `agent-tools` in
-[claude.nix](../../../modules/claude.nix), with install telemetry off. The
+[claude.nix](../../../modules/claude.nix), with install telemetry off and Kimi For Coding's `k3.1-pro` as its starting
+model.
+pi does not read `.claude/skills`, so the repository links `.agents/skills` to it; pi asks once
+whether to trust the repository before loading them, and `/trust` keeps the answer in
+`~/.pi/agent/trust.json` on `home.img`. The
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
 as `marcos` with the same tokens a shell gets, written for it at each start to a file only
@@ -114,7 +118,9 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
   MiniMax, exported as `ZAI_API_KEY`, `KIMI_API_KEY` and `MINIMAX_API_KEY`, which pi's built-in
   `zai`, `kimi-coding` and `minimax` providers read. A `/login` credential pi stored in
   `~/.pi/agent/auth.json` wins over these variables; `pi auth logout PROVIDER` drops it. Each is a subscription key that can spend
-  that plan's quota; revoke it in that provider's console.
+  that plan's quota; revoke it in that provider's console. pi also holds a `/login` for
+  `openai-codex`, the operator's ChatGPT subscription, in that file on `home.img`: like Cursor's
+  session below it lives outside the repository, survives restarts and is revoked from that account.
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
   never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
