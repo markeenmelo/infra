@@ -108,6 +108,9 @@ locals {
   tagged = {
     bastion = { id = "nRazrRf2yE11CNTRL", tags = ["tag:server", "tag:bastion"] }
     grafite = { id = "na2EEFHL1i11CNTRL", tags = ["tag:admin-client"] }
+    ca      = { id = "nU9a9LCnEk11CNTRL", tags = ["tag:vpn-exit"] }
+    us      = { id = "n3NiToiLaf11CNTRL", tags = ["tag:vpn-exit"] }
+    br      = { id = "nK6m9STc3Y11CNTRL", tags = ["tag:vpn-exit"] }
   }
 
   policy = {
