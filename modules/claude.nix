@@ -150,7 +150,11 @@ in
       {
         programs.pi-coding-agent = {
           enable = true;
-          settings.enableInstallTelemetry = false;
+          settings = {
+            enableInstallTelemetry = false;
+            defaultProvider = "kimi-coding";
+            defaultModel = "k3.1-pro";
+          };
         };
         home.file."${config.programs.pi-coding-agent.configDir}/mcp.json".source =
           (pkgs.formats.json { }).generate "pi-mcp.json"
