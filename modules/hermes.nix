@@ -63,7 +63,7 @@ let
         settings = {
           model = {
             provider = "openai-codex";
-            default = "gpt-6-luna";
+            default = "gpt-6-astra";
           };
           unauthorized_dm_behavior = "ignore";
           auth.adopt_external_logins = false;
