@@ -791,8 +791,11 @@ let
               done
               for db in ${lib.concatStringsSep " " apps}; do
                 echo "Replacing $db"
-                runuser -u postgres -- dropdb --if-exists --force "$db"
-                runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "alter database \"$db-return\" rename to \"$db\""
+                runuser -u postgres -- dropdb --if-exists --force "$db-old"
+                runuser -u postgres -- psql -v ON_ERROR_STOP=1 \
+                  -c "alter database \"$db\" rename to \"$db-old\"" \
+                  -c "alter database \"$db-return\" rename to \"$db\""
+                runuser -u postgres -- dropdb --force "$db-old"
               done
               printf '%s\n' "$sum" > ${returned}
             '';
