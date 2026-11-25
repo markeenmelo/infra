@@ -69,7 +69,7 @@ let
       ];
       microvm = {
         vcpu = 4;
-        mem = 8192;
+        mem = 12288;
         shares = [
           {
             proto = "virtiofs";
