@@ -1,28 +1,27 @@
 ---
 name: desktop
-description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Tokyo Night through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
+description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Everforest through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
 ---
 
 # Desktop
 
 The workstation runs Umbriel for windows and Noctalia for the bar. The design follows **Omarchy**:
-square, opaque and gapped, Tokyo Night throughout, on this stack instead of Hyprland.
+square, opaque and gapped, Everforest throughout, on this stack instead of Hyprland.
 
 ## Theming
 
-[stylix.nix](../../../modules/stylix.nix) sets the one scheme, Tokyo Night (`tokyo-night-terminal-dark`,
-whose base16 slots keep red, yellow and blue in the roles below, unlike `tokyo-night-dark`, with
-the text, muted text and success slots overridden to Tokyo Night's own so every role holds), dark
-polarity, and the fonts; every app that Stylix can theme takes its colors and fonts from it. An
+[stylix.nix](../../../modules/stylix.nix) sets the one scheme, Everforest dark medium (`everforest`,
+whose base16 slots hold every role below as shipped, unlike `everforest-dark-medium`, which puts
+the text in `base07`; muted, warm and low in blue, chosen to tire the eyes less), dark polarity, and the fonts; every app that Stylix can theme takes its colors and fonts from it. An
 app is then hand-tuned in its own module to the rules below, reading `config.lib.stylix.colors`
 (base16 names) and `config.stylix.fonts`, never a hex or font literal, so a scheme or font change
 reaches it. An app Stylix cannot theme gets the same treatment by hand.
 
-An app that ships its own Tokyo Night uses it for syntax instead of Stylix's base16 colors, while
+An app that ships its own Everforest uses it for syntax instead of Stylix's base16 colors, while
 its fonts still come from Stylix: its target is disabled and the native theme is selected, with its
-background and surfaces overridden from `base00`–`base02` so it sits on the same black as the rest.
-Only Neovim does (`tokyonight-nvim`, style `night`, in [neovim.nix](../../../modules/neovim.nix));
-Zed and bat, which ship no Tokyo Night, take Stylix's.
+background and surfaces overridden from `base00`–`base02` so it sits on the same background as the rest.
+Only Neovim does (`everforest`, background `medium`, in [neovim.nix](../../../modules/neovim.nix));
+Zed and bat, which ship no Everforest, take Stylix's.
 
 Terminals and desktop chrome stay on Stylix. [tmux.nix](../../../modules/tmux.nix) draws its status
 line and pane borders from the same palette (prefix `C-a`, vi keys, sessions restored by
@@ -89,8 +88,8 @@ module sets ([noctalia.nix](../../../modules/noctalia.nix)):
 
 | Use | Font | Size |
 |---|---|---|
-| Terminals, editors, code | JetBrainsMono Nerd Font Mono | 12 |
-| Application UI, desktop, popups | NotoSans Nerd Font Propo | 11 |
+| Terminals, editors, code | JetBrainsMono Nerd Font Mono | 14 |
+| Application UI, desktop, popups | NotoSans Nerd Font Propo | 12 |
 | Bar | JetBrainsMono Nerd Font Mono, semibold | 13 |
 | Serif slots | Noto Serif | as the app asks |
 | Emoji | Noto Color Emoji | as the text |
@@ -104,7 +103,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
   status glyphs stay Nerd Font (see Rules).
 - **Wallpaper:** [wallpaper.jpg](../../../modules/wallpaper.jpg), set as Stylix's `image`, which
   applies it. It is the only image in the look; nothing else is
-  derived from it, since the colors come from Tokyo Night, not from the picture.
+  derived from it, since the colors come from Everforest, not from the picture.
 - **Lock screen:** the wallpaper, blurred, with the clock in NotoSans Nerd Font Propo and the password field on a
   square `base01` panel.
 

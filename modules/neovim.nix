@@ -13,22 +13,16 @@
         vimAlias = true;
         plugins = [
           {
-            plugin = pkgs.vimPlugins.tokyonight-nvim;
+            plugin = pkgs.vimPlugins.everforest;
             type = "lua";
             config = ''
-              require('tokyonight').setup({
-                style = 'night',
-                on_colors = function(colors)
-                  colors.bg = '${c.base00}'
-                  colors.bg_dark = '${c.base00}'
-                  colors.bg_float = '${c.base01}'
-                  colors.bg_sidebar = '${c.base00}'
-                  colors.bg_statusline = '${c.base01}'
-                  colors.bg_highlight = '${c.base02}'
-                  colors.bg_popup = '${c.base01}'
-                end,
-              })
-              vim.cmd.colorscheme('tokyonight')
+              vim.g.everforest_background = 'medium'
+              vim.g.everforest_colors_override = {
+                bg0 = { '${c.base00}', '235' },
+                bg1 = { '${c.base01}', '236' },
+                bg3 = { '${c.base02}', '238' },
+              }
+              vim.cmd.colorscheme('everforest')
             '';
           }
         ];

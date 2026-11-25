@@ -181,7 +181,10 @@
             ];
           };
           lockscreen.transition = [ ];
-          nightlight.enabled = true;
+          nightlight = {
+            enabled = true;
+            temperature_night = 3400;
+          };
           idle.behavior = {
             lock = {
               timeout = 300;
