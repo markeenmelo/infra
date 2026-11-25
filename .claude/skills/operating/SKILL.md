@@ -11,7 +11,7 @@ Read the file for the task:
 |---|---|---|
 | [deploy.md](deploy.md) | Deploys, the deploy account, the remote apps, installs | `deploy.nix`, `install.nix` |
 | [secrets.md](secrets.md) | SOPS files and recipients, delivery to units, editing, a new host | `secrets.nix`, `.sops.yaml`, `secrets/` |
-| [tailnet.md](tailnet.md) | Joining the tailnet, the auth key, reinstalls, Proton exit nodes | `tailscale.nix`, `proton-exit.nix` |
+| [tailnet.md](tailnet.md) | Joining the tailnet, the auth key, reinstalls, Proton exit nodes | `tailscale.nix`, `vpn-exit.nix` |
 
 The agent only prepares deploys, installs and secret edits; [CLAUDE.md](../../../CLAUDE.md#autonomy)
 says who runs them. The tailnet's policy and tags are OpenTofu
