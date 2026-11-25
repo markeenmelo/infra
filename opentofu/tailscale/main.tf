@@ -97,13 +97,13 @@ locals {
   admin_clients = concat(var.fleet_operators, ["grafite"])
   operators     = var.fleet_operators
   enrollment = {
-    thinkpad  = ["tag:admin-client"]
-    edge      = ["tag:server"]
-    bastion   = ["tag:server", "tag:bastion"]
-    proton-ca = ["tag:proton-exit"]
-    proton-us = ["tag:proton-exit"]
-    proton-br = ["tag:proton-exit"]
-    agents    = ["tag:agent"]
+    thinkpad = ["tag:admin-client"]
+    edge     = ["tag:server"]
+    bastion  = ["tag:server", "tag:bastion"]
+    ca       = ["tag:vpn-exit"]
+    us       = ["tag:vpn-exit"]
+    br       = ["tag:vpn-exit"]
+    agents   = ["tag:agent"]
   }
   tagged = {
     bastion = { id = "nRazrRf2yE11CNTRL", tags = ["tag:server", "tag:bastion"] }
@@ -116,14 +116,16 @@ locals {
       "tag:admin-client"      = ["tag:infra-provisioner"]
       "tag:server"            = ["tag:infra-provisioner"]
       "tag:bastion"           = ["tag:infra-provisioner"]
-      "tag:proton-exit"       = ["tag:infra-provisioner"]
-      "tag:ci"                = ["tag:infra-provisioner"]
-      "tag:agent"             = ["tag:infra-provisioner"]
+      "tag:vpn-exit"          = ["tag:infra-provisioner"]
+      # shortcut: kept until the apply that retags the exit nodes has run, so the policy never drops a tag devices still carry; remove it in the next tailscale apply
+      "tag:proton-exit" = ["tag:infra-provisioner"]
+      "tag:ci"          = ["tag:infra-provisioner"]
+      "tag:agent"       = ["tag:infra-provisioner"]
     }
     groups = { "group:members" = ["naralidy.anjos@gmail.com", "markeenmelo@github"] }
     hosts  = local.hosts
     autoApprovers = {
-      exitNode = ["tag:proton-exit"]
+      exitNode = ["tag:vpn-exit"]
       routes   = { for lan in values(var.fleet_routes) : lan => ["tag:bastion"] }
     }
     grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [
@@ -212,4 +214,19 @@ output "enrollment_keys" {
   description = "Pre-authorized auth key per host; the operating skill (tailnet.md) says how one reaches secrets/hosts/HOST.yaml."
   value       = { for host, key in tailscale_tailnet_key.enrollment : host => key.key }
   sensitive   = true
+}
+
+moved {
+  from = tailscale_tailnet_key.enrollment["proton-ca"]
+  to   = tailscale_tailnet_key.enrollment["ca"]
+}
+
+moved {
+  from = tailscale_tailnet_key.enrollment["proton-us"]
+  to   = tailscale_tailnet_key.enrollment["us"]
+}
+
+moved {
+  from = tailscale_tailnet_key.enrollment["proton-br"]
+  to   = tailscale_tailnet_key.enrollment["br"]
 }
