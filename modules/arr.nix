@@ -700,15 +700,12 @@ let
         {
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];
           arr-return = {
-            description = "Replace the arr databases with the downloads guest's last dumps, once";
+            description = "Replace the arr databases with the downloads guest's dumps when they are newer than the last return";
             requiredBy = map (name: "${name}.service") apps;
             before = map (name: "${name}.service") apps;
             requires = [ "postgresql-ready.target" ];
             after = [ "postgresql-ready.target" ];
-            unitConfig = {
-              RequiresMountsFor = [ guestDumps ];
-              ConditionPathExists = "!${returned}";
-            };
+            unitConfig.RequiresMountsFor = [ guestDumps ];
             path = [
               config.services.postgresql.package
               pkgs.findutils
@@ -722,6 +719,9 @@ let
             };
             script = ''
               set -o pipefail
+              if [ -e ${returned} ] && [ -z "$(find ${guestDumps} -maxdepth 1 -name '*.sql.gz' -newer ${returned})" ]; then
+                exit 0
+              fi
               for db in ${lib.concatStringsSep " " apps}; do
                 if [ -z "$(find ${guestDumps}/"$db.sql.gz" ${guestDumps}/"$db.prev.sql.gz" -mtime -2 2> /dev/null)" ]; then
                   echo "$db has no dump newer than two days in ${guestDumps}; not replacing it" >&2
@@ -732,9 +732,11 @@ let
                 dump=${guestDumps}/$db.sql.gz
                 [ -e "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
                 echo "Replacing $db with $dump"
-                runuser -u postgres -- dropdb --if-exists "$db"
-                runuser -u postgres -- createdb -O "$db" "$db"
-                gunzip -c "$dump" | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db" > /dev/null
+                runuser -u postgres -- dropdb --if-exists --force "$db-return"
+                runuser -u postgres -- createdb -O "$db" "$db-return"
+                gunzip -c "$dump" | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db-return" > /dev/null
+                runuser -u postgres -- dropdb --if-exists --force "$db"
+                runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "alter database \"$db-return\" rename to \"$db\""
               done
               install -d -o postgres -m 0700 ${dirOf returned}
               touch ${returned}
