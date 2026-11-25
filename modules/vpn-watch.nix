@@ -52,7 +52,7 @@
                 reply=$(get -G --connect-to "$cn::$(jq -r .ip <<< "$server"):" --cacert ${./pia.crt} \
                   --data-urlencode pt@token --data-urlencode "pubkey=$(wg pubkey < key)" "https://$cn:1337/addKey")
                 jq -e '.status == "OK"' <<< "$reply" > /dev/null
-                jq -n --arg cn "$cn" --argjson reply "$reply" '{ $cn, gateway: $reply.server_vip }' > server.json
+                jq -n --arg cn "$cn" --argjson reply "$reply" '{ $cn, gateway: $reply.server_ip }' > server.json
                 jq -r --rawfile key key '[
                   "[Interface]",
                   "PrivateKey = \($key | rtrimstr("\n"))",
