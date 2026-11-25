@@ -713,7 +713,7 @@ let
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];
           # shortcut: migration from the downloads guest that can replace these databases, delete it once no kept generation runs that guest
           arr-return = {
-            description = "Replace the arr databases with the downloads guest's dumps when they are newer than the last return";
+            description = "Replace the arr databases with the downloads guest's dumps when they differ from the last return";
             requiredBy = map (name: "${name}.service") arrUnits;
             before = map (name: "${name}.service") arrUnits;
             requires = [ "postgresql-ready.target" ];
@@ -752,29 +752,40 @@ let
             };
             script = ''
               set -o pipefail
-              if [ -e ${returned} ]; then
-                [ -n "$(find ${guestDumps} -maxdepth 1 -name '*.sql.gz' -newer ${returned} 2> /dev/null)" ] || exit 0
-              elif [ ! -e ${dirOf returned}/done ]; then
-                exit 0
-              fi
-              key=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
+              [ -e ${returned} ] || [ -e ${dirOf returned}/done ] || exit 0
+              declare -A dumps
               for db in ${lib.concatStringsSep " " apps}; do
                 dump=${guestDumps}/$db.sql.gz
                 [ -f "$dump" ] && [ ! -L "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
                 if [ ! -f "$dump" ] || [ -L "$dump" ]; then
+                  [ ! -e ${returned} ] || exit 0
                   echo "$db has no dump in ${guestDumps}; not replacing any database" >&2
                   exit 1
                 fi
-                if [ -z "$(find "$dump" -mtime -2)" ]; then
-                  echo "$dump is older than two days; not replacing any database" >&2
+                dumps[$db]=$dump
+              done
+              sum=$(for db in ${lib.concatStringsSep " " apps}; do sha256sum < "''${dumps[$db]}"; done | sha256sum | cut -d ' ' -f 1)
+              if [ -e ${returned} ] && [ "$(< ${returned})" = "$sum" ]; then
+                exit 0
+              fi
+              for db in ${lib.concatStringsSep " " apps}; do
+                if [ -z "$(find "''${dumps[$db]}" -mtime -2 ! -newermt now)" ]; then
+                  if [ -e ${returned} ]; then
+                    echo "''${dumps[$db]} changed but is not from the last two days; keeping the databases" >&2
+                    exit 0
+                  fi
+                  echo "''${dumps[$db]} is not from the last two days; not replacing any database" >&2
                   exit 1
                 fi
-                echo "Loading $dump into $db-return"
+              done
+              key=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
+              for db in ${lib.concatStringsSep " " apps}; do
+                echo "Loading ''${dumps[$db]} into $db-return"
                 runuser -u postgres -- dropdb --if-exists --force "$db-return"
                 runuser -u postgres -- createdb -O "$db" "$db-return"
                 {
                   printf '\\restrict %s\n' "$key"
-                  gunzip -c "$dump" | awk 'NR <= 10 && !k && /^\\restrict [A-Za-z0-9]+$/ { k = $2; next } k && $0 == "\\unrestrict " k { next } { print }'
+                  gunzip -c "''${dumps[$db]}" | awk 'NR <= 10 && !k && /^\\restrict [A-Za-z0-9]+$/ { k = $2; next } k && $0 == "\\unrestrict " k { next } { print }'
                   printf '\\unrestrict %s\n' "$key"
                 } | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db-return" > /dev/null
               done
@@ -783,7 +794,7 @@ let
                 runuser -u postgres -- dropdb --if-exists --force "$db"
                 runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "alter database \"$db-return\" rename to \"$db\""
               done
-              touch ${returned}
+              printf '%s\n' "$sum" > ${returned}
             '';
           };
         }
