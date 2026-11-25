@@ -72,6 +72,15 @@
       restic = lib.getExe pkgs.restic;
     in
     {
+      imports = [
+        {
+          options.fleet.databaseDumps = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            description = "PostgreSQL dumps under `/srv`, as paths without `.sql.gz`, that the monthly restore drill reads back from the USB backup.";
+          };
+        }
+      ];
+      fleet.databaseDumps = map (db: "${dumpDir}/${db}") databases;
       sops.secrets = {
         backups-restic-password.key = "backups/restic-password";
         backups-rclone-pcloud.key = "backups/rclone-pcloud";
@@ -173,10 +182,9 @@
               script = ''
                 set -o pipefail
                 ${restic} check --retry-lock 30m --read-data-subset="$(date +%-m)/12"
-                for db in ${lib.escapeShellArgs databases}; do
-                  dump=${inSnapshot "usb" "/srv" "${dumpDir}/$db"}
+                for dump in ${lib.escapeShellArgs (map (inSnapshot "usb" "/srv") config.fleet.databaseDumps)}; do
                   if ! ${restic} ls latest "$dump.sql.gz" 2> /dev/null | grep -cxF "$dump.sql.gz" > /dev/null; then
-                    echo "The latest snapshot has no fresh dump of $db; testing the previous one."
+                    echo "The latest snapshot has no fresh $dump.sql.gz; testing the previous one."
                     dump=$dump.prev
                   fi
                   ${restic} dump latest "$dump.sql.gz" | gzip -dc | tail -n 20 | grep -q 'PostgreSQL database dump complete'

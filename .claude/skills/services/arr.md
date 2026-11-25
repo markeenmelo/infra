@@ -92,7 +92,7 @@ What the guest gets from bastion, over virtiofs:
   virtiofs daemons start. A changed secret restarts those daemons and the guest with them. Seerr's
   API key stays on bastion; the three arr API keys are on both sides, for the exporters and Seerr.
 - `/srv/backups/downloads`, where the guest's PostgreSQL dumps each arr database nightly, inside a
-  backup root ([backups skill](../backups/SKILL.md)). The restore drill does not load these dumps, and
+  backup root ([backups skill](../backups/SKILL.md)). The restore drill checks these dumps like bastion's own, and
   nothing bounds what the guest writes there or into the state directories: `apps/srv` and
   `apps/nixflix` have no quota, so a compromised guest can fill them.
 

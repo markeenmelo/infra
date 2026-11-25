@@ -23,7 +23,7 @@ Immich's thumbnails and transcodes, the journal and `/var/log`, caches and every
 `/persist/zfs`, sbctl, tailscale, machine-id) stay out. Each repository keeps 7 daily, 4 weekly and 6
 monthly snapshots, grouped by host only, so snapshots from older backup paths age out too. Each pCloud run checks a random 1% of its data, which bounds the download. On
 the 15th the drill reads a twelfth of the USB repository, a different twelfth
-each month, and tests that every dump of bastion's PostgreSQL in the latest snapshot decompresses and ends with pg_dump's completion line.
+each month, and tests that every dump listed in `fleet.databaseDumps` (bastion's PostgreSQL and the downloads guest's arr databases) in the latest snapshot decompresses and ends with pg_dump's completion line.
 
 The repositories open with `backups/restic-password`. bastion reaches pCloud directly with
 `backups/rclone-pcloud`, a full rclone config, so a compromised bastion can delete the off-site
