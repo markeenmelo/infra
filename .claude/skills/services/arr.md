@@ -69,25 +69,3 @@ on the Newshosting password and with strict certificate checks. Prowlarr's index
 application setup units print no response bodies, which can echo the keys they sent. An indexer
 that fails to apply (its site down, a key rejected) is logged and the rest still apply; the unit
 succeeds, so one unreachable site never fails a deploy.
-
-## Return from the downloads guest
-
-The apps ran in a MicroVM of their own for a while, with their databases in its PostgreSQL and
-nightly dumps in `/srv/backups/downloads`. `arr-return` runs before every arr unit and stops the
-guest if it still runs. It returns when the guest took over once (`downloads-handover/done`) and
-`downloads-handover/returned` is missing, or when the dumps differ from those it last returned
-(`returned` holds their hash; the guest sets the files' times, so they are not trusted);
-otherwise it does nothing. Each dump must be a regular file from the last two days and not dated
-in the future; a first return refuses otherwise, while after a return such dumps are logged and
-the databases kept, so the guest cannot keep the apps down. Since the guest is untrusted, psql
-loads each one under a random `\restrict` key the guest cannot know, in place of the dump's own,
-so any meta-command in it (`\!`, `\copy`) stops the load; it runs as the app's user inside a
-sandbox with no network. Every dump goes into a temporary database first, and only when all three
-loaded are they swapped for bastion's and `returned` touched.
-
-A rollback to a generation with the guest re-seeds it from bastion, and its dumps come back on the
-next move, so the side that ran last wins. Changes made in the guest after its last nightly dump
-are lost. A failed `arr-return` fails the switch, and the rollback re-seeds the guest from
-bastion's stale databases, keeping its own disk as `var.img.replaced-TIME` and its dumps under
-`downloads-handover/replaced-TIME` for recovery by hand; check that every dump is from the last
-night before deploying. The `-logs` databases stay as they were.

@@ -531,14 +531,6 @@ let
         "qbittorrent-password"
         "qbittorrent-password-hash"
       ];
-      guestDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
-      returned = "${guestDumps}-handover/returned";
-      # shortcut: drops the downloads guest's tap until arr-return stops it, since the guest's own table goes in the same switch, delete with _downloads.nix
-      guestTap = (import ./_downloads.nix).tap;
-      guestUnits = [
-        "microvm@downloads.service"
-        "microvm-virtiofsd@downloads.service"
-      ];
       awaitProfile =
         name:
         pkgs.writeShellApplication {
@@ -653,12 +645,10 @@ let
             type filter hook forward priority -200; policy accept;
             oifname "${vpn}-br" drop
             iifname "${vpn}-br" drop
-            iifname "${guestTap}" drop
           }
           chain input {
             type filter hook input priority -200; policy accept;
             iifname "${vpn}-br" ct state new drop
-            iifname "${guestTap}" drop
           }
           chain output {
             type filter hook output priority -150; policy accept;
@@ -696,96 +686,6 @@ let
         }))
         {
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];
-          # shortcut: migration from the downloads guest that can replace these databases, delete it once no kept generation runs that guest
-          arr-return = {
-            description = "Replace the arr databases with the downloads guest's dumps when they differ from the last return";
-            requiredBy = map (name: "${name}.service") arrUnits;
-            before = map (name: "${name}.service") arrUnits;
-            requires = [ "postgresql-ready.target" ];
-            after = [ "postgresql-ready.target" ] ++ guestUnits;
-            conflicts = guestUnits;
-            unitConfig.RequiresMountsFor = [ guestDumps ];
-            path = [
-              config.services.postgresql.package
-              pkgs.findutils
-              pkgs.gawk
-              pkgs.gzip
-              pkgs.util-linux
-            ];
-            enableStrictShellChecks = true;
-            serviceConfig = {
-              Type = "oneshot";
-              RemainAfterExit = true;
-              PrivateNetwork = true;
-              RestrictAddressFamilies = [ "AF_UNIX" ];
-              ProtectSystem = "strict";
-              ReadWritePaths = [
-                "/run/postgresql"
-                (dirOf returned)
-              ];
-              ProtectHome = true;
-              PrivateTmp = true;
-              PrivateDevices = true;
-              NoNewPrivileges = true;
-              CapabilityBoundingSet = [
-                "CAP_SETUID"
-                "CAP_SETGID"
-                "CAP_DAC_OVERRIDE"
-              ];
-              SystemCallFilter = [ "@system-service" ];
-              ExecStartPre = "+${lib.getExe' pkgs.coreutils "install"} -d -o postgres -m 0700 ${dirOf returned}";
-            };
-            script = ''
-              set -o pipefail
-              [ -e ${returned} ] || [ -e ${dirOf returned}/done ] || exit 0
-              declare -A dumps
-              for db in ${lib.concatStringsSep " " apps}; do
-                dump=${guestDumps}/$db.sql.gz
-                [ -f "$dump" ] && [ ! -L "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
-                if [ ! -f "$dump" ] || [ -L "$dump" ]; then
-                  [ ! -e ${returned} ] || exit 0
-                  echo "$db has no dump in ${guestDumps}; not replacing any database" >&2
-                  exit 1
-                fi
-                dumps[$db]=$dump
-              done
-              sum=$(for db in ${lib.concatStringsSep " " apps}; do sha256sum < "''${dumps[$db]}"; done | sha256sum | cut -d ' ' -f 1)
-              if [ -e ${returned} ] && [ "$(< ${returned})" = "$sum" ]; then
-                exit 0
-              fi
-              for db in ${lib.concatStringsSep " " apps}; do
-                if [ -z "$(find "''${dumps[$db]}" -mtime -2 ! -newermt now)" ]; then
-                  if [ -e ${returned} ]; then
-                    echo "''${dumps[$db]} changed but is not from the last two days; keeping the databases" >&2
-                    exit 0
-                  fi
-                  echo "''${dumps[$db]} is not from the last two days; not replacing any database" >&2
-                  exit 1
-                fi
-              done
-              key=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
-              for db in ${lib.concatStringsSep " " apps}; do
-                echo "Loading ''${dumps[$db]} into $db-return"
-                runuser -u postgres -- dropdb --if-exists --force "$db-return"
-                runuser -u postgres -- createdb -O "$db" "$db-return"
-                {
-                  printf '\\restrict %s\n' "$key"
-                  gunzip -c "''${dumps[$db]}" | awk 'NR <= 10 && !k && /^\\restrict [A-Za-z0-9]+$/ { k = $2; next } k && $0 == "\\unrestrict " k { next } { print }'
-                  printf '\\unrestrict %s\n' "$key"
-                } | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db-return" > /dev/null
-              done
-              for db in ${lib.concatStringsSep " " apps}; do
-                echo "Replacing $db"
-                runuser -u postgres -- dropdb --if-exists --force "$db-old"
-                runuser -u postgres -- psql -v ON_ERROR_STOP=1 --single-transaction \
-                  -c "select pg_terminate_backend(pid) from pg_stat_activity where datname = '$db' and pid <> pg_backend_pid()" \
-                  -c "alter database \"$db\" rename to \"$db-old\"" \
-                  -c "alter database \"$db-return\" rename to \"$db\""
-                runuser -u postgres -- dropdb --force "$db-old"
-              done
-              printf '%s\n' "$sum" > ${returned}
-            '';
-          };
         }
       ];
     };
