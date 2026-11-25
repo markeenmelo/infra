@@ -78,7 +78,8 @@ guest if it still runs. It returns when the guest took over once (`downloads-han
 `downloads-handover/returned` is missing, or when the dumps differ from those it last returned
 (`returned` holds their hash; the guest sets the files' times, so they are not trusted);
 otherwise it does nothing. Each dump must be a regular file from the last two days and not dated
-in the future. Since the guest is untrusted, psql
+in the future; a first return refuses otherwise, while after a return such dumps are logged and
+the databases kept, so the guest cannot keep the apps down. Since the guest is untrusted, psql
 loads each one under a random `\restrict` key the guest cannot know, in place of the dump's own,
 so any meta-command in it (`\!`, `\copy`) stops the load; it runs as the app's user inside a
 sandbox with no network. Every dump goes into a temporary database first, and only when all three

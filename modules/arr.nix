@@ -770,6 +770,10 @@ let
               fi
               for db in ${lib.concatStringsSep " " apps}; do
                 if [ -z "$(find "''${dumps[$db]}" -mtime -2 ! -newermt now)" ]; then
+                  if [ -e ${returned} ]; then
+                    echo "''${dumps[$db]} changed but is not from the last two days; keeping the databases" >&2
+                    exit 0
+                  fi
                   echo "''${dumps[$db]} is not from the last two days; not replacing any database" >&2
                   exit 1
                 fi
