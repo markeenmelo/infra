@@ -120,10 +120,8 @@ locals {
       "tag:server"            = ["tag:infra-provisioner"]
       "tag:bastion"           = ["tag:infra-provisioner"]
       "tag:vpn-exit"          = ["tag:infra-provisioner"]
-      # shortcut: kept until the apply that retags the exit nodes has run, so the policy never drops a tag devices still carry; remove it in the next tailscale apply
-      "tag:proton-exit" = ["tag:infra-provisioner"]
-      "tag:ci"          = ["tag:infra-provisioner"]
-      "tag:agent"       = ["tag:infra-provisioner"]
+      "tag:ci"                = ["tag:infra-provisioner"]
+      "tag:agent"             = ["tag:infra-provisioner"]
     }
     groups = { "group:members" = ["naralidy.anjos@gmail.com", "markeenmelo@github"] }
     hosts  = local.hosts
