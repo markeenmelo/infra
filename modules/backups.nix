@@ -58,6 +58,7 @@
           "/var/lib/tailscale*"
           "/var/lib/prometheus2"
           "/var/lib/loki"
+          "/var/lib/alloy"
           "/zfs"
           "/home/*/.ssh"
           "/home/*/.config/sops"
