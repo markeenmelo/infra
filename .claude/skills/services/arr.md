@@ -27,7 +27,8 @@ the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)); the arr apps and SAB
 `marcos` with `arr/password`. The `arr` nftables table drops
 anything forwarded through the namespace's bridge and lets only root and Caddy open new
 connections into the namespace, Seerr only to Sonarr and Radarr, and the `exportarr` user only
-to the three arr apps. One exportarr exporter per app publishes its
+to the three arr apps. Nothing filters what the namespace opens towards bastion itself over its
+bridge, so the apps reach bastion's own listeners. One exportarr exporter per app publishes its
 health checks (indexers, download clients, root folders, remote path mappings), which the `Arr
 health issue` alert reports after an hour; a single failed import is a queue item, which
 Decluttarr handles instead.
@@ -77,4 +78,7 @@ arr apps start, whenever a dump there is newer than `/srv/backups/downloads-hand
 dump into a temporary database, swaps it for bastion's and touches the marker. A rollback to a
 generation with the guest re-seeds it from bastion and its dumps then come back on the next move,
 so the side that ran last wins. Changes made in
-the guest after its last nightly dump are lost. The `-logs` databases stay as they were.
+the guest after its last nightly dump are lost. A failed `arr-return` fails the switch, and the
+rollback re-seeds the guest from bastion's stale databases, keeping its own disk as
+`var.img.replaced-TIME` and its dumps under `downloads-handover/replaced-TIME` for recovery by
+hand; check that every dump is from the last night before deploying. The `-logs` databases stay as they were.
