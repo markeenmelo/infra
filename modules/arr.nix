@@ -699,6 +699,7 @@ let
         }))
         {
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];
+          # shortcut: migration from the downloads guest that can replace these databases, delete it once no kept generation runs that guest
           arr-return = {
             description = "Replace the arr databases with the downloads guest's dumps when they are newer than the last return";
             requiredBy = map (name: "${name}.service") apps;
@@ -716,6 +717,24 @@ let
             serviceConfig = {
               Type = "oneshot";
               RemainAfterExit = true;
+              PrivateNetwork = true;
+              RestrictAddressFamilies = [ "AF_UNIX" ];
+              ProtectSystem = "strict";
+              ReadWritePaths = [
+                "/run/postgresql"
+                "-${dirOf returned}"
+              ];
+              ProtectHome = true;
+              PrivateTmp = true;
+              PrivateDevices = true;
+              NoNewPrivileges = true;
+              CapabilityBoundingSet = [
+                "CAP_SETUID"
+                "CAP_SETGID"
+                "CAP_DAC_OVERRIDE"
+                "CAP_CHOWN"
+              ];
+              SystemCallFilter = [ "@system-service" ];
             };
             script = ''
               set -o pipefail
@@ -723,14 +742,18 @@ let
                 exit 0
               fi
               for db in ${lib.concatStringsSep " " apps}; do
-                if [ -z "$(find ${guestDumps}/"$db.sql.gz" ${guestDumps}/"$db.prev.sql.gz" -mtime -2 2> /dev/null)" ]; then
+                if [ -z "$(find ${guestDumps}/"$db.sql.gz" ${guestDumps}/"$db.prev.sql.gz" -type f -mtime -2 2> /dev/null)" ]; then
                   echo "$db has no dump newer than two days in ${guestDumps}; not replacing it" >&2
                   exit 1
                 fi
               done
               for db in ${lib.concatStringsSep " " apps}; do
                 dump=${guestDumps}/$db.sql.gz
-                [ -e "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
+                [ -f "$dump" ] && [ ! -L "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
+                if [ ! -f "$dump" ] || [ -L "$dump" ]; then
+                  echo "$dump is not a regular file; not loading it" >&2
+                  exit 1
+                fi
                 echo "Replacing $db with $dump"
                 runuser -u postgres -- dropdb --if-exists --force "$db-return"
                 runuser -u postgres -- createdb -O "$db" "$db-return"
