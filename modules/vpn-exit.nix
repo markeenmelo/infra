@@ -30,8 +30,9 @@ in
       socket = country: "/run/tailscale-${country}/tailscaled.sock";
       perCountry = f: lib.mkMerge (lib.mapAttrsToList f countries);
       namespaces = map (country: "pv${country}") (lib.attrNames countries);
-      # tailscaled marks its own sockets (control, DERP, peers) with this fwmark, tsconst.LinuxBypassMarkNum under its 0xff0000 mask
+      # tailscaled marks its own sockets with this fwmark, tsconst.LinuxBypassMarkNum under its 0xff0000 mask
       bypassMark = "0x80000/0xff0000";
+      peerPort = country: 41641 + countries.${country}.subnet;
     in
     {
       imports = [ vpn-watch ];
@@ -84,7 +85,7 @@ in
       systemd.services = perCountry (
         country: _: {
           "pv${country}-bypass" = {
-            description = "Send the ${country} exit node's own tailnet traffic around the tunnel";
+            description = "Send the ${country} exit node's direct peer traffic around the tunnel";
             wantedBy = [ "pv${country}.service" ];
             partOf = [ "pv${country}.service" ];
             after = [ "pv${country}.service" ];
@@ -105,13 +106,13 @@ in
               ''
                 mark=${bypassMark}
                 ip -n ${ns} rule del priority 5200 2> /dev/null || true
-                ip -n ${ns} rule add priority 5200 fwmark "$mark" lookup 5200
+                ip -n ${ns} rule add priority 5200 fwmark "$mark" ipproto udp sport ${toString (peerPort country)} lookup 5200
                 ip -n ${ns} route replace default via ${
                   config.vpnNamespaces.${ns}.bridgeAddress
                 } dev veth-${ns} table 5200
                 ip netns exec ${ns} sysctl -qw net.ipv4.conf.veth-${ns}.rp_filter=2
-                ip netns exec ${ns} iptables -C OUTPUT -o veth-${ns} -m mark --mark "$mark" -j ACCEPT 2> /dev/null ||
-                  ip netns exec ${ns} iptables -I OUTPUT 1 -o veth-${ns} -m mark --mark "$mark" -j ACCEPT
+                ip netns exec ${ns} iptables -C OUTPUT -o veth-${ns} -p udp --sport ${toString (peerPort country)} -m mark --mark "$mark" -j ACCEPT 2> /dev/null ||
+                  ip netns exec ${ns} iptables -I OUTPUT 1 -o veth-${ns} -p udp --sport ${toString (peerPort country)} -m mark --mark "$mark" -j ACCEPT
               '';
           };
           "tailscaled-${country}" = {
@@ -126,7 +127,7 @@ in
             serviceConfig = {
               Type = "notify";
               ExecStartPre = "${lib.getExe' pkgs.procps "sysctl"} -w net.ipv4.ip_forward=1 net.ipv6.conf.all.forwarding=1";
-              ExecStart = "${lib.getExe' config.services.tailscale.package "tailscaled"} --statedir=/var/lib/tailscale-${country} --socket=${socket country} --tun=tailscale0 --port=41641";
+              ExecStart = "${lib.getExe' config.services.tailscale.package "tailscaled"} --statedir=/var/lib/tailscale-${country} --socket=${socket country} --tun=tailscale0 --port=${toString (peerPort country)}";
               ExecStopPost = "${lib.getExe' config.services.tailscale.package "tailscaled"} --cleanup --statedir=/var/lib/tailscale-${country} --socket=${socket country}";
               Restart = "on-failure";
               RuntimeDirectory = "tailscale-${country}";
