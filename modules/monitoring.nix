@@ -952,6 +952,7 @@ in
             mode = "0700";
           })
           {
+            "/var/lib/alloy" = "alloy";
             "/var/lib/prometheus2" = "prometheus";
             ${config.services.loki.dataDir} = "loki";
             ${config.services.grafana.dataDir} = "grafana";
