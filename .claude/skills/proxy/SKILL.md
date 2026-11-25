@@ -75,7 +75,9 @@ on first boot. The engine serves ban decisions on `fleet.bansPort` to the tailne
 `crowdsec-bouncer` on the edge pulls them and drops banned addresses in nftables, the firewall
 backend of every host ([caddy.nix](../../../modules/caddy.nix)), before they cross the tailnet.
 Bastion runs no bouncer of its own, since every public connection reaches it from the edge's
-address. The bouncer's key is `edge-bouncer-key` in `secrets/shared/crowdsec.yaml`, which both hosts read
+address. The hub's `whitelists` parser keeps loopback and private sources out of every scenario:
+the edge's own probes reach the listener as 127.0.0.1, and a ban on that address would cut the
+edge off from itself. The bouncer's key is `edge-bouncer-key` in `secrets/shared/crowdsec.yaml`, which both hosts read
 ([operating: secrets](../operating/secrets.md)), and reads decisions only; bastion registers it whenever
 the API does not accept it, so a rotated key needs no command and an unchanged one leaves no
 moment in which the edge is refused. The edge's bouncer restarts on failure, so it comes back by

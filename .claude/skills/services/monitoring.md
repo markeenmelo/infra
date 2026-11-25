@@ -10,9 +10,8 @@ on, and refuses the gateway's syslog port to every local sender; otherwise
 any service on bastion could read the whole journal through Loki or push data under another host's name. Exporter ports sit at 19xxx,
 clear of OpenCloud's internal block from 9100; CrowdSec's own metrics listener keeps 6060.
 Alloy ships bastion's journal to Loki and drops lines older than 12 h.
-Prometheus's and Loki's data lives under `/persist` and stays out of the backups ([backups skill](../backups/SKILL.md)):
-losing it costs history, nothing else. Alloy keeps no journal position across reboots, so
-the last 12 h may be shipped twice after one. On a host with a `fleet.hosts.HOST.lan` fact, Alloy
+Prometheus's, Loki's and Alloy's data lives under `/persist` and stays out of the backups ([backups skill](../backups/SKILL.md)):
+losing it costs history, nothing else. On a host with a `fleet.hosts.HOST.lan` fact, Alloy
 also takes the UniFi gateway's syslog (firewall blocks, IPS detections, admin activity) over UDP
 from the gateway alone and stores the lines unparsed under `host="gateway"`
 ([opentofu skill](../opentofu/SKILL.md)).
@@ -51,7 +50,7 @@ in its `telemetry` fact: no metrics and no `Host silent` alert, since a laptop t
 or off the tailnet is normal. Every sender retries its log pushes forever, so while bastion is out
 of reach Alloy's queue fills and then stops reading the journal, which holds the backlog until the
 tailnet returns; Loki refuses pushed lines over a week old (its default ingestion window, apart
-from how long it keeps what it stored). A sender's Alloy state is under `/persist`, so it resumes
+from how long it keeps what it stored). Every Alloy, bastion's included, keeps its state under `/persist`, so it resumes
 from its journal position after a reboot instead of shipping the last 12 h again, but still skips
 lines older than 12 h, so a laptop rebooted after more than 12 h away loses the lines it never
 sent. Each metrics sender also gets a `Logs silent HOST` alert once Loki has taken nothing from it
