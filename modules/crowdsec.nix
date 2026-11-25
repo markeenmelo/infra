@@ -34,6 +34,7 @@ let
             "crowdsecurity/syslog-logs"
             "crowdsecurity/dateparse-enrich"
             "crowdsecurity/geoip-enrich"
+            "crowdsecurity/whitelists"
           ];
         };
         settings = {
