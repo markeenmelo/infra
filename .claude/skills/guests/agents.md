@@ -89,7 +89,8 @@ is the boundary. The account's connectors stay out.
 Cursor's CLI (`cursor-agent`) and pi sit beside Claude Code; no other coding agent is installed.
 pi is configured through its Home Manager module for `marcos`, in `agent-tools` in
 [claude.nix](../../../modules/claude.nix), with install telemetry off, and gets the same nixos and Grafana MCP servers as Claude Code
-through `~/.pi/agent/mcp.json`. The
+through `~/.pi/agent/mcp.json`; what a pi session reads from Grafana, logs with host names,
+addresses, user names and request paths included, goes to the provider of the model it runs on. The
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
 as `marcos` with the same tokens a shell gets, written for it at each start to a file only
