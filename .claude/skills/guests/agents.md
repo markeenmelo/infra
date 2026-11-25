@@ -89,7 +89,9 @@ is the boundary. The account's connectors stay out.
 Cursor's CLI (`cursor-agent`) and pi sit beside Claude Code; no other coding agent is installed.
 pi is configured through its Home Manager module for `marcos`, in `agent-tools` in
 [claude.nix](../../../modules/claude.nix), with install telemetry off and Kimi For Coding's `k3.1-pro` as its starting
-model.
+model. It gets the same nixos and Grafana MCP servers as Claude Code through
+`~/.pi/agent/mcp.json`; what a pi session reads from Grafana, logs with host names, addresses,
+user names and request paths included, goes to the provider of the model it runs on.
 pi does not read `.claude/skills`, so the repository links `.agents/skills` to it; pi asks once
 whether to trust the repository before loading them, and `/trust` keeps the answer in
 `~/.pi/agent/trust.json` on `home.img`. The
