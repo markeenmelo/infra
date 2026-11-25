@@ -38,7 +38,7 @@ passphrase with a `fallback` key provider carrying the old one, apply, remove it
 
 [main.tf](../../../opentofu/tailscale/main.tf) owns the whole tailnet: the policy as `jsonencode`
 of a local (grants only; `tests` guard the SSH boundary and run on every apply), tailnet
-settings, DNS (global resolver plus split DNS for the domain to bastion), tags on devices enrolled
+settings, DNS (global resolver, which a client using an exit node leaves for the exit node's own resolver, plus split DNS for the domain to bastion), tags on devices enrolled
 without a key, and one auth key per host. Bastion's apps are reached through that split DNS and
 its LAN proxy, so the tailnet defines no Tailscale services; that is why `group:members` reach
 bastion on 443 and 53. Host addresses come from `fleet.hosts.*.tailnetAddress`, which the `tofu`

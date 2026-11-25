@@ -37,22 +37,13 @@ in
     {
       imports = [ vpn-watch ];
 
-      sops.secrets = lib.mkMerge [
-        (perCountry (
-          country: _: {
-            "vpn-exit-${country}-auth-key" = {
-              key = "vpn-exit/${country}-auth-key";
-              restartUnits = [ "tailscaled-${country}.service" ];
-            };
-          }
-        ))
-        (lib.genAttrs [ "pia-username" "pia-password" ] (name: {
-          key = "pia/${lib.removePrefix "pia-" name}";
-          restartUnits = map (country: "pv${country}.service") (lib.attrNames countries);
-        }))
-      ];
-      fleet.piaCredentials = lib.genAttrs [ "username" "password" ] (
-        field: config.sops.secrets."pia-${field}".path
+      sops.secrets = perCountry (
+        country: _: {
+          "vpn-exit-${country}-auth-key" = {
+            key = "vpn-exit/${country}-auth-key";
+            restartUnits = [ "tailscaled-${country}.service" ];
+          };
+        }
       );
 
       vpnNamespaces = perCountry (
