@@ -12,6 +12,7 @@ inputs:
 
     microvm = {
       hypervisor = "cloud-hypervisor";
+      balloon = true;
       interfaces = [
         {
           type = "tap";
@@ -40,6 +41,7 @@ inputs:
     };
 
     services.journald.settings.Journal.ForwardToConsole = true;
+    zramSwap.enable = true;
     users = {
       mutableUsers = false;
       allowNoPasswordLogin = true;

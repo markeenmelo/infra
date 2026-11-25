@@ -13,5 +13,9 @@ Read the file for the guest you touch; each holds what its module cannot say.
 | [hermes.md](hermes.md) | Hermes Agent behind Telegram | `hermes.nix`, `_hermes.nix` |
 
 Both of bastion's guests are built from [_guest.nix](../../../modules/_guest.nix): the
-cloud-hypervisor guest, its tap and /24, and the nftables table that confines it. What each guest
+cloud-hypervisor guest, its tap and /24, and the nftables table that confines it. Memory: each
+guest's `mem` is a ceiling, not a reservation: the balloon's free page reporting hands pages the
+guest's allocator frees back to bastion, but not its page cache or its memory-backed root, so after a
+build that reads much of the store a guest can still hold close to `mem`; and
+zram swap compresses the guest's own pages before its kernel kills a process. What each guest
 reaches and holds is in its file.
