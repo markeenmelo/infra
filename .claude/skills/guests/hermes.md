@@ -1,7 +1,7 @@
 # Hermes
 
-[hermes.nix](../../../modules/hermes.nix) runs a third guest on bastion, `hermes`, from
-[_guest.nix](../../../modules/_guest.nix) like the downloads guest ([services: arr](../services/arr.md)):
+[hermes.nix](../../../modules/hermes.nix) runs a second guest on bastion, `hermes`, from
+[_guest.nix](../../../modules/_guest.nix) like the agents' guest:
 cloud-hypervisor, its own /24 on a tap ([_hermes.nix](../../../modules/_hermes.nix)), internet
 only, nothing of bastion, the LANs or the tailnet reachable but the home gateway's public address
 ([agents.md](agents.md) names that limit), no login, journal on the console

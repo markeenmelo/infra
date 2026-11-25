@@ -1,6 +1,6 @@
 ---
 name: services
-description: "The apps on bastion: Authelia and the shared PostgreSQL, OpenCloud, Radicale calendars and contacts, Immich, Jellyfin and nixflix, the arr apps with their PIA VPN namespace and downloads MicroVM, Frigate cameras, the Dorian bot, and monitoring (Prometheus, Loki, Alloy, Grafana, alerts, ntfy). Use before touching modules/{authelia,postgresql,opencloud,radicale,immich,jellyfin,nixflix,arr,downloads,vpn-watch,frigate,dorian,monitoring,ntfy}.nix or their *.pkg.nix pins, adding a person or an app, rotating an app credential, or debugging sign-in, sync, transcoding, downloads, cameras, alerts or notifications."
+description: "The apps on bastion: Authelia and the shared PostgreSQL, OpenCloud, Radicale calendars and contacts, Immich, Jellyfin and nixflix, the arr apps with their PIA VPN namespace, Frigate cameras, the Dorian bot, and monitoring (Prometheus, Loki, Alloy, Grafana, alerts, ntfy). Use before touching modules/{authelia,postgresql,opencloud,radicale,immich,jellyfin,nixflix,arr,downloads,vpn-watch,frigate,dorian,monitoring,ntfy}.nix or their *.pkg.nix pins, adding a person or an app, rotating an app credential, or debugging sign-in, sync, transcoding, downloads, cameras, alerts or notifications."
 ---
 
 # Services
@@ -15,7 +15,7 @@ and the decisions taken against.
 | [calendar.md](calendar.md) | Radicale CalDAV and CardDAV behind OpenCloud | `radicale.nix` |
 | [immich.md](immich.md) | Immich photos | `immich.nix` |
 | [jellyfin.md](jellyfin.md) | Jellyfin through nixflix | `jellyfin.nix`, `nixflix.nix`, `jellyfin-sso.pkg.nix` |
-| [arr.md](arr.md) | Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr, Decluttarr, the `downloads` MicroVM | `arr.nix`, `downloads.nix`, `vpn-watch.nix`, `easynews-indexer.pkg.nix`, `decluttarr.pkg.nix` |
+| [arr.md](arr.md) | Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd, Seerr, Recyclarr, Decluttarr | `arr.nix`, `vpn-watch.nix`, `easynews-indexer.pkg.nix`, `decluttarr.pkg.nix` |
 | [frigate.md](frigate.md) | Frigate NVR | `frigate.nix` |
 | [dorian.md](dorian.md) | Dorian Discord dice bot | `dorian.nix`, `dorian.pkg.nix` |
 | [monitoring.md](monitoring.md) | Prometheus, Loki, Alloy, Grafana, alerts, ntfy | `monitoring.nix`, `ntfy.nix` |
@@ -26,5 +26,4 @@ datasets and pinned ids in [hosts: bastion](../hosts/bastion.md), backup roots i
 [backups skill](../backups/SKILL.md), and how a unit reads a secret in the
 [operating: secrets](../operating/secrets.md). Not every app follows them: Frigate, the arr apps and
 SABnzbd keep their own logins, Radicale is reached with OpenCloud app tokens, Dorian serves
-nothing, OpenCloud keeps its own secrets in a generated config, and the arr databases live in the
-downloads guest's PostgreSQL. Each file says where its app differs.
+nothing, OpenCloud keeps its own secrets in a generated config. Each file says where its app differs.

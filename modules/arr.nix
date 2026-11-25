@@ -1,11 +1,8 @@
 { config, inputs, ... }:
 let
-  inherit (config.flake.modules.nixos) downloads nixflix postgresql;
+  inherit (config.flake.modules.nixos) nixflix postgresql;
   inherit (config.fleet) domain;
-  net = import ./_downloads.nix;
-  hostSecrets = "/run/downloads-secrets";
-  guestSecrets = "/run/host-secrets";
-  guestDumps = "/var/backup/postgresql";
+  secretDir = "/run/arr-secrets";
   exporterPorts = {
     sonarr = 19708;
     radarr = 19709;
@@ -67,7 +64,7 @@ let
     "Bluray-1080p"
   ];
 
-  guest =
+  namespaced =
     {
       config,
       lib,
@@ -80,7 +77,7 @@ let
       qbittorrent = config.nixflix.torrentClients.qbittorrent;
       inherit (config.services.qbittorrent) webuiPort;
       sabnzbd = config.nixflix.usenetClients.sabnzbd;
-      secret = name: { _secret = "${guestSecrets}/${name}"; };
+      secret = name: { _secret = "${secretDir}/${name}"; };
       appPort = name: config.nixflix.${name}.config.hostConfig.port;
       confined = {
         enable = true;
@@ -190,16 +187,14 @@ let
     {
       imports = [ nixflix ];
       vpnNamespaces.${config.nixflix.vpn.namespace}.piaRegion = "ca";
-      fleet.piaCredentials = lib.genAttrs [ "username" "password" ] (
-        field: "${guestSecrets}/pia-${field}"
-      );
+      fleet.piaCredentials = lib.genAttrs [ "username" "password" ] (field: "${secretDir}/pia-${field}");
       nixflix = lib.mkMerge [
         {
           postgres.enable = true;
           vpn = {
             enable = true;
             wgConfFile = "/run/pia-${vpn}/wg.conf";
-            allowedIngress = [ net.hostAddress ];
+            allowedIngress = [ ];
           };
           torrentClients.qbittorrent = {
             enable = true;
@@ -300,21 +295,7 @@ let
         isSystemUser = true;
         inherit (config.services.qbittorrent) group;
       };
-      services.postgresqlBackup = {
-        enable = true;
-        databases = apps;
-        location = guestDumps;
-        pgdumpOptions = "--no-owner --no-privileges --lock-wait-timeout=5min";
-      };
       systemd.services = lib.mkMerge [
-        (lib.genAttrs (map (name: "postgresqlBackup-${name}") apps) (name: {
-          requires = [ "arr-restore.service" ];
-          after = [ "arr-restore.service" ];
-          serviceConfig.ExecCondition = pkgs.writeShellScript "${name}-has-tables" ''
-            tables=$(${lib.getExe' config.services.postgresql.package "psql"} -d ${lib.removePrefix "postgresqlBackup-" name} -Atc "select count(*) from pg_tables where schemaname = 'public'") || exit 255
-            [ "$tables" != 0 ]
-          '';
-        }))
         (lib.genAttrs
           (
             apps
@@ -332,36 +313,6 @@ let
           })
         )
         {
-          arr-restore = {
-            description = "Load each arr database from its last dump while it is empty";
-            requiredBy = map (name: "${name}.service") apps;
-            before = map (name: "${name}.service") apps;
-            requires = [ "postgresql-ready.target" ];
-            after = [ "postgresql-ready.target" ];
-            unitConfig.RequiresMountsFor = [ guestDumps ];
-            path = [
-              config.services.postgresql.package
-              pkgs.gzip
-              pkgs.util-linux
-            ];
-            enableStrictShellChecks = true;
-            serviceConfig = {
-              Type = "oneshot";
-              RemainAfterExit = true;
-            };
-            script = ''
-              set -o pipefail
-              for db in ${lib.concatStringsSep " " apps}; do
-                dump=${guestDumps}/$db.sql.gz
-                [ -e "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
-                [ -e "$dump" ] || continue
-                tables=$(runuser -u "$db" -- psql -d "$db" -Atc "select count(*) from pg_tables where schemaname = 'public'")
-                [ "$tables" = 0 ] || continue
-                echo "Loading $db from $dump"
-                gunzip -c "$dump" | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db" > /dev/null
-              done
-            '';
-          };
           prowlarr-indexers = {
             wants = [ "easynews-indexer.service" ];
             after = [ "easynews-indexer.service" ];
@@ -392,10 +343,10 @@ let
               StateDirectory = "decluttarr";
               WorkingDirectory = "%S/decluttarr";
               LoadCredential =
-                map (name: "${name}:${guestSecrets}/${name}") (
+                map (name: "${name}:${secretDir}/${name}") (
                   map (name: "${name}-api-key") (decluttarrApps ++ [ "sabnzbd" ])
                 )
-                ++ [ "QBITTORRENT_PASSWORD:${guestSecrets}/qbittorrent-password" ];
+                ++ [ "QBITTORRENT_PASSWORD:${secretDir}/qbittorrent-password" ];
             };
             script = ''
               mkdir -p config
@@ -422,7 +373,7 @@ let
               DynamicUser = true;
               Restart = "on-failure";
               RestartSec = "5s";
-              LoadCredential = map (name: "${name}:${guestSecrets}/${name}") [
+              LoadCredential = map (name: "${name}:${secretDir}/${name}") [
                 "newshosting-username"
                 "easynews-password"
                 "easynews-api-key"
@@ -441,7 +392,7 @@ let
             Restart = "on-failure";
             RestartSec = "5s";
             LoadCredential = [
-              "webui-password-hash:${guestSecrets}/qbittorrent-password-hash"
+              "webui-password-hash:${secretDir}/qbittorrent-password-hash"
             ];
             ExecStartPre = lib.mkAfter [
               (lib.getExe (
@@ -488,9 +439,9 @@ let
               RuntimeDirectoryMode = "0700";
               UMask = "0077";
               LoadCredential = [
-                "password:${guestSecrets}/qbittorrent-password"
-                "pia-username:${guestSecrets}/pia-username"
-                "pia-password:${guestSecrets}/pia-password"
+                "password:${secretDir}/qbittorrent-password"
+                "pia-username:${secretDir}/pia-username"
+                "pia-password:${secretDir}/pia-password"
               ];
             };
             script = ''
@@ -535,14 +486,22 @@ let
     {
       config,
       lib,
+      options,
       pkgs,
       ...
     }:
     let
-      guestSystem = config.microvm.vms.downloads.config;
-      guestConfig = guestSystem.config;
-      appPort = name: guestConfig.nixflix.${name}.config.hostConfig.port;
+      vpn = config.nixflix.vpn.namespace;
+      inherit (config.vpnNamespaces.${vpn}) namespaceAddress;
+      appPort = name: config.nixflix.${name}.config.hostConfig.port;
       secret = name: config.sops.secrets."arr-${name}".path;
+      arrUnits = apps ++ [
+        "qbittorrent"
+        "qbittorrent-port-forward"
+        "sabnzbd"
+        "decluttarr"
+        "easynews-indexer"
+      ];
       hostUnits = {
         sonarr-api-key = [
           "prometheus-exportarr-sonarr-exporter"
@@ -555,7 +514,7 @@ let
         prowlarr-api-key = [ "prometheus-exportarr-prowlarr-exporter" ];
         seerr-api-key = [ "seerr" ];
       };
-      guestHeld = [
+      appHeld = [
         "sonarr-api-key"
         "radarr-api-key"
         "prowlarr-api-key"
@@ -573,13 +532,14 @@ let
         "qbittorrent-password"
         "qbittorrent-password-hash"
       ];
-      piaSecrets = [
-        "pia-username"
-        "pia-password"
+      guestDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
+      returned = "${guestDumps}-handover/returned";
+      # shortcut: drops the downloads guest's tap until arr-return stops it, since the guest's own table goes in the same switch, delete with _downloads.nix
+      guestTap = (import ./_downloads.nix).tap;
+      guestUnits = [
+        "microvm@downloads.service"
+        "microvm-virtiofsd@downloads.service"
       ];
-      hostDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
-      handover = "${hostDumps}-handover";
-      install = lib.getExe' pkgs.coreutils "install";
       awaitProfile =
         name:
         pkgs.writeShellApplication {
@@ -591,105 +551,74 @@ let
           text = ''
             while (( SECONDS < 180 )); do
               if curl -fsS --max-time 5 -H @<(printf 'X-Api-Key: %s' "$(< ${secret "${name}-api-key"})") \
-                http://${net.guestAddress}:${toString (appPort name)}/api/v3/qualityprofile |
+                http://${namespaceAddress}:${toString (appPort name)}/api/v3/qualityprofile |
                 jq -e --arg profile ${lib.escapeShellArg storageProfile} 'any(.[]; .name == $profile)' > /dev/null; then
                 exit 0
               fi
               sleep 5
             done
-            echo "${name} in the downloads guest has no profile ${storageProfile} after 3 minutes" >&2
+            echo "${name} has no profile ${storageProfile} after 3 minutes" >&2
             exit 1
           '';
         };
-      toGuest =
-        name: uids:
-        ''ct state new oifname "${net.tap}" meta skuid { ${
-          lib.concatMapStringsSep ", " toString uids
-        } } tcp dport { ${lib.concatMapStringsSep ", " (app: toString (appPort app)) name} } accept'';
+      toApps =
+        names: uid:
+        ''ct state new oifname "${vpn}-br" meta skuid ${toString uid} tcp dport { ${
+          lib.concatMapStringsSep ", " (name: toString (appPort name)) names
+        } } accept'';
     in
     {
       imports = [
-        downloads
-        nixflix
+        namespaced
         postgresql
       ];
-      fleet.databaseDumps = map (db: "${hostDumps}/${db}") apps;
-
-      microvm.vms.downloads.config = {
-        imports = [ guest ];
-        services.postgresql.package = config.services.postgresql.package;
-        fileSystems = lib.genAttrs [ guestSecrets guestDumps ] (_: {
-          options = [
-            "nosuid"
-            "nodev"
-            "noexec"
-          ];
-        });
-        time.timeZone = config.time.timeZone;
-        microvm.shares = [
-          {
-            proto = "virtiofs";
-            tag = "secrets";
-            source = hostSecrets;
-            mountPoint = guestSecrets;
-            readOnly = true;
-          }
-          {
-            proto = "virtiofs";
-            tag = "dumps";
-            source = hostDumps;
-            mountPoint = guestDumps;
-          }
-        ];
-      };
 
       sops.secrets = lib.listToAttrs (
         map (
           name:
           lib.nameValuePair "arr-${name}" {
             key = "arr/${name}";
+            path = lib.mkIf (lib.elem name appHeld) "${secretDir}/${name}";
             restartUnits =
               map (unit: "${unit}.service") (
-                hostUnits.${name} or [ ] ++ lib.optional (lib.elem name guestHeld) "microvm-virtiofsd@downloads"
+                hostUnits.${name} or [ ] ++ lib.optionals (lib.elem name appHeld) arrUnits
               )
               ++ map (app: "seerr-${app}.timer") (lib.filter (app: name == "${app}-api-key") seerrApps);
           }
-        ) (lib.unique (lib.attrNames hostUnits ++ guestHeld))
-        ++ map (
-          name:
-          lib.nameValuePair name {
-            key = "pia/${lib.removePrefix "pia-" name}";
-            restartUnits = [ "microvm-virtiofsd@downloads.service" ];
-          }
-        ) piaSecrets
+        ) (lib.unique (lib.attrNames hostUnits ++ appHeld))
+        ++
+          map
+            (
+              field:
+              lib.nameValuePair "pia-${field}" {
+                key = "pia/${field}";
+                path = "${secretDir}/pia-${field}";
+                restartUnits = [ "${vpn}.service" ];
+              }
+            )
+            [
+              "username"
+              "password"
+            ]
       );
 
-      nixflix = {
-        postgres.enable = true;
-        seerr = lib.mkMerge [
-          {
-            enable = true;
-            vpn.enable = false;
-            apiKey._secret = secret "seerr-api-key";
-          }
-          (lib.genAttrs seerrApps (
-            name:
-            let
-              instance = lib.head (lib.attrNames guestSystem.options.nixflix.seerr.${name}.default);
-            in
-            lib.mkMerge [
-              guestSystem.options.nixflix.seerr.${name}.default
-              {
-                ${instance} = {
-                  hostname = lib.mkForce net.guestAddress;
-                  apiKey = lib.mkForce { _secret = secret "${name}-api-key"; };
-                  activeProfileName = storageProfile;
-                };
-              }
-            ]
-          ))
-        ];
-      };
+      nixflix.seerr = lib.mkMerge [
+        {
+          enable = true;
+          vpn.enable = false;
+          apiKey._secret = secret "seerr-api-key";
+        }
+        (lib.genAttrs seerrApps (
+          name:
+          lib.mkMerge [
+            options.nixflix.seerr.${name}.default
+            {
+              ${lib.head (lib.attrNames options.nixflix.seerr.${name}.default)}.activeProfileName =
+                storageProfile;
+            }
+          ]
+        ))
+      ];
 
       users.users.exportarr = {
         isSystemUser = true;
@@ -702,7 +631,7 @@ let
           name:
           lib.nameValuePair "exportarr-${name}" {
             enable = true;
-            url = "http://${net.guestAddress}:${toString (appPort name)}";
+            url = "http://${namespaceAddress}:${toString (appPort name)}";
             apiKeyFile = secret "${name}-api-key";
             environment.INTERFACE = "127.0.0.1";
             port = exporterPorts.${name};
@@ -717,41 +646,40 @@ let
       fleet.web.apps = lib.mkMerge [
         (lib.genAttrs apps (name: {
           port = appPort name;
-          address = net.guestAddress;
+          address = namespaceAddress;
         }))
         {
           qbittorrent = {
-            port = guestConfig.services.qbittorrent.webuiPort;
-            address = net.guestAddress;
+            port = config.services.qbittorrent.webuiPort;
+            address = namespaceAddress;
           };
           sabnzbd = {
-            inherit (guestConfig.nixflix.usenetClients.sabnzbd.settings.misc) port;
-            address = net.guestAddress;
+            inherit (config.nixflix.usenetClients.sabnzbd.settings.misc) port;
+            address = namespaceAddress;
           };
           seerr = { inherit (config.nixflix.seerr) port; };
         }
       ];
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
-      system.activationScripts.arr-handover.text = ''
-        if [ -e /run/current-system/etc/systemd/system/${lib.head apps}.service ] &&
-          [ -e ${handover}/done ]; then
-          stamp=$(date +%s)
-          mkdir -p ${handover}/replaced-"$stamp"
-          mv -f ${hostDumps}/*.sql.gz ${handover}/replaced-"$stamp"/ 2> /dev/null || true
-          if [ -e ${config.microvm.stateDir}/downloads/var.img ]; then
-            mv -f ${config.microvm.stateDir}/downloads/var.img ${config.microvm.stateDir}/downloads/var.img.replaced-"$stamp"
-          fi
-          rm -f ${handover}/done
-        fi
-      '';
       networking.nftables.tables.arr = {
         family = "inet";
         content = ''
+          chain forward {
+            type filter hook forward priority -200; policy accept;
+            oifname "${vpn}-br" drop
+            iifname "${vpn}-br" drop
+            iifname "${guestTap}" drop
+          }
+          chain input {
+            type filter hook input priority -200; policy accept;
+            iifname "${vpn}-br" ct state new drop
+            iifname "${guestTap}" drop
+          }
           chain output {
             type filter hook output priority -150; policy accept;
-            ${toGuest seerrApps [ config.users.users.${config.nixflix.seerr.user}.uid ]}
-            ${toGuest apps [ config.users.users.exportarr.uid ]}
-            ct state new oifname "${net.tap}" meta skuid != { ${
+            ${toApps seerrApps config.users.users.${config.nixflix.seerr.user}.uid}
+            ${toApps apps config.users.users.exportarr.uid}
+            ct state new oifname "${vpn}-br" meta skuid != { ${
               lib.concatMapStringsSep ", " toString (
                 [ 0 ] ++ lib.optional config.services.caddy.enable config.users.users.caddy.uid
               )
@@ -783,60 +711,79 @@ let
         }))
         {
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];
-          "microvm-virtiofsd@downloads" = {
-            unitConfig.RequiresMountsFor = [ hostDumps ];
-            serviceConfig.ExecStartPre = [
-              "${lib.getExe' pkgs.coreutils "rm"} -rf ${hostSecrets}"
-            ]
-            ++ map (name: "${install} -D -m 0400 ${secret name} ${hostSecrets}/${name}") guestHeld
-            ++ map (
-              name: "${install} -D -m 0400 ${config.sops.secrets.${name}.path} ${hostSecrets}/${name}"
-            ) piaSecrets;
-          };
-          arr-dumps-fresh = {
-            description = "Fail when the downloads guest's database dumps are older than two days";
-            startAt = "06:00";
-            path = [ pkgs.findutils ];
-            enableStrictShellChecks = true;
-            serviceConfig.Type = "oneshot";
-            script = ''
-              [ -e ${handover}/done ] || exit 0
-              for db in ${lib.concatStringsSep " " apps}; do
-                if [ -z "$(find ${hostDumps}/"$db.sql.gz" ${hostDumps}/"$db.prev.sql.gz" -mtime -2 2> /dev/null)" ]; then
-                  echo "$db has no dump newer than two days in ${hostDumps}" >&2
-                  exit 1
-                fi
-              done
-            '';
-          };
-          arr-handover = {
-            description = "Dump the arr databases bastion still holds for the downloads guest to load";
-            requiredBy = [ "microvm-virtiofsd@downloads.service" ];
-            before = [ "microvm-virtiofsd@downloads.service" ];
-            wants = [ "postgresql.target" ];
-            after = [ "postgresql.target" ];
-            unitConfig.RequiresMountsFor = [ (dirOf hostDumps) ];
+          # shortcut: migration from the downloads guest that can replace these databases, delete it once no kept generation runs that guest
+          arr-return = {
+            description = "Replace the arr databases with the downloads guest's dumps when they are newer than the last return";
+            requiredBy = map (name: "${name}.service") arrUnits;
+            before = map (name: "${name}.service") arrUnits;
+            requires = [ "postgresql-ready.target" ];
+            after = [ "postgresql-ready.target" ] ++ guestUnits;
+            conflicts = guestUnits;
+            unitConfig.RequiresMountsFor = [ guestDumps ];
             path = [
               config.services.postgresql.package
+              pkgs.findutils
+              pkgs.gawk
               pkgs.gzip
+              pkgs.util-linux
             ];
             enableStrictShellChecks = true;
             serviceConfig = {
               Type = "oneshot";
               RemainAfterExit = true;
-              User = "postgres";
-              ExecStartPre = "+${install} -d -o postgres -m 0700 ${hostDumps} ${handover}";
+              PrivateNetwork = true;
+              RestrictAddressFamilies = [ "AF_UNIX" ];
+              ProtectSystem = "strict";
+              ReadWritePaths = [
+                "/run/postgresql"
+                (dirOf returned)
+              ];
+              ProtectHome = true;
+              PrivateTmp = true;
+              PrivateDevices = true;
+              NoNewPrivileges = true;
+              CapabilityBoundingSet = [
+                "CAP_SETUID"
+                "CAP_SETGID"
+                "CAP_DAC_OVERRIDE"
+              ];
+              SystemCallFilter = [ "@system-service" ];
+              ExecStartPre = "+${lib.getExe' pkgs.coreutils "install"} -d -o postgres -m 0700 ${dirOf returned}";
             };
             script = ''
               set -o pipefail
-              [ ! -e ${handover}/done ] || exit 0
+              if [ -e ${returned} ]; then
+                [ -n "$(find ${guestDumps} -maxdepth 1 -name '*.sql.gz' -newer ${returned} 2> /dev/null)" ] || exit 0
+              elif [ ! -e ${dirOf returned}/done ]; then
+                exit 0
+              fi
+              key=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
               for db in ${lib.concatStringsSep " " apps}; do
-                exists=$(psql -Atc "select count(*) from pg_database where datname = '$db'")
-                [ "$exists" = 1 ] || continue
-                pg_dump --no-owner --no-privileges "$db" | gzip > ${handover}/"$db.sql.gz"
-                mv -T ${handover}/"$db.sql.gz" ${hostDumps}/"$db.sql.gz"
+                dump=${guestDumps}/$db.sql.gz
+                [ -f "$dump" ] && [ ! -L "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
+                if [ ! -f "$dump" ] || [ -L "$dump" ]; then
+                  echo "$db has no dump in ${guestDumps}; not replacing any database" >&2
+                  exit 1
+                fi
+                if [ -z "$(find "$dump" -mtime -2)" ]; then
+                  echo "$dump is older than two days; not replacing any database" >&2
+                  exit 1
+                fi
+                echo "Loading $dump into $db-return"
+                runuser -u postgres -- dropdb --if-exists --force "$db-return"
+                runuser -u postgres -- createdb -O "$db" "$db-return"
+                {
+                  printf '\\restrict %s\n' "$key"
+                  gunzip -c "$dump" | awk 'NR <= 10 && !k && /^\\restrict [A-Za-z0-9]+$/ { k = $2; next } k && $0 == "\\unrestrict " k { next } { print }'
+                  printf '\\unrestrict %s\n' "$key"
+                } | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db-return" > /dev/null
               done
-              touch ${handover}/done
+              for db in ${lib.concatStringsSep " " apps}; do
+                echo "Replacing $db"
+                runuser -u postgres -- dropdb --if-exists --force "$db"
+                runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "alter database \"$db-return\" rename to \"$db\""
+              done
+              touch ${returned}
             '';
           };
         }

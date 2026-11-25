@@ -12,7 +12,6 @@ Read the file for the guest you touch; each holds what its module cannot say.
 | [agents.md](agents.md) | Coding agents, Paseo, the GitHub App token | `agents.nix`, `claude.nix` |
 | [hermes.md](hermes.md) | Hermes Agent behind Telegram | `hermes.nix`, `_hermes.nix` |
 
-All of bastion's guests, the arr apps' `downloads` guest included
-([arr.md](../services/arr.md)), are built from [_guest.nix](../../../modules/_guest.nix): the
+Both of bastion's guests are built from [_guest.nix](../../../modules/_guest.nix): the
 cloud-hypervisor guest, its tap and /24, and the nftables table that confines it. What each guest
 reaches and holds is in its file.

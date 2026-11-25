@@ -1,10 +1,11 @@
 # Arr apps
 
 [arr.nix](../../../modules/arr.nix) runs Sonarr, Radarr, Prowlarr, qBittorrent and SABnzbd from
-nixflix inside the `downloads` MicroVM on bastion (below), on the media datasets shared with
-Jellyfin ([jellyfin](jellyfin.md)), the arr databases in a PostgreSQL of the
-guest's own over its socket. The file has two halves: `guest`, what runs in the MicroVM, and
-`host`, what bastion keeps (the secrets, Seerr, the exporters, the proxy entries, the firewall).
+nixflix on bastion, on the media datasets shared with Jellyfin ([jellyfin](jellyfin.md)), the arr
+databases in bastion's shared PostgreSQL ([identity](identity.md)). The file has two halves:
+`namespaced`, the apps in the namespace, and `host`, which imports it and adds the secrets, Seerr, the
+exporters, the proxy entries and the firewall; the secrets the apps read are linked under
+`/run/arr-secrets`.
 nixflix wires Prowlarr to Sonarr and Radarr and both to qBittorrent and SABnzbd from the declared
 API keys; its setup units apply settings after every start. Their bind address also goes in as an
 environment variable, which wins over `config.xml`: the setup units can only reach an app at the
@@ -17,27 +18,27 @@ All of them run in nixflix's WireGuard namespace on Private Internet Access, reg
 only through the tunnel. PIA has no static WireGuard config: each start of the namespace signs in
 with `pia/{username,password}`, registers a new key with one of the region's servers and writes the
 config under `/run` ([vpn-watch.nix](../../../modules/vpn-watch.nix)), so a restart is a new
-server and a new key. The account must not need a one-time code at that sign-in. Root in the guest
-therefore holds the whole PIA account, not one tunnel key, an accepted risk like the usenet and
-indexer credentials it already holds. nixflix confines them together: an app inside cannot reach one outside.
+server and a new key. The account must not need a one-time code at that sign-in. Root on bastion
+therefore holds the whole PIA account, not one tunnel key. nixflix confines them together: an app inside cannot reach one outside.
 [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts the tunnel when it fails or its handshake
 goes stale, and starts the confined apps again each time it comes up. Their web UIs are
 `sonarr.`, `radarr.`, `prowlarr.`, `qbittorrent.` and `sabnzbd.DOMAIN` through the LAN proxy, on
 the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)); the arr apps and SABnzbd log in as
-`marcos` with `arr/password`. The namespace lives inside the guest, and
-nixflix's port mappings forward the guest's address to the apps for bastion alone, the one
-address the namespace routes back outside the tunnel. On bastion the `arr` nftables table lets
-only root and Caddy open new connections to the guest, and Seerr only to Sonarr and Radarr, and
-the `exportarr` user only to the three arr apps. One exportarr exporter per app publishes its
+`marcos` with `arr/password`. The `arr` nftables table drops
+anything forwarded through the namespace's bridge and lets only root and Caddy open new
+connections into the namespace, Seerr only to Sonarr and Radarr, and the `exportarr` user only
+to the three arr apps. It also drops every new connection the namespace
+opens towards bastion itself, so the apps reach none of bastion's listeners; replies to bastion's
+own connections pass. One exportarr exporter per app publishes its
 health checks (indexers, download clients, root folders, remote path mappings), which the `Arr
 health issue` alert reports after an hour; a single failed import is a queue item, which
 Decluttarr handles instead.
 
-Seerr takes requests at `seerr.DOMAIN`, on the LAN and the tailnet, and runs on bastion, outside the guest, because it
+Seerr takes requests at `seerr.DOMAIN`, on the LAN and the tailnet, and runs outside the namespace because it
 needs Jellyfin; its database stays in bastion's shared PostgreSQL ([identity](identity.md)); it signs in to Jellyfin as the declared native admin to set itself up, and its Sonarr and Radarr
 setup units start from a timer a minute after boot or a deploy that changes them, outside the
 switch, and retry until
-the request profile exists in the guest, giving up after fifteen tries in an hour, since no
+the request profile exists, giving up after fifteen tries in an hour, since no
 unit ordering crosses into it. Its login
 takes a Jellyfin password and Seerr has no OIDC, so only accounts with a native Jellyfin password
 (the admin) sign in; people who reach Jellyfin through Authelia have none. Requests go to Sonarr and Radarr on
@@ -69,54 +70,21 @@ application setup units print no response bodies, which can echo the keys they s
 that fails to apply (its site down, a key rejected) is logged and the rest still apply; the unit
 succeeds, so one unreachable site never fails a deploy.
 
-## The downloads guest
+## Return from the downloads guest
 
-[downloads.nix](../../../modules/downloads.nix) is the MicroVM, `downloads`, built like the
-agents' ([guests: agents](../guests/agents.md)) from [_guest.nix](../../../modules/_guest.nix), the
-network and host wiring a guest of bastion needs given its name and addresses, shared with the agents' and
-hermes guests: cloud-hypervisor, a tap carrying a /24 only bastion
-and the guest sit on ([_downloads.nix](../../../modules/_downloads.nix) holds its addresses for
-both files), and the `downloads` nftables table, which masquerades the guest to the internet and
-drops what it sends to bastion, to private addresses, to the tailnet and over IPv6, and new
-connections forwarded towards it from any other network; replies to
-connections bastion opens pass; the home gateway's public address stays reachable, the limit the
-[guests: agents](../guests/agents.md) names. The apps talk to indexers and peers, so one of them compromised
-meets a second kernel before bastion. The guest's own uplink is bastion's, not the PIA tunnel:
-it carries the sign-in, the key registration and the tunnel's packets, and the namespace inside keeps the apps off it. The guest has no
-login, no tailnet node and no sops identity. Its journal goes to its console, which is
-`microvm@downloads`'s log on bastion, so Loki holds it; nothing on bastion sees a failed unit
-inside the guest except through that log and the exporters. Unlike the agents' guest it restarts
-whenever a deploy changes it, which stops downloads for the time of a boot. Its clock is in bastion's time zone.
+The apps ran in a MicroVM of their own for a while, with their databases in its PostgreSQL and
+nightly dumps in `/srv/backups/downloads`. `arr-return` runs before every arr unit and stops the
+guest if it still runs. It returns when the guest took over once (`downloads-handover/done`) and
+`downloads-handover/returned` is missing, or when a dump is newer than `returned`; otherwise it
+does nothing. Each dump must be a regular file newer than two days. Since the guest is untrusted, psql
+loads each one under a random `\restrict` key the guest cannot know, in place of the dump's own,
+so any meta-command in it (`\!`, `\copy`) stops the load; it runs as the app's user inside a
+sandbox with no network. Every dump goes into a temporary database first, and only when all three
+loaded are they swapped for bastion's and `returned` touched.
 
-What the guest gets from bastion, over virtiofs:
-
-- The media dataset and the state directories of Sonarr, Radarr, Prowlarr, qBittorrent and
-  SABnzbd, at the paths they have on bastion and with their datasets' mount options. Jellyfin's
-  and Seerr's state is not shared. The accounts that own them keep their ids: nixflix pins most,
-  and arr.nix restates qBittorrent's whole account, since nixflix forces it without a uid.
-- The arr secrets, read-only, copied from sops into `/run/downloads-secrets` when the guest's
-  virtiofs daemons start. A changed secret restarts those daemons and the guest with them. Seerr's
-  API key stays on bastion; the three arr API keys are on both sides, for the exporters and Seerr.
-- `/srv/backups/downloads`, where the guest's PostgreSQL dumps each arr database nightly, inside a
-  backup root ([backups skill](../backups/SKILL.md)). The restore drill checks these dumps like bastion's own, and
-  nothing bounds what the guest writes there or into the state directories: `apps/srv` and
-  `apps/nixflix` have no quota, so a compromised guest can fill them.
-
-The guest's disk, `var.img` on `apps/agents`, holds `/var/lib`: PostgreSQL, Recyclarr and
-Decluttarr. It is neither snapshotted nor backed up, so the dumps are the databases' only copy
-outside it: before the arr apps start, `arr-restore` loads each database that has no table from
-its dump, or from the previous one when a failed dump left only that, which is also how a lost
-disk comes back, and the nightly dump skips a database that
-has no table, so a failed load never replaces a good dump with an empty one. `arr-handover` on
-bastion writes the first dumps, from the databases bastion's PostgreSQL still holds from before
-the move, and once only: its marker, `/srv/backups/downloads-handover/done`, and its temporary
-files sit outside the share, since bastion's `postgres` must not write where the guest can plant
-a link. Those old databases are left in place. The side that ran last wins: when the generation
-being replaced ran the arr apps on bastion after a handover (a move redone after a rollback, or
-an old generation booted for any reason), activation removes the marker and moves the dumps (to
-`/srv/backups/downloads-handover/replaced-TIME`) and the guest's `var.img` (to `var.img.replaced-TIME`)
-aside, so the handover starts again from bastion's databases and the guest's former ones can be
-put back by hand. A boot straight into the new generation has no previous one to look at; there
-the three are moved by hand. `arr-dumps-fresh` on bastion fails each morning, and so raises
-`Unit failed` ([monitoring](monitoring.md)), while a database has no dump, current
-or previous, newer than two days.
+A rollback to a generation with the guest re-seeds it from bastion, and its dumps come back on the
+next move, so the side that ran last wins. Changes made in the guest after its last nightly dump
+are lost. A failed `arr-return` fails the switch, and the rollback re-seeds the guest from
+bastion's stale databases, keeping its own disk as `var.img.replaced-TIME` and its dumps under
+`downloads-handover/replaced-TIME` for recovery by hand; check that every dump is from the last
+night before deploying. The `-logs` databases stay as they were.
