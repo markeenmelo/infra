@@ -218,18 +218,3 @@ output "enrollment_keys" {
   value       = { for host, key in tailscale_tailnet_key.enrollment : host => key.key }
   sensitive   = true
 }
-
-moved {
-  from = tailscale_tailnet_key.enrollment["proton-ca"]
-  to   = tailscale_tailnet_key.enrollment["ca"]
-}
-
-moved {
-  from = tailscale_tailnet_key.enrollment["proton-us"]
-  to   = tailscale_tailnet_key.enrollment["us"]
-}
-
-moved {
-  from = tailscale_tailnet_key.enrollment["proton-br"]
-  to   = tailscale_tailnet_key.enrollment["br"]
-}
