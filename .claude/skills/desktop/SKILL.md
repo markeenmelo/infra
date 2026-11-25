@@ -12,14 +12,15 @@ square, solid and gapped, Everforest throughout, on this stack instead of Hyprla
 
 [stylix.nix](../../../modules/stylix.nix) sets the one scheme, Everforest dark medium (`everforest`,
 whose base16 slots hold every role below as shipped, unlike `everforest-dark-medium`, which puts
-the text in `base07`; muted, warm and low in blue, chosen to tire the eyes less), dark polarity, and the fonts; every app that Stylix can theme takes its colors and fonts from it. An
-app is then hand-tuned in its own module to the rules below, reading `config.lib.stylix.colors`
+the text in `base07`; muted, warm and low in blue, chosen to tire the eyes less), dark polarity, and the fonts;
+every app that Stylix can theme takes its colors and fonts from it. An app is then hand-tuned in its own module to the rules below, reading `config.lib.stylix.colors`
 (base16 names) and `config.stylix.fonts`, never a hex or font literal, so a scheme or font change
 reaches it. An app Stylix cannot theme gets the same treatment by hand.
 
 An app that ships its own Everforest uses it for syntax instead of Stylix's base16 colors, while
 its fonts still come from Stylix: its target is disabled and the native theme is selected, with its
-background and surfaces overridden from `base00`–`base02` so it sits on the same background as the rest.
+background and surfaces overridden from `base00`–`base02` so it sits on the same background as
+the rest.
 Only Neovim does (`everforest`, background `medium`, in [neovim.nix](../../../modules/neovim.nix));
 Zed and bat, which ship no Everforest, take Stylix's.
 
@@ -31,9 +32,9 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
 ## Rules
 
 - **Surfaces:** solid, with no blur and no drop shadow: app windows, the bar, the launcher,
-  notifications and popups alike; the border color alone marks focus. Only terminals and the file
-  manager let the wallpaper through, barely, as Omarchy does (0.985 focused, 0.96 not). The lock
-  screen's blurred wallpaper is the only blur.
+  notifications and popups alike; the border color marks focus. Only terminals and the file manager
+  let the wallpaper through, barely, and a little less while focused, as Omarchy does
+  ([umbriel.nix](../../../modules/umbriel.nix)). The lock screen's blurred wallpaper is the only blur.
 - **Quick terminal:** none: Umbriel has no global-shortcuts portal for Ghostty's own, and
   its scratchpad is unused, the stock binds parked in [umbriel.nix](../../../modules/umbriel.nix).
 - **Launcher:** `Mod + Space` or the bar's launcher button, on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
