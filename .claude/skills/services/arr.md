@@ -73,14 +73,17 @@ succeeds, so one unreachable site never fails a deploy.
 ## Return from the downloads guest
 
 The apps ran in a MicroVM of their own for a while, with their databases in its PostgreSQL and
-nightly dumps in `/srv/backups/downloads`. `arr-return` stops the guest if it still runs and brings those databases back before the
-arr apps start, whenever a dump there is newer than `/srv/backups/downloads-handover/returned`
-(always, the first time): it refuses while a database has no dump newer than two days, refuses a dump with
-psql meta-commands pg_dump does not write (the guest is untrusted), loads each dump into a
-temporary database inside a sandbox with no network, swaps it for bastion's and touches the marker. A rollback to a
-generation with the guest re-seeds it from bastion and its dumps then come back on the next move,
-so the side that ran last wins. Changes made in
-the guest after its last nightly dump are lost. A failed `arr-return` fails the switch, and the
-rollback re-seeds the guest from bastion's stale databases, keeping its own disk as
-`var.img.replaced-TIME` and its dumps under `downloads-handover/replaced-TIME` for recovery by
-hand; check that every dump is from the last night before deploying. The `-logs` databases stay as they were.
+nightly dumps in `/srv/backups/downloads`. `arr-return` runs before every arr unit and stops the
+guest if it still runs. It returns when the guest took over once (`downloads-handover/done`) and
+`downloads-handover/returned` is missing, or when a dump is newer than `returned`; otherwise it
+does nothing. Before touching any database it checks every dump: a regular file, newer than two
+days, and with no backslash outside COPY data except pg_dump's own `\restrict` lines, since the
+guest is untrusted. It then loads each dump into a temporary database inside a sandbox with no
+network, swaps it for bastion's and touches `returned`.
+
+A rollback to a generation with the guest re-seeds it from bastion, and its dumps come back on the
+next move, so the side that ran last wins. Changes made in the guest after its last nightly dump
+are lost. A failed `arr-return` fails the switch, and the rollback re-seeds the guest from
+bastion's stale databases, keeping its own disk as `var.img.replaced-TIME` and its dumps under
+`downloads-handover/replaced-TIME` for recovery by hand; check that every dump is from the last
+night before deploying. The `-logs` databases stay as they were.

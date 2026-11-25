@@ -710,8 +710,8 @@ let
           # shortcut: migration from the downloads guest that can replace these databases, delete it once no kept generation runs that guest
           arr-return = {
             description = "Replace the arr databases with the downloads guest's dumps when they are newer than the last return";
-            requiredBy = map (name: "${name}.service") apps;
-            before = map (name: "${name}.service") apps;
+            requiredBy = map (name: "${name}.service") arrUnits;
+            before = map (name: "${name}.service") arrUnits;
             requires = [ "postgresql-ready.target" ];
             after = [ "postgresql-ready.target" ] ++ guestUnits;
             conflicts = guestUnits;
@@ -748,31 +748,34 @@ let
             };
             script = ''
               set -o pipefail
-              [ -n "$(find ${guestDumps} -maxdepth 1 -type f -name '*.sql.gz' 2> /dev/null)" ] || exit 0
-              if [ -e ${returned} ] && [ -z "$(find ${guestDumps} -maxdepth 1 -name '*.sql.gz' -newer ${returned})" ]; then
+              if [ -e ${returned} ]; then
+                [ -n "$(find ${guestDumps} -maxdepth 1 -name '*.sql.gz' -newer ${returned} 2> /dev/null)" ] || exit 0
+              elif [ ! -e ${dirOf returned}/done ]; then
                 exit 0
               fi
-              for db in ${lib.concatStringsSep " " apps}; do
-                if [ -z "$(find ${guestDumps}/"$db.sql.gz" ${guestDumps}/"$db.prev.sql.gz" -type f -mtime -2 2> /dev/null)" ]; then
-                  echo "$db has no dump newer than two days in ${guestDumps}; not replacing it" >&2
-                  exit 1
-                fi
-              done
+              declare -A dumps
               for db in ${lib.concatStringsSep " " apps}; do
                 dump=${guestDumps}/$db.sql.gz
                 [ -f "$dump" ] && [ ! -L "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
                 if [ ! -f "$dump" ] || [ -L "$dump" ]; then
-                  echo "$dump is not a regular file; not loading it" >&2
+                  echo "$db has no dump in ${guestDumps}; not replacing any database" >&2
                   exit 1
                 fi
-                if ! gunzip -c "$dump" | awk '/^COPY .* FROM stdin;$/ { copy = 1; next } copy && $0 == "\\." { copy = 0; next } !copy && /^\\/ && !/^\\(connect|restrict|unrestrict) / { bad = 1; exit } END { exit bad }'; then
-                  echo "$dump holds psql meta-commands pg_dump does not write; not loading it" >&2
+                if [ -z "$(find "$dump" -mtime -2)" ]; then
+                  echo "$dump is older than two days; not replacing any database" >&2
                   exit 1
                 fi
-                echo "Replacing $db with $dump"
+                if ! gunzip -c "$dump" | awk '/^COPY .* FROM stdin;$/ { copy = 1; next } copy { if ($0 == "\\.") copy = 0; next } /^\\(restrict|unrestrict) [A-Za-z0-9]+$/ { next } index($0, "\\") { bad = 1; exit } END { exit bad }'; then
+                  echo "$dump holds a backslash outside COPY data that pg_dump does not write; not replacing any database" >&2
+                  exit 1
+                fi
+                dumps[$db]=$dump
+              done
+              for db in ${lib.concatStringsSep " " apps}; do
+                echo "Replacing $db with ''${dumps[$db]}"
                 runuser -u postgres -- dropdb --if-exists --force "$db-return"
                 runuser -u postgres -- createdb -O "$db" "$db-return"
-                gunzip -c "$dump" | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db-return" > /dev/null
+                gunzip -c "''${dumps[$db]}" | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db-return" > /dev/null
                 runuser -u postgres -- dropdb --if-exists --force "$db"
                 runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "alter database \"$db-return\" rename to \"$db\""
               done
