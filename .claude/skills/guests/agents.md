@@ -101,7 +101,9 @@ IP addresses as host names and accepts a browser origin only when it is the host
 web page elsewhere cannot drive it: Paseo's own default also admits `https://app.paseo.sh`, which
 the declared `services.paseo.settings` leaves out. The unit writes those settings over
 `~/.paseo/config.json` at every start, so a setting changed in an app lasts until the next
-restart. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`,
+restart. The settings inject Paseo's own MCP server into every agent it starts, so any session in
+the guest can start, prompt and stop other agents and create schedules, and give agents the
+browser tools of Paseo's clients and terminal agents the hooks that report their status. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`,
 lives on `home.img`.
 
 ## Credentials
