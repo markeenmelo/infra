@@ -75,8 +75,10 @@ succeeds, so one unreachable site never fails a deploy.
 The apps ran in a MicroVM of their own for a while, with their databases in its PostgreSQL and
 nightly dumps in `/srv/backups/downloads`. `arr-return` runs before every arr unit and stops the
 guest if it still runs. It returns when the guest took over once (`downloads-handover/done`) and
-`downloads-handover/returned` is missing, or when a dump is newer than `returned`; otherwise it
-does nothing. Each dump must be a regular file newer than two days. Since the guest is untrusted, psql
+`downloads-handover/returned` is missing, or when the dumps differ from those it last returned
+(`returned` holds their hash; the guest sets the files' times, so they are not trusted);
+otherwise it does nothing. Each dump must be a regular file from the last two days and not dated
+in the future. Since the guest is untrusted, psql
 loads each one under a random `\restrict` key the guest cannot know, in place of the dump's own,
 so any meta-command in it (`\!`, `\copy`) stops the load; it runs as the app's user inside a
 sandbox with no network. Every dump goes into a temporary database first, and only when all three
