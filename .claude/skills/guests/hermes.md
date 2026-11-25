@@ -24,7 +24,7 @@ or a web page can talk the agent into using or leaking.
 
 - **Reached by:** a Telegram bot, by long polling, so nothing listens. Only the user ids in
   `TELEGRAM_ALLOWED_USERS` are answered; anyone else is ignored without a reply.
-- **Model:** `gpt-6-luna` through the `openai-codex` provider, which is the operator's ChatGPT
+- **Model:** `gpt-6-astra` through the `openai-codex` provider, which is the operator's ChatGPT
   subscription, not an API key.
 - **Browser:** the fleet's Chromium, named in `browser.executable_path` because upstream's own
   download cannot run on NixOS, with one persistent profile under the agent's home
