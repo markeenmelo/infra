@@ -92,6 +92,7 @@ locals {
     "ThinkPad"           = { mac = "84:7b:57:95:b1:ae", ip = "192.168.10.2", admin = true }
     "Dock"               = { mac = "8c:ae:4c:af:7c:1e", ip = "192.168.10.3", admin = true }
     "Mac"                = { mac = "6c:7e:67:ca:c1:aa", ip = "192.168.10.4", admin = true }
+    "ThinkPad Wired"     = { mac = "6c:24:08:bb:90:0c", ip = "192.168.10.5", admin = true }
     "Nara PC"            = { mac = "58:02:05:14:4c:2c", ip = "192.168.10.10" }
     "Nara Phone"         = { mac = "82:87:9d:ce:ba:16", ip = "192.168.10.11" }
     "Marcos Pixel"       = { mac = "e0:1a:df:32:f3:08", ip = "192.168.10.12" }
