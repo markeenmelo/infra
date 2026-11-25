@@ -34,7 +34,7 @@ unit runs on every boot and redoes only what an interrupted move left undone. Th
 ## Network
 
 The guest's network and host wiring come from [_guest.nix](../../../modules/_guest.nix), as for
-the downloads and hermes guests ([services: arr](../services/arr.md)). Its tap carries a /24 that only
+the hermes guest ([hermes](hermes.md)). Its tap carries a /24 that only
 bastion and the guest sit on. The `agents` nftables table drops everything the guest sends to
 bastion itself, to any private, CGNAT, link-local or multicast address, to the tailnet interface
 and over IPv6, and new connections forwarded towards it, and masquerades the rest to the
