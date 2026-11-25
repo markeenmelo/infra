@@ -36,7 +36,11 @@ keys as for the arr apps, [services: arr](../services/arr.md)), advertised as th
 and admits the admin clients and members to the internet through them. Each joins once with its
 own key, `vpn-exit/COUNTRY-auth-key`,
 moved like a host's from the `enrollment_keys` output, and keeps `/var/lib/tailscale-COUNTRY`
-under `/persist`. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tunnel that fails or
+under `/persist`. Each node's direct peer traffic, the marked UDP from its own tailscaled port, goes around PIA:
+`pvCOUNTRY-bypass` routes it over the namespace's bridge and bastion masquerades it, so clients
+reach the nodes directly and see bastion's public address as their endpoint; the `vpn-exit`
+nftables table lets it reach public addresses only, never the LAN, the tailnet or another
+namespace. Control, DERP and the DNS tailscaled forwards for exit clients stay in the tunnel. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tunnel that fails or
 whose handshake is older than five minutes, and starts its exit node again each time it comes up. Choosing
 an exit node is done on the client: on the Linux laptops the bar's tailnet panel picks one. On the Linux laptops `marcos`
 is the Tailscale operator ([noctalia.nix](../../../modules/noctalia.nix)), an accepted risk: every
