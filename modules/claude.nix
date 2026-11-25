@@ -95,7 +95,7 @@ let
       inherit (grafana) args;
       env = {
         GRAFANA_URL = grafana.url;
-        GRAFANA_SERVICE_ACCOUNT_TOKEN = "\${GRAFANA_SERVICE_ACCOUNT_TOKEN:-}";
+        GRAFANA_SERVICE_ACCOUNT_TOKEN = "\${GRAFANA_SERVICE_ACCOUNT_TOKEN}";
       };
     };
   };
@@ -145,9 +145,16 @@ in
         };
       };
 
-    homeManager.agent-tools.programs.pi-coding-agent = {
-      enable = true;
-      settings.enableInstallTelemetry = false;
-    };
+    homeManager.agent-tools =
+      { config, pkgs, ... }:
+      {
+        programs.pi-coding-agent = {
+          enable = true;
+          settings.enableInstallTelemetry = false;
+        };
+        home.file."${config.programs.pi-coding-agent.configDir}/mcp.json".source =
+          (pkgs.formats.json { }).generate "pi-mcp.json"
+            { mcpServers = mcpServers pkgs; };
+      };
   };
 }
