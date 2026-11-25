@@ -609,6 +609,7 @@ let
         nixflix
         postgresql
       ];
+      fleet.databaseDumps = map (db: "${hostDumps}/${db}") apps;
 
       microvm.vms.downloads.config = {
         imports = [ guest ];
