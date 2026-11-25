@@ -5,7 +5,10 @@
       efi = "/run/fwupd-efi/fwupdx64.efi";
     in
     {
-      services.fwupd.enable = true;
+      services.fwupd = {
+        enable = true;
+        uefiCapsuleSettings.DisableShimForSecureBoot = true;
+      };
 
       systemd.services.fwupd-efi-sign = {
         description = "Sign fwupd's EFI app with the Secure Boot keys";

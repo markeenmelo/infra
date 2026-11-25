@@ -16,7 +16,7 @@ The host table and where each builds are in [README.md](../../../README.md#hosts
 
 [fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion and thinkpad, not edge, whose firmware is
 Oracle's. Both boot with their own Secure Boot keys, so each boot signs fwupd's EFI app with the
-sbctl keys for UEFI capsule updates. A capsule update reflashes the firmware, after which the TPM
+sbctl keys and capsule updates boot it without shim, which neither host has. A capsule update reflashes the firmware, after which the TPM
 may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
 
 `wake.nix` powers on bastion by Wake-on-LAN, from home only, and edge through the Oracle API; the
