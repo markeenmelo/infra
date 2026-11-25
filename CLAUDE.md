@@ -28,7 +28,7 @@ pending.
 **Do without asking:** read files without decrypting secrets; edit non-secret files; run
 formatters, linters, offline tests and `nix flake check` (if Bash cannot run `nix`, prepare the
 exact command and ask for its output); query live state read-only through the
-Grafana, GitHub and nixos MCP tools; commit in small Conventional Commits (`type(scope): summary`,
+Grafana and nixos MCP tools and `gh`; commit in small Conventional Commits (`type(scope): summary`,
 the body saying what changed and why), refactors and features apart; push branches, open pull
 requests into `dev`, answer reviewers and merge a clean round; prepare `deploy .#HOST` of a
 revision on `main` whose `check` run passed and report the command, saying when it changes remote access (SSH, firewall,
