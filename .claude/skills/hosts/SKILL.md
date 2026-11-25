@@ -1,6 +1,6 @@
 ---
 name: hosts
-description: "Each host's hardware, disks, boot and recovery: bastion (UGREEN NAS, LUKS with TPM2, Limine Secure Boot, the hand-made ZFS pools and declared mounts, snapshots, subnet routes, UPS, firmware), edge (Oracle Cloud Ampere instance, LUKS without TPM unlocked over SSH in the initrd, the unlock, wake and install apps) and thinkpad (LUKS with TPM2 and PIN, Secure Boot, remote builds, reinstall). Use before touching modules/hosts/, modules/unlock.nix or modules/wake.nix, any ZFS pool or dataset, Secure Boot or TPM enrollment, firmware, or rebooting, unlocking or reinstalling a host."
+description: "Each host's hardware, disks, boot and recovery: bastion (UGREEN NAS, LUKS with TPM2, Limine Secure Boot, the hand-made ZFS pools and declared mounts, snapshots, subnet routes, UPS, firmware), edge (Oracle Cloud Ampere instance, LUKS without TPM unlocked over SSH in the initrd, the unlock, wake and install apps) and thinkpad (LUKS with TPM2 and PIN, Secure Boot, remote builds, reinstall). Use before touching modules/hosts/, modules/{unlock,wake,fwupd}.nix, any ZFS pool or dataset, Secure Boot or TPM enrollment, firmware, or rebooting, unlocking or reinstalling a host."
 ---
 
 # Hosts
@@ -13,6 +13,11 @@ The host table and where each builds are in [README.md](../../../README.md#hosts
 | [bastion.md](bastion.md) | Home server: NAS hardware, ZFS pools, TPM2 unlock, UPS | `modules/hosts/bastion/` |
 | [edge.md](edge.md) | Oracle Cloud instance: initrd SSH unlock, wake, install | `modules/hosts/edge/`, `unlock.nix` |
 | [thinkpad.md](thinkpad.md) | Operator laptop: disk, unlock, boot | `modules/hosts/thinkpad/` |
+
+[fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion and thinkpad, not edge, whose firmware is
+Oracle's. Both boot with their own Secure Boot keys, so each boot signs fwupd's EFI app with the
+sbctl keys for UEFI capsule updates. A capsule update reflashes the firmware, after which the TPM
+may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
 
 `wake.nix` powers on bastion by Wake-on-LAN, from home only, and edge through the Oracle API; the
 command is in [operating: deploy](../operating/deploy.md).
