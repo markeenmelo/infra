@@ -118,9 +118,10 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
   MiniMax, exported as `ZAI_API_KEY`, `KIMI_API_KEY` and `MINIMAX_API_KEY`, which pi's built-in
   `zai`, `kimi-coding` and `minimax` providers read. A `/login` credential pi stored in
   `~/.pi/agent/auth.json` wins over these variables; `pi auth logout PROVIDER` drops it. Each is a subscription key that can spend
-  that plan's quota; revoke it in that provider's console. pi also holds a `/login` for
-  `openai-codex`, the operator's ChatGPT subscription, in that file on `home.img`: like Cursor's
-  session below it lives outside the repository, survives restarts and is revoked from that account.
+  that plan's quota; revoke it in that provider's console. For the
+  operator's ChatGPT subscription the operator signs pi in once over SSH (`/login`, provider
+  `openai-codex`); the session lands in that file on `home.img`, survives restarts, is usable and
+  leakable like the keys above, and is revoked from that account's settings.
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
   never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
