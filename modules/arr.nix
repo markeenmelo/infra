@@ -481,8 +481,6 @@ let
             serviceConfig = {
               Restart = "on-failure";
               RestartSec = "30s";
-              RestartSteps = 6;
-              RestartMaxDelaySec = "30min";
               RuntimeDirectory = "qbittorrent-port-forward";
               RuntimeDirectoryMode = "0700";
               UMask = "0077";
@@ -497,7 +495,7 @@ let
               server=${dirOf config.vpnNamespaces.${vpn}.wireguardConfigFile}/server.json
               cd "$RUNTIME_DIRECTORY"
               cn=$(jq -r .cn "$server")
-              tunnel() { ip netns exec ${vpn} curl -fsS --max-time 30 "$@"; }
+              tunnel() { ip netns exec ${vpn} curl -fsS --retry 3 --max-time 30 "$@"; }
               pf() { tunnel -G --connect-to "$cn::$(jq -r .gateway "$server"):" --cacert ${./pia.crt} "$@"; }
               fw() { ip netns exec ${vpn} iptables "$@"; }
               tunnel --form "username=<$CREDENTIALS_DIRECTORY/pia-username" --form "password=<$CREDENTIALS_DIRECTORY/pia-password" \
@@ -515,7 +513,7 @@ let
               for proto in tcp udp; do
                 fw -A qbittorrent-port -i ${vpn}0 -p "$proto" --dport "$port" -j ACCEPT
               done
-              curl -fsS -c cookies --data-urlencode username=marcos \
+              curl -fsS --retry 10 --retry-connrefused -c cookies --data-urlencode username=marcos \
                 --data-urlencode "password@$CREDENTIALS_DIRECTORY/password" "$api/auth/login" > /dev/null
               curl -fsS -b cookies --data "json={\"listen_port\":$port,\"random_port\":false}" "$api/app/setPreferences"
               curl -fsS -b cookies --data hashes=all "$api/torrents/reannounce"
