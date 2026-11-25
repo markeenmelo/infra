@@ -68,7 +68,7 @@ service restarts, `tailscale serve`, file changes).
 - Open the pull request with the sections Summary, Hosts affected, Validation run, Risks,
   Rollback, and After deploying when the operator has something to run. The body stays true as
   commits land.
-- After each push, wait for `claude-code (fable)` to succeed on the head commit with its summary
+- After each push, wait for `claude-code` to succeed on the head commit with its summary
   updated after it; read any Codex review too. Codex reviews only pull requests a person opens,
   so on one the App opened it reviews only when the operator comments `@codex review`. A reviewer that failed, was skipped or cut its
   coverage short is not a clean round: report it. Check every finding against the code, an
