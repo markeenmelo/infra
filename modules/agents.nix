@@ -198,7 +198,6 @@ let
             relay.enabled = false;
             mcp.injectIntoAgents = true;
             usage.enabled = true;
-            browserTools.enabled = true;
             enableTerminalAgentHooks = true;
             terminalProfiles = [
               {

@@ -102,8 +102,9 @@ web page elsewhere cannot drive it: Paseo's own default also admits `https://app
 the declared `services.paseo.settings` leaves out. The unit writes those settings over
 `~/.paseo/config.json` at every start, so a setting changed in an app lasts until the next
 restart. The settings inject Paseo's own MCP server into every agent it starts, so any session in
-the guest can start, prompt and stop other agents and create schedules, and give agents the
-browser tools of Paseo's clients and terminal agents the hooks that report their status. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`,
+the guest can start, prompt and stop other agents and create schedules, and give terminal agents the hooks that report their status. Paseo's
+browser tools stay off: their tabs live in the desktop app, so an agent would browse from the
+workstation, with its network and signed-in sessions, outside the guest. Traffic to the daemon is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`,
 lives on `home.img`.
 
 ## Credentials
