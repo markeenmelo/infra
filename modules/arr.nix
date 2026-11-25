@@ -22,9 +22,7 @@ let
   ];
   indexers = [
     "Knaben"
-    "The Pirate Bay"
     "YTS"
-    "Nyaa.si"
   ];
   easynewsPort = 8084;
   usenetIndexers = [
