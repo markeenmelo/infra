@@ -7,6 +7,11 @@ on:
 
 permissions: {}
 
+env:
+  NIX_CONFIG: |
+    accept-flake-config = false
+    max-jobs = auto
+
 concurrency:
   group: check-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: true
@@ -22,8 +27,6 @@ jobs:
         with:
           persist-credentials: false
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
-        with:
-          nix_conf: accept-flake-config = false
       - name: Copy the Hermes source into the store, which the read-only evaluation below reads and cannot add
         run: nix eval --raw .#nixosConfigurations.bastion.config.microvm.vms.hermes.config.config.services.hermes-agent.package.drvPath
       - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
@@ -53,9 +56,9 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Let bubblewrap map users for the MicroVM store images instead of copying their closures
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
-        with:
-          nix_conf: accept-flake-config = false
       - name: List the checks whose derivation differs from the base commit's
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
