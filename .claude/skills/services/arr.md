@@ -75,8 +75,9 @@ succeeds, so one unreachable site never fails a deploy.
 The apps ran in a MicroVM of their own for a while, with their databases in its PostgreSQL and
 nightly dumps in `/srv/backups/downloads`. `arr-return` stops the guest if it still runs and brings those databases back before the
 arr apps start, whenever a dump there is newer than `/srv/backups/downloads-handover/returned`
-(always, the first time): it refuses while a database has no dump newer than two days, loads each
-dump into a temporary database, swaps it for bastion's and touches the marker. A rollback to a
+(always, the first time): it refuses while a database has no dump newer than two days, refuses a dump with
+psql meta-commands pg_dump does not write (the guest is untrusted), loads each dump into a
+temporary database inside a sandbox with no network, swaps it for bastion's and touches the marker. A rollback to a
 generation with the guest re-seeds it from bastion and its dumps then come back on the next move,
 so the side that ran last wins. Changes made in
 the guest after its last nightly dump are lost. A failed `arr-return` fails the switch, and the

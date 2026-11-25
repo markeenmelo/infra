@@ -719,6 +719,7 @@ let
             path = [
               config.services.postgresql.package
               pkgs.findutils
+              pkgs.gawk
               pkgs.gzip
               pkgs.util-linux
             ];
@@ -762,6 +763,10 @@ let
                 [ -f "$dump" ] && [ ! -L "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
                 if [ ! -f "$dump" ] || [ -L "$dump" ]; then
                   echo "$dump is not a regular file; not loading it" >&2
+                  exit 1
+                fi
+                if ! gunzip -c "$dump" | awk '/^COPY .* FROM stdin;$/ { copy = 1; next } copy && $0 == "\\." { copy = 0; next } !copy && /^\\/ && !/^\\(connect|restrict|unrestrict) / { bad = 1; exit } END { exit bad }'; then
+                  echo "$dump holds psql meta-commands pg_dump does not write; not loading it" >&2
                   exit 1
                 fi
                 echo "Replacing $db with $dump"
