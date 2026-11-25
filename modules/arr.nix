@@ -793,6 +793,7 @@ let
                 echo "Replacing $db"
                 runuser -u postgres -- dropdb --if-exists --force "$db-old"
                 runuser -u postgres -- psql -v ON_ERROR_STOP=1 --single-transaction \
+                  -c "select pg_terminate_backend(pid) from pg_stat_activity where datname = '$db' and pid <> pg_backend_pid()" \
                   -c "alter database \"$db\" rename to \"$db-old\"" \
                   -c "alter database \"$db-return\" rename to \"$db\""
                 runuser -u postgres -- dropdb --force "$db-old"
