@@ -1,7 +1,10 @@
 { config, lib, ... }:
 let
   grafana = {
-    args = [ "--disable-write" ];
+    args = [
+      "--disable-write"
+      "--enabled-tools=search,datasource,prometheus,loki,alerting,dashboard,folder,annotations,navigation,api"
+    ];
     url = "https://grafana.${config.fleet.domain}";
   };
   attribution = {
@@ -81,11 +84,6 @@ let
           "skill-creator"
           "claude-md-management"
         ];
-  githubMcpArgs = [
-    "stdio"
-    "--read-only"
-    "--toolsets=repos,pull_requests,actions"
-  ];
   rtkHook = pkgs: {
     matcher = "Bash";
     hooks = [
@@ -114,17 +112,6 @@ in
                   type = "stdio";
                   command = lib.getExe pkgs.mcp-nixos;
                 };
-                # shortcut: the GitHub MCP server reads the one-hour App token once, so a session loses GitHub MCP within an hour while gh and git keep working; upgrade when github-mcp-server rereads a token
-                github = {
-                  type = "stdio";
-                  command = lib.getExe pkgs.bash;
-                  args = [
-                    "-c"
-                    ''GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token) || exit 1; export GITHUB_PERSONAL_ACCESS_TOKEN; exec ${lib.getExe pkgs.github-mcp-server} "$@"''
-                    "github-mcp-server"
-                  ]
-                  ++ githubMcpArgs;
-                };
                 grafana = {
                   type = "stdio";
                   command = lib.getExe pkgs.mcp-grafana;
@@ -151,6 +138,7 @@ in
             inherit attribution;
             env = {
               RTK_SUPPRESS_HOOK_WARNING = "1";
+              ANTHROPIC_MODEL = "claude-opus-5-5";
               CAVEMAN_DEFAULT_MODE = "ultracave";
               PONYTAIL_DEFAULT_MODE = "ultra";
               CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" ([ "${plugin}" ] ++ agentPlugins pkgs);
