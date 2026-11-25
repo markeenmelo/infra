@@ -97,8 +97,12 @@ like the tokens below; it may not hold a single quote, and the token script fail
 start, without it. The phone app connects to `agents` on that port; the desktop app (`paseo-desktop` in
 [desktop.nix](../../../modules/desktop.nix)) as a Remote SSH host `ssh://marcos@agents`; a browser through `ssh -N -L 6767:127.0.0.1:6767
 marcos@agents` and `http://localhost:6767`. The daemon accepts only `agents`, `localhost` and
-IP addresses as host names and refuses a browser origin other than `localhost`, so a web page
-cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`, lives on `home.img`.
+IP addresses as host names and accepts a browser origin only when it is the host it serves, so a
+web page elsewhere cannot drive it: Paseo's own default also admits `https://app.paseo.sh`, which
+the declared `services.paseo.settings` leaves out. The unit writes those settings over
+`~/.paseo/config.json` at every start, so a setting changed in an app lasts until the next
+restart. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`,
+lives on `home.img`.
 
 ## Credentials
 
