@@ -51,7 +51,7 @@ in its `telemetry` fact: no metrics and no `Host silent` alert, since a laptop t
 or off the tailnet is normal. Every sender retries its log pushes forever, so while bastion is out
 of reach Alloy's queue fills and then stops reading the journal, which holds the backlog until the
 tailnet returns; Loki refuses pushed lines over a week old (its default ingestion window, apart
-from how long it keeps what it stored). A sender's Alloy state is under `/persist`, so it resumes
+from how long it keeps what it stored). Every Alloy, bastion's included, keeps its state under `/persist`, so it resumes
 from its journal position after a reboot instead of shipping the last 12 h again, but still skips
 lines older than 12 h, so a laptop rebooted after more than 12 h away loses the lines it never
 sent. Each metrics sender also gets a `Logs silent HOST` alert once Loki has taken nothing from it
