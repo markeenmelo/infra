@@ -5,7 +5,7 @@ let
   countries = {
     ca = {
       subnet = 1;
-      region = "ca";
+      region = "ca_toronto";
     };
     us = {
       subnet = 2;
@@ -100,7 +100,7 @@ in
             script = ''
               ts() { ${tailscale} --socket=${socket country} "$@"; }
               prefs=(
-                --hostname=${country}
+                --hostname=vpn-${country}
                 --advertise-exit-node=true
                 --accept-dns=false
                 --accept-routes=false
