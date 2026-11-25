@@ -34,6 +34,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Let bubblewrap map users for the MicroVM store images instead of copying their closures
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
       - name: Scan the runtime closure of each host this runner can build
         env:
