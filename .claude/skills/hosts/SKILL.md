@@ -15,9 +15,9 @@ The host table and where each builds are in [README.md](../../../README.md#hosts
 | [thinkpad.md](thinkpad.md) | Operator laptop: disk, unlock, boot | `modules/hosts/thinkpad/` |
 
 [fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion and thinkpad, not edge, whose firmware is
-Oracle's. Both boot with their own Secure Boot keys, so each boot signs fwupd's EFI app with the
-sbctl keys and capsule updates boot it without shim, which neither host has. A capsule update reflashes the firmware, after which the TPM
-may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
+Oracle's. Both boot Limine with their own Secure Boot keys, so nixpkgs' Limine module signs fwupd's EFI
+app with the sbctl keys (`fwupd-efi.service`) and has capsule updates boot it without shim, which
+neither host has. A capsule update reflashes the firmware, after which the TPM may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
 
 `wake.nix` powers on bastion by Wake-on-LAN, from home only, and edge through the Oracle API; the
 command is in [operating: deploy](../operating/deploy.md).
