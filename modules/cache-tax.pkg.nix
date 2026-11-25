@@ -1,6 +1,6 @@
 { fetchFromGitHub }:
 let
-  version = "2.3.1-unstable-2026-11-17";
+  version = "2.3.1-unstable-2026-11-25";
 in
 {
   name = "cache-tax-${version}";
@@ -8,7 +8,7 @@ in
   src = fetchFromGitHub {
     owner = "karanb192";
     repo = "cache-tax";
-    rev = "535ff33225e666e605e731d78f5ac5efe243c7c3";
-    hash = "sha256-+47mWXxkL9n5Z+cgl6FayfybAIt7OL0wvfB352XlQJY=";
+    rev = "2ad70fb46aa1aa76eff7b627746040d82919b809";
+    hash = "sha256-BSXH91xHxFRa2iYsLbuH7S/bLznyjyunmNUbAiNTLNI=";
   };
 }
