@@ -481,6 +481,8 @@ let
             serviceConfig = {
               Restart = "on-failure";
               RestartSec = "30s";
+              RestartSteps = 6;
+              RestartMaxDelaySec = "30min";
               RuntimeDirectory = "qbittorrent-port-forward";
               RuntimeDirectoryMode = "0700";
               UMask = "0077";
@@ -781,11 +783,13 @@ let
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];
           "microvm-virtiofsd@downloads" = {
             unitConfig.RequiresMountsFor = [ hostDumps ];
-            serviceConfig.ExecStartPre =
-              map (name: "${install} -D -m 0400 ${secret name} ${hostSecrets}/${name}") guestHeld
-              ++ map (
-                name: "${install} -D -m 0400 ${config.sops.secrets.${name}.path} ${hostSecrets}/${name}"
-              ) piaSecrets;
+            serviceConfig.ExecStartPre = [
+              "${lib.getExe' pkgs.coreutils "rm"} -rf ${hostSecrets}"
+            ]
+            ++ map (name: "${install} -D -m 0400 ${secret name} ${hostSecrets}/${name}") guestHeld
+            ++ map (
+              name: "${install} -D -m 0400 ${config.sops.secrets.${name}.path} ${hostSecrets}/${name}"
+            ) piaSecrets;
           };
           arr-dumps-fresh = {
             description = "Fail when the downloads guest's database dumps are older than two days";

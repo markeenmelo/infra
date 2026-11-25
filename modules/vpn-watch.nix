@@ -41,8 +41,9 @@
               text = ''
                 umask 077
                 cd "$RUNTIME_DIRECTORY"
-                get() { curl -fsS --retry 3 --retry-all-errors --max-time 30 "$@"; }
-                server=$(get https://serverlist.piaservers.net/vpninfo/servers/v6 | head -n1 |
+                get() { curl -fsS --retry 3 --max-time 30 "$@"; }
+                list=$(get https://serverlist.piaservers.net/vpninfo/servers/v6)
+                server=$(head -n1 <<< "$list" |
                   jq -ce --arg region ${region} --argjson pick "$RANDOM" '.regions[] | select(.id == $region) | .servers.wg | .[$pick % length]')
                 cn=$(jq -r .cn <<< "$server")
                 get --form "username=<$CREDENTIALS_DIRECTORY/username" --form "password=<$CREDENTIALS_DIRECTORY/password" \
@@ -110,6 +111,8 @@
                     }
                     (lib.mkIf (piaRegion != null) {
                       ExecStartPre = lib.getExe (pia namespace piaRegion);
+                      RestartSteps = 6;
+                      RestartMaxDelaySec = "30min";
                       RuntimeDirectory = "pia-${namespace}";
                       RuntimeDirectoryMode = "0700";
                       LoadCredential = lib.mapAttrsToList (field: file: "${field}:${file}") config.fleet.piaCredentials;
