@@ -29,7 +29,7 @@ same name and the old one is removed in the admin console. Never `tailscale logo
 
 ## Proton exit nodes
 
-[proton-exit.nix](../../../modules/proton-exit.nix) runs one more `tailscaled` per country on
+[vpn-exit.nix](../../../modules/vpn-exit.nix) runs one more `tailscaled` per country on
 bastion, each inside its own Proton WireGuard namespace, advertised as the exit node
 `proton-COUNTRY`; the tailnet policy approves them by tag and admits the admin clients and
 members to the internet through them. Each joins once with its own key, `proton-exit/COUNTRY-auth-key`,

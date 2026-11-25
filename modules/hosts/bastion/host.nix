@@ -28,7 +28,7 @@
       backups
       builder
       opentofu-state
-      proton-exit
+      vpn-exit
       monitoring
       agents
       hermes
