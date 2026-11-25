@@ -76,10 +76,11 @@ The apps ran in a MicroVM of their own for a while, with their databases in its 
 nightly dumps in `/srv/backups/downloads`. `arr-return` runs before every arr unit and stops the
 guest if it still runs. It returns when the guest took over once (`downloads-handover/done`) and
 `downloads-handover/returned` is missing, or when a dump is newer than `returned`; otherwise it
-does nothing. Before touching any database it checks every dump: a regular file, newer than two
-days, and with no backslash outside COPY data except pg_dump's own `\restrict` lines, since the
-guest is untrusted. It then loads each dump into a temporary database inside a sandbox with no
-network, swaps it for bastion's and touches `returned`.
+does nothing. Each dump must be a regular file newer than two days. Since the guest is untrusted, psql
+loads each one under a random `\restrict` key the guest cannot know, in place of the dump's own,
+so any meta-command in it (`\!`, `\copy`) stops the load; it runs as the app's user inside a
+sandbox with no network. Every dump goes into a temporary database first, and only when all three
+loaded are they swapped for bastion's and `returned` touched.
 
 A rollback to a generation with the guest re-seeds it from bastion, and its dumps come back on the
 next move, so the side that ran last wins. Changes made in the guest after its last nightly dump

@@ -753,7 +753,7 @@ let
               elif [ ! -e ${dirOf returned}/done ]; then
                 exit 0
               fi
-              declare -A dumps
+              key=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
               for db in ${lib.concatStringsSep " " apps}; do
                 dump=${guestDumps}/$db.sql.gz
                 [ -f "$dump" ] && [ ! -L "$dump" ] || dump=${guestDumps}/$db.prev.sql.gz
@@ -765,17 +765,17 @@ let
                   echo "$dump is older than two days; not replacing any database" >&2
                   exit 1
                 fi
-                if ! gunzip -c "$dump" | awk '/^COPY .* FROM stdin;$/ { copy = 1; next } copy { if ($0 == "\\.") copy = 0; next } /^\\(restrict|unrestrict) [A-Za-z0-9]+$/ { next } index($0, "\\") { bad = 1; exit } END { exit bad }'; then
-                  echo "$dump holds a backslash outside COPY data that pg_dump does not write; not replacing any database" >&2
-                  exit 1
-                fi
-                dumps[$db]=$dump
-              done
-              for db in ${lib.concatStringsSep " " apps}; do
-                echo "Replacing $db with ''${dumps[$db]}"
+                echo "Loading $dump into $db-return"
                 runuser -u postgres -- dropdb --if-exists --force "$db-return"
                 runuser -u postgres -- createdb -O "$db" "$db-return"
-                gunzip -c "''${dumps[$db]}" | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db-return" > /dev/null
+                {
+                  printf '\\restrict %s\n' "$key"
+                  gunzip -c "$dump" | awk 'NR <= 10 && !k && /^\\restrict [A-Za-z0-9]+$/ { k = $2; next } k && $0 == "\\unrestrict " k { next } { print }'
+                  printf '\\unrestrict %s\n' "$key"
+                } | runuser -u "$db" -- psql -v ON_ERROR_STOP=1 --single-transaction -d "$db-return" > /dev/null
+              done
+              for db in ${lib.concatStringsSep " " apps}; do
+                echo "Replacing $db"
                 runuser -u postgres -- dropdb --if-exists --force "$db"
                 runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "alter database \"$db-return\" rename to \"$db\""
               done
