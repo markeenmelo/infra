@@ -534,6 +534,10 @@ let
       ];
       guestDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
       returned = "${guestDumps}-handover/returned";
+      guestUnits = [
+        "microvm@downloads.service"
+        "microvm-virtiofsd@downloads.service"
+      ];
       awaitProfile =
         name:
         pkgs.writeShellApplication {
@@ -705,7 +709,8 @@ let
             requiredBy = map (name: "${name}.service") apps;
             before = map (name: "${name}.service") apps;
             requires = [ "postgresql-ready.target" ];
-            after = [ "postgresql-ready.target" ];
+            after = [ "postgresql-ready.target" ] ++ guestUnits;
+            conflicts = guestUnits;
             unitConfig.RequiresMountsFor = [ guestDumps ];
             path = [
               config.services.postgresql.package
@@ -722,7 +727,7 @@ let
               ProtectSystem = "strict";
               ReadWritePaths = [
                 "/run/postgresql"
-                "-${dirOf returned}"
+                (dirOf returned)
               ];
               ProtectHome = true;
               PrivateTmp = true;
@@ -732,12 +737,13 @@ let
                 "CAP_SETUID"
                 "CAP_SETGID"
                 "CAP_DAC_OVERRIDE"
-                "CAP_CHOWN"
               ];
               SystemCallFilter = [ "@system-service" ];
+              ExecStartPre = "+${lib.getExe' pkgs.coreutils "install"} -d -o postgres -m 0700 ${dirOf returned}";
             };
             script = ''
               set -o pipefail
+              [ -n "$(find ${guestDumps} -maxdepth 1 -type f -name '*.sql.gz' 2> /dev/null)" ] || exit 0
               if [ -e ${returned} ] && [ -z "$(find ${guestDumps} -maxdepth 1 -name '*.sql.gz' -newer ${returned})" ]; then
                 exit 0
               fi
@@ -761,7 +767,6 @@ let
                 runuser -u postgres -- dropdb --if-exists --force "$db"
                 runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "alter database \"$db-return\" rename to \"$db\""
               done
-              install -d -o postgres -m 0700 ${dirOf returned}
               touch ${returned}
             '';
           };

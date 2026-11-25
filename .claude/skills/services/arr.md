@@ -72,7 +72,7 @@ succeeds, so one unreachable site never fails a deploy.
 ## Return from the downloads guest
 
 The apps ran in a MicroVM of their own for a while, with their databases in its PostgreSQL and
-nightly dumps in `/srv/backups/downloads`. `arr-return` brings those databases back before the
+nightly dumps in `/srv/backups/downloads`. `arr-return` stops the guest if it still runs and brings those databases back before the
 arr apps start, whenever a dump there is newer than `/srv/backups/downloads-handover/returned`
 (always, the first time): it refuses while a database has no dump newer than two days, loads each
 dump into a temporary database, swaps it for bastion's and touches the marker. A rollback to a
