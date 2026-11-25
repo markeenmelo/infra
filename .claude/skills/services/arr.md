@@ -17,7 +17,9 @@ All of them run in nixflix's WireGuard namespace on Private Internet Access, reg
 only through the tunnel. PIA has no static WireGuard config: each start of the namespace signs in
 with `pia/{username,password}`, registers a new key with one of the region's servers and writes the
 config under `/run` ([vpn-watch.nix](../../../modules/vpn-watch.nix)), so a restart is a new
-server and a new key. The account must not need a one-time code at that sign-in. nixflix confines them together: an app inside cannot reach one outside.
+server and a new key. The account must not need a one-time code at that sign-in. Root in the guest
+therefore holds the whole PIA account, not one tunnel key, an accepted risk like the usenet and
+indexer credentials it already holds. nixflix confines them together: an app inside cannot reach one outside.
 [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts the tunnel when it fails or its handshake
 goes stale, and starts the confined apps again each time it comes up. Their web UIs are
 `sonarr.`, `radarr.`, `prowlarr.`, `qbittorrent.` and `sabnzbd.DOMAIN` through the LAN proxy, on
