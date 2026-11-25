@@ -118,7 +118,7 @@ in
           "tailscaled-${country}" = {
             description = "Tailscale exit node through PIA (${country})";
             wantedBy = [ "multi-user.target" ];
-            requires = [ "pv${country}-bypass.service" ];
+            wants = [ "pv${country}-bypass.service" ];
             after = [ "pv${country}-bypass.service" ];
             vpnConfinement = {
               enable = true;
