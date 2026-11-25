@@ -29,7 +29,10 @@ that matters is pushed. Three images live there: `store.img` (the overlay, delet
 start because the guest's Nix database starts empty), `state.img` (`/var/lib`: the tailnet node,
 the SSH host key) and `home.img` (`/home`). `/home/agent` is a symlink to `/home/marcos`, left by the
 `home-move` unit when the user was renamed, so old absolute paths in tool state still resolve; the
-unit runs on every boot and redoes only what an interrupted move left undone. The root is memory and is lost on restart, and builds write their temporary files there.
+unit runs on every boot and redoes only what an interrupted move left undone. The root is memory and is lost on restart, and builds write their temporary files there. Evaluating
+the whole flake (`just check`) fits in the guest's memory; building the big checks does not, since
+a large build such as the hermes runner fills that root, so build them one at a time or leave them to
+CI.
 
 ## Network
 
