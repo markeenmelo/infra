@@ -6,7 +6,7 @@ description: "The Linux desktop role and the workstations' look: the role's modu
 # Desktop
 
 The workstation runs Umbriel for windows and Noctalia for the bar. The design follows **Omarchy**:
-square, opaque and gapped, Everforest throughout, on this stack instead of Hyprland.
+square, solid and gapped, Everforest throughout, on this stack instead of Hyprland.
 
 ## Theming
 
@@ -30,15 +30,17 @@ immutable; its extensions, language servers and keymaps are declared in zed.nix.
 
 ## Rules
 
-- **Surfaces:** every surface is opaque and solid, focused or not, with no blur and no drop shadow:
-  app windows, the bar, the launcher, notifications and popups alike; the border color alone marks
-  focus. The lock screen's blurred wallpaper is the only blur.
+- **Surfaces:** solid, with no blur and no drop shadow: app windows, the bar, the launcher,
+  notifications and popups alike; the border color alone marks focus. Only terminals and the file
+  manager let the wallpaper through, barely, as Omarchy does (0.985 focused, 0.96 not). The lock
+  screen's blurred wallpaper is the only blur.
 - **Quick terminal:** none: Umbriel has no global-shortcuts portal for Ghostty's own, and
   its scratchpad is unused, the stock binds parked in [umbriel.nix](../../../modules/umbriel.nix).
 - **Launcher:** `Mod + Space` or the bar's launcher button, on the Linux laptops only; Umbriel's stock tap on `Mod` is parked
   in [umbriel.nix](../../../modules/umbriel.nix) with the scratchpad binds.
-- **Motion:** quick ease-out with no bounce: windows pop in from 87% over 300 ms and pop out over
-  120 ms, other transitions take 300 ms, and switching workspaces is instant
+- **Motion:** Omarchy's curves and timings, quick ease-out with no bounce: windows pop in from
+  87% over about 330 ms and pop out linearly over about 120 ms, other transitions take about
+  300 ms, and switching workspaces is instant
   ([umbriel.nix](../../../modules/umbriel.nix)).
 - **Spacing:** 10 px between windows and to the screen edge (the bar's edge counts as the
   screen's). Terminal padding 10 px across, 8 px down.
