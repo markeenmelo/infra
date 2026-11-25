@@ -66,8 +66,6 @@ let
     "WEBRip-1080p"
     "Bluray-1080p"
   ];
-  # ProtonVPN's NAT-PMP gateway inside the tunnel
-  protonGateway = "10.2.0.1";
 
   guest =
     {
@@ -191,12 +189,16 @@ let
     in
     {
       imports = [ nixflix ];
+      vpnNamespaces.${config.nixflix.vpn.namespace}.piaRegion = "ca";
+      fleet.piaCredentials = lib.genAttrs [ "username" "password" ] (
+        field: "${guestSecrets}/pia-${field}"
+      );
       nixflix = lib.mkMerge [
         {
           postgres.enable = true;
           vpn = {
             enable = true;
-            wgConfFile = "${guestSecrets}/proton-wireguard";
+            wgConfFile = "/run/pia-${vpn}/wg.conf";
             allowedIngress = [ net.hostAddress ];
           };
           torrentClients.qbittorrent = {
@@ -461,7 +463,7 @@ let
             ];
           };
           qbittorrent-port-forward = {
-            description = "Keep ProtonVPN's forwarded port open for qBittorrent";
+            description = "Keep PIA's forwarded port open for qBittorrent";
             after = [
               "${vpn}.service"
               "qbittorrent.service"
@@ -473,54 +475,51 @@ let
               pkgs.curl
               pkgs.iproute2
               pkgs.iptables
-              pkgs.libnatpmp
-              pkgs.gawk
+              pkgs.jq
             ];
             enableStrictShellChecks = true;
             serviceConfig = {
               Restart = "on-failure";
-              RestartSec = "5s";
+              RestartSec = "30s";
               RuntimeDirectory = "qbittorrent-port-forward";
               RuntimeDirectoryMode = "0700";
               UMask = "0077";
-              LoadCredential = [ "password:${guestSecrets}/qbittorrent-password" ];
+              LoadCredential = [
+                "password:${guestSecrets}/qbittorrent-password"
+                "pia-username:${guestSecrets}/pia-username"
+                "pia-password:${guestSecrets}/pia-password"
+              ];
             };
             script = ''
               api=http://${namespaceAddress}:${toString webuiPort}/api/v2
-              cookies=$RUNTIME_DIRECTORY/cookies
-              current=""
+              server=${dirOf config.vpnNamespaces.${vpn}.wireguardConfigFile}/server.json
+              cd "$RUNTIME_DIRECTORY"
+              cn=$(jq -r .cn "$server")
+              tunnel() { ip netns exec ${vpn} curl -fsS --max-time 30 "$@"; }
+              pf() { tunnel -G --connect-to "$cn::$(jq -r .gateway "$server"):" --cacert ${./pia.crt} "$@"; }
               fw() { ip netns exec ${vpn} iptables "$@"; }
+              tunnel --form "username=<$CREDENTIALS_DIRECTORY/pia-username" --form "password=<$CREDENTIALS_DIRECTORY/pia-password" \
+                https://www.privateinternetaccess.com/api/client/v2/token | jq -je .token > token
+              pf --data-urlencode token@token "https://$cn:19999/getSignature" > signature.json
+              jq -e '.status == "OK"' signature.json > /dev/null
+              jq -j .payload signature.json > payload
+              jq -j .signature signature.json > signature
+              port=$(base64 -d payload | jq -er .port)
+              bind() { pf --data-urlencode payload@payload --data-urlencode signature@signature "https://$cn:19999/bindPort" | jq -e '.status == "OK"' > /dev/null; }
+              bind
               fw -N qbittorrent-port 2>/dev/null || true
               fw -C INPUT -j qbittorrent-port 2>/dev/null || fw -I INPUT -j qbittorrent-port
-              open_port() {
-                fw -F qbittorrent-port || return
-                for proto in tcp udp; do
-                  fw -A qbittorrent-port -i ${vpn}0 -p "$proto" --dport "$1" -j ACCEPT || return
-                done
-              }
-              set_port() {
-                curl -fsS -c "$cookies" --data-urlencode username=marcos \
-                  --data-urlencode "password@$CREDENTIALS_DIRECTORY/password" "$api/auth/login" > /dev/null &&
-                  curl -fsS -b "$cookies" --data "json={\"listen_port\":$1,\"random_port\":false}" "$api/app/setPreferences" &&
-                  curl -fsS -b "$cookies" --data hashes=all "$api/torrents/reannounce"
-              }
-              while true; do
-                port=$(ip netns exec ${vpn} natpmpc -a 1 0 udp 60 -g ${protonGateway} | awk '/Mapped public port/ { print $4 }' || true)
-                ip netns exec ${vpn} natpmpc -a 1 0 tcp 60 -g ${protonGateway} > /dev/null || true
-                if [ -z "$port" ]; then
-                  echo "No port from ${protonGateway}; is the tunnel up?"
-                  sleep 5
-                  continue
-                fi
-                if [ "$port" != "$current" ]; then
-                  echo "Forwarded port $current -> $port"
-                  if ! { open_port "$port" && set_port "$port"; }; then
-                    sleep 5
-                    continue
-                  fi
-                  current=$port
-                fi
-                sleep 45
+              fw -F qbittorrent-port
+              for proto in tcp udp; do
+                fw -A qbittorrent-port -i ${vpn}0 -p "$proto" --dport "$port" -j ACCEPT
+              done
+              curl -fsS -c cookies --data-urlencode username=marcos \
+                --data-urlencode "password@$CREDENTIALS_DIRECTORY/password" "$api/auth/login" > /dev/null
+              curl -fsS -b cookies --data "json={\"listen_port\":$port,\"random_port\":false}" "$api/app/setPreferences"
+              curl -fsS -b cookies --data hashes=all "$api/torrents/reannounce"
+              echo "Forwarded port $port"
+              while sleep 900; do
+                bind
               done
             '';
           };
@@ -569,7 +568,10 @@ let
         "althub-api-key"
         "qbittorrent-password"
         "qbittorrent-password-hash"
-        "proton-wireguard"
+      ];
+      piaSecrets = [
+        "pia-username"
+        "pia-password"
       ];
       hostDumps = "${dirOf config.services.postgresqlBackup.location}/downloads";
       handover = "${hostDumps}-handover";
@@ -649,6 +651,13 @@ let
               ++ map (app: "seerr-${app}.timer") (lib.filter (app: name == "${app}-api-key") seerrApps);
           }
         ) (lib.unique (lib.attrNames hostUnits ++ guestHeld))
+        ++ map (
+          name:
+          lib.nameValuePair name {
+            key = "pia/${lib.removePrefix "pia-" name}";
+            restartUnits = [ "microvm-virtiofsd@downloads.service" ];
+          }
+        ) piaSecrets
       );
 
       nixflix = {
@@ -772,9 +781,11 @@ let
           seerr.unitConfig.RequiresMountsFor = [ config.nixflix.stateDir ];
           "microvm-virtiofsd@downloads" = {
             unitConfig.RequiresMountsFor = [ hostDumps ];
-            serviceConfig.ExecStartPre = map (
-              name: "${install} -D -m 0400 ${secret name} ${hostSecrets}/${name}"
-            ) guestHeld;
+            serviceConfig.ExecStartPre =
+              map (name: "${install} -D -m 0400 ${secret name} ${hostSecrets}/${name}") guestHeld
+              ++ map (
+                name: "${install} -D -m 0400 ${config.sops.secrets.${name}.path} ${hostSecrets}/${name}"
+              ) piaSecrets;
           };
           arr-dumps-fresh = {
             description = "Fail when the downloads guest's database dumps are older than two days";

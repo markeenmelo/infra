@@ -12,9 +12,12 @@ namespace address, so an address carried in an old `config.xml` would keep it un
 Nix at each start, so its categories unit reruns with it; its queue and logs live in the state
 dataset.
 
-All of them run in nixflix's WireGuard namespace on Proton's config (`arr/proton-wireguard`,
-generated with NAT-PMP on), so indexer searches, metadata and downloads leave only through the
-tunnel. nixflix confines them together: an app inside cannot reach one outside.
+All of them run in nixflix's WireGuard namespace on Private Internet Access, region `ca`
+(Montreal; PIA forwards no port in the US), so indexer searches, metadata and downloads leave
+only through the tunnel. PIA has no static WireGuard config: each start of the namespace signs in
+with `pia/{username,password}`, registers a new key with one of the region's servers and writes the
+config under `/run` ([vpn-watch.nix](../../../modules/vpn-watch.nix)), so a restart is a new
+server and a new key. The account must not need a one-time code at that sign-in. nixflix confines them together: an app inside cannot reach one outside.
 [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts the tunnel when it fails or its handshake
 goes stale, and starts the confined apps again each time it comes up. Their web UIs are
 `sonarr.`, `radarr.`, `prowlarr.`, `qbittorrent.` and `sabnzbd.DOMAIN` through the LAN proxy, on
@@ -48,8 +51,9 @@ its login: Sonarr, Radarr, Decluttarr and the port-forward unit use `arr/qbittor
 PBKDF2 hash qBittorrent checks is written into its config at each start from
 `arr/qbittorrent-password-hash`, never into the store.
 
-ProtonVPN forwards one random port, leased for 60 seconds over NAT-PMP from the gateway inside
-the tunnel. `qbittorrent-port-forward` renews it every 45 seconds, opens it in its own chain of
+PIA forwards one random port per server, valid for about two months and dropped unless bound
+again every 15 minutes through the tunnel's gateway. `qbittorrent-port-forward` signs in through
+the tunnel, asks for the port, binds it every 15 minutes, opens it in its own chain of
 the namespace's firewall, which otherwise drops unsolicited inbound traffic, and sets it as
 qBittorrent's listen port. Each qBittorrent start rewrites its config from the store and drops
 that port, so the unit is bound to qBittorrent and starts again with it. The `qbittorrent` uid is the one bastion had allocated, which owns its state.
@@ -75,8 +79,8 @@ drops what it sends to bastion, to private addresses, to the tailnet and over IP
 connections forwarded towards it from any other network; replies to
 connections bastion opens pass; the home gateway's public address stays reachable, the limit the
 [guests: agents](../guests/agents.md) names. The apps talk to indexers and peers, so one of them compromised
-meets a second kernel before bastion. The guest's own uplink is bastion's, not the Proton tunnel:
-it carries the tunnel's packets, and the namespace inside keeps the apps off it. The guest has no
+meets a second kernel before bastion. The guest's own uplink is bastion's, not the PIA tunnel:
+it carries the sign-in, the key registration and the tunnel's packets, and the namespace inside keeps the apps off it. The guest has no
 login, no tailnet node and no sops identity. Its journal goes to its console, which is
 `microvm@downloads`'s log on bastion, so Loki holds it; nothing on bastion sees a failed unit
 inside the guest except through that log and the exporters. Unlike the agents' guest it restarts
