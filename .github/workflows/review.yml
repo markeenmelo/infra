@@ -8,12 +8,12 @@ permissions: {}
 
 jobs:
   claude:
-    name: claude-code (fable)
+    name: claude-code
     if: >-
       (github.event.sender.type != 'Bot' || github.event.sender.login == 'markeenmelo-agents[bot]') && !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository
     concurrency:
-      group: review-fable-${{ github.event.pull_request.number }}
+      group: review-claude-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -53,10 +53,10 @@ jobs:
             Return the top-level summary as the `summary` field of your structured output and
             post line-specific findings with
             `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`),
-            starting every inline comment body with the line `**fable**`.
+            starting every inline comment body with the line `**claude**`.
             Post nothing else. Return the summary even if you run short of turns.
           claude_args: >-
-            --model claude-fable-5-2
+            --model claude-opus-5-5
             --effort medium
             --max-turns 100
             --permission-mode default
@@ -72,7 +72,7 @@ jobs:
               exit 1
             }
           done
-          body="$MARKER"$'\n'"**fable**"$'\n\n'"$body"
+          body="$MARKER"$'\n'"**claude**"$'\n\n'"$body"
           id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
             --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id' | tail -n 1)
           if [ -n "$id" ]; then
@@ -84,5 +84,5 @@ jobs:
           REVIEW_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          MARKER: <!-- fable-review -->
+          MARKER: <!-- claude-review -->
           SUMMARY: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').summary }}
