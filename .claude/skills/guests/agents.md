@@ -74,10 +74,13 @@ login, so a change to the guest is a change to agents.nix. Agent sessions run un
 `nixos.claude-agent` in [claude.nix](../../../modules/claude.nix) gives the guest's Claude Code
 the caveman, ponytail and cache-tax plugins, Trail of Bits' `insecure-defaults` and
 `sharp-edges`, the official `skill-creator` and `claude-md-management`, the language servers,
-the rtk hook, and the nixos, GitHub and Grafana MCP servers: the GitHub one read-only on the
-token `gh` uses, the Grafana one with `--disable-write` on `agents/grafana-token`, a Viewer
-service account's token. They arrive as managed settings and one generated plugin, so nothing depends on the
-agent's home. caveman and ponytail start at their levels through their environment variables,
+the rtk hook, and the nixos and Grafana MCP servers, the Grafana one with `--disable-write` and
+only the tool groups for what the fleet runs, on `agents/grafana-token`, a Viewer service
+account's token. GitHub goes through `gh`, which reads the fresh App token on every call; an MCP
+server would read it once and lose GitHub within the hour.
+All of it arrives as managed settings and one generated plugin, so nothing depends on the
+agent's home. Opus 5.5 is the default model through `ANTHROPIC_MODEL`, which a `--model` Paseo
+passes still overrides. caveman and ponytail start at their levels through their environment variables,
 which also turns caveman on in headless runs. The guest has no Bash sandbox: the guest itself
 is the boundary. The account's connectors stay out.
 
@@ -85,7 +88,13 @@ is the boundary. The account's connectors stay out.
 
 Cursor's CLI (`cursor-agent`) and pi sit beside Claude Code; no other coding agent is installed.
 pi is configured through its Home Manager module for `marcos`, in `agent-tools` in
-[claude.nix](../../../modules/claude.nix), with install telemetry off. The
+[claude.nix](../../../modules/claude.nix), with install telemetry off and Kimi For Coding's `k3.1-pro` as its starting
+model. It gets the same nixos and Grafana MCP servers as Claude Code through
+`~/.pi/agent/mcp.json`; what a pi session reads from Grafana, logs with host names, addresses,
+user names and request paths included, goes to the provider of the model it runs on.
+pi does not read `.claude/skills`, so the repository links `.agents/skills` to it; pi asks once
+whether to trust the repository before loading them, and `/trust` keeps the answer in
+`~/.pi/agent/trust.json` on `home.img`. The
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
 through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
 as `marcos` with the same tokens a shell gets, written for it at each start to a file only
@@ -97,8 +106,15 @@ like the tokens below; it may not hold a single quote, and the token script fail
 start, without it. The phone app connects to `agents` on that port; the desktop app (`paseo-desktop` in
 [desktop.nix](../../../modules/desktop.nix)) as a Remote SSH host `ssh://marcos@agents`; a browser through `ssh -N -L 6767:127.0.0.1:6767
 marcos@agents` and `http://localhost:6767`. The daemon accepts only `agents`, `localhost` and
-IP addresses as host names and refuses a browser origin other than `localhost`, so a web page
-cannot drive it. Traffic to it is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`, lives on `home.img`.
+IP addresses as host names and accepts a browser origin only when it is the host it serves, so a
+web page elsewhere cannot drive it: Paseo's own default also admits `https://app.paseo.sh`, which
+the declared `services.paseo.settings` leaves out. The unit writes those settings over
+`~/.paseo/config.json` at every start, so a setting changed in an app lasts until the next
+restart. The settings inject Paseo's own MCP server into every agent it starts, so any session in
+the guest can start, prompt and stop other agents and create schedules, and give terminal agents the hooks that report their status. The settings keep Paseo's
+browser tools off: their tabs live in the desktop app, so an agent would browse from the
+workstation, with its network and signed-in sessions, outside the guest. Traffic to the daemon is plain HTTP inside the tailnet's WireGuard. Paseo's state, `~/.paseo`,
+lives on `home.img`.
 
 ## Credentials
 
@@ -114,13 +130,14 @@ restarts the guest, through `agents-restart`. The GitHub token is minted on bast
   MiniMax, exported as `ZAI_API_KEY`, `KIMI_API_KEY` and `MINIMAX_API_KEY`, which pi's built-in
   `zai`, `kimi-coding` and `minimax` providers read. A `/login` credential pi stored in
   `~/.pi/agent/auth.json` wins over these variables; `pi auth logout PROVIDER` drops it. Each is a subscription key that can spend
-  that plan's quota; revoke it in that provider's console.
+  that plan's quota; revoke it in that provider's console. For the
+  operator's ChatGPT subscription the operator signs pi in once over SSH (`/login`, provider
+  `openai-codex`); the session lands in that file on `home.img`, survives restarts, is usable and
+  leakable like the keys above, and is revoked from that account's settings.
 - `github-token`: a one-hour installation token of the operator's GitHub App, which
   `agents-github-token` on bastion mints from the App's private key (`agents/github-api-key`,
   never in the guest) when the share starts and every 30 minutes. The guest's `gh` wrapper reads
-  the file on each call and Git goes through `gh`. Claude Code's GitHub MCP server takes the token
-  once when it starts, so it loses
-  GitHub within the hour while `gh` and Git keep working. The App acts as `NAME[bot]`, not as the
+  the file on each call and Git goes through `gh`. The App acts as `NAME[bot]`, not as the
   operator: it holds Contents and Pull requests writes, Issues write for comments in a pull
   request's conversation, and Actions, Checks and Commit statuses reads, never Workflows or
   Administration, and is not a ruleset bypass actor, so the rulesets bind it. It still merges

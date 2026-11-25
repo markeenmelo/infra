@@ -191,6 +191,51 @@ let
         listenAddress = "0.0.0.0";
         port = paseoPort;
         hostnames = [ "agents" ];
+        settings = {
+          version = 1;
+          daemon = {
+            cors.allowedOrigins = [ ];
+            relay.enabled = false;
+            mcp.injectIntoAgents = true;
+            usage.enabled = true;
+            browserTools.enabled = false;
+            enableTerminalAgentHooks = true;
+            terminalProfiles = [
+              {
+                id = "claude";
+                name = "Claude Code";
+                command = "claude";
+                args = [ "{{{prompt}}}" ];
+                icon = "claude";
+              }
+              {
+                id = "pi";
+                name = "Pi";
+                command = "pi";
+                args = [ "{{{prompt}}}" ];
+                icon = "pi";
+              }
+            ];
+          };
+          agents = {
+            resumeOnStartup = false;
+            providers =
+              lib.genAttrs [ "muse" "antigravity" "copilot" "opencode" "codex" ] (_: {
+                enabled = false;
+              })
+              // {
+                cursor = {
+                  extends = "acp";
+                  label = "Cursor";
+                  description = "Cursor's coding agent";
+                  command = [
+                    "cursor-agent"
+                    "acp"
+                  ];
+                };
+              };
+          };
+        };
       };
       # shortcut: /home/agent stays a symlink so the absolute paths in Paseo's and the Nix profile's state still resolve; drop it with this unit once nothing under /home/marcos names /home/agent
       systemd.services.home-move = {
