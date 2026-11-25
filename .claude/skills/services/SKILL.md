@@ -1,6 +1,6 @@
 ---
 name: services
-description: "The apps on bastion: Authelia and the shared PostgreSQL, OpenCloud, Radicale calendars and contacts, Immich, Jellyfin and nixflix, the arr apps with their PIA VPN namespace, Frigate cameras, the Dorian bot, and monitoring (Prometheus, Loki, Alloy, Grafana, alerts, ntfy). Use before touching modules/{authelia,postgresql,opencloud,radicale,immich,jellyfin,nixflix,arr,downloads,vpn-watch,frigate,dorian,monitoring,ntfy}.nix or their *.pkg.nix pins, adding a person or an app, rotating an app credential, or debugging sign-in, sync, transcoding, downloads, cameras, alerts or notifications."
+description: "The apps on bastion: Authelia and the shared PostgreSQL, OpenCloud, Radicale calendars and contacts, Immich, Jellyfin and nixflix, the arr apps with their PIA VPN namespace, Frigate cameras, the Dorian bot, and monitoring (Prometheus, Loki, Alloy, Grafana, alerts, ntfy). Use before touching modules/{authelia,postgresql,opencloud,radicale,immich,jellyfin,nixflix,arr,vpn-watch,frigate,dorian,monitoring,ntfy}.nix or their *.pkg.nix pins, adding a person or an app, rotating an app credential, or debugging sign-in, sync, transcoding, downloads, cameras, alerts or notifications."
 ---
 
 # Services
