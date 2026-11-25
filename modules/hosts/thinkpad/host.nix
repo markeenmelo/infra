@@ -10,6 +10,7 @@
       desktop
       remote-builds
       logs
+      fwupd
     ];
     system.stateVersion = "26.11";
   };

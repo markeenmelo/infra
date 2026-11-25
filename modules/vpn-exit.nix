@@ -9,7 +9,7 @@ let
   };
 in
 {
-  flake.modules.nixos.proton-exit =
+  flake.modules.nixos.vpn-exit =
     {
       config,
       lib,

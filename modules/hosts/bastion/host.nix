@@ -28,12 +28,13 @@
       backups
       builder
       opentofu-state
-      proton-exit
+      vpn-exit
       monitoring
       agents
       hermes
       radicale
       dorian
+      fwupd
     ];
     system.stateVersion = "26.05";
   };
