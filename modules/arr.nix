@@ -481,6 +481,9 @@ let
             serviceConfig = {
               Restart = "on-failure";
               RestartSec = "30s";
+              RestartSteps = 6;
+              RestartMaxDelaySec = "30min";
+              NotifyAccess = "all";
               RuntimeDirectory = "qbittorrent-port-forward";
               RuntimeDirectoryMode = "0700";
               UMask = "0077";
@@ -518,6 +521,7 @@ let
               curl -fsS -b cookies --data "json={\"listen_port\":$port,\"random_port\":false}" "$api/app/setPreferences"
               curl -fsS -b cookies --data hashes=all "$api/torrents/reannounce"
               echo "Forwarded port $port"
+              systemd-notify RESTART_RESET=1
               while sleep 900; do
                 bind
               done
