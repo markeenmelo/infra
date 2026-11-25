@@ -5,7 +5,7 @@ let
   countries = {
     ca = {
       subnet = 1;
-      region = "ca";
+      region = "ca_toronto";
     };
     us = {
       subnet = 2;
@@ -29,6 +29,10 @@ in
       tailscale = lib.getExe config.services.tailscale.package;
       socket = country: "/run/tailscale-${country}/tailscaled.sock";
       perCountry = f: lib.mkMerge (lib.mapAttrsToList f countries);
+      namespaces = map (country: "pv${country}") (lib.attrNames countries);
+      # tailscaled marks its own sockets with this fwmark, tsconst.LinuxBypassMarkNum under its 0xff0000 mask
+      bypassMark = "0x80000/0xff0000";
+      peerPort = country: 41641 + countries.${country}.subnet;
     in
     {
       imports = [ vpn-watch ];
@@ -62,12 +66,66 @@ in
         }
       );
 
-      # shortcut: tailscaled's own control, DERP and peer traffic also leaves through PIA, so peers mostly relay over DERP; route its fwmark over the bridge if throughput matters
+      networking.nftables.tables.vpn-exit = {
+        family = "ip";
+        content = ''
+          chain forward {
+            type filter hook forward priority filter; policy accept;
+            ip saddr { ${
+              lib.concatMapStringsSep ", " (ns: config.vpnNamespaces.${ns}.namespaceAddress) namespaces
+            } } ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/3 } drop
+          }
+          chain postrouting {
+            type nat hook postrouting priority srcnat; policy accept;
+            ${lib.concatMapStrings (
+              ns:
+              let
+                inherit (config.vpnNamespaces.${ns}) namespaceAddress;
+              in
+              "ip saddr ${namespaceAddress} oifname != \"${ns}-br\" masquerade\n"
+            ) namespaces}
+          }
+        '';
+      };
+
       systemd.services = perCountry (
         country: _: {
+          "pv${country}-bypass" = {
+            description = "Send the ${country} exit node's direct peer traffic around the tunnel";
+            wantedBy = [ "pv${country}.service" ];
+            partOf = [ "pv${country}.service" ];
+            after = [ "pv${country}.service" ];
+            path = [
+              pkgs.iproute2
+              pkgs.iptables
+              pkgs.procps
+            ];
+            enableStrictShellChecks = true;
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+            };
+            script =
+              let
+                ns = "pv${country}";
+              in
+              ''
+                mark=${bypassMark}
+                ip -n ${ns} rule del priority 5200 2> /dev/null || true
+                ip -n ${ns} rule add priority 5200 fwmark "$mark" ipproto udp sport ${toString (peerPort country)} lookup 5200
+                ip -n ${ns} route replace default via ${
+                  config.vpnNamespaces.${ns}.bridgeAddress
+                } dev veth-${ns} table 5200
+                ip netns exec ${ns} sysctl -qw net.ipv4.conf.veth-${ns}.rp_filter=2
+                ip netns exec ${ns} iptables -C OUTPUT -o veth-${ns} -p udp --sport ${toString (peerPort country)} -m mark --mark "$mark" -j ACCEPT 2> /dev/null ||
+                  ip netns exec ${ns} iptables -I OUTPUT 1 -o veth-${ns} -p udp --sport ${toString (peerPort country)} -m mark --mark "$mark" -j ACCEPT
+              '';
+          };
           "tailscaled-${country}" = {
             description = "Tailscale exit node through PIA (${country})";
             wantedBy = [ "multi-user.target" ];
+            wants = [ "pv${country}-bypass.service" ];
+            after = [ "pv${country}-bypass.service" ];
             vpnConfinement = {
               enable = true;
               vpnNamespace = "pv${country}";
@@ -75,7 +133,7 @@ in
             serviceConfig = {
               Type = "notify";
               ExecStartPre = "${lib.getExe' pkgs.procps "sysctl"} -w net.ipv4.ip_forward=1 net.ipv6.conf.all.forwarding=1";
-              ExecStart = "${lib.getExe' config.services.tailscale.package "tailscaled"} --statedir=/var/lib/tailscale-${country} --socket=${socket country} --tun=tailscale0 --port=41641";
+              ExecStart = "${lib.getExe' config.services.tailscale.package "tailscaled"} --statedir=/var/lib/tailscale-${country} --socket=${socket country} --tun=tailscale0 --port=${toString (peerPort country)}";
               ExecStopPost = "${lib.getExe' config.services.tailscale.package "tailscaled"} --cleanup --statedir=/var/lib/tailscale-${country} --socket=${socket country}";
               Restart = "on-failure";
               RuntimeDirectory = "tailscale-${country}";
@@ -100,7 +158,7 @@ in
             script = ''
               ts() { ${tailscale} --socket=${socket country} "$@"; }
               prefs=(
-                --hostname=${country}
+                --hostname=vpn-${country}
                 --advertise-exit-node=true
                 --accept-dns=false
                 --accept-routes=false
