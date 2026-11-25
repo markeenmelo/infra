@@ -97,17 +97,20 @@ locals {
   admin_clients = concat(var.fleet_operators, ["grafite"])
   operators     = var.fleet_operators
   enrollment = {
-    thinkpad  = ["tag:admin-client"]
-    edge      = ["tag:server"]
-    bastion   = ["tag:server", "tag:bastion"]
-    proton-ca = ["tag:proton-exit"]
-    proton-us = ["tag:proton-exit"]
-    proton-br = ["tag:proton-exit"]
-    agents    = ["tag:agent"]
+    thinkpad = ["tag:admin-client"]
+    edge     = ["tag:server"]
+    bastion  = ["tag:server", "tag:bastion"]
+    ca       = ["tag:vpn-exit"]
+    us       = ["tag:vpn-exit"]
+    br       = ["tag:vpn-exit"]
+    agents   = ["tag:agent"]
   }
   tagged = {
     bastion = { id = "nRazrRf2yE11CNTRL", tags = ["tag:server", "tag:bastion"] }
     grafite = { id = "na2EEFHL1i11CNTRL", tags = ["tag:admin-client"] }
+    ca      = { id = "nU9a9LCnEk11CNTRL", tags = ["tag:vpn-exit"] }
+    us      = { id = "n3NiToiLaf11CNTRL", tags = ["tag:vpn-exit"] }
+    br      = { id = "nK6m9STc3Y11CNTRL", tags = ["tag:vpn-exit"] }
   }
 
   policy = {
@@ -116,14 +119,16 @@ locals {
       "tag:admin-client"      = ["tag:infra-provisioner"]
       "tag:server"            = ["tag:infra-provisioner"]
       "tag:bastion"           = ["tag:infra-provisioner"]
-      "tag:proton-exit"       = ["tag:infra-provisioner"]
-      "tag:ci"                = ["tag:infra-provisioner"]
-      "tag:agent"             = ["tag:infra-provisioner"]
+      "tag:vpn-exit"          = ["tag:infra-provisioner"]
+      # shortcut: kept until the apply that retags the exit nodes has run, so the policy never drops a tag devices still carry; remove it in the next tailscale apply
+      "tag:proton-exit" = ["tag:infra-provisioner"]
+      "tag:ci"          = ["tag:infra-provisioner"]
+      "tag:agent"       = ["tag:infra-provisioner"]
     }
     groups = { "group:members" = ["naralidy.anjos@gmail.com", "markeenmelo@github"] }
     hosts  = local.hosts
     autoApprovers = {
-      exitNode = ["tag:proton-exit"]
+      exitNode = ["tag:vpn-exit"]
       routes   = { for lan in values(var.fleet_routes) : lan => ["tag:bastion"] }
     }
     grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [

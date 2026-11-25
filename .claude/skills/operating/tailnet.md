@@ -27,12 +27,14 @@ The `install` app carries `/persist/var/lib/tailscale` with `/persist/etc/ssh` (
 `fleet.carry`, [deploy.md](deploy.md#install)), so the node keeps its identity; otherwise it joins as a new node under the
 same name and the old one is removed in the admin console. Never `tailscale logout` a live host.
 
-## Proton exit nodes
+## VPN exit nodes
 
 [vpn-exit.nix](../../../modules/vpn-exit.nix) runs one more `tailscaled` per country on
-bastion, each inside its own Proton WireGuard namespace, advertised as the exit node
-`proton-COUNTRY`; the tailnet policy approves them by tag and admits the admin clients and
-members to the internet through them. Each joins once with its own key, `proton-exit/COUNTRY-auth-key`,
+bastion, each inside its own Private Internet Access namespace (the PIA account and per-start
+keys as for the arr apps, [services: arr](../services/arr.md)), advertised as the exit node
+`COUNTRY` (`ca`, `us`, `br`) and tagged `tag:vpn-exit`; the tailnet policy approves them by tag
+and admits the admin clients and members to the internet through them. Each joins once with its
+own key, `vpn-exit/COUNTRY-auth-key`,
 moved like a host's from the `enrollment_keys` output, and keeps `/var/lib/tailscale-COUNTRY`
 under `/persist`. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tunnel that fails or
 whose handshake is older than five minutes, and starts its exit node again each time it comes up. Choosing
