@@ -34,9 +34,8 @@ sudo nix shell nixpkgs#sbctl -c sbctl create-keys --disable-landlock -e /persist
 The first deploy that turns signing on installs Limine before Preservation mounts
 `/var/lib/sbctl`, and the installer reads the keys only there and ignores a failed `sbctl sign`,
 so the keys are bound in by hand first and the signature is checked before the firmware enforces
-it. Then the firmware is put in setup mode, the keys enrolled beside Microsoft's (the RTX 3070's
-option ROM is signed by Microsoft's UEFI CA, and without them the card shows nothing at boot),
-Secure Boot turned on, and the TPM sealed:
+it. Then the firmware is put in setup mode, the keys enrolled beside Microsoft's, Secure Boot turned
+on, and the TPM sealed:
 
 ```sh
 sudo mkdir -p /var/lib/sbctl && sudo mount --bind /persist/var/lib/sbctl /var/lib/sbctl
