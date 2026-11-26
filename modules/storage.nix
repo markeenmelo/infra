@@ -62,8 +62,6 @@ let
   '';
 in
 {
-  flake.modules.nixos.base.imports = [ config.flake.modules.nixos.storage ];
-
   flake.checks.${system} = {
     storage = inputs.disko.lib.testLib.makeDiskoTest {
       pkgs = inputs.nixpkgs.legacyPackages.${system};

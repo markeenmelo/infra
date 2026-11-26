@@ -14,6 +14,7 @@
   };
   fleet.hosts.bastion.module = {
     imports = with config.flake.modules.nixos; [
+      storage
       server
       operator-login
       lan-proxy
