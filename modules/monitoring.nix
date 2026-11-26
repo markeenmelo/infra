@@ -10,6 +10,11 @@ let
   watched = lib.filterAttrs (
     _: host: host.telemetry.metrics != null && host.telemetry.alwaysOn
   ) senders;
+  awake = "instance!~\"${
+    lib.concatStringsSep "|" (
+      lib.attrNames (lib.filterAttrs (_: host: !host.telemetry.alwaysOn) senders)
+    )
+  }\"";
   senderPorts =
     telemetry:
     lib.remove null [
@@ -747,32 +752,32 @@ in
                       }
                       {
                         title = "Unit failed";
-                        expr = "node_systemd_unit_state{state=\"failed\"}";
+                        expr = "node_systemd_unit_state{state=\"failed\", ${awake}}";
                         for = "5m";
                         summary = "{{ $labels.name }} failed on {{ $labels.instance }}";
                       }
                       {
                         title = "Unit restarting";
-                        expr = "round(increase(node_systemd_service_restart_total[30m]))";
+                        expr = "round(increase(node_systemd_service_restart_total{${awake}}[30m]))";
                         threshold = 3;
                         for = "0s";
                         summary = "{{ $labels.name }} on {{ $labels.instance }} restarted more than 3 times in 30 minutes";
                       }
                       {
                         title = "Filesystem almost full";
-                        expr = "1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|erofs|overlay|nsfs\"} / node_filesystem_size_bytes";
+                        expr = "1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|erofs|overlay|nsfs\", ${awake}} / node_filesystem_size_bytes";
                         threshold = 0.85;
                         summary = "{{ $labels.mountpoint }} on {{ $labels.instance }} is over 85% full";
                       }
                       {
                         title = "Memory low";
-                        expr = "1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes";
+                        expr = "1 - node_memory_MemAvailable_bytes{${awake}} / node_memory_MemTotal_bytes";
                         threshold = 0.9;
                         summary = "{{ $labels.instance }} has had under 10% memory available for 15 minutes";
                       }
                       {
                         title = "Out of memory kill";
-                        expr = "increase(node_vmstat_oom_kill[15m])";
+                        expr = "increase(node_vmstat_oom_kill{${awake}}[15m])";
                         for = "0s";
                         severity = "critical";
                         summary = "The kernel killed a process for memory on {{ $labels.instance }}";
@@ -887,6 +892,10 @@ in
                 forward_to = [prometheus.remote_write.local.receiver]
                 rule {
                   target_label = "host"
+                  replacement  = "${sender}"
+                }
+                rule {
+                  target_label = "instance"
                   replacement  = "${sender}"
                 }
               }

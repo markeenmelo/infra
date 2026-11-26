@@ -43,18 +43,20 @@ every host ([caddy.nix](../../../modules/caddy.nix)). It pushes to the port pair
 into the local Prometheus and Loki, and its firewall admits the pair only from that host's tailnet
 address, with a tailnet grant for the same ports ([opentofu skill](../opentofu/SKILL.md)). Nothing
 is authenticated, an accepted risk: a compromised host can push false data under its own name but
-read nothing. Each sender gets a critical `Host silent HOST` alert once its metrics have stopped for 10 minutes,
+read nothing; bastion stamps both `host` and `instance` with the sender, so it cannot pose as another
+host. Each always-on sender gets a critical `Host silent HOST` alert once its metrics have stopped for 10 minutes,
 since its own alerts, the edge's probes among them, stop with it and no data counts as fine.
 The workstations and inspiron send metrics and logs too, but set `alwaysOn = false` in their
-`telemetry` fact: no `Host silent`, `Logs silent` or `Server login` alert, since a machine that is
-shut, asleep or off the tailnet is normal. The `logs` module, the journal half of `telemetry`,
+`telemetry` fact: no `Host silent`, `Logs silent` or `Server login` alert, and none of the node
+alerts (failed or restarting units, full disks, low memory, OOM kills), since a machine that is shut,
+asleep or off the tailnet is normal and a games drive runs full; their metrics stay on the dashboards. The `logs` module, the journal half of `telemetry`,
 serves a host that ships no metrics (`metrics = null`). Every sender retries its log pushes forever, so while bastion is out
 of reach Alloy's queue fills and then stops reading the journal, which holds the backlog until the
 tailnet returns; Loki refuses pushed lines over a week old (its default ingestion window, apart
 from how long it keeps what it stored). Every Alloy, bastion's included, keeps its state under `/persist`, so it resumes
 from its journal position after a reboot instead of shipping the last 12 h again, but still skips
 lines older than 12 h, so a laptop rebooted after more than 12 h away loses the lines it never
-sent. Each metrics sender also gets a `Logs silent HOST` alert once Loki has taken nothing from it
+sent. Each always-on sender also gets a `Logs silent HOST` alert once Loki has taken nothing from it
 for 45 minutes, which catches a push that retries forever on a batch Loki keeps refusing.
 Bastion's own Alloy probes `https://auth.DOMAIN` through the gateway's wildcard record, so the
 LAN proxy's certificate and reachability get the same `Public endpoint down` and `Certificate
