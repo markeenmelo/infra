@@ -6,6 +6,19 @@ Ryzen 5000, Barcelo graphics, AX210 Wi-Fi), used for Minecraft and mostly on AC.
 running Prism Launcher, and starts it again when it exits; `ian` has no sudo, `marcos` and
 `deploy` are the fleet's accounts, the CPU governor stays on `performance`, and Bluetooth is on for a mouse or controller, paired from an SSH session with `sudo bluetoothctl`.
 
+## Minecraft
+
+Prism launches the instance `fo` straight away: the Fabulously Optimized modpack, fetched from
+Modrinth and pinned by `packHash` with nix-minecraft's fetcher, minus e4mc, which would open a LAN
+world to the internet. It runs on GraalVM CE with a fixed 4 to 6 GB heap. Before greetd starts,
+`minecraft-instance` links the pack's mods and resource packs into the instance read-only, and
+copies the instance settings and the pack's configs only where they are missing, since Prism and
+the mods rewrite them. A version bump therefore reaches the mods at once, but an existing instance
+keeps its `instance.cfg` and `mmc-pack.json`, so a new Minecraft or loader version means deleting
+those two files on the laptop. To bump: set `version` and `url` from Modrinth and an empty
+`packHash`, build, and paste the hash the build prints. The Microsoft sign-in is the one step by
+hand, and the tokens Prism keeps in `accounts.json` stay out of Nix.
+
 ## Disk and boot
 
 `plain-storage`: an ext4 root on LUKS, never rolled back, so everything Ian keeps stays. Limine is
