@@ -46,11 +46,9 @@ is authenticated, an accepted risk: a compromised host can push false data under
 read nothing; bastion stamps both `host` and `instance` with the sender, so it cannot pose as another
 host. Each always-on sender gets a critical `Host silent HOST` alert once its metrics have stopped for 10 minutes,
 since its own alerts, the edge's probes among them, stop with it and no data counts as fine.
-The workstations and inspiron send metrics and logs too, but set `alwaysOn = false` in their
-`telemetry` fact: no `Host silent`, `Logs silent` or `Server login` alert, and none of the node
+The workstations and inspiron send metrics and logs too, but are not `fleet.hosts.HOST.alwaysOn`: no `Host silent`, `Logs silent` or `Server login` alert, and none of the node
 alerts (failed or restarting units, full disks, low memory, OOM kills), since a machine that is shut,
-asleep or off the tailnet is normal and a games drive runs full; their metrics stay on the dashboards. The `logs` module, the journal half of `telemetry`,
-serves a host that ships no metrics (`metrics = null`). Every sender retries its log pushes forever, so while bastion is out
+asleep or off the tailnet is normal and a games drive runs full; their metrics stay on the dashboards. Every sender retries its log pushes forever, so while bastion is out
 of reach Alloy's queue fills and then stops reading the journal, which holds the backlog until the
 tailnet returns; Loki refuses pushed lines over a week old (its default ingestion window, apart
 from how long it keeps what it stored). Every Alloy, bastion's included, keeps its state under `/persist`, so it resumes
