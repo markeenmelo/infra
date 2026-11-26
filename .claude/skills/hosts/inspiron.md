@@ -4,7 +4,7 @@
 Ryzen 5000, Barcelo graphics, AX210 Wi-Fi), used for Minecraft and mostly on AC. It runs the
 `kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)): greetd logs `ian` straight into gamescope
 running Prism Launcher, and starts it again when it exits; `ian` has no sudo, `marcos` and
-`deploy` are the fleet's accounts, and the CPU governor stays on `performance`. It pushes metrics and its journal to bastion (`telemetry`, ports 9098 and 3106) like edge, so it shows in Grafana's node-exporter-full and Loki.
+`deploy` are the fleet's accounts, and the CPU governor stays on `performance`.
 
 ## Disk and boot
 
