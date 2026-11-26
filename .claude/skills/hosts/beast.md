@@ -51,6 +51,14 @@ sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel
 A firmware update changes PCR 7, so LUKS asks for the passphrase again until the token is
 resealed with the last command plus `--wipe-slot=tpm2`.
 
+## Fans and lighting
+
+[case.nix](../../../modules/hosts/beast/case.nix) loads `nct6775` for the board's Nuvoton NCT6798,
+which exposes the fans and their PWM outputs. OpenRGB runs as a root server for the board's
+Polychrome USB controller, the DRAM, the card and the AIO cooler; its SDK port answers without
+authentication, so a loopback guard lets only `marcos` reach it, and its profiles stay in
+`/var/lib/OpenRGB`.
+
 ## Games drive
 
 The larger NVMe holds the game library on LUKS and ext4 at `/games`, outside disko like bastion's
