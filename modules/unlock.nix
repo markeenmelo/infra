@@ -29,7 +29,7 @@ in
         network.ssh = {
           enable = true;
           inherit (unlock) port;
-          hostKeys = [ "/persist/${hostKeyPath}" ];
+          hostKeys = [ "${lib.optionalString config.preservation.enable "/persist"}/${hostKeyPath}" ];
           authorizedKeys = map (
             key: "restrict,pty ${lib.removePrefix "restrict " key}"
           ) config.users.users.deploy.openssh.authorizedKeys.keys;

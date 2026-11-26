@@ -88,7 +88,7 @@ boot.
 ```sh
 just enroll HOST                          # a new host: make its identity on this machine
 just install HOST USER@ADDRESS IDENTITY   # a new host, with the directory enroll named
-just install HOST root@ADDRESS /mnt/old/persist   # a reinstall, identity carried off the old disk
+just install HOST root@ADDRESS /mnt/old/persist   # a reinstall, identity carried off the old disk (a plain-storage host: /mnt/old)
 ```
 
 The steps around these commands: the [operating skill: deploy](.claude/skills/operating/deploy.md#install); the
