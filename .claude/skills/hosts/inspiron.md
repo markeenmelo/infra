@@ -10,12 +10,12 @@ running Prism Launcher, and starts it again when it exits; `ian` has no sudo, `m
 
 Prism launches the instance `fo` straight away: the Fabulously Optimized modpack, fetched from
 Modrinth and pinned by `packHash` with nix-minecraft's fetcher, minus e4mc, which would open a LAN
-world to the internet. It runs on GraalVM CE with a fixed 4 to 6 GB heap. Before greetd starts,
-`minecraft-instance` links the pack's mods and resource packs into the instance read-only, and
-copies the instance settings and the pack's configs only where they are missing, since Prism and
-the mods rewrite them. A version bump therefore reaches the mods at once, but an existing instance
-keeps its `instance.cfg` and `mmc-pack.json`, so a new Minecraft or loader version means deleting
-those two files on the laptop. To bump: set `version` and `url` from Modrinth and an empty
+world to the internet. It runs on GraalVM CE with a 4 to 6 GB heap. At every boot and deploy,
+`minecraft-instance` links the pack's mods and resource packs into the instance read-only, writes
+`mmc-pack.json` and the settings keys Nix declares into Prism's files while keeping the keys Prism
+adds, and copies the pack's configs only where none exist, since the mods rewrite them. A bump
+therefore moves the mods, game and loader versions together on the next deploy. To bump: set
+`version` and `url` from Modrinth, the Minecraft and loader versions from its index, and an empty
 `packHash`, build, and paste the hash the build prints. The Microsoft sign-in is the one step by
 hand, and the tokens Prism keeps in `accounts.json` stay out of Nix.
 

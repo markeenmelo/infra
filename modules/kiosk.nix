@@ -82,25 +82,31 @@ in
       };
       systemd.services.minecraft-instance = {
         description = "Lay the declared Minecraft instance into Ian's Prism Launcher";
-        wantedBy = [ "greetd.service" ];
+        wantedBy = [
+          "multi-user.target"
+          "greetd.service"
+        ];
         before = [ "greetd.service" ];
+        path = [ pkgs.crudini ];
         serviceConfig = {
           Type = "oneshot";
+          RemainAfterExit = true;
           User = "ian";
         };
         script = ''
           data=$HOME/.local/share/PrismLauncher
           game=$data/instances/fo/.minecraft
           mkdir -p "$game"
-          seed() {
-            [ -e "$2" ] || install -m 644 "$1" "$2"
+          own() {
+            touch "$2"
+            crudini --ini-options=nospace --merge "$2" < "$1"
           }
-          seed ${launcher} "$data/prismlauncher.cfg"
-          seed ${instance} "$data/instances/fo/instance.cfg"
-          seed ${components} "$data/instances/fo/mmc-pack.json"
+          own ${launcher} "$data/prismlauncher.cfg"
+          own ${instance} "$data/instances/fo/instance.cfg"
+          install -m 644 ${components} "$data/instances/fo/mmc-pack.json"
           [ -e "$game/config" ] || { cp -r ${pack}/config "$game/config"; chmod -R u+w "$game/config"; }
-          ln -sfn ${pack}/mods "$game/mods"
-          ln -sfn ${pack}/resourcepacks "$game/resourcepacks"
+          ln -sfnT ${pack}/mods "$game/mods"
+          ln -sfnT ${pack}/resourcepacks "$game/resourcepacks"
         '';
       };
       services.greetd = {
