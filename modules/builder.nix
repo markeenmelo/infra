@@ -92,6 +92,8 @@ in
       };
     };
 
+  config.flake.modules.nixos.cache-client = cacheClient;
+
   config.flake.modules.nixos.remote-builds =
     { lib, pkgs, ... }:
     {

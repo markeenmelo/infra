@@ -1,0 +1,47 @@
+# Beast
+
+[modules/hosts/beast/](../../../modules/hosts/beast/) is the operator's gaming desktop: an ASRock
+Z690 board, an Intel 12th-gen CPU with its iGPU off in the firmware, and an NVIDIA card. It runs
+the `desktop` role ([desktop skill](../desktop/SKILL.md)), builds for itself with bastion's cache
+as a substituter (`cache-client` in [builder.nix](../../../modules/builder.nix)), and is an
+operator machine like the thinkpad (`operatorNames` in
+[opentofu.nix](../../../modules/opentofu.nix)), so it reaches the cache and the OpenTofu state.
+
+## Disk, unlock and boot
+
+The smaller NVMe is the `os` disk of [storage.nix](../../../modules/storage.nix), with the root
+wiped at every boot. LUKS opens with a TPM2 token sealed to PCR 7 and no PIN, since the desktop
+stays home, the passphrase as fallback. Secure Boot is off until it gets its own sbctl keys. After
+the first boot, seal the LUKS header:
+
+```sh
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-os-state
+```
+
+## Games drive
+
+The larger NVMe holds the game library on LUKS and ext4 at `/games`, outside disko like bastion's
+pools, so an install never formats it. `/etc/crypttab` opens it in stage 2 with the keyfile
+`/persist/var/lib/luks/games.key`, which is in `fleet.carry`, so a reinstall keeps the library
+readable; losing the keyfile loses the library, which Steam downloads again. Both mounts are
+`nofail`: a missing drive or key leaves the desktop booting without `/games`.
+
+Before the first install the keyfile goes into the directory `enroll` made, since `install`
+refuses an identity that lacks a carried path:
+
+```sh
+install -d -m 700 ~/.config/sops/enroll/beast/persist/var/lib/luks
+(umask 077; head -c 64 /dev/urandom > ~/.config/sops/enroll/beast/persist/var/lib/luks/games.key)
+```
+
+Once, after the first boot, format the drive; this wipes it:
+
+```sh
+sudo cryptsetup luksFormat --type luks2 --batch-mode --key-file /persist/var/lib/luks/games.key /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b416db901
+sudo systemctl start systemd-cryptsetup@games.service
+sudo mkfs.ext4 -L games /dev/mapper/games
+sudo systemctl start games.mount
+sudo chown marcos:users /games
+```
+
+A reinstall follows [operating: deploy](../operating/deploy.md#install) and touches only the `os` disk.

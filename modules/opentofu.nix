@@ -30,7 +30,10 @@ let
     assert lib.assertMsg (lib.all (lib.hasPrefix "ssh-") keys)
       "a deploy key carries options beyond `restrict`, which the stock image would apply to the install login: ${toString keys}";
     lib.concatStringsSep "\n" keys;
-  operatorNames = [ "thinkpad" ];
+  operatorNames = [
+    "thinkpad"
+    "beast"
+  ];
   operators = map (name: config.fleet.hosts.${name}.tailnetAddress) operatorNames;
 in
 {
