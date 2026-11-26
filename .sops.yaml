@@ -39,7 +39,6 @@ creation_rules:
           - *bastion
           - *thinkpad
           - *beast
-          - *inspiron
   - path_regex: ^secrets/shared/crowdsec\.yaml$
     key_groups:
       - age:
