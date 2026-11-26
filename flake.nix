@@ -68,6 +68,10 @@
       url = "github:getpaseo/paseo";
       inputs.nixpkgs.follows = "";
     };
+    nix-minecraft = {
+      url = "github:Infinidoge/nix-minecraft";
+      flake = false;
+    };
   };
 
   outputs =
