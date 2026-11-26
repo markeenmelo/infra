@@ -133,7 +133,10 @@ in
       systemd.services.bedtime = {
         description = "Power off for the night";
         serviceConfig.ExecStart = "${config.systemd.package}/bin/systemctl poweroff";
-        startAt = "*-*-* 20:00:00";
+        startAt = [
+          "*-*-* 13:00:00"
+          "*-*-* 20:00:00"
+        ];
       };
       nix = {
         settings.max-jobs = 0;
