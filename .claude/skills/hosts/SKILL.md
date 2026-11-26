@@ -28,10 +28,10 @@ and unlock read ([secrets.nix](../../../modules/secrets.nix)); the install stage
 Oracle's. Bastion, thinkpad, beast and inspiron boot Limine with their own Secure Boot keys (the `secure-boot` module, [secure-boot.nix](../../../modules/secure-boot.nix): signing on, sbctl, `/var/lib/sbctl` carried, and preserved where Preservation runs), so nixpkgs' Limine module signs fwupd's EFI
 app with the sbctl keys (`fwupd-efi.service`) and has capsule updates boot it without shim, which
 none of them has. A capsule update reflashes the firmware, after which the TPM may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
-Of the boot chain only Limine's EFI binary is signed: the hash of its config is enrolled into it, and the config pins
+Of the boot path, only Limine's EFI binary is signed (fwupd's app, above, is signed too): the hash of its config is enrolled into it, and the config pins
 each kernel and initrd by BLAKE2 hash, refusing to boot on a mismatch, so `sbctl verify` lists the
-kernels as unsigned. On a firmware that refuses `sbctl enroll-keys` with "File is immutable",
-`chattr -i` the efivarfs files it names first.
+kernels as unsigned. When `sbctl enroll-keys` fails with "File is immutable" (the kernel's efivarfs guard on variables
+that already exist), `chattr -i` the files it names first.
 
 `wake.nix` powers on bastion and beast by Wake-on-LAN, from home only, and edge through the Oracle API; the
 command is in [operating: deploy](../operating/deploy.md).
