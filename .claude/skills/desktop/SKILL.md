@@ -121,7 +121,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
 
 The role is one file per concern, each setting its NixOS and Home Manager halves: the base in
 [desktop.nix](../../../modules/desktop.nix) (Home Manager as a NixOS module, NetworkManager,
-Bluetooth, PipeWire, UPower, the apps), [umbriel.nix](../../../modules/umbriel.nix)
+Bluetooth, PipeWire, UPower, power-profiles-daemon for the bar's power profiles, the apps), [umbriel.nix](../../../modules/umbriel.nix)
 (the compositor session from nixpkgs' module, and `programs.umbriel.settings`, a config layered
 over Umbriel's packaged `config.toml`: tables merge by key and the last file wins, so only changes
 to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists the keybinds),
