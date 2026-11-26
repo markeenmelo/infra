@@ -64,10 +64,7 @@
         text = ''
           lighting=$1
           server=127.0.0.1:${toString openrgb.server.port}
-          for _ in $(seq 30); do
-            devices=$(openrgb --client "$server" --list-devices 2> /dev/null) && [ -n "$devices" ] && break
-            sleep 2
-          done
+          devices=$(openrgb --client "$server" --list-devices 2> /dev/null) && [ -n "$devices" ] || { echo "beast-lighting: OpenRGB server at $server listed no devices" >&2; exit 1; }
           echo "$devices" | grep -E '^[0-9]+: ' | while IFS=: read -r index name; do
             name=''${name# }
             case $lighting:$name in
@@ -109,7 +106,6 @@
           description = "Follow the power profile with beast's fans and lighting";
           wantedBy = [ "multi-user.target" ];
           after = [
-            "power-profiles-daemon.service"
             "openrgb.service"
           ];
           wants = [ "openrgb.service" ];
@@ -124,6 +120,9 @@
           };
           script = ''
             applied=
+            lighting=
+            lit=
+            failing=
             while true; do
               profile=$(busctl --system get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile) || { sleep 2; continue; }
               profile=''${profile#s \"}
@@ -131,12 +130,22 @@
               if [ "$profile" != "$applied" ]; then
                 if [ "$profile" = performance ]; then
                   systemctl start fan2go-gaming.service
-                  beast-lighting gaming
+                  lighting=gaming
                 else
                   systemctl stop fan2go-gaming.service
-                  beast-lighting off
+                  lighting=off
                 fi
                 applied=$profile
+              fi
+              if [ "$lit" != "$lighting" ]; then
+                if errors=$(beast-lighting "$lighting" 2>&1); then
+                  [ -z "$errors" ] || echo "$errors" >&2
+                  lit=$lighting
+                  failing=
+                elif [ -z "$failing" ]; then
+                  echo "''${errors:-beast-lighting $lighting failed}; retrying every 2 s" >&2
+                  failing=1
+                fi
               fi
               sleep 2
             done
