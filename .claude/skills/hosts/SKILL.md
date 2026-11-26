@@ -1,6 +1,6 @@
 ---
 name: hosts
-description: "Each host's hardware, disks, boot and recovery: bastion (UGREEN NAS, LUKS with TPM2, Limine Secure Boot, the hand-made ZFS pools and declared mounts, snapshots, subnet routes, UPS, firmware), edge (Oracle Cloud Ampere instance, LUKS without TPM unlocked over SSH in the initrd, the unlock, wake and install apps), thinkpad (LUKS with TPM2 and PIN, Secure Boot, remote builds, reinstall) and beast (gaming desktop, LUKS with TPM2, the games drive outside disko). Use before touching modules/hosts/, modules/{unlock,wake,fwupd}.nix, any ZFS pool or dataset, Secure Boot or TPM enrollment, firmware, or rebooting, unlocking or reinstalling a host."
+description: "Each host's hardware, disks, boot and recovery: bastion (UGREEN NAS, LUKS with TPM2, Limine Secure Boot, the hand-made ZFS pools and declared mounts, snapshots, subnet routes, UPS, firmware), edge (Oracle Cloud Ampere instance, LUKS without TPM unlocked over SSH in the initrd, the unlock, wake and install apps), thinkpad (LUKS with TPM2 and PIN, Secure Boot, remote builds, reinstall) and beast (gaming desktop, LUKS by passphrase until Secure Boot and TPM2, the games drive outside disko). Use before touching modules/hosts/, modules/{unlock,wake,fwupd}.nix, any ZFS pool or dataset, Secure Boot or TPM enrollment, firmware, or rebooting, unlocking or reinstalling a host."
 ---
 
 # Hosts

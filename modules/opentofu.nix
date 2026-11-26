@@ -50,7 +50,7 @@ in
             ensureDBOwnership = true;
           }
         ];
-        # shortcut: trusts the operator laptops' tailnet addresses, so any process on one can rewrite the encrypted state, move to scram with a sops password once a laptop has other users
+        # shortcut: trusts the operator machines' tailnet addresses, so any process on one, the games beast runs as marcos included, can rewrite or delete the encrypted state, move to scram with a sops password once a machine has other users or runs code the operator no longer trusts
         authentication = lib.concatMapStrings (address: "host tofu tofu ${address}/32 trust\n") operators;
       };
       networking.firewall.extraInputRules = ''

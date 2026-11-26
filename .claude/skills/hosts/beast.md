@@ -10,13 +10,11 @@ operator machine like the thinkpad (`operatorNames` in
 ## Disk, unlock and boot
 
 The smaller NVMe is the `os` disk of [storage.nix](../../../modules/storage.nix), with the root
-wiped at every boot. LUKS opens with a TPM2 token sealed to PCR 7 and no PIN, since the desktop
-stays home, the passphrase as fallback. Secure Boot is off until it gets its own sbctl keys. After
-the first boot, seal the LUKS header:
-
-```sh
-sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-os-state
-```
+wiped at every boot. Secure Boot is off until it gets its own sbctl keys, and until then LUKS asks
+for the passphrase at every boot: with Secure Boot off, PCR 7 is the same for any loader, a live
+USB included, so a token sealed to it would hand the key to anyone at the keyboard. Once Secure
+Boot is on, the header gets a TPM2 token sealed to PCR 7 without a PIN, since the desktop stays
+home, the passphrase kept as fallback.
 
 ## Games drive
 
