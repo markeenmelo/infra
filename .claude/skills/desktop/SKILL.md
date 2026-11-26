@@ -1,6 +1,6 @@
 ---
 name: desktop
-description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Everforest through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
+description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, printing, the desk monitor, Bitwarden as SSH agent) and the Wi-Fi module a host imports beside it, idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Everforest through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
 ---
 
 # Desktop
