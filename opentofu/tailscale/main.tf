@@ -105,6 +105,7 @@ locals {
     us       = ["tag:vpn-exit"]
     br       = ["tag:vpn-exit"]
     agents   = ["tag:agent"]
+    inspiron = ["tag:kid"]
   }
   tagged = {
     bastion = { id = "nRazrRf2yE11CNTRL", tags = ["tag:server", "tag:bastion"] }
@@ -123,6 +124,7 @@ locals {
       "tag:vpn-exit"          = ["tag:infra-provisioner"]
       "tag:ci"                = ["tag:infra-provisioner"]
       "tag:agent"             = ["tag:infra-provisioner"]
+      "tag:kid"               = ["tag:infra-provisioner"]
     }
     groups = { "group:members" = ["naralidy.anjos@gmail.com", "markeenmelo@github"] }
     hosts  = local.hosts
@@ -131,7 +133,8 @@ locals {
       routes   = { for lan in values(var.fleet_routes) : lan => ["tag:bastion"] }
     }
     grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [
-      { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client", "tag:agent"], ip = ["tcp:22"] },
+      { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client", "tag:agent", "tag:kid"], ip = ["tcp:22"] },
+      { src = ["tag:kid"], dst = ["bastion"], ip = ["tcp:22", "tcp:${var.fleet_cache_port}"] },
       { src = ["tag:admin-client"], dst = ["tag:agent"], ip = ["tcp:${var.fleet_paseo_port}"] },
       { src = ["tag:agent"], dst = ["bastion"], ip = ["tcp:443"] },
       { src = ["edge"], dst = ["bastion"], ip = ["tcp:${var.fleet_public_port}", "tcp:${var.fleet_bans_port}"] },
@@ -144,7 +147,8 @@ locals {
       { src = ["tag:admin-client", "group:members"], dst = ["autogroup:internet"], ip = ["*"] },
     ])
     tests = concat([for host, ports in local.telemetry : { src = host, proto = "tcp", accept = [for port in ports : "bastion:${port}"], deny = [for port in setsubtract(flatten(values(local.telemetry)), ports) : "bastion:${port}"] }], [
-      { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}"] },
+      { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:kid:22"] },
+      { src = "tag:kid", proto = "tcp", accept = ["bastion:22", "bastion:${var.fleet_cache_port}"], deny = ["edge:22", "tag:admin-client:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:443", "bastion:53", "bastion:${var.fleet_state_port}"] },
       { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:admin-client:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:${var.fleet_state_port}"] },
