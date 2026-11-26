@@ -4,7 +4,7 @@
 Ryzen 5000, Barcelo graphics, AX210 Wi-Fi), used for Minecraft and mostly on AC. It runs the
 `kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)): greetd logs `ian` straight into gamescope
 running Prism Launcher, and starts it again when it exits; `ian` has no sudo, `marcos` and
-`deploy` are the fleet's accounts, and the CPU governor stays on `performance`.
+`deploy` are the fleet's accounts, the CPU governor stays on `performance`, and Bluetooth is on for a mouse or controller, paired from an SSH session with `sudo bluetoothctl`.
 
 ## Disk and boot
 
