@@ -30,6 +30,7 @@ in
       };
       services.greetd = {
         enable = true;
+        restart = true;
         settings = {
           initial_session = session;
           default_session = session;
@@ -44,6 +45,13 @@ in
         pulse.enable = true;
       };
       powerManagement.cpuFreqGovernor = "performance";
-      nix.settings.max-jobs = 0;
+      nix = {
+        settings.max-jobs = 0;
+        gc = {
+          automatic = true;
+          dates = "weekly";
+          options = "--delete-older-than 14d";
+        };
+      };
     };
 }
