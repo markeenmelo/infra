@@ -1,6 +1,6 @@
 ---
 name: desktop
-description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, printing, the desk monitor, Bitwarden as SSH agent) and the Wi-Fi module a host imports beside it, idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Everforest through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
+description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, printing, the desk monitor, Bitwarden as SSH agent) and the Wi-Fi module a host imports beside it, idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Everforest through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix,gaming}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
 ---
 
 # Desktop
@@ -132,7 +132,7 @@ key either program's validator rejects or warns about),
 [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Wi-Fi
 profiles are their own `wifi` module ([wifi.nix](../../../modules/wifi.nix)), which a host
-imports beside the role, so a wired desktop holds no Wi-Fi secrets. The tailnet client accepts bastion's subnet routes
+imports beside the role, so a wired desktop holds no Wi-Fi secrets; Steam is the `gaming` module ([gaming.nix](../../../modules/gaming.nix)), imported the same way by beast. The tailnet client accepts bastion's subnet routes
 so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
 advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
 through bastion. Bitwarden's desktop app is the SSH agent
