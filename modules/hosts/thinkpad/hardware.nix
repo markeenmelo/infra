@@ -71,6 +71,7 @@
               [ "$held" != active ] || systemctl stop power-saver-on-battery
             elif [ "$held" != active ]; then
               systemd-run --collect --unit=power-saver-on-battery \
+                --property=BindsTo=power-profiles-daemon.service --property=After=power-profiles-daemon.service \
                 powerprofilesctl launch --profile power-saver --reason battery sleep infinity
             fi
             for panel in /sys/class/backlight/*; do
