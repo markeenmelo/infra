@@ -23,8 +23,8 @@ also matches under a Microsoft-signed loader that does not measure what it boots
 can unseal the key; accepted over a TPM PIN, since the desktop stays home. The keys are carried
 across reinstalls but not backed up, since beast runs no backups; losing them means making and
 enrolling new ones.
-
-Its keys were made on beast straight into the preserved path; sbctl's landlock sandbox refuses
+Keys for a host that has none are made on it straight into the preserved path, before signing is
+turned on; sbctl's landlock sandbox refuses any path but its own, hence the flag:
 any path but its own, hence the flag:
 
 ```sh
