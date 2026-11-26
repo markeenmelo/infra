@@ -56,12 +56,15 @@ in
           wants = [ "tailscaled-set.service" ];
           path = [ config.services.tailscale.package ];
           enableStrictShellChecks = true;
-          serviceConfig = {
-            Type = "oneshot";
-            Restart = "on-failure";
-            RestartSec = 10;
-          };
-          script = "tailscale set --exit-node=vpn-ca";
+          restartIfChanged = false;
+          script = ''
+            for _ in $(seq 30); do
+              tailscale set --exit-node=vpn-ca && exit 0
+              sleep 10
+            done
+            echo "tailscale-exit-node: vpn-ca stayed unreachable for 5 minutes; no exit node set" >&2
+            exit 1
+          '';
         };
       };
       services.btrfs.autoScrub.interval = "weekly";
