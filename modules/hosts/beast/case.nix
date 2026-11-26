@@ -122,6 +122,7 @@
             applied=
             lighting=
             lit=
+            failing=
             while true; do
               profile=$(busctl --system get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile) || { sleep 2; continue; }
               profile=''${profile#s \"}
@@ -136,8 +137,15 @@
                 fi
                 applied=$profile
               fi
-              if [ "$lit" != "$lighting" ] && beast-lighting "$lighting"; then
-                lit=$lighting
+              if [ "$lit" != "$lighting" ]; then
+                if errors=$(beast-lighting "$lighting" 2>&1); then
+                  [ -z "$errors" ] || echo "$errors" >&2
+                  lit=$lighting
+                  failing=
+                elif [ -z "$failing" ]; then
+                  echo "$errors; retrying every 2 s" >&2
+                  failing=1
+                fi
               fi
               sleep 2
             done
