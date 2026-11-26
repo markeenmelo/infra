@@ -6,10 +6,10 @@
   };
 
   flake.modules.nixos.operator-login =
-    { config, ... }:
+    { config, lib, ... }:
     {
       sops.secrets.marcos-password-hash = {
-        sopsFile = ../secrets/shared/login.yaml;
+        sopsFile = lib.mkDefault ../secrets/shared/login.yaml;
         neededForUsers = true;
       };
       users.users.marcos = {

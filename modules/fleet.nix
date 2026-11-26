@@ -9,6 +9,11 @@ let
   ipv4 = lib.types.strMatching "${octet}(\\.${octet}){3}";
 in
 {
+  options.fleet.operators = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    description = "Hosts the operator works and deploys from, by name: the `tofu` app hands them to `opentofu/tailscale` as `fleet_operators`, bastion lets them reach the state database, and the Server login alert accepts `deploy` logins from them.";
+  };
+
   options.fleet.hosts = lib.mkOption {
     description = "Fleet members; `modules/hosts/NAME/` is the only writer of `fleet.hosts.NAME`.";
     default = { };

@@ -22,9 +22,9 @@ package diff between the running and the new system at each activation, `--dry-a
 included, as nh does on the workstations. The `deploy` binary and the activator are
 nixpkgs' package, taken from the binary cache; the input supplies only its library.
 
-A host that does not hand its builds to bastion builds itself (bastion, which runs the builder
+A host builds itself unless its `nix.settings.max-jobs` is 0 (bastion, which runs the builder
 in [builder.nix](../../../modules/builder.nix), the edge and beast); a host that imports
-`remote-builds` (the thinkpad) is built on the deploying machine, which hands the build to bastion. The deploying
+`remote-builds` (the thinkpad) or refuses local builds (inspiron) is built on the deploying machine, which from the thinkpad hands the build to bastion. The deploying
 machine receives the whole closure back from bastion; deploy-rs then pushes it with
 `--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
 Bastion trusts the admin clients' build keys alone: the edge builds itself, and the tailnet
@@ -49,7 +49,7 @@ nix run .#deploy -- .#HOST          # after checks pass on the committed revisio
 nix run .#deploy -- .#HOST --boot   # set the boot default only, no activation
 nix run .#reboot -- HOST            # reboot as deploy, e.g. after --boot
 nix run .#shutdown -- HOST          # power off as deploy
-nix run .#wake -- HOST              # bastion by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); edge through the Oracle API
+nix run .#wake -- HOST              # bastion or beast by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); edge through the Oracle API
 nix run .#unlock -- HOST            # send the disk passphrase to a host waiting in its initrd (hosts skill, edge.md)
 nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
 ```
@@ -76,7 +76,7 @@ installer image with its old disk mounted read-only: it copies the host's `fleet
 (the SSH host key, `/var/lib/tailscale`, and what the host adds, such as bastion's Secure Boot
 keys and ZFS key files) out of the old persist tree into an `--extra-files` tree, both under
 `/persist` and at their live paths, since the installer reads some of them (Limine signs with
-`/var/lib/sbctl`) before Preservation exists; the root copy is gone on first boot. It then
+`/var/lib/sbctl`) before Preservation exists; on a `storage` host the root copy is gone on first boot, a `plain-storage` host gets only the live copy, and its reinstall mounts the old ext4 root and passes it as ROOT, not `/persist`. It then
 unmounts the old disk, partitions with the host's disko layout and installs its configuration,
 so the host keeps its SSH identity and its tailnet node, and sops-nix can decrypt on first boot.
 A path that holds the only copy of a key goes in `fleet.carry` beside its owner, so no install
@@ -94,7 +94,7 @@ the host's enrollment key ([tailnet.md](tailnet.md)), which spends the key, and 
 it. The directory it names holds the private halves laid out under `persist/`, so the node key
 and host key never touch the provider's stock image. It sits beside the operator's sops key,
 under `~/.config/sops`,
-since it is the only copy until the host has booted. The install takes it as ROOT and leaves it
+since it is the only copy until the host has booted. The install takes it as ROOT, stages it under `/persist` and at the live paths as for a reinstall, and leaves it
 in place, since a finished install proves nothing about the first boot; the operator deletes it
 once the host answers on the tailnet. Losing it before then means enrolling again and changing
 the three facts.

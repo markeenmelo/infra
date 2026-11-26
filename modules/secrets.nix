@@ -12,7 +12,9 @@
       imports = [ inputs.sops-nix.nixosModules.sops ];
       sops = {
         defaultSopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
-        age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
+        age.sshKeyPaths = [
+          "${lib.optionalString config.preservation.enable "/persist"}/etc/ssh/ssh_host_ed25519_key"
+        ];
       };
       assertions = lib.concatLists (
         lib.mapAttrsToList (

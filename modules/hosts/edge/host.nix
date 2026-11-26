@@ -14,6 +14,7 @@
     };
     module = {
       imports = with config.flake.modules.nixos; [
+        storage
         server
         telemetry
         unlock

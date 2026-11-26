@@ -14,13 +14,22 @@ The host table and where each builds are in [README.md](../../../README.md#hosts
 | [edge.md](edge.md) | Oracle Cloud instance: initrd SSH unlock, wake, install | `modules/hosts/edge/`, `unlock.nix` |
 | [thinkpad.md](thinkpad.md) | Operator laptop: disk, unlock, boot | `modules/hosts/thinkpad/` |
 | [beast.md](beast.md) | Gaming desktop: disks, the games drive, unlock, install | `modules/hosts/beast/` |
+| [inspiron.md](inspiron.md) | Ian's Minecraft laptop: plain storage, kiosk session, Kids network | `modules/hosts/inspiron/`, `kiosk.nix` |
+
+Each host names its disk layout in `host.nix` ([storage.nix](../../../modules/storage.nix)):
+`storage`, a btrfs root rolled back at every boot with state preserved under `/persist`, or
+`plain-storage`, an ext4 root on the same LUKS partition that keeps everything and runs no
+Preservation. A `plain-storage` host keeps its identity at the live paths only, which sops-nix
+and unlock read ([secrets.nix](../../../modules/secrets.nix)); the install stages nothing under
+`/persist` for it, and its reinstall takes the mounted ext4 root itself as ROOT, where the
+`fleet.carry` paths resolve to the live files.
 
 [fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion, thinkpad and beast, not edge, whose firmware is
 Oracle's. Bastion, thinkpad and beast boot Limine with their own Secure Boot keys (the `secure-boot` module, [secure-boot.nix](../../../modules/secure-boot.nix): signing on, sbctl, `/var/lib/sbctl` preserved and carried), so nixpkgs' Limine module signs fwupd's EFI
 app with the sbctl keys (`fwupd-efi.service`) and has capsule updates boot it without shim, which
 none of them has. A capsule update reflashes the firmware, after which the TPM may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
 
-`wake.nix` powers on bastion by Wake-on-LAN, from home only, and edge through the Oracle API; the
+`wake.nix` powers on bastion and beast by Wake-on-LAN, from home only, and edge through the Oracle API; the
 command is in [operating: deploy](../operating/deploy.md).
 
 What runs on a host lives elsewhere: bastion's apps in the [services skill](../services/SKILL.md),

@@ -5,12 +5,38 @@
 }:
 let
   inherit (config.fleet.hosts.bastion) system;
+  layout = lib: root: {
+    type = "gpt";
+    partitions = {
+      boot = {
+        type = lib.mkDefault "EF00";
+        size = lib.mkDefault "2G";
+        content = {
+          type = "filesystem";
+          format = "vfat";
+          mountpoint = "/boot";
+          mountOptions = [ "umask=0077" ];
+        };
+      };
+      state = {
+        size = "100%";
+        content = {
+          type = "luks";
+          name = "state";
+          settings.allowDiscards = true;
+          content = root;
+        };
+      };
+    };
+  };
   keyFile = "/tmp/secret.key";
   probeWith =
-    extra:
+    storage: extra:
     inputs.nixpkgs.lib.nixosSystem {
       modules = [
-        config.flake.modules.nixos.storage
+        inputs.disko.nixosModules.disko
+        inputs.preservation.nixosModules.preservation
+        storage
         (
           { pkgs, ... }:
           {
@@ -25,8 +51,9 @@ let
       ];
     };
   keyed.disko.devices.disk.os.content.partitions.state.content.settings = { inherit keyFile; };
-  probe = probeWith keyed;
-  probePerlless = probeWith (
+  probe = probeWith config.flake.modules.nixos.storage keyed;
+  probePlain = probeWith config.flake.modules.nixos.plain-storage keyed;
+  probePerlless = probeWith config.flake.modules.nixos.storage (
     { modulesPath, ... }:
     {
       imports = [
@@ -62,7 +89,10 @@ let
   '';
 in
 {
-  flake.modules.nixos.base.imports = [ config.flake.modules.nixos.storage ];
+  flake.modules.nixos.base.imports = [
+    inputs.disko.nixosModules.disko
+    inputs.preservation.nixosModules.preservation
+  ];
 
   flake.checks.${system} = {
     storage = inputs.disko.lib.testLib.makeDiskoTest {
@@ -74,6 +104,22 @@ in
         machine.succeed("cryptsetup status state")
       ''
       + survivesReboot;
+    };
+    plain-storage = inputs.disko.lib.testLib.makeDiskoTest {
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      name = "plain-storage";
+      disko-config.disko.devices = probePlain.config.disko.devices;
+      inherit (probePlain) extendModules;
+      extraTestScript = ''
+        machine.wait_for_unit("multi-user.target")
+        machine.succeed("cryptsetup status state")
+        machine.succeed("findmnt --types ext4 /")
+        machine.succeed("touch /kept")
+        machine.shutdown()
+        machine.start()
+        machine.wait_for_unit("multi-user.target")
+        machine.succeed("test -e /kept")
+      '';
     };
     storage-perlless = inputs.disko.lib.testLib.makeDiskoTest {
       pkgs = inputs.nixpkgs.legacyPackages.${system};
@@ -112,18 +158,6 @@ in
           ];
         });
       };
-      esp = {
-        type = "filesystem";
-        format = "vfat";
-        mountpoint = "/boot";
-        mountOptions = [ "umask=0077" ];
-      };
-      state = {
-        type = "luks";
-        name = "state";
-        settings.allowDiscards = true;
-        content = btrfs;
-      };
     in
     {
       imports = [
@@ -131,20 +165,7 @@ in
         inputs.preservation.nixosModules.preservation
       ];
       config = {
-        disko.devices.disk.os.content = {
-          type = "gpt";
-          partitions = {
-            boot = {
-              type = lib.mkDefault "EF00";
-              size = lib.mkDefault "2G";
-              content = esp;
-            };
-            state = {
-              size = "100%";
-              content = state;
-            };
-          };
-        };
+        disko.devices.disk.os.content = layout lib btrfs;
         fileSystems."/persist".neededForBoot = true;
         services.btrfs.autoScrub = {
           enable = true;
@@ -199,6 +220,17 @@ in
           };
         };
         systemd.suppressedSystemUnits = [ "systemd-machine-id-commit.service" ];
+      };
+    };
+
+  flake.modules.nixos.plain-storage =
+    { lib, ... }:
+    {
+      disko.devices.disk.os.content = layout lib {
+        type = "filesystem";
+        format = "ext4";
+        mountpoint = "/";
+        mountOptions = [ "noatime" ];
       };
     };
 }

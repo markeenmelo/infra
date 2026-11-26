@@ -53,6 +53,8 @@ from `fleet.domain` as `TF_VAR_fleet_domain`. The admin console is
 read-only for all of these; `acls_externally_managed_on` says so.
 
 - `grafite` is the operator's phone, an admin client outside the fleet.
+- `tag:kid` is inspiron, Ian's laptop on the Kids VLAN; its grants and their tests in `main.tf`
+  hold what it reaches.
 - Auth keys recreate on apply once invalid; [operating: tailnet](../operating/tailnet.md) moves one
   into `secrets/hosts/HOST.yaml`.
 - A host enrolled by key carries the key's tag; retagging it is a re-enrollment.

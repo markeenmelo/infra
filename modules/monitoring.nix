@@ -1,6 +1,6 @@
 { config, lib, ... }:
 let
-  inherit (config.fleet) domain hosts;
+  inherit (config.fleet) domain hosts operators;
   bastion = hosts.bastion.tailnetAddress;
   senders = lib.filterAttrs (_: host: host.telemetry != null) hosts;
   publishers = lib.filterAttrs (
@@ -706,7 +706,7 @@ in
                         }\", syslog_identifier=~\"sshd.*\"} |= \"Accepted \" != \" for nix-ssh \" | regexp `Accepted \\S+ for (?P<user>\\S+) from (?P<source>\\S+)` | user != \"deploy\" or source !~ `${
                           lib.concatMapStringsSep "|" (
                             workstation: lib.replaceStrings [ "." ] [ "\\." ] workstation.tailnetAddress
-                          ) (lib.attrValues (lib.removeAttrs hosts (lib.attrNames metricSenders ++ [ host ])))
+                          ) (map (name: hosts.${name}) operators)
                         }` [10m]))";
                         for = "0s";
                         summary = "{{ $labels.user }} logged in to {{ $labels.host }} over SSH from {{ $labels.source }}; only a deploy from a workstation is expected";
