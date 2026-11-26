@@ -22,9 +22,9 @@ package diff between the running and the new system at each activation, `--dry-a
 included, as nh does on the workstations. The `deploy` binary and the activator are
 nixpkgs' package, taken from the binary cache; the input supplies only its library.
 
-A host that runs the builder ([builder.nix](../../../modules/builder.nix)), or has another
-system than bastion, builds itself; every other host is built on the deploying machine, which
-hands the build to bastion when it imports `remote-builds` (the thinkpad). The deploying
+A host that does not hand its builds to bastion builds itself (bastion, which runs the builder
+in [builder.nix](../../../modules/builder.nix), the edge and beast); a host that imports
+`remote-builds` (the thinkpad) is built on the deploying machine, which hands the build to bastion. The deploying
 machine receives the whole closure back from bastion; deploy-rs then pushes it with
 `--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
 Bastion trusts the admin clients' build keys alone: the edge builds itself, and the tailnet

@@ -11,6 +11,7 @@ to be read; nothing here is meant to be reused as is.
 | `bastion` | x86_64-linux | Home server: LAN and public proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, MicroVMs (agents, hermes) | itself |
 | `edge` | aarch64-linux | Public HTTPS edge (Oracle Cloud instance): passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
 | `thinkpad` | x86_64-linux | Operator laptop | bastion |
+| `beast` | x86_64-linux | Operator gaming desktop | itself |
 
 ## Quick start
 

@@ -98,6 +98,7 @@ locals {
   operators     = var.fleet_operators
   enrollment = {
     thinkpad = ["tag:admin-client"]
+    beast    = ["tag:admin-client"]
     edge     = ["tag:server"]
     bastion  = ["tag:server", "tag:bastion"]
     ca       = ["tag:vpn-exit"]
