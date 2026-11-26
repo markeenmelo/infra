@@ -132,7 +132,7 @@ key either program's validator rejects or warns about),
 [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Wi-Fi
 profiles are their own `wifi` module ([wifi.nix](../../../modules/wifi.nix)), which a host
-imports beside the role, so a wired desktop holds no Wi-Fi secrets; Steam with Proton-GE and protontricks, GameMode, MangoHud and the Umbriel rule for Steam games (tearing allowed, VRR always, pointer confined) are the `gaming` module ([gaming.nix](../../../modules/gaming.nix)), imported the same way by beast. A game launched with `gamemoderun mangohud %command%` sets the `performance` power profile while it runs, and `power-saver` when it exits; MangoHud stays hidden until Shift_R+F12 and takes its colors and fonts from Stylix. The tailnet client accepts bastion's subnet routes
+imports beside the role, so a wired desktop holds no Wi-Fi secrets; Steam with Proton-GE and protontricks, GameMode, MangoHud and the Umbriel rule for Steam games (tearing allowed, VRR always, pointer confined) are the `gaming` module ([gaming.nix](../../../modules/gaming.nix)), imported the same way by the thinkpad and beast; Steam alone is its `steam` module, which inspiron imports. A game launched with `gamemoderun mangohud %command%` holds the `performance` power profile while it runs (a `powerprofilesctl launch` hold in the user unit `gamemode-performance`), and power-profiles-daemon returns to the profile set before it when the game exits, so the thinkpad's AC and battery switching keeps its say; MangoHud stays hidden until Shift_R+F12 and takes its colors and fonts from Stylix. The tailnet client accepts bastion's subnet routes
 so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
 advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
 through bastion. Bitwarden's desktop app is the SSH agent
@@ -141,8 +141,8 @@ through bastion. Bitwarden's desktop app is the SSH agent
 Idle locks, turns the screen off and suspends on the timers in
 [noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
 does while a video plays; on battery two earlier timers there turn the screen off and suspend
-sooner. On battery `power-profile-ac` switches to
-power-saver and caps the panel brightness, and restores the previous profile and brightness on AC;
+sooner. On battery `power-profile-ac` holds
+power-saver (a hold in the unit `power-saver-on-battery`, which outranks a game's performance hold) and caps the panel brightness, and on AC releases the hold and restores the brightness;
 the battery charges to 90% and resumes at
 85%. The btrfs scrub
 ([desktop.nix](../../../modules/desktop.nix)) starts on AC only. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move

@@ -47,12 +47,14 @@
           AllowSuspendThenHibernate = false;
         };
         services.power-profile-ac = {
-          description = "Use power-saver and a dimmer panel on battery and restore the previous profile and brightness on AC";
+          description = "Hold power-saver and dim the panel on battery, and release the hold and restore the brightness on AC";
           wantedBy = [ "power-profiles-daemon.service" ];
           requires = [ "power-profiles-daemon.service" ];
           after = [ "power-profiles-daemon.service" ];
           path = [
             config.services.power-profiles-daemon.package
+            config.systemd.package
+            pkgs.coreutils
           ];
           enableStrictShellChecks = true;
           serviceConfig = {
@@ -63,16 +65,14 @@
           };
           # shortcut: the 40% brightness cap on battery is a starting point, not measured; tune after a battery baseline
           script = ''
-            saved=$STATE_DIRECTORY/saved
             ac=$(cat /sys/class/power_supply/AC/online)
+            held=$(systemctl is-active power-saver-on-battery || true)
             if [ "$ac" = 1 ]; then
-              if [ -s "$saved" ]; then
-                powerprofilesctl set "$(cat "$saved")"
-              fi
-              rm -f "$saved"
-            else
-              [ -s "$saved" ] || powerprofilesctl get > "$saved"
-              powerprofilesctl set power-saver
+              [ "$held" != active ] || systemctl stop power-saver-on-battery
+            elif [ "$held" != active ]; then
+              systemd-run --collect --unit=power-saver-on-battery \
+                --property=BindsTo=power-profiles-daemon.service --property=After=power-profiles-daemon.service \
+                powerprofilesctl launch --profile power-saver --reason battery sleep infinity
             fi
             for panel in /sys/class/backlight/*; do
               [ -e "$panel/brightness" ] || continue

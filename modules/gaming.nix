@@ -1,8 +1,23 @@
 { config, ... }:
 let
   inherit (config.flake.modules) homeManager;
+  inherit (config.flake.modules.nixos) steam;
 in
 {
+  flake.modules.nixos.steam =
+    { pkgs, ... }:
+    {
+      programs.steam = {
+        enable = true;
+        extraCompatPackages = [ pkgs.proton-ge-bin ];
+        protontricks.enable = true;
+      };
+      nixpkgs.config.allowUnfreePackages = [
+        "steam"
+        "steam-unwrapped"
+      ];
+    };
+
   flake.modules.nixos.gaming =
     {
       config,
@@ -12,25 +27,18 @@ in
     }:
     let
       profiles = lib.getExe' config.services.power-profiles-daemon.package "powerprofilesctl";
+      systemd = config.systemd.package;
     in
     {
-      programs.steam = {
-        enable = true;
-        extraCompatPackages = [ pkgs.proton-ge-bin ];
-        protontricks.enable = true;
-      };
+      imports = [ steam ];
       programs.gamemode = {
         enable = true;
         settings.custom = {
-          start = "${profiles} set performance";
-          end = "${profiles} set power-saver";
+          start = "${systemd}/bin/systemd-run --user --collect --unit=gamemode-performance ${profiles} launch --profile performance --reason GameMode ${pkgs.coreutils}/bin/sleep infinity";
+          end = "${systemd}/bin/systemctl --user stop gamemode-performance";
         };
       };
       home-manager.users.marcos.imports = [ homeManager.gaming ];
-      nixpkgs.config.allowUnfreePackages = [
-        "steam"
-        "steam-unwrapped"
-      ];
     };
 
   flake.modules.homeManager.gaming = {
