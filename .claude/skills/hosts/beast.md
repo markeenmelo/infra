@@ -6,7 +6,7 @@ the `desktop` role ([desktop skill](../desktop/SKILL.md)), builds for itself wit
 as a substituter (`cache-client` in [builder.nix](../../../modules/builder.nix)), and is an
 operator machine like the thinkpad (`operatorNames` in
 [opentofu.nix](../../../modules/opentofu.nix)), so it reaches the cache and the OpenTofu state.
-The card runs NVIDIA's open kernel module with VRAM preserved across suspend, since the idle timer
+The card runs NVIDIA's open kernel module, which can lag the newest kernel as ZFS does on bastion, so [kernel.nix](../../../modules/kernel.nix) boots the newest series that module builds for; VRAM is preserved across suspend, since the idle timer
 suspends the desktop; Steam comes from the `gaming` module ([gaming.nix](../../../modules/gaming.nix)),
 its state under the preserved home, and the library on `/games` is added once in Steam's storage
 settings.
@@ -50,6 +50,30 @@ sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel
 
 A firmware update changes PCR 7, so LUKS asks for the passphrase again until the token is
 resealed with the last command plus `--wipe-slot=tpm2`.
+
+## Fans and lighting
+
+[case.nix](../../../modules/hosts/beast/case.nix) loads `nct6775` for the board's Nuvoton NCT6798,
+which exposes the fans and their PWM outputs. OpenRGB runs as a root server for the board's
+Polychrome USB controller, the DRAM, the card and the AIO cooler; its SDK port answers without
+authentication, so a loopback guard lets only root and `marcos` reach it, and its profiles stay in
+`/var/lib/OpenRGB`.
+
+The power profile is beast's one switch, set from the bar or by GameMode: `beast-mode` follows it,
+running fan2go with the gaming curve and rainbow lighting under `performance`, and turning the
+lights off and stopping fan2go under any other profile. On exit fan2go hands the channels back to
+the firmware's automatic mode, so the firmware's own curve, set to silent, is the quiet mode and
+also runs the fans at boot or whenever fan2go is down. The gaming curve follows the CPU package
+temperature and drives the three connected channels alike, since which header feeds the AIO pump is
+unknown, never below 38%.
+
+## Display
+
+[display.nix](../../../modules/hosts/beast/display.nix) drives the Odyssey G93SC at 5120x1440 and
+240 Hz over DisplayPort, which the thinkpad's HDMI cannot reach, so it overrides the 120 Hz default
+of [odyssey.nix](../../../modules/odyssey.nix). HDR is always on, as on the thinkpad; VRR engages for
+fullscreen windows and always for Steam games. The 10-bit render depth and the EDID color profile
+mapping untagged SDR to sRGB apply whenever the panel runs SDR.
 
 ## Games drive
 

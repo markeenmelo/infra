@@ -27,7 +27,6 @@
       };
       services = {
         hardware.bolt.enable = true;
-        power-profiles-daemon.enable = true;
         udev = {
           extraHwdb = ''
             battery:BAT0:*:dmi:*
@@ -106,7 +105,6 @@
       };
       preservation.preserveAt."/persist".directories = [
         "/var/lib/boltd"
-        "/var/lib/power-profiles-daemon"
         "/var/lib/power-profile-ac"
       ];
       home-manager.users.marcos.programs.umbriel.settings.output =

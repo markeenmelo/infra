@@ -121,7 +121,7 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
 
 The role is one file per concern, each setting its NixOS and Home Manager halves: the base in
 [desktop.nix](../../../modules/desktop.nix) (Home Manager as a NixOS module, NetworkManager,
-Bluetooth, PipeWire, UPower, the apps), [umbriel.nix](../../../modules/umbriel.nix)
+Bluetooth, PipeWire, UPower, power-profiles-daemon for the bar's power profiles, the apps), [umbriel.nix](../../../modules/umbriel.nix)
 (the compositor session from nixpkgs' module, and `programs.umbriel.settings`, a config layered
 over Umbriel's packaged `config.toml`: tables merge by key and the last file wins, so only changes
 to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists the keybinds),
@@ -132,7 +132,7 @@ key either program's validator rejects or warns about),
 [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Wi-Fi
 profiles are their own `wifi` module ([wifi.nix](../../../modules/wifi.nix)), which a host
-imports beside the role, so a wired desktop holds no Wi-Fi secrets; Steam is the `gaming` module ([gaming.nix](../../../modules/gaming.nix)), imported the same way by beast. The tailnet client accepts bastion's subnet routes
+imports beside the role, so a wired desktop holds no Wi-Fi secrets; Steam with Proton-GE and protontricks, GameMode, MangoHud and the Umbriel rule for Steam games (tearing allowed, VRR always, pointer confined) are the `gaming` module ([gaming.nix](../../../modules/gaming.nix)), imported the same way by beast. A game launched with `gamemoderun mangohud %command%` sets the `performance` power profile while it runs, and `power-saver` when it exits; MangoHud stays hidden until Shift_R+F12 and takes its colors and fonts from Stylix. The tailnet client accepts bastion's subnet routes
 so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
 advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
 through bastion. Bitwarden's desktop app is the SSH agent

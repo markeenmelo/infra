@@ -49,6 +49,33 @@ in
           preStart = "printf 1 > /var/lib/upower/charging-threshold-status";
         };
         "btrfs-scrub@".unitConfig.ConditionACPower = true;
+        tailscale-exit-node = {
+          description = "Route through the vpn-ca exit node by default";
+          wantedBy = [
+            "multi-user.target"
+            "tailscaled-set.service"
+          ];
+          after = [ "tailscaled-set.service" ];
+          wants = [ "tailscaled-set.service" ];
+          path = [
+            config.services.tailscale.package
+            pkgs.jq
+          ];
+          enableStrictShellChecks = true;
+          restartIfChanged = false;
+          script = ''
+            for _ in $(seq 30); do
+              if tailscale set --exit-node=vpn-ca; then
+                tailscale status --json | jq -e '.ExitNodeStatus.Online' > /dev/null && exit 0
+                echo "tailscale-exit-node: the node named vpn-ca is offline; internet is down until another exit node is picked" >&2
+                exit 1
+              fi
+              sleep 10
+            done
+            echo "tailscale-exit-node: vpn-ca stayed unreachable for 5 minutes; the exit node is left as it was" >&2
+            exit 1
+          '';
+        };
       };
       services.btrfs.autoScrub.interval = "weekly";
       networking.modemmanager.enable = false;
@@ -76,6 +103,7 @@ in
         };
         logind.settings.Login.HandleLidSwitchExternalPower = "ignore";
         gvfs.enable = true;
+        power-profiles-daemon.enable = true;
         speechd.enable = false;
       };
       xdg.sounds.enable = false;
@@ -88,6 +116,7 @@ in
         "/var/lib/NetworkManager"
         "/var/lib/bluetooth"
         "/var/lib/upower"
+        "/var/lib/power-profiles-daemon"
         "/var/lib/systemd/backlight"
         "/var/lib/systemd/rfkill"
       ];
