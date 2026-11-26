@@ -60,7 +60,10 @@ in
         tailscale = {
           useRoutingFeatures = "client";
           extraUpFlags = [ "--reset" ];
-          extraSetFlags = [ "--accept-routes" ];
+          extraSetFlags = [
+            "--accept-routes"
+            "--exit-node-allow-lan-access"
+          ];
         };
         pipewire = {
           enable = true;
