@@ -40,7 +40,7 @@ on, and the TPM sealed:
 ```sh
 sudo mkdir -p /var/lib/sbctl && sudo mount --bind /persist/var/lib/sbctl /var/lib/sbctl
 just deploy beast                         # from the operator's machine
-sudo sbctl verify                         # every EFI file signed
+sudo sbctl verify                         # BOOTX64.EFI signed; kernels are checked by hash instead
 systemctl reboot --firmware-setup         # Security > Secure Boot: custom mode, reset to setup mode
 sudo sbctl enroll-keys --microsoft
 systemctl reboot --firmware-setup         # turn Secure Boot on
