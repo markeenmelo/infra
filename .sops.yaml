@@ -3,6 +3,7 @@ keys:
   - &bastion age16fyy8678zedgm6nqgqnvmwzlc9cjzsc2nu9u45jaxvuh0sw5wfjst73np2
   - &edge age1wp59wfdt35kt2nu4w7ufepqmw44qpe3f79u8h46rz74jp2y95d3q4defmp
   - &thinkpad age133p0p8m0aecjw92dg8unslruhfhsupq68juht0m5j8p6xwcyp9gse344fz
+  - &beast age1ewkhy4ewpz2x096p973662us47rzydejp4xav0lhrq9eqt2dsp5svtzfr4
 
 creation_rules:
   - path_regex: ^secrets/hosts/edge\.yaml$
@@ -20,12 +21,18 @@ creation_rules:
       - age:
           - *operator
           - *thinkpad
+  - path_regex: ^secrets/hosts/beast\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *beast
   - path_regex: ^secrets/shared/login\.yaml$
     key_groups:
       - age:
           - *operator
           - *bastion
           - *thinkpad
+          - *beast
   - path_regex: ^secrets/shared/crowdsec\.yaml$
     key_groups:
       - age:
