@@ -35,6 +35,7 @@
       radicale
       dorian
       fwupd
+      secure-boot
     ];
     system.stateVersion = "26.05";
   };
