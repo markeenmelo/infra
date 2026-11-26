@@ -199,6 +199,11 @@ in
       programs.gamemode.enable = true;
       services.desktopManager.plasma6.enable = true;
       services.power-profiles-daemon.enable = false;
+      environment.etc."xdg/kscreenlockerrc".text = ''
+        [Daemon][$i]
+        Autolock=false
+        LockOnResume=false
+      '';
       security.polkit.extraConfig = ''
         polkit.addRule(function (action, subject) {
           if (subject.user == "ian" && action.id.indexOf("org.freedesktop.NetworkManager.") == 0) {
