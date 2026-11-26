@@ -114,7 +114,6 @@
           ];
           wants = [ "openrgb.service" ];
           path = [
-            config.services.power-profiles-daemon.package
             config.systemd.package
             lighting
           ];
@@ -126,7 +125,9 @@
           script = ''
             applied=
             while true; do
-              profile=$(powerprofilesctl get) || { sleep 2; continue; }
+              profile=$(busctl --system get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile) || { sleep 2; continue; }
+              profile=''${profile#s \"}
+              profile=''${profile%\"}
               if [ "$profile" != "$applied" ]; then
                 if [ "$profile" = performance ]; then
                   systemctl start fan2go-gaming.service
