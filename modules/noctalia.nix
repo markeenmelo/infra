@@ -55,7 +55,12 @@
           directory = "/var/lib/AccountsService";
           mode = "0700";
         }
-        "/var/lib/noctalia-greeter"
+        {
+          directory = "/var/lib/noctalia-greeter";
+          user = config.services.greetd.settings.default_session.user;
+          group = config.users.users.${config.services.greetd.settings.default_session.user}.group;
+          mode = "0750";
+        }
       ];
     };
 
