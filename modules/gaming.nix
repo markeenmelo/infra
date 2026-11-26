@@ -1,36 +1,52 @@
 { config, ... }:
 let
   inherit (config.flake.modules) homeManager;
+  inherit (config.flake.modules.nixos) steam;
 in
 {
-  flake.modules.nixos.gaming =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
-    let
-      profiles = lib.getExe' config.services.power-profiles-daemon.package "powerprofilesctl";
-    in
+  flake.modules.nixos.steam =
+    { pkgs, ... }:
     {
       programs.steam = {
         enable = true;
         extraCompatPackages = [ pkgs.proton-ge-bin ];
         protontricks.enable = true;
       };
-      programs.gamemode = {
-        enable = true;
-        settings.custom = {
-          start = "${profiles} set performance";
-          end = "${profiles} set power-saver";
-        };
-      };
-      home-manager.users.marcos.imports = [ homeManager.gaming ];
       nixpkgs.config.allowUnfreePackages = [
         "steam"
         "steam-unwrapped"
       ];
+    };
+
+  flake.modules.nixos.gaming =
+    {
+      config,
+      lib,
+      ...
+    }:
+    let
+      profiles = lib.getExe' config.services.power-profiles-daemon.package "powerprofilesctl";
+    in
+    {
+      options.gaming.restProfile = lib.mkOption {
+        type = lib.types.enum [
+          "power-saver"
+          "balanced"
+        ];
+        default = "balanced";
+        description = "Power profile GameMode sets when the last game exits.";
+      };
+      imports = [ steam ];
+      config = {
+        programs.gamemode = {
+          enable = true;
+          settings.custom = {
+            start = "${profiles} set performance";
+            end = "${profiles} set ${config.gaming.restProfile}";
+          };
+        };
+        home-manager.users.marcos.imports = [ homeManager.gaming ];
+      };
     };
 
   flake.modules.homeManager.gaming = {

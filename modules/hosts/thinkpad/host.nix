@@ -12,6 +12,7 @@
       desktop
       wifi
       remote-builds
+      gaming
       telemetry
       fwupd
       secure-boot
