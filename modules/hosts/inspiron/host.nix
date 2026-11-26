@@ -13,6 +13,7 @@
         kiosk
         cache-client
         secure-boot
+        fwupd
         telemetry
       ];
       system.stateVersion = "26.11";
