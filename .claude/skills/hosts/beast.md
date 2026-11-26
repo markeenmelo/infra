@@ -78,4 +78,4 @@ sudo systemctl start games.mount
 sudo chown marcos:users /games
 ```
 
-A reinstall follows [operating: deploy](../operating/deploy.md#install) and touches only the `os` disk.
+A reinstall follows [operating: deploy](../operating/deploy.md#install) and touches only the `os` disk. The NixOS installer is unsigned, so Secure Boot is turned off in the firmware first; the install signs Limine with the carried keys, Secure Boot goes back on, and the new LUKS header is sealed with the `systemd-cryptenroll` line above.
