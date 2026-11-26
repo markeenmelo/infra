@@ -7,6 +7,7 @@
   };
   fleet.hosts.beast.module = {
     imports = with config.flake.modules.nixos; [
+      storage
       desktop
       gaming
       cache-client

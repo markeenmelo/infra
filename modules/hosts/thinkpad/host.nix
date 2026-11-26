@@ -7,6 +7,7 @@
   };
   fleet.hosts.thinkpad.module = {
     imports = with config.flake.modules.nixos; [
+      storage
       desktop
       wifi
       remote-builds
