@@ -12,6 +12,7 @@ to be read; nothing here is meant to be reused as is.
 | `edge` | aarch64-linux | Public HTTPS edge (Oracle Cloud instance): passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
 | `thinkpad` | x86_64-linux | Operator laptop | bastion |
 | `beast` | x86_64-linux | Operator gaming desktop | itself |
+| `inspiron` | x86_64-linux | Ian's Minecraft kiosk on the Kids VLAN | the deploying machine |
 
 ## Quick start
 

@@ -25,7 +25,7 @@ in
     deploy.nodes = lib.mapAttrs (name: host: {
       hostname = name;
       sshUser = "deploy";
-      remoteBuild = !config.flake.nixosConfigurations.${name}.config.nix.distributedBuilds;
+      remoteBuild = config.flake.nixosConfigurations.${name}.config.nix.settings.max-jobs != 0;
       profiles.system = {
         user = "root";
         path = (deployLib host.system).activate.nixos config.flake.nixosConfigurations.${name};
