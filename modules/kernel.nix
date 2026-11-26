@@ -12,6 +12,7 @@
       builds =
         packages:
         lib.optional zfs packages.${config.boot.zfs.package.kernelModuleAttribute}
+        # shortcut: checks the default stable driver, not hardware.nvidia.package, which is chosen from boot.kernelPackages itself; follow the chosen driver when a host picks dc, beta or a pinned one
         ++ lib.optional nvidia (
           if config.hardware.nvidia.open then
             packages.nvidiaPackages.stable.open
