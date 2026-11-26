@@ -67,6 +67,14 @@ also runs the fans at boot or whenever fan2go is down. The gaming curve follows 
 temperature and drives the three connected channels alike, since which header feeds the AIO pump is
 unknown, never below 38%.
 
+## Network and wake
+
+beast is wired: [hardware.nix](../../../modules/hosts/beast/hardware.nix) turns the Wi-Fi radio
+off at every boot (the bar turns it back on until the next one), and NetworkManager arms
+magic-packet Wake-on-LAN on the wired connection, so `nix run .#wake -- beast` powers it on from
+the Home VLAN, suspended or off. Waking from off also needs the firmware's PCIe power-on enabled
+and its ErP / deep sleep disabled.
+
 ## Display
 
 [display.nix](../../../modules/hosts/beast/display.nix) drives the Odyssey G93SC at 5120x1440 and

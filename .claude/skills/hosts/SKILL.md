@@ -20,7 +20,7 @@ Oracle's. Bastion, thinkpad and beast boot Limine with their own Secure Boot key
 app with the sbctl keys (`fwupd-efi.service`) and has capsule updates boot it without shim, which
 none of them has. A capsule update reflashes the firmware, after which the TPM may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
 
-`wake.nix` powers on bastion by Wake-on-LAN, from home only, and edge through the Oracle API; the
+`wake.nix` powers on bastion and beast by Wake-on-LAN, from home only, and edge through the Oracle API; the
 command is in [operating: deploy](../operating/deploy.md).
 
 What runs on a host lives elsewhere: bastion's apps in the [services skill](../services/SKILL.md),
