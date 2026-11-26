@@ -109,7 +109,6 @@
           description = "Follow the power profile with beast's fans and lighting";
           wantedBy = [ "multi-user.target" ];
           after = [
-            "power-profiles-daemon.service"
             "openrgb.service"
           ];
           wants = [ "openrgb.service" ];
@@ -131,10 +130,10 @@
               if [ "$profile" != "$applied" ]; then
                 if [ "$profile" = performance ]; then
                   systemctl start fan2go-gaming.service
-                  beast-lighting gaming
+                  beast-lighting gaming || true
                 else
                   systemctl stop fan2go-gaming.service
-                  beast-lighting off
+                  beast-lighting off || true
                 fi
                 applied=$profile
               fi
