@@ -2,13 +2,12 @@
 
 [modules/hosts/inspiron/](../../../modules/hosts/inspiron/) is Ian's Dell Inspiron 14 2-in-1 (AMD
 Ryzen 5000, Barcelo graphics, AX210 Wi-Fi), used for Minecraft and mostly on AC. It runs the
-`kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)), which powers it off at 13:00 and 20:00 every day, and on waking from a suspend that spanned either time: greetd logs `ian` straight into gamescope
-running Prism Launcher, and starts it again when it exits; `ian` has no sudo, `marcos` and
+`kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)), which powers it off at 13:00 and 20:00 every day, and on waking from a suspend that spanned either time: greetd logs `ian` straight into a full-screen chooser (Qt Quick in cage) with three large touch buttons: Minecraft (Prism in gamescope), Steam Big Picture (in gamescope, whose "switch to desktop" quits Steam through a `steamos-session-select` stub) and KDE Plasma. Leaving any of them returns to the chooser; `ian` has no sudo, `marcos` and
 `deploy` are the fleet's accounts, the CPU governor stays on `performance`, and Bluetooth is on for a mouse or controller, paired from an SSH session with `sudo bluetoothctl`.
 
 ## Minecraft
 
-Prism launches the instance `fo` straight away: the Fabulously Optimized modpack, fetched from
+The Minecraft button launches the Prism instance `fo` straight away: the Fabulously Optimized modpack, fetched from
 Modrinth and pinned by `packHash` with nix-minecraft's fetcher, minus e4mc, which would open a LAN
 world to the internet. It runs on GraalVM CE with a 4 to 6 GB heap. At every boot and deploy,
 `minecraft-instance` links the pack's mods and resource packs into the instance read-only, writes
