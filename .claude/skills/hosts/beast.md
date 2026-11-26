@@ -6,6 +6,10 @@ the `desktop` role ([desktop skill](../desktop/SKILL.md)), builds for itself wit
 as a substituter (`cache-client` in [builder.nix](../../../modules/builder.nix)), and is an
 operator machine like the thinkpad (`operatorNames` in
 [opentofu.nix](../../../modules/opentofu.nix)), so it reaches the cache and the OpenTofu state.
+The card runs NVIDIA's open kernel module with VRAM preserved across suspend, since the idle timer
+suspends the desktop; Steam comes from the `gaming` module ([gaming.nix](../../../modules/gaming.nix)),
+its state under the preserved home, and the library on `/games` is added once in Steam's storage
+settings.
 
 ## Disk, unlock and boot
 

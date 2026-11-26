@@ -8,6 +8,7 @@
   fleet.hosts.beast.module = {
     imports = with config.flake.modules.nixos; [
       desktop
+      gaming
       cache-client
       logs
       fwupd
