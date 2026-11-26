@@ -3,24 +3,17 @@ let
   inherit (config.fleet) domain hosts operators;
   bastion = hosts.bastion.tailnetAddress;
   senders = lib.filterAttrs (_: host: host.telemetry != null) hosts;
+  asleep = lib.filterAttrs (_: host: !host.alwaysOn) senders;
   publishers = lib.filterAttrs (
     name: host:
     host.publicAddress != null && config.flake.nixosConfigurations.${name}.config.fleet.probes != { }
   ) hosts;
-  watched = lib.filterAttrs (
-    _: host: host.telemetry.metrics != null && host.telemetry.alwaysOn
-  ) senders;
-  awake = "instance!~\"${
-    lib.concatStringsSep "|" (
-      lib.attrNames (lib.filterAttrs (_: host: !host.telemetry.alwaysOn) senders)
-    )
-  }\"";
-  senderPorts =
-    telemetry:
-    lib.remove null [
-      telemetry.metrics
-      telemetry.logs
-    ];
+  watched = lib.filterAttrs (_: host: host.alwaysOn) senders;
+  awake = "instance!~\"${lib.concatStringsSep "|" (lib.attrNames asleep)}\"";
+  senderPorts = telemetry: [
+    telemetry.metrics
+    telemetry.logs
+  ];
   journal = forward: labels: ''
     loki.relabel "journal" {
       forward_to = []
@@ -86,7 +79,7 @@ let
         forward_to      = [${forward}]
       }
     '';
-  inherit (config.flake.modules.nixos) ntfy logs;
+  inherit (config.flake.modules.nixos) ntfy;
   hostname = "grafana.${domain}";
   admins = "grafana-admins";
   ports = {
@@ -134,30 +127,6 @@ in
       };
     };
 
-  flake.modules.nixos.logs =
-    { config, ... }:
-    {
-      key = "fleet-logs";
-      services.alloy.enable = true;
-      environment.etc."alloy/config.alloy".text = journal "loki.write.bastion.receiver" "{}" + ''
-        loki.write "bastion" {
-          endpoint {
-            url                 = "http://${bastion}:${
-              toString hosts.${config.networking.hostName}.telemetry.logs
-            }/loki/api/v1/push"
-            max_backoff_retries = 0
-          }
-        }
-      '';
-      preservation.preserveAt."/persist".directories = [
-        {
-          directory = "/var/lib/private/alloy";
-          configureParent = true;
-          parent.mode = "0700";
-        }
-      ];
-    };
-
   flake.modules.nixos.telemetry =
     { config, lib, ... }:
     let
@@ -170,64 +139,80 @@ in
       );
     in
     {
-      imports = [ logs ];
-      assertions = [
+      services.alloy.enable = true;
+      preservation.preserveAt."/persist".directories = [
         {
-          assertion = telemetry.metrics != null;
-          message = "fleet.hosts.${host}.telemetry.metrics is null: a host that imports `telemetry` pushes metrics; import `logs` to ship only the journal.";
+          directory = "/var/lib/private/alloy";
+          configureParent = true;
+          parent.mode = "0700";
         }
       ];
-      environment.etc."alloy/config.alloy".text = ''
-        prometheus.exporter.unix "node" {
-          enable_collectors = ["systemd"]
+      environment.etc."alloy/config.alloy".text = lib.mkMerge [
+        (
+          ''
+            prometheus.exporter.unix "node" {
+              enable_collectors = ["systemd"]
 
-          systemd {
-            enable_restarts = true
+              systemd {
+                enable_restarts = true
+              }
+            }
+
+            discovery.relabel "node" {
+              targets = prometheus.exporter.unix.node.targets
+              rule {
+                target_label = "job"
+                replacement  = "node"
+              }
+            }
+
+            prometheus.scrape "node" {
+              scrape_interval = "60s"
+              targets         = discovery.relabel.node.output
+              forward_to      = [prometheus.relabel.instance.receiver]
+            }
+
+            prometheus.scrape "targets" {
+              scrape_interval = "60s"
+              targets         = [
+                ${targets}
+              ]
+              forward_to      = [prometheus.relabel.instance.receiver]
+            }
+
+            prometheus.relabel "instance" {
+              forward_to = [prometheus.remote_write.bastion.receiver]
+              rule {
+                target_label = "instance"
+                replacement  = "${host}"
+              }
+            }
+
+            prometheus.remote_write "bastion" {
+              endpoint {
+                url = "http://${bastion}:${toString telemetry.metrics}/api/v1/metrics/write"
+              }
+            }
+          ''
+          + blackbox {
+            targets = lib.concatStrings (
+              lib.mapAttrsToList (name: url: target name url "https") config.fleet.probes
+            );
+            forward = "prometheus.relabel.instance.receiver";
           }
-        }
-
-        discovery.relabel "node" {
-          targets = prometheus.exporter.unix.node.targets
-          rule {
-            target_label = "job"
-            replacement  = "node"
-          }
-        }
-
-        prometheus.scrape "node" {
-          scrape_interval = "60s"
-          targets         = discovery.relabel.node.output
-          forward_to      = [prometheus.relabel.instance.receiver]
-        }
-
-        prometheus.scrape "targets" {
-          scrape_interval = "60s"
-          targets         = [
-            ${targets}
-          ]
-          forward_to      = [prometheus.relabel.instance.receiver]
-        }
-
-        prometheus.relabel "instance" {
-          forward_to = [prometheus.remote_write.bastion.receiver]
-          rule {
-            target_label = "instance"
-            replacement  = "${host}"
-          }
-        }
-
-        prometheus.remote_write "bastion" {
-          endpoint {
-            url = "http://${bastion}:${toString telemetry.metrics}/api/v1/metrics/write"
-          }
-        }
-      ''
-      + blackbox {
-        targets = lib.concatStrings (
-          lib.mapAttrsToList (name: url: target name url "https") config.fleet.probes
-        );
-        forward = "prometheus.relabel.instance.receiver";
-      };
+        )
+        (
+          journal "loki.write.bastion.receiver" "{}"
+          + ''
+            loki.write "bastion" {
+              endpoint {
+                url                 = "http://${bastion}:${toString telemetry.logs}/loki/api/v1/push"
+                max_backoff_retries = 0
+              }
+            }
+          ''
+        )
+      ];
     };
 
   flake.modules.nixos.monitoring =
@@ -877,41 +862,36 @@ in
           forward = "prometheus.remote_write.local.receiver";
         }
         + lib.concatStrings (
-          lib.mapAttrsToList (
-            sender: telemetry:
-            lib.optionalString (telemetry.metrics != null) ''
-              prometheus.receive_http "${sender}" {
-                http {
-                  listen_address = "0.0.0.0"
-                  listen_port    = ${toString telemetry.metrics}
-                }
-                forward_to = [prometheus.relabel.${sender}.receiver]
+          lib.mapAttrsToList (sender: telemetry: ''
+            prometheus.receive_http "${sender}" {
+              http {
+                listen_address = "0.0.0.0"
+                listen_port    = ${toString telemetry.metrics}
               }
+              forward_to = [prometheus.relabel.${sender}.receiver]
+            }
 
-              prometheus.relabel "${sender}" {
-                forward_to = [prometheus.remote_write.local.receiver]
-                rule {
-                  target_label = "host"
-                  replacement  = "${sender}"
-                }
-                rule {
-                  target_label = "instance"
-                  replacement  = "${sender}"
-                }
+            prometheus.relabel "${sender}" {
+              forward_to = [prometheus.remote_write.local.receiver]
+              rule {
+                target_label = "host"
+                replacement  = "${sender}"
               }
-            ''
-            + ''
-              loki.source.api "${sender}" {
-                http {
-                  listen_address = "0.0.0.0"
-                  listen_port    = ${toString telemetry.logs}
-                }
-                labels                 = { host = "${sender}" }
-                use_incoming_timestamp = true
-                forward_to             = [loki.write.local.receiver]
+              rule {
+                target_label = "instance"
+                replacement  = "${sender}"
               }
-            ''
-          ) (lib.mapAttrs (_: host: host.telemetry) senders)
+            }
+            loki.source.api "${sender}" {
+              http {
+                listen_address = "0.0.0.0"
+                listen_port    = ${toString telemetry.logs}
+              }
+              labels                 = { host = "${sender}" }
+              use_incoming_timestamp = true
+              forward_to             = [loki.write.local.receiver]
+            }
+          '') (lib.mapAttrs (_: host: host.telemetry) senders)
         )
         + lib.optionalString (lan != null) ''
           loki.source.syslog "gateway" {
