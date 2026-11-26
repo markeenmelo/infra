@@ -66,9 +66,10 @@
           # shortcut: the 40% brightness cap on battery is a starting point, not measured; tune after a battery baseline
           script = ''
             ac=$(cat /sys/class/power_supply/AC/online)
+            held=$(systemctl is-active power-saver-on-battery || true)
             if [ "$ac" = 1 ]; then
-              systemctl stop power-saver-on-battery
-            elif ! systemctl is-active --quiet power-saver-on-battery; then
+              [ "$held" != active ] || systemctl stop power-saver-on-battery
+            elif [ "$held" != active ]; then
               systemd-run --collect --unit=power-saver-on-battery \
                 powerprofilesctl launch --profile power-saver --reason battery sleep infinity
             fi
