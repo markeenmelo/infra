@@ -39,6 +39,10 @@
       noctalia = args: "${spawn config.programs.noctalia.package} msg ${args}";
       panel = action: "${lib.getExe osConfig.programs.umbriel.package} msg output-${action} eDP-1";
       color = name: "#${config.lib.stylix.colors.${name}}ff";
+      translucent = [
+        "^com\\.mitchellh\\.ghostty$"
+        "^org\\.gnome\\.Nautilus$"
+      ];
     in
     {
       options.programs.umbriel.settings = lib.mkOption {
@@ -65,22 +69,45 @@
                   "workspaces"
                 ]
                 (event: {
-                  curve = "easeout";
-                  duration_ms = if event == "windows_out" then 120 else 300;
+                  curve = lib.mkDefault "easeOutQuint";
+                  duration_ms = lib.mkDefault 300;
                 });
           }
           {
             animation = {
-              curve = "easeout";
+              beziers = {
+                easeOutQuint = [
+                  0.23
+                  1
+                  0.32
+                  1
+                ];
+                quick = [
+                  0.15
+                  0
+                  0.1
+                  1
+                ];
+              };
+              curve = "easeOutQuint";
               duration_ms = 300;
-              overview.workspace_curve = "easeout";
+              overview.workspace_curve = "easeOutQuint";
+              border.duration_ms = 431;
+              layers.duration_ms = 320;
               windows_in = {
                 style = "popin";
                 scale = 0.87;
+                duration_ms = 328;
               };
               windows_out = {
                 style = "popin";
                 scale = 0.87;
+                curve = "linear";
+                duration_ms = 119;
+              };
+              windows_opacity = {
+                curve = "quick";
+                duration_ms = 242;
               };
               workspaces.enabled = false;
             };
@@ -109,7 +136,20 @@
               ];
               gap = 10;
             };
-            window_rule = [ { blur = false; } ];
+            window_rule = [
+              { blur = false; }
+              {
+                match.app_id = translucent;
+                opacity = 0.96;
+              }
+              {
+                match = {
+                  app_id = translucent;
+                  is_focused = true;
+                };
+                opacity = 0.985;
+              }
+            ];
             layer_rule = [ { blur = false; } ];
           }
           {

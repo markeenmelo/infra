@@ -5,21 +5,16 @@ let
     {
       stylix = {
         enable = true;
-        base16Scheme = "${inputs.stylix.inputs.tinted-schemes}/base16/tokyo-night-terminal-dark.yaml";
-        override = {
-          base03 = "565F89";
-          base05 = "A9B1D6";
-          base0B = "9ECE6A";
-        };
+        base16Scheme = "${inputs.stylix.inputs.tinted-schemes}/base16/everforest.yaml";
         polarity = "dark";
         image = ./wallpaper.jpg;
         overlays.enable = false;
         fonts = {
           sizes = {
-            terminal = 12;
-            applications = 11;
-            desktop = 11;
-            popups = 11;
+            terminal = 14;
+            applications = 12;
+            desktop = 12;
+            popups = 12;
           };
           monospace = {
             package = pkgs.nerd-fonts.jetbrains-mono;
