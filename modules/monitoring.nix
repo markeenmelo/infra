@@ -7,8 +7,15 @@ let
     name: host:
     host.publicAddress != null && config.flake.nixosConfigurations.${name}.config.fleet.probes != { }
   ) hosts;
-  metricSenders = lib.filterAttrs (_: host: host.telemetry.metrics != null) senders;
-  senderPorts = telemetry: lib.remove null (lib.attrValues telemetry);
+  watched = lib.filterAttrs (
+    _: host: host.telemetry.metrics != null && host.telemetry.alwaysOn
+  ) senders;
+  senderPorts =
+    telemetry:
+    lib.remove null [
+      telemetry.metrics
+      telemetry.logs
+    ];
   journal = forward: labels: ''
     loki.relabel "journal" {
       forward_to = []
@@ -593,13 +600,13 @@ in
                       for = "2m";
                       severity = "critical";
                       summary = "${sender} has sent no metrics to bastion for 10 minutes";
-                    }) metricSenders
+                    }) watched
                     ++ lib.mapAttrsToList (sender: _: {
                       title = "Logs silent ${sender}";
                       datasource = "loki";
                       expr = "absent_over_time({host=\"${sender}\"}[30m])";
                       summary = "${sender} has delivered no logs to bastion for 45 minutes";
-                    }) metricSenders
+                    }) watched
                     ++ [
                       {
                         title = "Heartbeat";
@@ -702,7 +709,7 @@ in
                         title = "Server login";
                         datasource = "loki";
                         expr = "sum by (host, user, source) (count_over_time({host=~\"${
-                          lib.concatStringsSep "|" (lib.attrNames metricSenders ++ [ host ])
+                          lib.concatStringsSep "|" (lib.attrNames watched ++ [ host ])
                         }\", syslog_identifier=~\"sshd.*\"} |= \"Accepted \" != \" for nix-ssh \" | regexp `Accepted \\S+ for (?P<user>\\S+) from (?P<source>\\S+)` | user != \"deploy\" or source !~ `${
                           lib.concatMapStringsSep "|" (
                             workstation: lib.replaceStrings [ "." ] [ "\\." ] workstation.tailnetAddress

@@ -45,9 +45,10 @@ address, with a tailnet grant for the same ports ([opentofu skill](../opentofu/S
 is authenticated, an accepted risk: a compromised host can push false data under its own name but
 read nothing. Each sender gets a critical `Host silent HOST` alert once its metrics have stopped for 10 minutes,
 since its own alerts, the edge's probes among them, stop with it and no data counts as fine.
-A Linux workstation imports `logs` instead, the journal half of `telemetry`, with `metrics = null`
-in its `telemetry` fact: no metrics and no `Host silent` alert, since a laptop that is shut, asleep
-or off the tailnet is normal. Every sender retries its log pushes forever, so while bastion is out
+The workstations and inspiron send metrics and logs too, but set `alwaysOn = false` in their
+`telemetry` fact: no `Host silent`, `Logs silent` or `Server login` alert, since a machine that is
+shut, asleep or off the tailnet is normal. The `logs` module, the journal half of `telemetry`,
+serves a host that ships no metrics (`metrics = null`). Every sender retries its log pushes forever, so while bastion is out
 of reach Alloy's queue fills and then stops reading the journal, which holds the backlog until the
 tailnet returns; Loki refuses pushed lines over a week old (its default ingestion window, apart
 from how long it keeps what it stored). Every Alloy, bastion's included, keeps its state under `/persist`, so it resumes
