@@ -12,6 +12,7 @@
       cache-client
       logs
       fwupd
+      secure-boot
     ];
     system.stateVersion = "26.11";
   };
