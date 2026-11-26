@@ -67,6 +67,14 @@ also runs the fans at boot or whenever fan2go is down. The gaming curve follows 
 temperature and drives the three connected channels alike, since which header feeds the AIO pump is
 unknown, never below 38%.
 
+## Display
+
+[display.nix](../../../modules/hosts/beast/display.nix) drives the Odyssey G93SC at 5120x1440 and
+240 Hz over DisplayPort, which the thinkpad's HDMI cannot reach, so it overrides the 120 Hz default
+of [odyssey.nix](../../../modules/odyssey.nix). HDR is always on, as on the thinkpad; VRR engages for
+fullscreen windows and always for Steam games. The 10-bit render depth and the EDID color profile
+mapping untagged SDR to sRGB apply whenever the panel runs SDR.
+
 ## Games drive
 
 The larger NVMe holds the game library on LUKS and ext4 at `/games`, outside disko like bastion's
