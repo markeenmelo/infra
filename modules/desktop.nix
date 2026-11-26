@@ -51,7 +51,10 @@ in
         "btrfs-scrub@".unitConfig.ConditionACPower = true;
         tailscale-exit-node = {
           description = "Route through the vpn-ca exit node by default";
-          wantedBy = [ "multi-user.target" ];
+          wantedBy = [
+            "multi-user.target"
+            "tailscaled-set.service"
+          ];
           after = [ "tailscaled-set.service" ];
           wants = [ "tailscaled-set.service" ];
           path = [
@@ -69,7 +72,7 @@ in
               fi
               sleep 10
             done
-            echo "tailscale-exit-node: vpn-ca stayed unreachable for 5 minutes; no exit node set" >&2
+            echo "tailscale-exit-node: vpn-ca stayed unreachable for 5 minutes; the exit node is left as it was" >&2
             exit 1
           '';
         };
