@@ -21,7 +21,7 @@ passphrase until then, since with Secure Boot off PCR 7 is the same for any load
 enrolled with Microsoft's CA kept, which the RTX 3070's option ROM needs, so as on bastion PCR 7
 also matches under a Microsoft-signed loader that does not measure what it boots, and a stolen box
 can unseal the key; accepted over a TPM PIN, since the desktop stays home. The keys are carried
-across reinstalls but not backed up (`backups.nix` leaves sbctl out); losing them means making and
+across reinstalls but not backed up, since beast runs no backups; losing them means making and
 enrolling new ones.
 
 Its keys were made on beast straight into the preserved path; sbctl's landlock sandbox refuses
