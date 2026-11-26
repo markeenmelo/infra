@@ -18,9 +18,9 @@ The host table and where each builds are in [README.md](../../../README.md#hosts
 Each host names its disk layout in `host.nix` ([storage.nix](../../../modules/storage.nix)):
 `storage`, a btrfs root rolled back at every boot with state preserved under `/persist`, or
 `plain-storage`, an ext4 root on the same LUKS partition that keeps everything and runs no
-Preservation. On a `plain-storage` host the live paths are the only ones in use, sops-nix
-included ([secrets.nix](../../../modules/secrets.nix)); the copy the install also wrote under
-`/persist` goes stale, so a reinstall takes the mounted ext4 root itself as ROOT, where the
+Preservation. A `plain-storage` host keeps its identity at the live paths only, which sops-nix
+and unlock read ([secrets.nix](../../../modules/secrets.nix)); the install stages nothing under
+`/persist` for it, and its reinstall takes the mounted ext4 root itself as ROOT, where the
 `fleet.carry` paths resolve to the live files.
 
 [fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion, thinkpad and beast, not edge, whose firmware is

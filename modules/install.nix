@@ -1,6 +1,9 @@
 { config, lib, ... }:
 let
-  carry = lib.mapAttrs (_: nixos: nixos.config.fleet.carry) config.flake.nixosConfigurations;
+  carry = lib.mapAttrs (_: nixos: {
+    paths = nixos.config.fleet.carry;
+    preserved = nixos.config.preservation.enable;
+  }) config.flake.nixosConfigurations;
   identities = ".config/sops/enroll";
 in
 {
@@ -85,7 +88,10 @@ in
             case $host in
             ${
               lib.concatStrings (
-                lib.mapAttrsToList (name: paths: "  ${name}) paths=(${lib.escapeShellArgs paths}) ;;\n") carry
+                lib.mapAttrsToList (
+                  name: host:
+                  "  ${name}) paths=(${lib.escapeShellArgs host.paths}) preserved=${lib.optionalString host.preserved "1"} ;;\n"
+                ) carry
               )
             }  *) echo "install: no NixOS host named $host" >&2; exit 1 ;;
             esac
@@ -113,6 +119,7 @@ in
               ssh "$target" umount -R "''${mount@Q}"
               trap - EXIT
             fi
+            [ -n "$preserved" ] || rm -rf "$extra/persist"
             nixos-anywhere "''${kexec[@]}" --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
               if [ -n "$identity" ]; then
                 echo "install: nixos-anywhere failed; read above how far it got. The identity is kept in $identity: rerun install with it" >&2
