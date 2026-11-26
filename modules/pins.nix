@@ -3,7 +3,6 @@
     { lib, pkgs, ... }:
     let
       pins = {
-        cache-tax = [ "--version=branch" ];
         caddy = [ "--version=skip" ];
         caveman = [ "--version=branch" ];
         decluttarr = [ ];
