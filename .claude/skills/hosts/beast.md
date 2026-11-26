@@ -56,8 +56,16 @@ resealed with the last command plus `--wipe-slot=tpm2`.
 [case.nix](../../../modules/hosts/beast/case.nix) loads `nct6775` for the board's Nuvoton NCT6798,
 which exposes the fans and their PWM outputs. OpenRGB runs as a root server for the board's
 Polychrome USB controller, the DRAM, the card and the AIO cooler; its SDK port answers without
-authentication, so a loopback guard lets only `marcos` reach it, and its profiles stay in
+authentication, so a loopback guard lets only root and `marcos` reach it, and its profiles stay in
 `/var/lib/OpenRGB`.
+
+The power profile is beast's one switch, set from the bar or by GameMode: `beast-mode` follows it,
+running fan2go with the gaming curve and rainbow lighting under `performance`, and turning the
+lights off and stopping fan2go under any other profile. On exit fan2go hands the channels back to
+the firmware's automatic mode, so the firmware's own curve, set to silent, is the quiet mode and
+also runs the fans at boot or whenever fan2go is down. The gaming curve follows the CPU package
+temperature and drives the three connected channels alike, since which header feeds the AIO pump is
+unknown, never below 38%.
 
 ## Games drive
 
