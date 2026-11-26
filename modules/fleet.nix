@@ -73,7 +73,12 @@ in
                 options = {
                   metrics = lib.mkOption {
                     type = lib.types.nullOr lib.types.port;
-                    description = "Port on bastion's tailnet address that takes this host's remote-written metrics; null for a host that ships only logs, which gets no `Host silent` alert.";
+                    description = "Port on bastion's tailnet address that takes this host's remote-written metrics; null for a host that ships only logs.";
+                  };
+                  alwaysOn = lib.mkOption {
+                    type = lib.types.bool;
+                    default = true;
+                    description = "Whether the host is meant to be up at all times, so bastion alerts when its metrics or logs stop; false for a machine that is switched off or asleep at will.";
                   };
                   logs = lib.mkOption {
                     type = lib.types.port;

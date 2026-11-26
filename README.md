@@ -74,6 +74,7 @@ just deploy HOST           # activate the committed checkout
 just deploy HOST --boot    # set the boot default only; no rollback
 just reboot HOST
 just deploy-many A B       # concurrent builds, sequential activations
+just deploy-online         # the same, over every host that is online
 just unlock edge           # send the disk passphrase to the edge waiting in its initrd
 just switch                # the laptop switches itself
 ```

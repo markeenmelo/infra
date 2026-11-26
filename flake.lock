@@ -265,6 +265,22 @@
         "type": "github"
       }
     },
+    "nix-minecraft": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795679667,
+        "narHash": "sha256-klgx8Hxb33Ew/5m0BDGMFfSsZYSAxCCMoCJA+ps97DM=",
+        "owner": "Infinidoge",
+        "repo": "nix-minecraft",
+        "rev": "ad1ef671c1c835e3d3ab921aa8fd5a14bb69972f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Infinidoge",
+        "repo": "nix-minecraft",
+        "type": "github"
+      }
+    },
     "nixflix": {
       "inputs": {
         "mkdocs-catppuccin": [],
@@ -437,6 +453,7 @@
         "home-manager": "home-manager",
         "import-tree": "import-tree",
         "microvm": "microvm",
+        "nix-minecraft": "nix-minecraft",
         "nixflix": "nixflix",
         "nixpkgs": "nixpkgs_2",
         "paseo": "paseo",

@@ -75,7 +75,7 @@ login, so a change to the guest is a change to agents.nix. Agent sessions run un
 ## Claude
 
 `nixos.claude-agent` in [claude.nix](../../../modules/claude.nix) gives the guest's Claude Code
-the caveman, ponytail and cache-tax plugins, Trail of Bits' `insecure-defaults` and
+the caveman and ponytail plugins, Trail of Bits' `insecure-defaults` and
 `sharp-edges`, the official `skill-creator` and `claude-md-management`, the language servers,
 the rtk hook, and the nixos and Grafana MCP servers, the Grafana one with `--disable-write` and
 only the tool groups for what the fleet runs, on `agents/grafana-token`, a Viewer service
