@@ -111,6 +111,7 @@ in
 
   perSystem =
     {
+      config,
       lib,
       pkgs,
       ...
@@ -153,6 +154,26 @@ in
             [ "$targets" -eq 1 ] || { echo "deploy: name a target, e.g. .#HOST" >&2; exit 1; }
             git diff --quiet HEAD || { echo "deploy: commit the tracked changes first" >&2; exit 1; }
             exec ${lib.getExe pkgs.deploy-rs} "$@"
+          '';
+        };
+      };
+      apps.deploy-online = {
+        meta.description = "deploy-online [--boot]: deploy every NixOS host the tailnet shows online in one run of the deploy app, naming each one skipped";
+        program = pkgs.writeShellApplication {
+          name = "deploy-online";
+          runtimeInputs = [ pkgs.jq ];
+          text = ''
+            online=$(tailscale status --json | jq -r '[.Self] + [.Peer[]?] | .[] | select(.Online) | .DNSName | split(".")[0]')
+            targets=()
+            for host in ${lib.escapeShellArgs (lib.attrNames hosts)}; do
+              if grep -qx "$host" <<< "$online"; then
+                targets+=(".#$host")
+              else
+                echo "deploy-online: skipping $host, offline" >&2
+              fi
+            done
+            [ ''${#targets[@]} -gt 0 ] || { echo "deploy-online: no host is online" >&2; exit 1; }
+            exec ${config.apps.deploy.program} --targets "''${targets[@]}" "$@"
           '';
         };
       };

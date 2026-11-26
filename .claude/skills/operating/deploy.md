@@ -52,11 +52,14 @@ nix run .#shutdown -- HOST          # power off as deploy
 nix run .#wake -- HOST              # bastion or beast by Wake-on-LAN, from home only (works from the Home VLAN, not over the tailnet); edge through the Oracle API
 nix run .#unlock -- HOST            # send the disk passphrase to a host waiting in its initrd (hosts skill, edge.md)
 nix run .#deploy -- --targets .#A .#B  # concurrent builds, sequential activations; a failure rolls back the hosts done
+nix run .#deploy-online             # the same over every host the tailnet shows online, naming each skipped
 ```
 
 The `deploy` app refuses a run that names no `.#HOST`, has uncommitted tracked changes, or passes
 any flag outside its allow list, so none can skip the checks, turn a rollback off, stretch the confirm timeout or set SSH options; `clean` keeps the newest two generations, so
-the previous one stays in the Limine menu.
+the previous one stays in the Limine menu. `deploy-online` takes "online" from `tailscale status` on the
+deploying machine, the coordination server's view, so a host switched off a minute ago may still
+count and then fails the run, rolling back the hosts already activated as `--targets` does.
 
 Claude prepares the command and the operator runs it ([CLAUDE.md](../../../CLAUDE.md#autonomy)); a deploy
 that changes SSH, firewall, Tailscale, users, sudo or this module is an access change. The first
