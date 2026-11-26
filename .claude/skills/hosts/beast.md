@@ -20,6 +20,13 @@ USB included, so a token sealed to it would hand the key to anyone at the keyboa
 Boot is on, the header gets a TPM2 token sealed to PCR 7 without a PIN, since the desktop stays
 home, the passphrase kept as fallback.
 
+Its sbctl keys live in `/var/lib/sbctl`, preserved under `/persist` and in `fleet.carry` like the
+thinkpad's. They are made once on beast, before Limine signing is turned on:
+
+```sh
+sudo sbctl create-keys
+```
+
 ## Games drive
 
 The larger NVMe holds the game library on LUKS and ext4 at `/games`, outside disko like bastion's
