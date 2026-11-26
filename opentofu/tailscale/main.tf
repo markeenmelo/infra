@@ -89,7 +89,7 @@ variable "fleet_domain" {
 locals {
   domain    = var.fleet_domain
   bastion   = var.fleet_hosts.bastion
-  telemetry = { for host, ports in var.fleet_telemetry : host => [for port in values(ports) : port if port != null] if ports != null }
+  telemetry = { for host, ports in var.fleet_telemetry : host => values(ports) if ports != null }
   # grafite is an admin device outside the fleet
   hosts = merge({
     grafite = "100.91.224.11"

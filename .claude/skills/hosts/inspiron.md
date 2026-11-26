@@ -2,7 +2,7 @@
 
 [modules/hosts/inspiron/](../../../modules/hosts/inspiron/) is Ian's Dell Inspiron 14 2-in-1 (AMD
 Ryzen 5000, Barcelo graphics, AX210 Wi-Fi), used for Minecraft and mostly on AC. It runs the
-`kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)): greetd logs `ian` straight into gamescope
+`kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)), which powers it off at 13:00 and 20:00 every day, and on waking from a suspend that spanned either time: greetd logs `ian` straight into gamescope
 running Prism Launcher, and starts it again when it exits; `ian` has no sudo, `marcos` and
 `deploy` are the fleet's accounts, the CPU governor stays on `performance`, and Bluetooth is on for a mouse or controller, paired from an SSH session with `sudo bluetoothctl`.
 
@@ -34,7 +34,7 @@ Secure Boot:
 ```sh
 sudo nix shell nixpkgs#sbctl -c sbctl create-keys
 just deploy inspiron                      # from the operator's machine
-sudo sbctl verify                         # every EFI file signed
+sudo sbctl verify                         # BOOTX64.EFI signed; kernels are checked by hash instead
 systemctl reboot --firmware-setup         # Secure Boot > Expert Key Management: custom mode, delete all keys
 sudo sbctl enroll-keys --microsoft
 systemctl reboot --firmware-setup         # turn Secure Boot on

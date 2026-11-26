@@ -67,18 +67,18 @@ in
             default = null;
             description = "A host wired to the LAN at a fixed address; the `tofu` app hands these to `opentofu/unifi` and `opentofu/tailscale` as `fleet_lan`.";
           };
+          alwaysOn = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Whether the host is meant to be up at all times: bastion alerts when an always-on host's metrics or logs stop; false for a machine that is switched off or asleep at will.";
+          };
           telemetry = lib.mkOption {
             type = lib.types.nullOr (
               lib.types.submodule {
                 options = {
                   metrics = lib.mkOption {
-                    type = lib.types.nullOr lib.types.port;
-                    description = "Port on bastion's tailnet address that takes this host's remote-written metrics; null for a host that ships only logs.";
-                  };
-                  alwaysOn = lib.mkOption {
-                    type = lib.types.bool;
-                    default = true;
-                    description = "Whether the host is meant to be up at all times, so bastion alerts when its metrics or logs stop; false for a machine that is switched off or asleep at will.";
+                    type = lib.types.port;
+                    description = "Port on bastion's tailnet address that takes this host's remote-written metrics.";
                   };
                   logs = lib.mkOption {
                     type = lib.types.port;
@@ -88,7 +88,7 @@ in
               }
             );
             default = null;
-            description = "Ports a host that imports `telemetry` or `logs` pushes to; bastion's Alloy listens on each, stamps the host label and admits only that host's tailnet address.";
+            description = "Ports a host that imports `telemetry` pushes to; bastion's Alloy listens on each, stamps the host label and admits only that host's tailnet address.";
           };
           unlock = lib.mkOption {
             type = lib.types.nullOr (

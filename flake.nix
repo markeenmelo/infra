@@ -7,7 +7,7 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
-    import-tree.url = "github:denful/import-tree";
+    import-tree.url = "github:denful/import-tree/v0.3.0";
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -22,7 +22,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     deploy-rs = {
-      url = "github:serokell/deploy-rs";
+      url = "github:serokell/deploy-rs/v1.0.0";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-compat.follows = "";
@@ -43,7 +43,7 @@
       };
     };
     nixflix = {
-      url = "github:kiriwalawren/nixflix";
+      url = "github:kiriwalawren/nixflix/v6.0.0";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         mkdocs-catppuccin.follows = "";
@@ -65,7 +65,7 @@
       };
     };
     paseo = {
-      url = "github:getpaseo/paseo";
+      url = "github:getpaseo/paseo/v0.17.5";
       inputs.nixpkgs.follows = "";
     };
     nix-minecraft = {

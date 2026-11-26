@@ -11,20 +11,10 @@ check:
     nix flake check --no-build --all-systems --option allow-import-from-derivation false
 
 [arg("args", pattern='--?[a-z-]+')]
-[arg("host", pattern='[a-z0-9-]+')]
-[doc("Activate HOST's configuration from this checkout over the tailnet, with magic rollback; --boot sets the boot default only and has no rollback")]
-deploy host *args:
-    nix run .#deploy -- .#{{ host }} {{ args }}
-
-[arg("hosts", pattern='[a-z0-9-]+')]
-[doc("Deploy several HOSTS in one run: builds run concurrently, activations one after another, and a failed host rolls back the ones already activated")]
-deploy-many +hosts:
-    nix run .#deploy -- --targets {{ prepend('.#', hosts) }}
-
-[arg("args", pattern='--?[a-z-]+')]
-[doc("Deploy every host the tailnet shows online in one run, as deploy-many does, naming each host skipped")]
-deploy-online *args:
-    nix run .#deploy-online -- {{ args }}
+[arg("target", pattern='[a-z0-9-]+')]
+[doc("Activate this checkout over the tailnet with magic rollback on TARGET: a host, or the online hosts of servers, workstations or all in one run, where a failed host rolls back the ones already activated; --boot sets the boot default only and has no rollback")]
+deploy target *args:
+    nix run .#deploy -- {{ target }} {{ args }}
 
 [arg("host", pattern='[a-z0-9-]+')]
 [doc("Reboot HOST over the tailnet as the deploy account, e.g. after `just deploy HOST --boot`")]

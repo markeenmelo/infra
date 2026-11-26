@@ -1,9 +1,9 @@
 { config, ... }:
 {
   fleet.hosts.thinkpad.tailnetAddress = "100.119.79.113";
+  fleet.hosts.thinkpad.alwaysOn = false;
   fleet.hosts.thinkpad.telemetry = {
     metrics = 9099;
-    alwaysOn = false;
     logs = 3103;
   };
   fleet.hosts.thinkpad.module = {
@@ -12,6 +12,7 @@
       desktop
       wifi
       remote-builds
+      gaming
       telemetry
       fwupd
       secure-boot
