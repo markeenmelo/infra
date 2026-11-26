@@ -64,10 +64,7 @@
         text = ''
           lighting=$1
           server=127.0.0.1:${toString openrgb.server.port}
-          for _ in $(seq 30); do
-            devices=$(openrgb --client "$server" --list-devices 2> /dev/null) && [ -n "$devices" ] && break
-            sleep 2
-          done
+          devices=$(openrgb --client "$server" --list-devices 2> /dev/null)
           echo "$devices" | grep -E '^[0-9]+: ' | while IFS=: read -r index name; do
             name=''${name# }
             case $lighting:$name in
