@@ -8,6 +8,7 @@ let
   inherit (config.fleet) hosts;
   systems = lib.unique (lib.mapAttrsToList (_: host: host.system) hosts);
   clean = "/run/current-system/sw/bin/clean-generations";
+  nodes = config.flake.deploy.nodes;
   deployLib =
     system:
     (inputs.nixpkgs.legacyPackages.${system}.appendOverlays [
@@ -26,6 +27,7 @@ in
       hostname = name;
       sshUser = "deploy";
       remoteBuild = config.flake.nixosConfigurations.${name}.config.nix.settings.max-jobs != 0;
+      groups = [ (if host.alwaysOn then "servers" else "workstations") ];
       profiles.system = {
         user = "root";
         path = (deployLib host.system).activate.nixos config.flake.nixosConfigurations.${name};
@@ -111,13 +113,20 @@ in
 
   perSystem =
     {
-      config,
       lib,
       pkgs,
       ...
     }:
     let
       hostCases = lib.concatMapStrings (name: "  ${name}) ;;\n") (lib.attrNames hosts);
+      deployCases = lib.concatMapStrings (name: "  ${name}) exec \"$deploy\" \".#${name}\" \"$@\" ;;\n") (
+        lib.attrNames hosts
+      );
+      members = lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (
+          name: host: "${name} ${host.tailnetAddress} ${toString nodes.${name}.groups}"
+        ) hosts
+      );
       systemctl = name: verb: description: {
         meta = { inherit description; };
         program = pkgs.writeShellApplication {
@@ -134,50 +143,42 @@ in
     in
     {
       apps.deploy = {
-        meta.description = "deploy .#HOST: activate the host's committed configuration over the tailnet with magic rollback; --boot sets the boot default only and has no rollback";
+        meta.description = "deploy TARGET [--boot]: activate the committed configuration with magic rollback on a host, or on the online hosts of a deploy group (servers, workstations or all), over the tailnet; --boot sets the boot default only and has no rollback";
         program = pkgs.writeShellApplication {
           name = "deploy";
-          runtimeInputs = [ pkgs.git ];
+          runtimeInputs = [
+            pkgs.git
+            pkgs.jq
+          ];
           text = ''
-            refuse() {
-              echo "deploy: $1 is not allowed" >&2
-              exit 1
-            }
-            targets=0
+            target=''${1-}
+            shift || true
             for arg in "$@"; do
               case $arg in
-                .#*) targets=1 ;;
-                --targets | --boot | --dry-activate | --remote-build | --debug-logs | -d) ;;
-                *) refuse "$arg" ;;
+                --boot | --dry-activate | --remote-build | --debug-logs | -d) ;;
+                *) echo "deploy: $arg is not allowed" >&2; exit 1 ;;
               esac
             done
-            [ "$targets" -eq 1 ] || { echo "deploy: name a target, e.g. .#HOST" >&2; exit 1; }
             git diff --quiet HEAD || { echo "deploy: commit the tracked changes first" >&2; exit 1; }
-            exec ${lib.getExe pkgs.deploy-rs} "$@"
-          '';
-        };
-      };
-      apps.deploy-online = {
-        meta.description = "deploy-online [--boot]: deploy every NixOS host the tailnet shows online in one run of the deploy app, naming each one skipped";
-        program = pkgs.writeShellApplication {
-          name = "deploy-online";
-          runtimeInputs = [ pkgs.jq ];
-          text = ''
+            deploy=${lib.getExe pkgs.deploy-rs}
+            case $target in
+            ${deployCases}  servers | workstations | all) ;;
+              *) echo "deploy: name a host or a group (servers, workstations, all), not '$target'" >&2; exit 1 ;;
+            esac
             online=$(tailscale status --json | jq -r '[.Self] + [.Peer[]?] | .[] | select(.Online) | .TailscaleIPs[]?')
             targets=()
-            while read -r host address; do
+            while read -r host address groups; do
+              [ "$target" = all ] || [[ " $groups " == *" $target "* ]] || continue
               if grep -qxF "$address" <<< "$online"; then
                 targets+=(".#$host")
               else
-                echo "deploy-online: skipping $host, offline" >&2
+                echo "deploy: skipping $host, offline" >&2
               fi
-            done <<< ${
-              lib.escapeShellArg (
-                lib.concatStringsSep "\n" (lib.mapAttrsToList (name: host: "${name} ${host.tailnetAddress}") hosts)
-              )
-            }
-            [ ''${#targets[@]} -gt 0 ] || { echo "deploy-online: no host is online" >&2; exit 1; }
-            exec ${config.apps.deploy.program} --targets "''${targets[@]}" "$@"
+            done <<< ${lib.escapeShellArg members}
+            [ ''${#targets[@]} -gt 0 ] || { echo "deploy: no host in $target is online" >&2; exit 1; }
+            groups=()
+            [ "$target" = all ] || groups=(--groups "$target")
+            exec "$deploy" --targets "''${targets[@]}" "''${groups[@]}" "$@"
           '';
         };
       };
