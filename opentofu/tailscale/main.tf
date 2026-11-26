@@ -134,7 +134,7 @@ locals {
     }
     grants = concat([for host, ports in local.telemetry : { src = [host], dst = ["bastion"], ip = [for port in ports : "tcp:${port}"] }], [
       { src = ["tag:admin-client"], dst = ["tag:server", "tag:admin-client", "tag:agent", "tag:kid"], ip = ["tcp:22"] },
-      { src = ["tag:kid"], dst = ["bastion"], ip = ["tcp:22", "tcp:${var.fleet_cache_port}"] },
+      { src = ["tag:kid"], dst = ["bastion"], ip = ["tcp:${var.fleet_cache_port}"] },
       { src = ["tag:admin-client"], dst = ["tag:agent"], ip = ["tcp:${var.fleet_paseo_port}"] },
       { src = ["tag:agent"], dst = ["bastion"], ip = ["tcp:443"] },
       { src = ["edge"], dst = ["bastion"], ip = ["tcp:${var.fleet_public_port}", "tcp:${var.fleet_bans_port}"] },
@@ -148,7 +148,7 @@ locals {
     ])
     tests = concat([for host, ports in local.telemetry : { src = host, proto = "tcp", accept = [for port in ports : "bastion:${port}"], deny = [for port in setsubtract(flatten(values(local.telemetry)), ports) : "bastion:${port}"] }], [
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:kid:22"] },
-      { src = "tag:kid", proto = "tcp", accept = ["bastion:22", "bastion:${var.fleet_cache_port}"], deny = ["edge:22", "tag:admin-client:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:443", "bastion:53", "bastion:${var.fleet_state_port}"] },
+      { src = "tag:kid", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["bastion:22", "edge:22", "tag:admin-client:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:443", "bastion:53", "bastion:${var.fleet_state_port}"] },
       { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:admin-client:22", "tag:kid:22"] },
       { src = "group:members", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:${var.fleet_state_port}", "tag:kid:22"] },

@@ -54,7 +54,8 @@ read-only for all of these; `acls_externally_managed_on` says so.
 
 - `grafite` is the operator's phone, an admin client outside the fleet.
 - `tag:kid` is inspiron, Ian's laptop on the Kids VLAN: the admin clients SSH to it, and it reaches
-  only bastion's builder (22) and cache, with no grant to the internet through an exit node; the
+  only bastion's cache: it holds no builder key, the deploying machine builds it on bastion. It has no
+  grant to the internet through an exit node; the
   tailnet's DNS reaches every node that accepts it, so the host itself turns it off for the Kids
   VLAN's filter and bedtime rule to keep applying.
 - Auth keys recreate on apply once invalid; [operating: tailnet](../operating/tailnet.md) moves one
