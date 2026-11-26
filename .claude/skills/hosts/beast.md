@@ -14,11 +14,42 @@ settings.
 ## Disk, unlock and boot
 
 The smaller NVMe is the `os` disk of [storage.nix](../../../modules/storage.nix), with the root
-wiped at every boot. Secure Boot is off until it gets its own sbctl keys, and until then LUKS asks
-for the passphrase at every boot: with Secure Boot off, PCR 7 is the same for any loader, a live
-USB included, so a token sealed to it would hand the key to anyone at the keyboard. Once Secure
-Boot is on, the header gets a TPM2 token sealed to PCR 7 without a PIN, since the desktop stays
-home, the passphrase kept as fallback.
+wiped at every boot. Limine is signed with beast's own keys (the `secure-boot` module,
+[secure-boot.nix](../../../modules/secure-boot.nix)). Once Secure Boot is on, LUKS opens with a
+TPM2 token sealed to PCR 7 without a PIN, the passphrase kept as fallback, and asks for the
+passphrase until then, since with Secure Boot off PCR 7 is the same for any loader. The keys are
+enrolled with Microsoft's CA kept, which the RTX 3070's option ROM needs, so as on bastion PCR 7
+also matches under a Microsoft-signed loader that does not measure what it boots, and a stolen box
+can unseal the key; accepted over a TPM PIN, since the desktop stays home. The keys are carried
+across reinstalls but not backed up, since beast runs no backups; losing them means making and
+enrolling new ones.
+
+Keys for a host that has none are made on it straight into the preserved path, before signing is
+turned on; sbctl's landlock sandbox refuses any path but its own, hence the flag:
+
+```sh
+sudo nix shell nixpkgs#sbctl -c sbctl create-keys --disable-landlock -e /persist/var/lib/sbctl/keys -d /persist/var/lib/sbctl/GUID
+```
+
+The first deploy that turns signing on installs Limine before Preservation mounts
+`/var/lib/sbctl`, and the installer reads the keys only there and ignores a failed `sbctl sign`,
+so the keys are bound in by hand first and the signature is checked before the firmware enforces
+it. Then the firmware is put in setup mode, the keys enrolled beside Microsoft's, Secure Boot turned
+on, and the TPM sealed:
+
+```sh
+sudo mkdir -p /var/lib/sbctl && sudo mount --bind /persist/var/lib/sbctl /var/lib/sbctl
+just deploy beast                         # from the operator's machine
+sudo sbctl verify                         # every EFI file signed
+systemctl reboot --firmware-setup         # Security > Secure Boot: custom mode, reset to setup mode
+sudo sbctl enroll-keys --microsoft
+systemctl reboot --firmware-setup         # turn Secure Boot on
+sudo sbctl status                         # Secure Boot enabled
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-os-state
+```
+
+A firmware update changes PCR 7, so LUKS asks for the passphrase again until the token is
+resealed with the last command plus `--wipe-slot=tpm2`.
 
 ## Games drive
 
@@ -46,4 +77,4 @@ sudo systemctl start games.mount
 sudo chown marcos:users /games
 ```
 
-A reinstall follows [operating: deploy](../operating/deploy.md#install) and touches only the `os` disk.
+A reinstall follows [operating: deploy](../operating/deploy.md#install) and touches only the `os` disk. The NixOS installer is unsigned, so Secure Boot is turned off in the firmware first; the install signs Limine with the carried keys, Secure Boot goes back on, and the new LUKS header is sealed with the `systemd-cryptenroll` line above.
