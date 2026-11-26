@@ -23,9 +23,9 @@ also matches under a Microsoft-signed loader that does not measure what it boots
 can unseal the key; accepted over a TPM PIN, since the desktop stays home. The keys are carried
 across reinstalls but not backed up, since beast runs no backups; losing them means making and
 enrolling new ones.
+
 Keys for a host that has none are made on it straight into the preserved path, before signing is
 turned on; sbctl's landlock sandbox refuses any path but its own, hence the flag:
-any path but its own, hence the flag:
 
 ```sh
 sudo nix shell nixpkgs#sbctl -c sbctl create-keys --disable-landlock -e /persist/var/lib/sbctl/keys -d /persist/var/lib/sbctl/GUID
