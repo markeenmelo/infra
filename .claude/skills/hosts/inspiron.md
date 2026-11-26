@@ -34,7 +34,7 @@ Secure Boot:
 ```sh
 sudo nix shell nixpkgs#sbctl -c sbctl create-keys
 just deploy inspiron                      # from the operator's machine
-sudo sbctl verify                         # every EFI file signed
+sudo sbctl verify                         # BOOTX64.EFI signed; kernels are checked by hash instead
 systemctl reboot --firmware-setup         # Secure Boot > Expert Key Management: custom mode, delete all keys
 sudo sbctl enroll-keys --microsoft
 systemctl reboot --firmware-setup         # turn Secure Boot on
