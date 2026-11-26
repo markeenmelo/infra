@@ -49,6 +49,20 @@ in
           preStart = "printf 1 > /var/lib/upower/charging-threshold-status";
         };
         "btrfs-scrub@".unitConfig.ConditionACPower = true;
+        tailscale-exit-node = {
+          description = "Route through the vpn-ca exit node by default";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "tailscaled-set.service" ];
+          wants = [ "tailscaled-set.service" ];
+          path = [ config.services.tailscale.package ];
+          enableStrictShellChecks = true;
+          serviceConfig = {
+            Type = "oneshot";
+            Restart = "on-failure";
+            RestartSec = 10;
+          };
+          script = "tailscale set --exit-node=vpn-ca";
+        };
       };
       services.btrfs.autoScrub.interval = "weekly";
       networking.modemmanager.enable = false;

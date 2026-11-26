@@ -42,7 +42,7 @@ reach the nodes directly and see bastion's public address as their endpoint; the
 nftables table lets it reach public addresses only, never the LAN, the tailnet or another
 namespace. Control, DERP and the DNS tailscaled forwards for exit clients stay in the tunnel. [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts a tunnel that fails or
 whose handshake is older than five minutes, and starts its exit node again each time it comes up. Choosing
-an exit node is done on the client: on the Linux laptops the bar's tailnet panel picks one. Their local subnet stays off the tunnel
+an exit node is done on the client: the desktops start on `vpn-ca` at every boot (`tailscale-exit-node`, [desktop.nix](../../../modules/desktop.nix), retried until the peer is known), and the bar's tailnet panel picks another or none until the next boot; with bastion or the tunnel down, the internet is down on them until another is picked. Their local subnet stays off the tunnel
 (`--exit-node-allow-lan-access`, [desktop.nix](../../../modules/desktop.nix)), since an exit node
 never reaches a LAN; on an untrusted network that subnet sees the laptop's local traffic. On the Linux laptops `marcos`
 is the Tailscale operator ([noctalia.nix](../../../modules/noctalia.nix)), an accepted risk: every
