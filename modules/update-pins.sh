@@ -24,11 +24,19 @@ while read -r name; do
   mv "$dashboards.new" "$dashboards"
 done <<< "$names"
 
-hermes=$(curl -fsS ${github_token:+-H "Authorization: Bearer $github_token"} https://api.github.com/repos/NousResearch/hermes-agent/releases/latest | jq -er .tag_name)
-[[ $hermes =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
-sed -i "s|\"github:NousResearch/hermes-agent/v[^\"]*\"|\"github:NousResearch/hermes-agent/$hermes\"|" flake.nix
-grep -qF "\"github:NousResearch/hermes-agent/$hermes\"" flake.nix
-nix flake update hermes-agent
+release() {
+  local repo=$1 input=$2 tag
+  tag=$(curl -fsS ${github_token:+-H "Authorization: Bearer $github_token"} "https://api.github.com/repos/$repo/releases/latest" | jq -er .tag_name)
+  [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+  sed -i "s|\"github:$repo/v[^\"]*\"|\"github:$repo/$tag\"|" flake.nix
+  grep -qF "\"github:$repo/$tag\"" flake.nix
+  nix flake update "$input"
+}
+release NousResearch/hermes-agent hermes-agent
+release getpaseo/paseo paseo
+release kiriwalawren/nixflix nixflix
+release denful/import-tree import-tree
+release serokell/deploy-rs deploy-rs
 
 GITHUB_TOKEN=$github_token pinact run --update
 
