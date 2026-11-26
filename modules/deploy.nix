@@ -163,15 +163,19 @@ in
           name = "deploy-online";
           runtimeInputs = [ pkgs.jq ];
           text = ''
-            online=$(tailscale status --json | jq -r '[.Self] + [.Peer[]?] | .[] | select(.Online) | .DNSName | split(".")[0]')
+            online=$(tailscale status --json | jq -r '[.Self] + [.Peer[]?] | .[] | select(.Online) | .TailscaleIPs[]?')
             targets=()
-            for host in ${lib.escapeShellArgs (lib.attrNames hosts)}; do
-              if grep -qx "$host" <<< "$online"; then
+            while read -r host address; do
+              if grep -qxF "$address" <<< "$online"; then
                 targets+=(".#$host")
               else
                 echo "deploy-online: skipping $host, offline" >&2
               fi
-            done
+            done <<< ${
+              lib.escapeShellArg (
+                lib.concatStringsSep "\n" (lib.mapAttrsToList (name: host: "${name} ${host.tailnetAddress}") hosts)
+              )
+            }
             [ ''${#targets[@]} -gt 0 ] || { echo "deploy-online: no host is online" >&2; exit 1; }
             exec ${config.apps.deploy.program} --targets "''${targets[@]}" "$@"
           '';
