@@ -42,7 +42,7 @@
     in
     {
       apps.wake = {
-        meta.description = "wake HOST: power on bastion by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), or edge through the Oracle Cloud API";
+        meta.description = "wake HOST: power on bastion or beast by Wake-on-LAN from a machine at home (it works from the Home VLAN, not over the tailnet), or edge through the Oracle Cloud API";
         program = pkgs.writeShellApplication {
           name = "wake";
           runtimeInputs = [
@@ -54,8 +54,10 @@
             cd "$(git rev-parse --show-toplevel)"
             case ''${1-} in
               bastion) wakeonlan ${config.fleet.hosts.bastion.lan.mac} ;;
+              # beast's wired NIC, which the UniFi project fixes to 192.168.10.6 on Home
+              beast) wakeonlan a8:a1:59:b8:91:ed ;;
               edge) sops exec-env secrets/oracle/operator.yaml "${lib.getExe oracle-boot} edge ${config.fleet.hosts.edge.publicAddress} ${config.fleet.hosts.edge.tailnetAddress} ${toString config.fleet.hosts.edge.unlock.port}" ;;
-              *) echo "wake: name bastion or edge, not ''${1-}" >&2; exit 1 ;;
+              *) echo "wake: name bastion, beast or edge, not ''${1-}" >&2; exit 1 ;;
             esac
           '';
         };
