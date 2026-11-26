@@ -14,6 +14,7 @@
       };
       users.users.marcos = {
         isNormalUser = true;
+        uid = 1000;
         description = "Marcos Melo";
         extraGroups = [ "wheel" ];
         hashedPasswordFile = config.sops.secrets.marcos-password-hash.path;
