@@ -8,6 +8,7 @@
         kiosk
         cache-client
         secure-boot
+        fwupd
       ];
       system.stateVersion = "26.11";
     };

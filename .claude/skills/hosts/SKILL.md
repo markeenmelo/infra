@@ -24,7 +24,7 @@ and unlock read ([secrets.nix](../../../modules/secrets.nix)); the install stage
 `/persist` for it, and its reinstall takes the mounted ext4 root itself as ROOT, where the
 `fleet.carry` paths resolve to the live files.
 
-[fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion, thinkpad and beast, not edge, whose firmware is
+[fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion, thinkpad, beast and inspiron, not edge, whose firmware is
 Oracle's. Bastion, thinkpad, beast and inspiron boot Limine with their own Secure Boot keys (the `secure-boot` module, [secure-boot.nix](../../../modules/secure-boot.nix): signing on, sbctl, `/var/lib/sbctl` carried, and preserved where Preservation runs), so nixpkgs' Limine module signs fwupd's EFI
 app with the sbctl keys (`fwupd-efi.service`) and has capsule updates boot it without shim, which
 none of them has. A capsule update reflashes the firmware, after which the TPM may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
