@@ -57,7 +57,10 @@
       };
       lighting = pkgs.writeShellApplication {
         name = "beast-lighting";
-        runtimeInputs = [ openrgb.package ];
+        runtimeInputs = [
+          openrgb.package
+          pkgs.gnugrep
+        ];
         text = ''
           lighting=$1
           server=127.0.0.1:${toString openrgb.server.port}
@@ -65,7 +68,7 @@
             devices=$(openrgb --client "$server" --list-devices 2> /dev/null) && [ -n "$devices" ] && break
             sleep 2
           done
-          echo "$devices" | while IFS=: read -r index name; do
+          echo "$devices" | grep -E '^[0-9]+: ' | while IFS=: read -r index name; do
             name=''${name# }
             case $lighting:$name in
               gaming:"EVGA"*) mode=(--mode "Rainbow Wave") ;;
@@ -116,11 +119,14 @@
             lighting
           ];
           enableStrictShellChecks = true;
-          serviceConfig.Restart = "always";
+          serviceConfig = {
+            Restart = "always";
+            RestartSec = 5;
+          };
           script = ''
             applied=
             while true; do
-              profile=$(powerprofilesctl get)
+              profile=$(powerprofilesctl get) || { sleep 2; continue; }
               if [ "$profile" != "$applied" ]; then
                 if [ "$profile" = performance ]; then
                   systemctl start fan2go-gaming.service
