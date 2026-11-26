@@ -22,31 +22,23 @@ in
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
       profiles = lib.getExe' config.services.power-profiles-daemon.package "powerprofilesctl";
+      systemd = config.systemd.package;
     in
     {
-      options.gaming.restProfile = lib.mkOption {
-        type = lib.types.enum [
-          "power-saver"
-          "balanced"
-        ];
-        default = "balanced";
-        description = "Power profile GameMode sets when the last game exits.";
-      };
       imports = [ steam ];
-      config = {
-        programs.gamemode = {
-          enable = true;
-          settings.custom = {
-            start = "${profiles} set performance";
-            end = "${profiles} set ${config.gaming.restProfile}";
-          };
+      programs.gamemode = {
+        enable = true;
+        settings.custom = {
+          start = "${systemd}/bin/systemd-run --user --collect --unit=gamemode-performance ${profiles} launch --profile performance --reason GameMode ${pkgs.coreutils}/bin/sleep infinity";
+          end = "${systemd}/bin/systemctl --user stop gamemode-performance";
         };
-        home-manager.users.marcos.imports = [ homeManager.gaming ];
       };
+      home-manager.users.marcos.imports = [ homeManager.gaming ];
     };
 
   flake.modules.homeManager.gaming = {

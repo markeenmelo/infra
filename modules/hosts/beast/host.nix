@@ -16,7 +16,6 @@
       fwupd
       secure-boot
     ];
-    gaming.restProfile = "power-saver";
     system.stateVersion = "26.11";
   };
 }
