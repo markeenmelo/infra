@@ -15,10 +15,14 @@ settings.
 
 The smaller NVMe is the `os` disk of [storage.nix](../../../modules/storage.nix), with the root
 wiped at every boot. Limine is signed with beast's own keys (the `secure-boot` module,
-[secure-boot.nix](../../../modules/secure-boot.nix)). LUKS opens with a TPM2 token sealed to PCR 7
-without a PIN, since the desktop stays home, the passphrase kept as fallback; the token is sealed
-only once Secure Boot is on, since with it off PCR 7 is the same for any loader, a live USB
-included.
+[secure-boot.nix](../../../modules/secure-boot.nix)). Once Secure Boot is on, LUKS opens with a
+TPM2 token sealed to PCR 7 without a PIN, the passphrase kept as fallback, and asks for the
+passphrase until then, since with Secure Boot off PCR 7 is the same for any loader. The keys are
+enrolled with Microsoft's CA kept, which the RTX 3070's option ROM needs, so as on bastion PCR 7
+also matches under a Microsoft-signed loader that does not measure what it boots, and a stolen box
+can unseal the key; accepted over a TPM PIN, since the desktop stays home. The keys are carried
+across reinstalls but not backed up (`backups.nix` leaves sbctl out); losing them means making and
+enrolling new ones.
 
 Its keys were made on beast straight into the preserved path; sbctl's landlock sandbox refuses
 any path but its own, hence the flag:
