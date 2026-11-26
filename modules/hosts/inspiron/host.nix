@@ -7,6 +7,7 @@
         plain-storage
         kiosk
         cache-client
+        secure-boot
       ];
       system.stateVersion = "26.11";
     };
