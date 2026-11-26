@@ -77,15 +77,16 @@
         "utils": "utils"
       },
       "locked": {
-        "lastModified": 1792446739,
-        "narHash": "sha256-eINUtQW48bf9G3EYprthHMll8VDKxaXQP52TZFuwMmE=",
+        "lastModified": 1792420374,
+        "narHash": "sha256-i5dTwfPglZYE1zpg2IvBq+n0wDxMdrLwgHuRxZmO6Tw=",
         "owner": "serokell",
         "repo": "deploy-rs",
-        "rev": "1cec0527bd09074bbee6d4461900ce5d58267217",
+        "rev": "26e0f241b1b7c6b1717fc7babc4852192886bbc0",
         "type": "github"
       },
       "original": {
         "owner": "serokell",
+        "ref": "v1.0.0",
         "repo": "deploy-rs",
         "type": "github"
       }
@@ -216,11 +217,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795699347,
-        "narHash": "sha256-9VbfnntwEYRAyfLpxchf1+EI7efzM7hMVfPDwIBqEKg=",
+        "lastModified": 1795713076,
+        "narHash": "sha256-GUY/RHSSnAJKKI3xk7xrSXrsXFgIOgFrRJOD4uub5J8=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "a3a080dad466c6352a869b48bd6d4860dab3ce94",
+        "rev": "361da94fb55c67094ec47322d2757d6616a0de92",
         "type": "github"
       },
       "original": {
@@ -240,6 +241,7 @@
       },
       "original": {
         "owner": "denful",
+        "ref": "v0.3.0",
         "repo": "import-tree",
         "type": "github"
       }
@@ -291,15 +293,16 @@
         "vpn-confinement": "vpn-confinement"
       },
       "locked": {
-        "lastModified": 1795396364,
-        "narHash": "sha256-sZHXkRsHrb2uvD7AtTOi7jrYVki54laQuLgc8jd6Zsk=",
+        "lastModified": 1794871614,
+        "narHash": "sha256-CQHpIuC5qrvKOOLnVRJGzdEkdr8/m5JfvWGDHBqKHw8=",
         "owner": "kiriwalawren",
         "repo": "nixflix",
-        "rev": "bd645b77d743555943a6a38514e4f041b159e145",
+        "rev": "8251a67f50f9e7298c301c6864a25dd7c572cf9e",
         "type": "github"
       },
       "original": {
         "owner": "kiriwalawren",
+        "ref": "v6.0.0",
         "repo": "nixflix",
         "type": "github"
       }
@@ -366,15 +369,16 @@
         "nixpkgs": []
       },
       "locked": {
-        "lastModified": 1795704529,
-        "narHash": "sha256-Kum+FxKAPjZH2jC1h8lM19gFmR5Cufmm4mjtciF41hQ=",
+        "lastModified": 1795675327,
+        "narHash": "sha256-JnfKWg/ti8Jyfbh0SQUTqFXhLI7A9T9NUyEkRAkPe9k=",
         "owner": "getpaseo",
         "repo": "paseo",
-        "rev": "e4dc119df8a6754bfd2e65d0a7bd34b7e80c52b6",
+        "rev": "713b6dbbfe3ea5d395da569dca08fd31b2f8a0f8",
         "type": "github"
       },
       "original": {
         "owner": "getpaseo",
+        "ref": "v0.17.5",
         "repo": "paseo",
         "type": "github"
       }
