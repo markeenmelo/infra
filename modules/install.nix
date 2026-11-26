@@ -113,6 +113,13 @@ in
               ssh "$target" umount -R "''${mount@Q}"
               trap - EXIT
             fi
+            for path in "''${paths[@]}"; do
+              dir=$(dirname "$path")
+              while [ "$dir" != . ]; do
+                chmod 755 "$extra/$dir"
+                dir=$(dirname "$dir")
+              done
+            done
             nixos-anywhere "''${kexec[@]}" --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
               if [ -n "$identity" ]; then
                 echo "install: nixos-anywhere failed; read above how far it got. The identity is kept in $identity: rerun install with it" >&2
