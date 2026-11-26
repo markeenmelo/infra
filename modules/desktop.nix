@@ -76,6 +76,7 @@ in
         };
         logind.settings.Login.HandleLidSwitchExternalPower = "ignore";
         gvfs.enable = true;
+        power-profiles-daemon.enable = true;
         speechd.enable = false;
       };
       xdg.sounds.enable = false;
@@ -88,6 +89,7 @@ in
         "/var/lib/NetworkManager"
         "/var/lib/bluetooth"
         "/var/lib/upower"
+        "/var/lib/power-profiles-daemon"
         "/var/lib/systemd/backlight"
         "/var/lib/systemd/rfkill"
       ];
