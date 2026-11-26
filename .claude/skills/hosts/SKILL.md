@@ -14,6 +14,7 @@ The host table and where each builds are in [README.md](../../../README.md#hosts
 | [edge.md](edge.md) | Oracle Cloud instance: initrd SSH unlock, wake, install | `modules/hosts/edge/`, `unlock.nix` |
 | [thinkpad.md](thinkpad.md) | Operator laptop: disk, unlock, boot | `modules/hosts/thinkpad/` |
 | [beast.md](beast.md) | Gaming desktop: disks, the games drive, unlock, install | `modules/hosts/beast/` |
+| [inspiron.md](inspiron.md) | Ian's Minecraft laptop: plain storage, kiosk session, Kids network | `modules/hosts/inspiron/`, `kiosk.nix` |
 
 Each host names its disk layout in `host.nix` ([storage.nix](../../../modules/storage.nix)):
 `storage`, a btrfs root rolled back at every boot with state preserved under `/persist`, or
