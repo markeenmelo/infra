@@ -70,7 +70,6 @@ let
   agentPlugins =
     pkgs:
     [
-      "${(pkgs.callPackage ./cache-tax.pkg.nix { }).src}"
       "${(pkgs.callPackage ./ponytail.pkg.nix { }).src}"
       "${(pkgs.callPackage ./caveman.pkg.nix { }).src}"
     ]
