@@ -141,8 +141,8 @@ through bastion. Bitwarden's desktop app is the SSH agent
 Idle locks, turns the screen off and suspends on the timers in
 [noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
 does while a video plays; on battery two earlier timers there turn the screen off and suspend
-sooner. On battery `power-profile-ac` switches to
-power-saver and caps the panel brightness, and restores the previous profile and brightness on AC;
+sooner. On battery `power-profile-ac` holds
+power-saver (a hold in the unit `power-saver-on-battery`, which outranks a game's performance hold) and caps the panel brightness, and on AC releases the hold and restores the brightness;
 the battery charges to 90% and resumes at
 85%. The btrfs scrub
 ([desktop.nix](../../../modules/desktop.nix)) starts on AC only. Shutting the lid removes the built-in panel from the desktop, docked or not, and windows move
