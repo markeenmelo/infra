@@ -12,7 +12,6 @@
         plain-storage
         kiosk
         cache-client
-        steam
         secure-boot
         fwupd
         telemetry

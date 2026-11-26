@@ -1,6 +1,6 @@
 { config, inputs, ... }:
 let
-  inherit (config.flake.modules.nixos) operator-login;
+  inherit (config.flake.modules.nixos) operator-login steam;
 in
 {
   flake.modules.nixos.kiosk =
@@ -147,7 +147,10 @@ in
       };
     in
     {
-      imports = [ operator-login ];
+      imports = [
+        operator-login
+        steam
+      ];
       users.users.ian = {
         isNormalUser = true;
         uid = 1001;
