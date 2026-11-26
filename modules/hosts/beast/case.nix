@@ -123,6 +123,8 @@
           };
           script = ''
             applied=
+            lighting=
+            lit=
             while true; do
               profile=$(busctl --system get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile) || { sleep 2; continue; }
               profile=''${profile#s \"}
@@ -130,12 +132,15 @@
               if [ "$profile" != "$applied" ]; then
                 if [ "$profile" = performance ]; then
                   systemctl start fan2go-gaming.service
-                  beast-lighting gaming || true
+                  lighting=gaming
                 else
                   systemctl stop fan2go-gaming.service
-                  beast-lighting off || true
+                  lighting=off
                 fi
                 applied=$profile
+              fi
+              if [ "$lit" != "$lighting" ] && beast-lighting "$lighting"; then
+                lit=$lighting
               fi
               sleep 2
             done
