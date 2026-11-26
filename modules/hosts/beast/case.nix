@@ -64,7 +64,7 @@
         text = ''
           lighting=$1
           server=127.0.0.1:${toString openrgb.server.port}
-          devices=$(openrgb --client "$server" --list-devices 2> /dev/null) || { echo "beast-lighting: OpenRGB server at $server did not answer" >&2; exit 1; }
+          devices=$(openrgb --client "$server" --list-devices 2> /dev/null) && [ -n "$devices" ] || { echo "beast-lighting: OpenRGB server at $server listed no devices" >&2; exit 1; }
           echo "$devices" | grep -E '^[0-9]+: ' | while IFS=: read -r index name; do
             name=''${name# }
             case $lighting:$name in
@@ -122,7 +122,6 @@
             applied=
             lighting=
             lit=
-            failing=
             while true; do
               profile=$(busctl --system get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile) || { sleep 2; continue; }
               profile=''${profile#s \"}
@@ -137,14 +136,8 @@
                 fi
                 applied=$profile
               fi
-              if [ "$lit" != "$lighting" ]; then
-                if beast-lighting "$lighting" 2> /dev/null; then
-                  lit=$lighting
-                  failing=
-                elif [ -z "$failing" ]; then
-                  echo "beast-mode: OpenRGB did not take '$lighting'; retrying every 2 s" >&2
-                  failing=1
-                fi
+              if [ "$lit" != "$lighting" ] && beast-lighting "$lighting"; then
+                lit=$lighting
               fi
               sleep 2
             done
