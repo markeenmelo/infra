@@ -11,7 +11,11 @@ let
     ) "every fleet.hosts.*.lan must name the one UniFi gateway, found: ${toString gateways}";
     lib.head gateways;
   hosts = builtins.toJSON (lib.mapAttrs (_: host: host.tailnetAddress) config.fleet.hosts);
-  telemetry = builtins.toJSON (lib.mapAttrs (_: host: host.telemetry) config.fleet.hosts);
+  telemetry = builtins.toJSON (
+    lib.mapAttrs (
+      _: host: lib.mapNullable (ports: { inherit (ports) metrics logs; }) host.telemetry
+    ) config.fleet.hosts
+  );
   settings = ../opentofu/unifi/settings.json;
   program = ../opentofu/unifi/settings.jq;
   inherit (config.flake.modules.nixos) postgresql;
