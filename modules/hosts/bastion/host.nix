@@ -6,6 +6,7 @@
     gateway = "192.168.2.1";
     mac = "6c:1f:f7:56:0a:10";
     syslogPort = 5514;
+    gameCache = "192.168.2.3";
     routes = {
       homelab = "192.168.2.0/24";
       iot = "192.168.4.0/24";
@@ -37,6 +38,7 @@
       dorian
       fwupd
       secure-boot
+      lancache
     ];
     system.stateVersion = "26.05";
   };
