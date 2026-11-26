@@ -78,6 +78,7 @@ in
           "audio"
           "video"
           "input"
+          "gamemode"
         ];
       };
       systemd.services.minecraft-instance = {
