@@ -143,7 +143,7 @@
                   lit=$lighting
                   failing=
                 elif [ -z "$failing" ]; then
-                  echo "$errors; retrying every 2 s" >&2
+                  echo "''${errors:-beast-lighting $lighting failed}; retrying every 2 s" >&2
                   failing=1
                 fi
               fi
