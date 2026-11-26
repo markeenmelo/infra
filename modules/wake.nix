@@ -54,7 +54,7 @@
             cd "$(git rev-parse --show-toplevel)"
             case ''${1-} in
               bastion) wakeonlan ${config.fleet.hosts.bastion.lan.mac} ;;
-              # beast's wired NIC, which the UniFi project fixes to 192.168.10.6 on Home
+              # shortcut: beast's MAC is also written in opentofu/unifi's client map; move both to a host fact the tofu app and this app read once a second host wakes on LAN or the NIC changes
               beast) wakeonlan a8:a1:59:b8:91:ed ;;
               edge) sops exec-env secrets/oracle/operator.yaml "${lib.getExe oracle-boot} edge ${config.fleet.hosts.edge.publicAddress} ${config.fleet.hosts.edge.tailnetAddress} ${toString config.fleet.hosts.edge.unlock.port}" ;;
               *) echo "wake: name bastion, beast or edge, not ''${1-}" >&2; exit 1 ;;

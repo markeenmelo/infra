@@ -24,7 +24,7 @@
         ];
         kernelModules = [ "kvm-intel" ];
       };
-      networking.networkmanager.settings.connection."ethernet.wake-on-lan" = 64;
+      networking.networkmanager.connectionConfig."ethernet.wake-on-lan" = 64;
       systemd.services.wifi-off = {
         description = "Start with the Wi-Fi radio off; beast is wired";
         wantedBy = [ "multi-user.target" ];
