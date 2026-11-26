@@ -1,6 +1,6 @@
 ---
 name: desktop
-description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, Wi-Fi, printing, the desk monitor, Bitwarden as SSH agent), idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Everforest through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
+description: "The Linux desktop role and the workstations' look: the role's modules (Home Manager, NetworkManager, PipeWire, Umbriel, Noctalia, printing, the desk monitor, Bitwarden as SSH agent) and the Wi-Fi module a host imports beside it, idle, lid and power behaviour, and the rules every theme follows: Omarchy-style design, Everforest through Stylix, fonts, spacing, borders, color roles, bars, notifications, and how an app is themed or hand-tuned. Use before touching modules/{desktop,umbriel,noctalia,wifi,printing,odyssey,bitwarden,stylix}.nix, a window manager, bar, terminal, editor or any app's appearance, or adding a desktop app."
 ---
 
 # Desktop
@@ -129,8 +129,10 @@ to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists t
 whose output layout is derived from Umbriel's positions; apps it launches run as their own systemd
 units, so a shell restart does not take them down; the `desktop-config-HOST` check fails on any
 key either program's validator rejects or warns about),
-[wifi.nix](../../../modules/wifi.nix), [printing.nix](../../../modules/printing.nix) and
-[odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). The tailnet client accepts bastion's subnet routes
+[printing.nix](../../../modules/printing.nix) and
+[odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Wi-Fi
+profiles are their own `wifi` module ([wifi.nix](../../../modules/wifi.nix)), which a host
+imports beside the role, so a wired desktop holds no Wi-Fi secrets. The tailnet client accepts bastion's subnet routes
 so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
 advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
 through bastion. Bitwarden's desktop app is the SSH agent

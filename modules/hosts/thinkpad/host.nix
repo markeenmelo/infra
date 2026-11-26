@@ -8,6 +8,7 @@
   fleet.hosts.thinkpad.module = {
     imports = with config.flake.modules.nixos; [
       desktop
+      wifi
       remote-builds
       logs
       fwupd
