@@ -1,6 +1,6 @@
 ---
 name: hosts
-description: "Each host's hardware, disks, boot and recovery: bastion (UGREEN NAS, LUKS with TPM2, Limine Secure Boot, the hand-made ZFS pools and declared mounts, snapshots, subnet routes, UPS, firmware), edge (Oracle Cloud Ampere instance, LUKS without TPM unlocked over SSH in the initrd, the unlock, wake and install apps), thinkpad (LUKS with TPM2 and PIN, Secure Boot, remote builds, reinstall) and beast (gaming desktop, LUKS with TPM2, Secure Boot, the games drive outside disko). Use before touching modules/hosts/, modules/{unlock,wake,fwupd,secure-boot}.nix, any ZFS pool or dataset, Secure Boot or TPM enrollment, firmware, or rebooting, unlocking or reinstalling a host."
+description: "Each host's hardware, disks, boot and recovery: bastion (UGREEN NAS, LUKS with TPM2, Limine Secure Boot, the hand-made ZFS pools and declared mounts, snapshots, subnet routes, UPS, firmware), edge (Oracle Cloud Ampere instance, LUKS without TPM unlocked over SSH in the initrd, the unlock, wake and install apps), thinkpad (LUKS with TPM2 and PIN, Secure Boot, remote builds, reinstall), beast (gaming desktop, LUKS with TPM2, Secure Boot, the games drive outside disko) and inspiron (kiosk laptop, ext4 on LUKS with TPM2, Secure Boot). Use before touching modules/hosts/, modules/{unlock,wake,fwupd,secure-boot}.nix, any ZFS pool or dataset, Secure Boot or TPM enrollment, firmware, or rebooting, unlocking or reinstalling a host."
 ---
 
 # Hosts
@@ -25,7 +25,7 @@ and unlock read ([secrets.nix](../../../modules/secrets.nix)); the install stage
 `fleet.carry` paths resolve to the live files.
 
 [fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion, thinkpad and beast, not edge, whose firmware is
-Oracle's. Bastion, thinkpad and beast boot Limine with their own Secure Boot keys (the `secure-boot` module, [secure-boot.nix](../../../modules/secure-boot.nix): signing on, sbctl, `/var/lib/sbctl` preserved and carried), so nixpkgs' Limine module signs fwupd's EFI
+Oracle's. Bastion, thinkpad, beast and inspiron boot Limine with their own Secure Boot keys (the `secure-boot` module, [secure-boot.nix](../../../modules/secure-boot.nix): signing on, sbctl, `/var/lib/sbctl` carried, and preserved where Preservation runs), so nixpkgs' Limine module signs fwupd's EFI
 app with the sbctl keys (`fwupd-efi.service`) and has capsule updates boot it without shim, which
 none of them has. A capsule update reflashes the firmware, after which the TPM may not unseal and LUKS asks for the passphrase; re-seal as in the host's file.
 

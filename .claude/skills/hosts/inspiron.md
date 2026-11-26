@@ -8,8 +8,28 @@ running Prism Launcher, and starts it again when it exits; `ian` has no sudo, `m
 
 ## Disk and boot
 
-`plain-storage`: an ext4 root on LUKS, never rolled back, so everything Ian keeps stays. LUKS asks
-for its passphrase until Secure Boot and the TPM seal come, as on beast.
+`plain-storage`: an ext4 root on LUKS, never rolled back, so everything Ian keeps stays. Limine is
+signed with inspiron's own keys (the `secure-boot` module), and LUKS opens with a TPM2 token sealed
+to PCR 7 without a PIN, the passphrase kept as fallback, on the same terms as beast's: Microsoft's
+CA stays enrolled so the firmware's own signed drivers still load, which also lets a stolen laptop
+unseal the key under a Microsoft-signed loader; accepted, since a PIN would stop Ian's boot.
+
+With no Preservation the keys live at sbctl's own path, so they are made there and the first deploy
+signs Limine with no bind mount. Dell's firmware calls setup mode Expert Key Management, under
+Secure Boot:
+
+```sh
+sudo nix shell nixpkgs#sbctl -c sbctl create-keys
+just deploy inspiron                      # from the operator's machine
+sudo sbctl verify                         # every EFI file signed
+systemctl reboot --firmware-setup         # Secure Boot > Expert Key Management: custom mode, delete all keys
+sudo sbctl enroll-keys --microsoft
+systemctl reboot --firmware-setup         # turn Secure Boot on
+sudo sbctl status                         # Secure Boot enabled
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-os-state
+```
+
+A firmware update changes PCR 7; reseal with the last command plus `--wipe-slot=tpm2`.
 
 ## Network
 
