@@ -54,12 +54,19 @@ in
           wantedBy = [ "multi-user.target" ];
           after = [ "tailscaled-set.service" ];
           wants = [ "tailscaled-set.service" ];
-          path = [ config.services.tailscale.package ];
+          path = [
+            config.services.tailscale.package
+            pkgs.jq
+          ];
           enableStrictShellChecks = true;
           restartIfChanged = false;
           script = ''
             for _ in $(seq 30); do
-              tailscale set --exit-node=vpn-ca && exit 0
+              if tailscale set --exit-node=vpn-ca; then
+                tailscale status --json | jq -e '.ExitNodeStatus.Online' > /dev/null && exit 0
+                echo "tailscale-exit-node: the node named vpn-ca is offline; internet is down until another exit node is picked" >&2
+                exit 1
+              fi
               sleep 10
             done
             echo "tailscale-exit-node: vpn-ca stayed unreachable for 5 minutes; no exit node set" >&2
