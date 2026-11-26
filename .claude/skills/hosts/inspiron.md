@@ -2,7 +2,7 @@
 
 [modules/hosts/inspiron/](../../../modules/hosts/inspiron/) is Ian's Dell Inspiron 14 2-in-1 (AMD
 Ryzen 5000, Barcelo graphics, AX210 Wi-Fi), used for Minecraft and mostly on AC. It runs the
-`kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)), which powers it off at 13:00 and 20:00 every day, and on waking from a suspend that spanned either time: greetd logs `ian` straight into a full-screen chooser (Qt Quick in cage) with three large touch buttons: Minecraft (Prism in gamescope), Steam Big Picture (in gamescope, whose "switch to desktop" quits Steam through a `steamos-session-select` stub) and KDE Plasma. Leaving any of them returns to the chooser; `ian` has no sudo, `marcos` and
+`kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)), which powers it off at 13:00 and 20:00 every day, and on waking from a suspend that spanned either time: greetd logs `ian` straight into a full-screen chooser (Qt Quick in cage) with three large touch buttons: Minecraft (Prism in gamescope), Steam Big Picture (in gamescope, whose "switch to desktop" quits Steam through a `steamos-session-select` stub) and KDE Plasma. Leaving any of them returns to the chooser. A polkit rule refuses every NetworkManager action to `ian`, so Plasma cannot join another network or change DNS around the Kids VLAN's filter, and power-profiles-daemon, which Plasma would turn on, stays off so the governor holds; `ian` has no sudo, `marcos` and
 `deploy` are the fleet's accounts, the CPU governor stays on `performance`, and Bluetooth is on for a mouse or controller, paired from an SSH session with `sudo bluetoothctl`.
 
 ## Minecraft

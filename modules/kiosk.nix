@@ -76,9 +76,9 @@ in
             spacing: 80
             Repeater {
               model: [
-                { label: "Minecraft", icon: "${pkgs.prismlauncher-unwrapped}/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg", code: 1 },
-                { label: "Steam", icon: "${pkgs.steam-unwrapped}/share/icons/hicolor/256x256/apps/steam.png", code: 2 },
-                { label: "Plasma", icon: "${pkgs.kdePackages.breeze-icons}/share/icons/breeze/places/64/start-here-kde-plasma.svg", code: 3 }
+                { label: "Minecraft", icon: "${pkgs.prismlauncher-unwrapped}/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg", code: 10 },
+                { label: "Steam", icon: "${pkgs.steam-unwrapped}/share/icons/hicolor/256x256/apps/steam.png", code: 11 },
+                { label: "Plasma", icon: "${pkgs.kdePackages.breeze-icons}/share/icons/breeze/places/64/start-here-kde-plasma.svg", code: 12 }
               ]
               delegate: Column {
                 spacing: 24
@@ -133,9 +133,9 @@ in
             rm -f "$choice"
             cage -- ${pick} || true
             case $(cat "$choice" 2> /dev/null || true) in
-              1) gamescope --fullscreen -- prismlauncher --launch fo || true ;;
-              2) gamescope --steam --fullscreen -- steam -gamepadui -steamos3 || true ;;
-              3) startplasma-wayland || true ;;
+              10) gamescope --fullscreen -- prismlauncher --launch fo || true ;;
+              11) gamescope --steam --fullscreen -- steam -gamepadui -steamos3 || true ;;
+              12) startplasma-wayland || true ;;
               *) sleep 1 ;;
             esac
           done
@@ -198,6 +198,14 @@ in
       programs.gamescope.enable = true;
       programs.gamemode.enable = true;
       services.desktopManager.plasma6.enable = true;
+      services.power-profiles-daemon.enable = false;
+      security.polkit.extraConfig = ''
+        polkit.addRule(function (action, subject) {
+          if (subject.user == "ian" && action.id.indexOf("org.freedesktop.NetworkManager.") == 0) {
+            return polkit.Result.NO;
+          }
+        });
+      '';
       hardware = {
         graphics.enable = true;
         bluetooth.enable = true;
