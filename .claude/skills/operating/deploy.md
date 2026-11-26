@@ -76,7 +76,7 @@ installer image with its old disk mounted read-only: it copies the host's `fleet
 (the SSH host key, `/var/lib/tailscale`, and what the host adds, such as bastion's Secure Boot
 keys and ZFS key files) out of the old persist tree into an `--extra-files` tree, both under
 `/persist` and at their live paths, since the installer reads some of them (Limine signs with
-`/var/lib/sbctl`) before Preservation exists; the root copy is gone on first boot. It then
+`/var/lib/sbctl`) before Preservation exists; on a `storage` host the root copy is gone on first boot, on a `plain-storage` host it is the one in use. It then
 unmounts the old disk, partitions with the host's disko layout and installs its configuration,
 so the host keeps its SSH identity and its tailnet node, and sops-nix can decrypt on first boot.
 A path that holds the only copy of a key goes in `fleet.carry` beside its owner, so no install
@@ -94,7 +94,7 @@ the host's enrollment key ([tailnet.md](tailnet.md)), which spends the key, and 
 it. The directory it names holds the private halves laid out under `persist/`, so the node key
 and host key never touch the provider's stock image. It sits beside the operator's sops key,
 under `~/.config/sops`,
-since it is the only copy until the host has booted. The install takes it as ROOT and leaves it
+since it is the only copy until the host has booted. The install takes it as ROOT, stages it under `/persist` and at the live paths as for a reinstall, and leaves it
 in place, since a finished install proves nothing about the first boot; the operator deletes it
 once the host answers on the tailnet. Losing it before then means enrolling again and changing
 the three facts.

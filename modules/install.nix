@@ -90,12 +90,16 @@ in
             }  *) echo "install: no NixOS host named $host" >&2; exit 1 ;;
             esac
             kexec=()
+            identity=
             if [ -d "$root/persist" ]; then
-              extra=$root
+              identity=$root
               kexec=(--kexec-extra-flags --kexec-syscall)
               for path in "''${paths[@]}"; do
-                [ -e "$extra/persist/$path" ] || { echo "install: the identity in $extra lacks $path" >&2; exit 1; }
+                [ -e "$identity/persist/$path" ] || { echo "install: the identity in $identity lacks $path" >&2; exit 1; }
               done
+              extra=$(mktemp -d)
+              cp -a "$identity/." "$extra/"
+              cp -a "$identity/persist/." "$extra/"
             else
               extra=$(mktemp -d)
               echo "install: identity staged in $extra" >&2
@@ -109,13 +113,17 @@ in
               trap - EXIT
             fi
             nixos-anywhere "''${kexec[@]}" --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
-              echo "install: nixos-anywhere failed; read above how far it got, since once it has partitioned, the target's old system is gone. The identity is kept in $extra: rerun nixos-anywhere with --extra-files $extra" >&2
+              if [ -n "$identity" ]; then
+                rm -rf "$extra"
+                echo "install: nixos-anywhere failed; read above how far it got. The identity is kept in $identity: rerun install with it" >&2
+              else
+                echo "install: nixos-anywhere failed; read above how far it got, since once it has partitioned, the target's old system is gone. The identity is kept in $extra: rerun nixos-anywhere with --extra-files $extra" >&2
+              fi
               exit 1
             }
-            if [ "$extra" = "$root" ]; then
-              echo "install: $host has not booted yet and $extra is the only other copy of its identity; delete it once $host answers on the tailnet" >&2
-            else
-              rm -rf "$extra"
+            rm -rf "$extra"
+            if [ -n "$identity" ]; then
+              echo "install: $host has not booted yet and $identity is the only other copy of its identity; delete it once $host answers on the tailnet" >&2
             fi
           '';
         };

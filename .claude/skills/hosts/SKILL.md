@@ -15,6 +15,13 @@ The host table and where each builds are in [README.md](../../../README.md#hosts
 | [thinkpad.md](thinkpad.md) | Operator laptop: disk, unlock, boot | `modules/hosts/thinkpad/` |
 | [beast.md](beast.md) | Gaming desktop: disks, the games drive, unlock, install | `modules/hosts/beast/` |
 
+Each host names its disk layout in `host.nix` ([storage.nix](../../../modules/storage.nix)):
+`storage`, a btrfs root rolled back at every boot with state preserved under `/persist`, or
+`plain-storage`, an ext4 root on the same LUKS partition that keeps everything and runs no
+Preservation. On a `plain-storage` host `/persist` holds only the copy of the identity the install
+wrote there, which sops-nix reads its key from and a reinstall carries; the live copies beside it
+are the ones in use.
+
 [fwupd.nix](../../../modules/fwupd.nix) runs fwupd on bastion, thinkpad and beast, not edge, whose firmware is
 Oracle's. Bastion, thinkpad and beast boot Limine with their own Secure Boot keys (the `secure-boot` module, [secure-boot.nix](../../../modules/secure-boot.nix): signing on, sbctl, `/var/lib/sbctl` preserved and carried), so nixpkgs' Limine module signs fwupd's EFI
 app with the sbctl keys (`fwupd-efi.service`) and has capsule updates boot it without shim, which

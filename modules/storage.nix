@@ -204,4 +204,38 @@ in
         systemd.suppressedSystemUnits = [ "systemd-machine-id-commit.service" ];
       };
     };
+
+  flake.modules.nixos.plain-storage =
+    { lib, ... }:
+    {
+      disko.devices.disk.os.content = {
+        type = "gpt";
+        partitions = {
+          boot = {
+            type = lib.mkDefault "EF00";
+            size = lib.mkDefault "2G";
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+              mountOptions = [ "umask=0077" ];
+            };
+          };
+          state = {
+            size = "100%";
+            content = {
+              type = "luks";
+              name = "state";
+              settings.allowDiscards = true;
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/";
+                mountOptions = [ "noatime" ];
+              };
+            };
+          };
+        };
+      };
+    };
 }
