@@ -76,7 +76,7 @@ installer image with its old disk mounted read-only: it copies the host's `fleet
 (the SSH host key, `/var/lib/tailscale`, and what the host adds, such as bastion's Secure Boot
 keys and ZFS key files) out of the old persist tree into an `--extra-files` tree, both under
 `/persist` and at their live paths, since the installer reads some of them (Limine signs with
-`/var/lib/sbctl`) before Preservation exists; on a `storage` host the root copy is gone on first boot, on a `plain-storage` host it is the one in use. It then
+`/var/lib/sbctl`) before Preservation exists; on a `storage` host the root copy is gone on first boot, on a `plain-storage` host it is the one in use, so its reinstall mounts the old ext4 root and passes it as ROOT, not `/persist`. It then
 unmounts the old disk, partitions with the host's disko layout and installs its configuration,
 so the host keeps its SSH identity and its tailnet node, and sops-nix can decrypt on first boot.
 A path that holds the only copy of a key goes in `fleet.carry` beside its owner, so no install

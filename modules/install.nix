@@ -98,6 +98,7 @@ in
                 [ -e "$identity/persist/$path" ] || { echo "install: the identity in $identity lacks $path" >&2; exit 1; }
               done
               extra=$(mktemp -d)
+              trap 'rm -rf "$extra"' EXIT
               cp -a "$identity/." "$extra/"
               cp -a "$identity/persist/." "$extra/"
             else
@@ -114,7 +115,6 @@ in
             fi
             nixos-anywhere "''${kexec[@]}" --flake ".#$host" --extra-files "$extra" --target-host "$target" || {
               if [ -n "$identity" ]; then
-                rm -rf "$extra"
                 echo "install: nixos-anywhere failed; read above how far it got. The identity is kept in $identity: rerun install with it" >&2
               else
                 echo "install: nixos-anywhere failed; read above how far it got, since once it has partitioned, the target's old system is gone. The identity is kept in $extra: rerun nixos-anywhere with --extra-files $extra" >&2
