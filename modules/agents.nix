@@ -347,11 +347,6 @@ in
 
       users.users.marcos.uid = agentUid;
 
-      nixpkgs.config.allowUnfreePackages = [
-        "claude-code"
-        "cursor-cli"
-        "rtk"
-      ];
       microvm.vms.agents = {
         config = guest;
         restartIfChanged = false;
