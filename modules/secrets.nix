@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, self, ... }:
 {
   flake.modules.homeManager.base =
     { config, ... }:
@@ -38,7 +38,7 @@
     { lib, pkgs, ... }:
     {
       checks.secrets = pkgs.runCommand "secrets" { } ''
-        cd ${inputs.self}
+        cd ${self}
         while IFS= read -r -d "" f; do
           case $f in *.yaml) ;; *) echo "secrets/ holds only sops yaml: $f" >&2; exit 1 ;; esac
           grep -q '^    mac: ENC\[' "$f" || { echo "not sops ciphertext: $f" >&2; exit 1; }

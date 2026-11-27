@@ -8,6 +8,7 @@
 /.envrc @markeenmelo
 /flake.nix @markeenmelo
 /flake.lock @markeenmelo
+/.tack/ @markeenmelo
 *.pkg.nix @markeenmelo
 /modules/pins.nix @markeenmelo
 /.sops.yaml @markeenmelo

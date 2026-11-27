@@ -1,0 +1,64 @@
+[inputs.deploy-rs]
+url = "github:serokell/deploy-rs/v1.0.0"
+follows = { nixpkgs = "nixpkgs" }
+omit_inputs = ["flake-compat"]
+
+[inputs.disko]
+url = "github:nix-community/disko"
+follows = { nixpkgs = "nixpkgs" }
+
+[inputs.flake-parts]
+url = "github:hercules-ci/flake-parts"
+follows = { nixpkgs-lib = "nixpkgs" }
+
+[inputs.hermes-agent]
+url = "github:NousResearch/hermes-agent/v0.23.4"
+follows = { flake-parts = "flake-parts", home-manager = "home-manager" }
+
+[inputs.home-manager]
+url = "github:nix-community/home-manager"
+follows = { nixpkgs = "nixpkgs" }
+
+[inputs.import-tree]
+url = "github:denful/import-tree/v0.3.0"
+
+[inputs.microvm]
+url = "github:microvm-nix/microvm.nix"
+follows = { nixpkgs = "nixpkgs" }
+omit_inputs = ["spectrum"]
+
+[inputs.nix-minecraft]
+url = "github:Infinidoge/nix-minecraft"
+type = "fetch"
+
+[inputs.nixflix]
+url = "github:kiriwalawren/nixflix"
+follows = { nixpkgs = "nixpkgs" }
+omit_inputs = ["mkdocs-catppuccin", "treefmt-nix"]
+
+[inputs.nixpkgs]
+url = "github:NixOS/nixpkgs/nixos-unstable"
+
+[inputs.paseo]
+url = "github:getpaseo/paseo/v0.17.5"
+omit_inputs = ["nixpkgs"]
+
+[inputs.preservation]
+url = "github:nix-community/preservation"
+
+[inputs.sops-nix]
+url = "github:Mic92/sops-nix"
+follows = { nixpkgs = "nixpkgs" }
+
+[inputs.stylix]
+url = "github:nix-community/stylix"
+follows = { flake-parts = "flake-parts", nixpkgs = "nixpkgs" }
+
+[inputs.tack]
+url = "github:manic-systems/tack/v2.0.0"
+follows = { nixpkgs = "nixpkgs" }
+omit_inputs = ["fenix"]
+
+[inputs.zen-browser]
+url = "github:0xc000022070/zen-browser-flake"
+follows = { home-manager = "home-manager", nixpkgs = "nixpkgs" }

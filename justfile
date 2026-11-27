@@ -65,7 +65,7 @@ enroll host:
 install host target root:
     nix run .#install -- "$@"
 
-[doc("Update every flake input, NAME.pkg.nix pin, GitHub Action and OpenTofu provider")]
+[doc("Update every tack pin, NAME.pkg.nix pin, GitHub Action and OpenTofu provider")]
 update:
-    nix flake update
+    nix run .#tack -- update
     nix run .#update-pins

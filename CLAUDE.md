@@ -5,7 +5,7 @@ Dendritic NixOS fleet, one operator. Load the skill whose description owns the f
 
 Hosts, their roles and where each builds: [README.md](README.md#hosts).
 
-Stack, decided: flake-parts + import-tree, disko, btrfs root rolled back every boot with state under
+Stack, decided: flake-parts + import-tree with tack pins, disko, btrfs root rolled back every boot with state under
 `/persist` (Preservation; a host that keeps nothing worth rolling back runs `plain-storage`, ext4), sops-nix, deploy-rs with magic rollback over Tailscale, nixos-anywhere for
 installs, Caddy (Porkbun DNS-01) with CrowdSec's firewall bouncer, nginx only as the edge's TLS passthrough, Authelia, OpenTofu HCL for
 Tailscale, Porkbun, UniFi and Oracle Cloud, Stylix, OpenCloud, microvm.nix for the guests on bastion. No Hydra, Attic, Cachix, containers where a NixOS
