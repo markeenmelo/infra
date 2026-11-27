@@ -60,7 +60,7 @@ variable "fleet_lan" {
 }
 
 variable "fleet_cache_port" {
-  description = "Bastion port of the Harmonia cache, from fleet.cachePort; the tofu app sets it."
+  description = "Port of each builder's Harmonia cache, from fleet.cachePort; the tofu app sets it."
   type        = number
 }
 

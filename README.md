@@ -126,7 +126,7 @@ system and check evaluates, the cheap `format`, `secrets` and `links` checks bui
 projects validate. `linux` runs
 only on pull requests into `main` and pushes to `main`: on a push it builds every x86_64 check, on
 a pull request only those whose derivation differs from the base commit's. Only `main`'s run joins
-the tailnet to read bastion's cache. The aarch64-linux host `edge` is evaluated, not built.
+the tailnet to read the builders' caches. The aarch64-linux host `edge` is evaluated, not built.
 
 Changes reach `main` in two steps: agents and the operator open pull requests into `dev`, which
 [guard.yml](.github/workflows/guard.yml), `eval` and the review bot gate, and files in
