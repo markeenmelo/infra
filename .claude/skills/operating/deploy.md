@@ -24,14 +24,14 @@ nixpkgs' package, taken from the binary cache; the input supplies only its libra
 
 A host builds itself unless its `nix.settings.max-jobs` is 0 (bastion, which runs the builder
 in [builder.nix](../../../modules/builder.nix), the edge and beast); a host that imports
-`remote-builds` (the thinkpad) or refuses local builds (inspiron) is built on the deploying machine, which from the thinkpad hands the build to bastion. The deploying
-machine receives the whole closure back from bastion; deploy-rs then pushes it with
+`remote-builds` (the thinkpad) or refuses local builds (inspiron) is built on the deploying machine, which from the thinkpad hands the build to beast while it is awake, else bastion. The deploying
+machine receives the whole closure back from the builder; deploy-rs then pushes it with
 `--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
-Bastion trusts the admin clients' build keys alone: the edge builds itself, and the tailnet
+The builders (bastion and beast, `build-host`) trust the admin clients' build keys alone: the edge builds itself, and the tailnet
 policy keeps it off the cache ([opentofu skill](../opentofu/SKILL.md)), so a compromised edge
 cannot reach bastion's store. A build key is a
-trusted user on bastion and whatever it uploads is signed and served to every workstation, so a stolen
-build key is root on bastion without the deploy key's Bitwarden prompt. That is accepted: Nix
+trusted user on each builder, and whatever it uploads to bastion is signed and served to every workstation, so a stolen
+build key is root on both builders without the deploy key's Bitwarden prompt. That is accepted: Nix
 refuses remote builds from an untrusted user (`you are not privileged to build input-addressed
 derivations`), and the key is readable only by root on an admin client.
 `remote-builds` makes bastion's cache each workstation's first substituter, so a cleaned store

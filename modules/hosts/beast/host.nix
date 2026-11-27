@@ -12,6 +12,7 @@
       desktop
       gaming
       cache-client
+      build-host
       github-token
       telemetry
       fwupd
