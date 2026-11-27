@@ -1,3 +1,4 @@
+{ inputs, ... }:
 let
   common =
     { lib, ... }:
@@ -24,10 +25,11 @@ let
       };
     };
   nh =
-    { lib, ... }:
+    { lib, pkgs, ... }:
     {
       programs.nh = {
         enable = true;
+        package = inputs.nh.packages.${pkgs.stdenv.hostPlatform.system}.nh;
         clean = {
           enable = true;
           extraArgs = lib.mkDefault "--keep 10 --keep-since 14d";

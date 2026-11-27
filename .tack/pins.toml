@@ -48,14 +48,34 @@ follows = { nixpkgs = "nixpkgs" }
 url = "github:denful/import-tree"
 tag = "v{version}"
 
+[inputs.just-lsp]
+url = "github:terror/just-lsp"
+tag = "{version}"
+follows = { nixpkgs = "nixpkgs" }
+
+[inputs.mcp-nixos]
+url = "github:utensils/mcp-nixos"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs", flake-parts = "flake-parts" }
+
 [inputs.microvm]
 url = "github:microvm-nix/microvm.nix"
 follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["spectrum"]
 
+[inputs.nh]
+url = "github:nix-community/nh"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
+
 [inputs.nix-minecraft]
 url = "github:Infinidoge/nix-minecraft"
 type = "fetch"
+
+[inputs.nix-update]
+url = "github:Mic92/nix-update"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
 
 [inputs.nixflix]
 # shortcut: v6.0.0 lacks the arr host config merge fix #302 follows main for, add tag = "v{version}" once a later release carries it

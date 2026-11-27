@@ -74,7 +74,9 @@ Extend an upstream default list at its priority: `mkDefault (mkAfter …)`.
 
 **Inputs** — an input is a tack pin; a new one lists the transitive inputs it never uses in
 `omit_inputs`. Since the flake itself declares no inputs, flake-parts' `inputs'` and `self.inputs`
-are empty: read `inputs`.
+are empty: read `inputs`. A package whose upstream flake is ahead of nixpkgs comes from a pin
+following its release tags, built against our nixpkgs, unless no cache serves a build too large to
+repeat (Zed, Ghostty) or upstream says its flake is not for consumers (Tailscale).
 Substituters go in `nix.settings`, never flake `nixConfig`. Every host trusts, after bastion's
 cache and cache.nixos.org, the caches the pins' upstreams publish
 ([base.nix](../../../modules/base.nix)): numtide's for llm-agents, nix-community's, microvm's and

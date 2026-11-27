@@ -14,8 +14,7 @@
         jellyfin-sso = [ ];
         noctalia-plugins = [ "--version=branch" ];
       };
-      # shortcut: nix 2.35 no longer copies the flake on `nix flake metadata`, the store path nix-update evaluates; drop the override once nix-update copies it itself
-      nix-update = pkgs.nix-update.override { nix = pkgs.nixVersions.nix_2_34; };
+      nix-update = inputs.nix-update.packages.${system}.nix-update;
       nixUpdate =
         name: flags:
         "GITHUB_TOKEN=\"$github_token\" "
