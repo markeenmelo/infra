@@ -90,6 +90,7 @@ is the boundary. The account's connectors stay out.
 ## Paseo and the other agents
 
 Cursor's CLI (`cursor-agent`) and pi sit beside Claude Code; no other coding agent is installed.
+All three, rtk and Paseo come from the `llm-agents` pin ([nix skill](../nix/SKILL.md)), not nixpkgs.
 pi is configured through its Home Manager module for `marcos`, in `agent-tools` in
 [claude.nix](../../../modules/claude.nix), with install telemetry off and Kimi For Coding's `k3.1-pro` as its starting
 model. It gets the same nixos and Grafana MCP servers as Claude Code through
@@ -99,7 +100,7 @@ pi does not read `.claude/skills`, so the repository links `.agents/skills` to i
 whether to trust the repository before loading them, and `/trust` keeps the answer in
 `~/.pi/agent/trust.json` on `home.img`. The
 [Paseo](https://paseo.sh) daemon runs any of them for its desktop, web and mobile clients,
-through the module of Paseo's own flake (the `paseo` input) on nixpkgs' package. The daemon runs
+through the module of Paseo's own flake (the `paseo` input) on the `llm-agents` package. The daemon runs
 as `marcos` with the same tokens a shell gets, written for it at each start to a file only
 `marcos` reads, with its relay off (`--no-relay`). It listens on `fleet.paseoPort`, which the
 guest's firewall opens on the tailnet interface only and the tailnet policy grants to admin

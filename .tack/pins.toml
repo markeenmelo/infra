@@ -54,6 +54,9 @@ url = "github:terror/just-lsp"
 tag = "{version}"
 follows = { nixpkgs = "nixpkgs" }
 
+[inputs.llm-agents]
+url = "github:numtide/llm-agents.nix"
+
 [inputs.luciole]
 url = "github:noctalia-dev/luciole"
 follows = { nixpkgs = "nixpkgs" }

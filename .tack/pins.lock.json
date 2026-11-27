@@ -12,6 +12,7 @@
     "home-manager": "github:nix-community/home-manager",
     "import-tree": "github:denful/import-tree",
     "just-lsp": "github:terror/just-lsp",
+    "llm-agents": "github:numtide/llm-agents.nix",
     "luciole": "github:noctalia-dev/luciole",
     "mcp-nixos": "github:utensils/mcp-nixos",
     "microvm": "github:microvm-nix/microvm.nix",
@@ -172,6 +173,15 @@
     "public": true,
     "tag": "0.12.0",
     "version": "0.12.0"
+  },
+  "llm-agents": {
+    "type": "github",
+    "owner": "numtide",
+    "repo": "llm-agents.nix",
+    "rev": "ed78f78388f2bcea00f5edd0b27bab753723c343",
+    "narHash": "sha256-euPmSl9HzbTktN83I1EbJvMkzqQ0TcB/Cq46bx2VS3s=",
+    "lastModified": 1795789832,
+    "public": true
   },
   "luciole": {
     "type": "github",

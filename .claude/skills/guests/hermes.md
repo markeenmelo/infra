@@ -9,7 +9,7 @@ and so in `microvm@hermes`'s log. Inside runs
 [Hermes Agent](https://github.com/NousResearch/hermes-agent) through upstream's own NixOS
 module, from the `hermes-agent` tack pin, which follows the `v0.{version}` tag template in `.tack/pins.toml` that `just update`
 moves to the newest matching tag ([nix skill](../nix/SKILL.md)). The input keeps the nixpkgs upstream locked,
-the one exception to every host following one nixpkgs: upstream patches `patchelf` for that
+one of the two exceptions to every host following one nixpkgs: upstream patches `patchelf` for that
 revision and the patch does not apply to the fleet's. The package is upstream's `messaging`
 variant, the chat gateways without the terminal UI, web and desktop parts. Evaluating it reads
 its Python workspace from a filtered copy of the source, which a read-only evaluation

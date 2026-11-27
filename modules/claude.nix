@@ -99,12 +99,13 @@ let
       };
     };
   };
+  llm = pkgs: inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   rtkHook = pkgs: {
     matcher = "Bash";
     hooks = [
       {
         type = "command";
-        command = "${lib.getExe pkgs.rtk} hook claude";
+        command = "${lib.getExe (llm pkgs).rtk} hook claude";
       }
     ];
   };
@@ -127,9 +128,9 @@ in
       {
         environment = {
           systemPackages = [
-            pkgs.claude-code
+            (llm pkgs).claude-code
             pkgs.nodejs
-            pkgs.rtk
+            (llm pkgs).rtk
           ];
           etc."claude-code/managed-settings.json".text = builtins.toJSON {
             inherit attribution;
@@ -150,6 +151,7 @@ in
       {
         programs.pi-coding-agent = {
           enable = true;
+          package = (llm pkgs).pi;
           settings = {
             enableInstallTelemetry = false;
             defaultProvider = "kimi-coding";
