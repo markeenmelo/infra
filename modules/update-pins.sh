@@ -24,20 +24,7 @@ while read -r name; do
   mv "$dashboards.new" "$dashboards"
 done <<< "$names"
 
-release() {
-  local repo=$1 input=$2 tag
-  tag=$(curl -fsS ${github_token:+-H "Authorization: Bearer $github_token"} "https://api.github.com/repos/$repo/releases/latest" | jq -er .tag_name)
-  [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
-  sed -i "s|\"github:$repo/v[^\"]*\"|\"github:$repo/$tag\"|" .tack/pins.toml
-  grep -qF "\"github:$repo/$tag\"" .tack/pins.toml
-  tack update "$input"
-}
-release NousResearch/hermes-agent hermes-agent
-release getpaseo/paseo paseo
-release denful/import-tree import-tree
-release serokell/deploy-rs deploy-rs
-release manic-systems/tack tack
-nix run .#tack -- init --resolver
+tack init --resolver
 
 GITHUB_TOKEN=$github_token pinact run --update
 
