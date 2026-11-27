@@ -13,7 +13,7 @@ let
     beast = {
       hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPXndlFVNQh7GH5OHUsoavMfPSxq5Z65/3zKkqcEPsSR";
       # public half of harmonia-sign-key in secrets/hosts/beast.yaml
-      cacheKey = "beast-cache-1:+jId0w2bmbHywWAJFghXtimokozW98XOzll3Lo8GeGo=";
+      cacheKey = "beast-cache-1:NaFlssuO9j/YvQ7aEBMcUkKzQOQFiD4TcgpKsBzRZ40=";
       maxJobs = 4;
       speedFactor = 2;
     };
