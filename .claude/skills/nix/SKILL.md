@@ -78,7 +78,10 @@ Extend an upstream default list at its priority: `mkDefault (mkAfter …)`.
 **Inputs** — an input is a tack pin; a new one lists the transitive inputs it never uses in
 `omit_inputs`. Since the flake itself declares no inputs, flake-parts' `inputs'` and `self.inputs`
 are empty: read `inputs`.
-Substituters go in `nix.settings`, never flake `nixConfig`.
+Substituters go in `nix.settings`, never flake `nixConfig`. Every host trusts, after bastion's
+cache and cache.nixos.org, the caches the pins' upstreams publish
+([base.nix](../../../modules/base.nix)): numtide's for llm-agents, nix-community's, microvm's and
+tack's. A cache serves a pin only where it keeps its own nixpkgs; a pin that follows ours rarely hits it.
 
 **Apps** — every operator task is a flake app built with `writeShellApplication`; switch to
 `writers.writePython3Bin` past ~100 lines or when it parses data. Only workflow YAML, `.envrc` and
