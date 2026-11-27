@@ -49,6 +49,10 @@ follows = { nixpkgs = "nixpkgs" }
 url = "github:denful/import-tree"
 tag = "v{version}"
 
+[inputs.luciole]
+url = "github:noctalia-dev/luciole"
+follows = { nixpkgs = "nixpkgs" }
+
 [inputs.microvm]
 url = "github:microvm-nix/microvm.nix"
 follows = { nixpkgs = "nixpkgs" }
@@ -66,6 +70,16 @@ omit_inputs = ["mkdocs-catppuccin", "treefmt-nix"]
 
 [inputs.nixpkgs]
 url = "github:NixOS/nixpkgs/nixos-unstable"
+
+[inputs.noctalia-greeter]
+url = "github:noctalia-dev/noctalia-greeter"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
+
+[inputs.noctalia]
+url = "github:noctalia-dev/noctalia"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
 
 [inputs.paseo]
 url = "github:getpaseo/paseo"
@@ -97,6 +111,14 @@ omit_inputs = ["fenix"]
 [inputs.trailofbits-skills]
 url = "github:trailofbits/skills"
 type = "fetch"
+
+[inputs.umbriel]
+url = "github:noctalia-dev/umbriel"
+follows = { nixpkgs = "nixpkgs", xdg-desktop-portal-umbriel = "xdg-desktop-portal-umbriel" }
+
+[inputs.xdg-desktop-portal-umbriel]
+url = "github:noctalia-dev/xdg-desktop-portal-umbriel"
+follows = { nixpkgs = "nixpkgs" }
 
 [inputs.zen-browser]
 url = "github:0xc000022070/zen-browser-flake"
