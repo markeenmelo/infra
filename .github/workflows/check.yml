@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - uses: nixbuild/nix-quick-install-action@e0ea8f6061c766e5c1d927cea8be769a1c5108a9 # v36
       - name: Copy the Hermes source into the store, which the read-only evaluation below reads and cannot add
         run: nix eval --raw .#nixosConfigurations.bastion.config.microvm.vms.hermes.config.config.services.hermes-agent.package.drvPath
       - run: nix flake check --all-systems --no-build --option allow-import-from-derivation false
@@ -59,7 +59,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Let bubblewrap map users for the MicroVM store images instead of copying their closures
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - uses: nixbuild/nix-quick-install-action@e0ea8f6061c766e5c1d927cea8be769a1c5108a9 # v36
       - name: List the checks whose derivation differs from the base commit's
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
