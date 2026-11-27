@@ -114,7 +114,7 @@ in
       '';
       pick = pkgs.writeShellScript "kiosk-pick" ''
         export QML_IMPORT_PATH=${pkgs.qt6.qtdeclarative}/lib/qt-6/qml
-        export QT_PLUGIN_PATH=${pkgs.qt6.qtbase}/lib/qt-6/plugins:${pkgs.qt6.qtwayland}/lib/qt-6/plugins
+        export QT_PLUGIN_PATH=${pkgs.qt6.qtbase}/lib/qt-6/plugins:${pkgs.qt6.qtwayland}/lib/qt-6/plugins:${pkgs.qt6.qtsvg}/lib/qt-6/plugins
         ${pkgs.qt6.qtdeclarative}/bin/qml ${chooser}
         echo $? > "$XDG_RUNTIME_DIR/kiosk-choice"
       '';
