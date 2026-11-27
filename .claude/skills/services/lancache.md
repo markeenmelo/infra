@@ -11,8 +11,10 @@ share one key whatever CDN host they name, from their user agent; other hosts ar
 name. Upstream names resolve through public resolvers, never the LAN's, since the LAN sends
 the cached names back to the cache. On port 443 a stream server passes TLS through untouched,
 by its server name, for the cached names that also serve HTTPS; nothing there is cached or
-decrypted. Windows' certificate trust lists, which `ctldl.windowsupdate.com` republishes at fixed
-URLs, pass through uncached, so a list Microsoft updates never goes stale at home. Both refuse
+decrypted. Only Steam's depot content (`/depot/<id>/...`), which is content-addressed and never
+changes at its URL, is kept for ten years whatever its headers say; every other response follows
+its upstream's Cache-Control (a day when it sends none), so manifests republished at fixed URLs,
+such as Windows' certificate trust lists or Office's version files, stay current. Both refuse
 every host outside [the names list](../../../modules/_game-cache-names.nix): an HTTP request
 for another host gets 403 and a TLS connection for another name is closed, so the cache is no
 proxy to bastion's loopback services or the LAN. nginx binds only the cache address, which the
