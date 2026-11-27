@@ -11,6 +11,7 @@
     "hermes-agent": "github:NousResearch/hermes-agent",
     "home-manager": "github:nix-community/home-manager",
     "import-tree": "github:denful/import-tree",
+    "llm-agents": "github:numtide/llm-agents.nix",
     "microvm": "github:microvm-nix/microvm.nix",
     "nix-minecraft": "github:Infinidoge/nix-minecraft",
     "nixflix": "github:kiriwalawren/nixflix",
@@ -150,6 +151,15 @@
     "public": true,
     "tag": "v0.3.0",
     "version": "0.3.0"
+  },
+  "llm-agents": {
+    "type": "github",
+    "owner": "numtide",
+    "repo": "llm-agents.nix",
+    "rev": "ed78f78388f2bcea00f5edd0b27bab753723c343",
+    "narHash": "sha256-euPmSl9HzbTktN83I1EbJvMkzqQ0TcB/Cq46bx2VS3s=",
+    "lastModified": 1795789832,
+    "public": true
   },
   "microvm": {
     "type": "github",

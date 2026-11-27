@@ -134,7 +134,7 @@ in
         pkgs.whatsapp-electron
         pkgs.spotify
         pkgs.bruno
-        pkgs.paseo-desktop
+        inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.paseo-desktop
         pkgs.wl-clipboard
       ];
       programs = {

@@ -90,6 +90,7 @@ is the boundary. The account's connectors stay out.
 ## Paseo and the other agents
 
 Cursor's CLI (`cursor-agent`) and pi sit beside Claude Code; no other coding agent is installed.
+All three, rtk and Paseo come from the `llm-agents` pin ([nix skill](../nix/SKILL.md)), not nixpkgs.
 pi is configured through its Home Manager module for `marcos`, in `agent-tools` in
 [claude.nix](../../../modules/claude.nix), with install telemetry off and Kimi For Coding's `k3.1-pro` as its starting
 model. It gets the same nixos and Grafana MCP servers as Claude Code through

@@ -180,11 +180,11 @@ let
       environment.systemPackages = [
         gh
         pkgs.ripgrep
-        pkgs.cursor-cli
+        inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.cursor-agent
       ];
       services.paseo = {
         enable = true;
-        package = pkgs.paseo;
+        package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.paseo;
         user = "marcos";
         group = "users";
         relay.enable = false;

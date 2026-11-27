@@ -47,6 +47,9 @@ follows = { nixpkgs = "nixpkgs" }
 url = "github:denful/import-tree"
 tag = "v{version}"
 
+[inputs.llm-agents]
+url = "github:numtide/llm-agents.nix"
+
 [inputs.microvm]
 url = "github:microvm-nix/microvm.nix"
 follows = { nixpkgs = "nixpkgs" }

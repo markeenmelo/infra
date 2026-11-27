@@ -64,7 +64,10 @@ Answer each before the module is done; a reviewer will ask otherwise.
 
 **Arguments** — request only what you use; inner modules take their own `lib`/`pkgs`. Every host
 follows the one `nixpkgs`. No overlays unless nixpkgs forces one, no `inputs.self` pass-through,
-no mixed package sets. `with` only for capability imports.
+no mixed package sets. `with` only for capability imports. Two pins keep the nixpkgs their upstream
+locked: `hermes-agent` ([guests: hermes](../guests/hermes.md)) and `llm-agents`, whose coding-agent
+packages (Claude Code, pi, cursor-agent, rtk, Paseo and its desktop app) come prebuilt from
+numtide's cache only as built against its own nixpkgs.
 
 **Merging** — let the module system merge; `//` is shallow and skips priorities, so it appears
 nowhere in Nix here: config shared between classes or hosts is a module both import, and a value
