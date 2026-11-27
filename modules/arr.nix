@@ -665,6 +665,7 @@ let
         token_endpoint_auth_method = "client_secret_post";
         redirect_uris = [ "https://${name}.${domain}/signin-oidc" ];
       });
+      vpnNamespaces.${vpn}.allowedEgress = [ bridgeAddress ];
       services.caddy.virtualHosts."*.${domain}".extraConfig = lib.mkBefore ''
         @arr-namespace {
           remote_ip ${namespaceAddress}
