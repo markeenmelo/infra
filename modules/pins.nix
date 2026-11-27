@@ -1,6 +1,12 @@
+{ inputs, ... }:
 {
   perSystem =
-    { lib, pkgs, ... }:
+    {
+      lib,
+      pkgs,
+      system,
+      ...
+    }:
     let
       pins = {
         caddy = [ "--version=skip" ];
@@ -32,8 +38,15 @@
     in
     {
       legacyPackages = lib.mapAttrs (name: _: pkgs.callPackage ./${name}.pkg.nix { }) pins;
+      checks.tack-resolver = pkgs.runCommand "tack-resolver" { } ''
+        cmp ${inputs.tack}/.tack/default.nix ${../.tack/default.nix} || {
+          echo ".tack/default.nix differs from the resolver of the tack pin: run tack init --resolver" >&2
+          exit 1
+        }
+        touch $out
+      '';
       apps.update-pins = {
-        meta.description = "update-pins: bump every NAME.pkg.nix pin, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit, the hermes-agent, paseo, import-tree and deploy-rs release tags, the GitHub Actions and the OpenTofu providers to the latest upstream, with their hashes";
+        meta.description = "update-pins: bump every NAME.pkg.nix pin, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit, every tack pin, the hermes-agent, paseo, import-tree, deploy-rs and tack release tags, the GitHub Actions and the OpenTofu providers to the latest upstream, with their hashes";
         program = pkgs.writeShellApplication {
           name = "update-pins";
           runtimeInputs = [
@@ -46,6 +59,7 @@
             pkgs.opentofu
             pkgs.pinact
             nix-update
+            inputs.tack.packages.${system}.tack
           ];
           text = lib.concatLines (
             [ (builtins.readFile ./update-pins.sh) ]

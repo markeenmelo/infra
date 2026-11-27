@@ -5,8 +5,11 @@ description: "How this flake is organized (dendritic flake-parts + import-tree):
 
 # Nix
 
-`flake.nix` holds only inputs and `flake-parts.lib.mkFlake` over `import-tree ./modules`. Every
-file under `modules/` is a flake-parts module for one concern, and nothing Nix lives elsewhere.
+`flake.nix` holds only `flake-parts.lib.mkFlake` over `import-tree ./modules`, with the inputs
+[tack](https://docs.manic.systems/tack) pins in [pins.toml](../../../.tack/pins.toml) and locks in
+`.tack/pins.lock.json`. Every file under `modules/` is a flake-parts module for one concern, and
+nothing Nix lives elsewhere but tack's generated resolver, `.tack/default.nix`, which the
+`tack-resolver` check in [pins.nix](../../../modules/pins.nix) holds to the tack pin's own.
 [flake-parts.nix](../../../modules/flake-parts.nix) lists the systems and loads the flake module
 that makes `flake.modules.*` exist. [base.nix](../../../modules/base.nix) is what a host gets
 before any role.
@@ -69,7 +72,9 @@ built from several parts is `lib.mkMerge [ … ]` (inside module config) or `lib
 `mkDefault` for policy a host may override; a non-obvious `mkForce` gets one sentence in the owning skill naming the attribute.
 Extend an upstream default list at its priority: `mkDefault (mkAfter …)`.
 
-**Inputs** — a new input empties transitive inputs it never uses (`inputs.X.follows = ""`).
+**Inputs** — an input is a tack pin; a new one lists the transitive inputs it never uses in
+`omit_inputs`. Since the flake itself declares no inputs, flake-parts' `inputs'` and `self.inputs`
+are empty: read `inputs`.
 Substituters go in `nix.settings`, never flake `nixConfig`.
 
 **Apps** — every operator task is a flake app built with `writeShellApplication`; switch to
@@ -104,20 +109,19 @@ repository's. Comments follow [CLAUDE.md](../../../CLAUDE.md).
 
 ## Package updates
 
-`just update` is the only updater: it runs `nix flake update`, then the `update-pins` app
-([pins.nix](../../../modules/pins.nix)). nix-update bumps each `NAME.pkg.nix` in `pins` with its
+`just update` is the only updater: it runs the `update-pins` app
+([pins.nix](../../../modules/pins.nix)), which starts with `tack update`. nix-update bumps each `NAME.pkg.nix` in `pins` with its
 hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
-(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, the release tags of `hermes-agent`, `paseo`, `import-tree` and `deploy-rs`, each OpenTofu
+(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, the release tags of the `hermes-agent`, `paseo`, `import-tree`, `deploy-rs` and `tack` pins, each OpenTofu
 provider's constraint and lock, the SHA-pinned actions through pinact). The operator reads the
-diff before committing, above all action, `flake.lock` and plugin moves: actions run with secrets,
+diff before committing, above all action, `pins.lock.json` and plugin moves: actions run with secrets,
 the inputs on every host, the Noctalia plugins as `marcos` with the Tailscale operator, and the
 Claude Code plugins as `marcos` in the agent guest ([guests: agents](../guests/agents.md));
 a provider move needs a `tofu plan` with no changes. Updates take the newest release
 at once, with no release-age cool-down: that read is the only gate. A source the fleet
-fetches is a `NAME.pkg.nix` added to `pins`, not a `flake = false` input, which a rev in its URL
-freezes. Never hand-edit `flake.lock`: Nix
-resolves a locked input by `narHash` before `rev`, so a revision bump without its hash keeps the
-old tree where cached and fails elsewhere; `nix flake update INPUT` instead. Each pin keeps its
+fetches is a `NAME.pkg.nix` added to `pins`, not a `type = "fetch"` pin. Never hand-edit
+`pins.lock.json`: the resolver fetches a locked input by `narHash`, so a revision bump without its
+hash keeps the old tree where cached and fails elsewhere; `tack update PIN` instead. Each pin keeps its
 own version literal so only that line is rewritten.
 
 [vulnix.yml](../../../.github/workflows/vulnix.yml) scans each host's runtime closure on a runner

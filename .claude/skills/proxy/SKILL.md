@@ -48,7 +48,7 @@ answered 404 by the public listener as defence in depth, each app's own authoriz
 administering those apps happens over the LAN or the tailnet, never through the public hostname. Each app's `denied` list says which logins the public hostname still takes; bans there come from CrowdSec, and a per-address `rate_limit` zone answers 429 past a ceiling set above an Immich thumbnail burst.
 
 Requests from outside `countries`, from the `hosting` networks (clouds and server hosts, where scanners run, Canadian addresses included) and from the `crawlers` user agents are aborted without a response before any app sees them, the answer an unpublished name gets, so a refusal reveals nothing; `/robots.txt` disallows everything. A household member abroad, or on a VPN that exits through a hosting network, uses the tailnet. The lookups use the DB-IP
-country and ASN databases packaged in nixpkgs, so they update with the flake lock and need no account.
+country and ASN databases packaged in nixpkgs, so they update with the nixpkgs pin and need no account.
 Tailnet clients never need the edge, even behind a foreign exit node: the split DNS sends the
 domain to bastion directly.
 An app module declares itself with `fleet.web.apps.SUBDOMAIN` (port, `public`, denied paths,
