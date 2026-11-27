@@ -142,7 +142,7 @@ apply a network or Wi-Fi change from a wired client, since it can cut the route 
 **Who reaches what.** Each VLAN is its own firewall zone. The controller lets a custom zone out
 to the gateway and the internet and keeps it from the other zones, so `local.policies` lists
 only the exceptions, one row each: `from` and `to` zones, optional `from_ips`, `to_ips`,
-`protocol`, one `port` or a `ports` group, `block`, and a `schedule` (the Kids' bedtime block). An allow towards another VLAN gets its
+`protocol`, one `port` or a `ports` group, and `block`. An allow towards another VLAN gets its
 return policy from the controller; one towards the gateway or the internet must not ask for it,
 and an ICMP policy is IPv4 only, both of which the resource derives. `local.orders` lists the
 zone pairs where order decides, first match first. A client's flags in `local.clients` put it in
