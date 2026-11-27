@@ -1,15 +1,42 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   inherit (config.fleet.hosts.bastion) lan;
+  names = config.fleet.gameCacheNames;
 in
 {
-  flake.modules.nixos.lancache =
+  options.fleet.gameCacheNames = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    default = [
+      "lancache.steamcontent.com"
+      "*.steamcontent.com"
+      "steampipe.akamaized.net"
+      "*.steampipe.akamaized.net"
+      "*.dl.delivery.mp.microsoft.com"
+      "dl.delivery.mp.microsoft.com"
+      "*.do.dsp.mp.microsoft.com"
+      "*.microsoft.com.edgesuite.net"
+      "*.update.microsoft.com"
+      "*.windowsupdate.com"
+      "amupdatedl.microsoft.com"
+      "amupdatedl2.microsoft.com"
+      "amupdatedl3.microsoft.com"
+      "amupdatedl4.microsoft.com"
+      "amupdatedl5.microsoft.com"
+      "officecdn.microsoft.com"
+    ];
+    description = "Download hosts the game cache serves, from uklans/cache-domains' steam and windowsupdates lists plus Steam's CDN hosts; a leading `*.` covers the subdomains. The cache refuses every other host, and DNS sends these names to it.";
+  };
+
+  config.flake.modules.nixos.lancache =
     { pkgs, ... }:
     let
       cache = "/var/cache/lancache";
       httpPort = 3180;
       tlsPort = 3443;
       resolver = "resolver 1.1.1.1 9.9.9.9 ipv6=off;";
+      wild = map (lib.removePrefix "*") (lib.filter (lib.hasPrefix "*.") names);
+      exact = lib.filter (name: !lib.hasPrefix "*." name && !lib.elem ".${name}" wild) names;
+      allowed = value: lib.concatMapStrings (name: "  ${name} ${value};\n") (wild ++ exact);
     in
     {
       networking.nftables.tables.lancache = {
@@ -17,20 +44,23 @@ in
         content = ''
           chain prerouting {
             type nat hook prerouting priority dstnat; policy accept;
-            ip daddr ${lan.gameCache} tcp dport 80 redirect to :${toString httpPort}
-            ip daddr ${lan.gameCache} tcp dport 443 redirect to :${toString tlsPort}
+            ip daddr ${lan.gameCache} tcp dport 80 dnat to ${lan.gameCache}:${toString httpPort}
+            ip daddr ${lan.gameCache} tcp dport 443 dnat to ${lan.gameCache}:${toString tlsPort}
           }
         '';
       };
-      networking.firewall.allowedTCPPorts = [
-        httpPort
-        tlsPort
-      ];
+      networking.firewall.extraInputRules = ''
+        ip daddr ${lan.gameCache} tcp dport { ${toString httpPort}, ${toString tlsPort} } ct original proto-dst { 80, 443 } accept
+      '';
       services.nginx = {
         enable = true;
         package = pkgs.nginxStable.override { withSlice = true; };
         appendHttpConfig = ''
           proxy_cache_path ${cache}/data levels=2:2 keys_zone=lancache:500m inactive=3650d max_size=950g use_temp_path=off;
+          map $host $lancache_allowed {
+            hostnames;
+            default 0;
+          ${allowed "1"}}
           map "$http_user_agent£££$http_host" $lancache_id {
             default $http_host;
             "~Valve/Steam HTTP Client 1\.0£££.*" steam;
@@ -40,11 +70,14 @@ in
           serverName = "_";
           listen = [
             {
-              addr = "0.0.0.0";
+              addr = lan.gameCache;
               port = httpPort;
             }
           ];
           locations."/".extraConfig = ''
+            if ($lancache_allowed = 0) {
+              return 403;
+            }
             ${resolver}
             slice 1m;
             proxy_cache lancache;
@@ -65,17 +98,26 @@ in
           '';
         };
         streamConfig = ''
+          map $ssl_preread_server_name $lancache_tls {
+            hostnames;
+            default 127.0.0.1:9;
+          ${allowed "$ssl_preread_server_name:443"}}
           server {
-            listen ${toString tlsPort};
+            listen ${lan.gameCache}:${toString tlsPort};
             ${resolver}
             ssl_preread on;
-            proxy_pass $ssl_preread_server_name:443;
+            proxy_pass $lancache_tls;
           }
         '';
       };
-      systemd = {
-        services.nginx.unitConfig.RequiresMountsFor = cache;
-        tmpfiles.rules = [ "d ${cache}/data 0750 nginx nginx -" ];
+      systemd.services.nginx = {
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
+        unitConfig.RequiresMountsFor = cache;
+        serviceConfig = {
+          ReadWritePaths = [ cache ];
+          ExecStartPre = [ "+${pkgs.coreutils}/bin/install -d -o nginx -g nginx -m 0750 ${cache}/data" ];
+        };
       };
     };
 }

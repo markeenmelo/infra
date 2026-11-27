@@ -10,7 +10,7 @@ range, so a game downloaded once comes from bastion for every other machine. Ste
 one key whatever CDN host they name, from their user agent; other hosts are keyed by name. Upstream
 names resolve through public resolvers, never the LAN's, since the LAN sends the cached names back
 to the cache. On port 443 a stream server passes TLS through untouched, by its server name, for the
-cached names that also serve HTTPS; nothing there is cached or decrypted.
+cached names that also serve HTTPS; nothing there is cached or decrypted. Both refuse every host outside `fleet.gameCacheNames`: an HTTP request for another host gets 403 and a TLS connection for another name is closed, so the cache is no proxy to bastion's loopback services or the LAN. nginx binds only the cache address, which the firewall admits only after the redirect.
 
 The cache lives on the `scratch/lancache` dataset (rebuildable, no snapshots, no backups), and nginx
 requires its mount, so the dataset must exist before bastion's deploy or nginx, and with it
