@@ -121,7 +121,7 @@ a provider move needs a `tofu plan` with no changes. Updates take the newest rel
 at once, with no release-age cool-down: that read is the only gate. A source the fleet
 fetches is a `NAME.pkg.nix` added to `pins`, not a `type = "fetch"` pin. Never hand-edit
 `pins.lock.json`: the resolver fetches a locked input by `narHash`, so a revision bump without its
-hash keeps the old tree where cached and fails elsewhere; `tack update PIN` instead. Each pin keeps its
+hash keeps the old tree where cached and fails elsewhere; `nix run .#tack -- update PIN` instead. Each pin keeps its
 own version literal so only that line is rewritten.
 
 [vulnix.yml](../../../.github/workflows/vulnix.yml) scans each host's runtime closure on a runner
