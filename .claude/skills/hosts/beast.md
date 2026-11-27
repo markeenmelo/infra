@@ -4,8 +4,8 @@
 Z690 board, an Intel 12th-gen CPU with its iGPU off in the firmware, and an NVIDIA card. It runs
 the `desktop` role ([desktop skill](../desktop/SKILL.md)), builds for itself with bastion's cache
 as a substituter (`cache-client` in [builder.nix](../../../modules/builder.nix)), builds for the thinkpad
-(`build-host`, which trusts only its build key and serves what it built from its own Harmonia cache; clients
-prefer beast while it is awake), and is an
+(`build-host`, which trusts only its build key and serves what it built from its own Harmonia cache; the
+thinkpad weights it 2:1 over bastion while it is awake), and is an
 operator machine like the thinkpad (`operatorNames` in
 [opentofu.nix](../../../modules/opentofu.nix)), so it reaches the cache and the OpenTofu state.
 The card runs NVIDIA's open kernel module, which can lag the newest kernel as ZFS does on bastion, so [kernel.nix](../../../modules/kernel.nix) boots the newest series that module builds for; VRAM is preserved across suspend, since the idle timer

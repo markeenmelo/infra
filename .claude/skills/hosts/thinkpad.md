@@ -1,7 +1,7 @@
 # ThinkPad
 
 [modules/hosts/thinkpad/](../../../modules/hosts/thinkpad/) is an Intel ThinkPad on Thunderbolt.
-It runs the `desktop` role ([desktop skill](../desktop/SKILL.md)), `remote-builds` (every build goes over the tailnet to beast while it is awake, else bastion, with
+It runs the `desktop` role ([desktop skill](../desktop/SKILL.md)), `remote-builds` (every build goes over the tailnet to beast or bastion, spread by load against their speed factors, about 2:1 to beast while it is awake, with
 `nix-build-ssh-key`, whose public half is `builderKeys.thinkpad` in
 [builder.nix](../../../modules/builder.nix); `max-jobs = 0` keeps the laptop from building
 itself, so with neither builder reachable only substitutes work).
