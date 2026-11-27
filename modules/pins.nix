@@ -41,7 +41,7 @@
         touch $out
       '';
       apps.update-pins = {
-        meta.description = "update-pins: bump every NAME.pkg.nix pin, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit, tack's resolver, the GitHub Actions and the OpenTofu providers to the latest upstream, with their hashes";
+        meta.description = "update-pins: bump each NAME.pkg.nix in pins, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit, tack's resolver, the GitHub Actions and the OpenTofu providers to the latest upstream, with their hashes";
         program = pkgs.writeShellApplication {
           name = "update-pins";
           runtimeInputs = [
