@@ -34,7 +34,6 @@ release() {
 }
 release NousResearch/hermes-agent hermes-agent
 release getpaseo/paseo paseo
-release kiriwalawren/nixflix nixflix
 release denful/import-tree import-tree
 release serokell/deploy-rs deploy-rs
 

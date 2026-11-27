@@ -43,7 +43,7 @@
       };
     };
     nixflix = {
-      url = "github:kiriwalawren/nixflix/v6.0.0";
+      url = "github:kiriwalawren/nixflix";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         mkdocs-catppuccin.follows = "";
