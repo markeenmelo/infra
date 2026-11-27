@@ -1,0 +1,13 @@
+[
+  {
+    "name": "AdBlock",
+    "enabled": true,
+    "categories": ["ADVERTISEMENT", "FAMILY"],
+    "safe_search": ["BING", "GOOGLE", "YOUTUBE"],
+    "networks": ["Home", "IoT", "Kids"],
+    "client_macs": [],
+    "allow_list": [],
+    "block_list": [],
+    "schedule": { "mode": "ALWAYS" }
+  }
+]
