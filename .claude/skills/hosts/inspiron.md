@@ -49,7 +49,7 @@ It joins MN-Kids on the Kids VLAN with its permanent MAC, which the UniFi projec
 192.168.20.2 as the client `Dino`, with the passphrase from `kids-wifi-psk`. Its tailnet tag,
 `tag:kid`, admits SSH from the admin clients and reaches only bastion's cache and its own telemetry ports. It takes neither the
 tailnet's DNS (`--accept-dns=false`) nor an exit node, since the tailnet's resolvers would bypass
-the Kids VLAN's content filter and bedtime rule.
+the Kids VLAN's content filter.
 
 ## Builds
 
