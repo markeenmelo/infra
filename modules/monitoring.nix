@@ -35,7 +35,15 @@ let
       max_age       = "12h"
       relabel_rules = loki.relabel.journal.rules
       labels        = ${labels}
-      forward_to    = [${forward}]
+      forward_to    = [loki.process.redact.receiver]
+    }
+
+    loki.process "redact" {
+      forward_to = [${forward}]
+      stage.replace {
+        expression = "(?i)[?&](?:access_token|api_?key|token)=([^&\\s\"]+)"
+        replace    = "<redacted>"
+      }
     }
   '';
   httpsProbe =
