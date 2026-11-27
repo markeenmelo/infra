@@ -39,6 +39,7 @@ in
         };
       };
       home-manager.users.marcos.imports = [ homeManager.gaming ];
+      users.users.marcos.extraGroups = [ "gamemode" ];
     };
 
   flake.modules.homeManager.gaming = {

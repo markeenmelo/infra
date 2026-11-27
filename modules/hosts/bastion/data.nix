@@ -11,6 +11,7 @@
         "/srv/opencloud" = "tank/opencloud";
         "/srv/media" = "tank/media";
         "/var/lib/frigate" = "scratch/frigate";
+        "/var/cache/lancache" = "tank/lancache";
         "/var/lib/microvms" = "apps/agents";
       };
       pools = lib.unique (

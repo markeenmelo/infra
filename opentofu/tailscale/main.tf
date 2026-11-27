@@ -41,6 +41,14 @@ variable "fleet_telemetry" {
   type        = map(object({ metrics = number, logs = number }))
 }
 
+variable "fleet_game_cache" {
+  description = "Bastion's game cache address and the download names DNS sends to it, from fleet.hosts.bastion.lan.gameCache and modules/_game-cache-names.nix; the tofu app sets it."
+  type = object({
+    address = string
+    names   = list(string)
+  })
+}
+
 variable "fleet_routes" {
   description = "LAN subnets bastion routes for the tailnet, by name, from fleet.hosts.*.lan.routes; the tofu app sets it."
   type        = map(string)
@@ -143,15 +151,16 @@ locals {
       { src = concat(local.admin_clients, ["group:members"]), dst = ["bastion"], ip = ["tcp:443", "udp:443"] },
       { src = local.admin_clients, dst = [var.fleet_lan.bastion.gateway], ip = ["tcp:443"] },
       { src = local.admin_clients, dst = [var.fleet_routes.iot, var.fleet_routes.kids], ip = ["*"] },
+      { src = concat(local.admin_clients, ["group:members"]), dst = ["${var.fleet_game_cache.address}/32"], ip = ["tcp:80", "tcp:443"] },
       { src = ["tag:admin-client", "tag:server", "group:members"], dst = ["bastion"], ip = ["tcp:53", "udp:53"] },
       { src = ["tag:admin-client", "group:members"], dst = ["autogroup:internet"], ip = ["*"] },
     ])
     tests = concat([for host, ports in local.telemetry : { src = host, proto = "tcp", accept = [for port in ports : "bastion:${port}"], deny = [for port in setsubtract(flatten(values(local.telemetry)), ports) : "bastion:${port}"] }], [
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:kid:22"] },
       { src = "tag:kid", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = concat(["bastion:22", "bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}", "edge:22", "tag:admin-client:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:443", "bastion:53", "bastion:${var.fleet_state_port}"], [for port in setsubtract(flatten(values(local.telemetry)), flatten([for host, tags in local.enrollment : lookup(local.telemetry, host, []) if contains(tags, "tag:kid")])) : "bastion:${port}"]) },
-      { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
+      { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}", "${var.fleet_game_cache.address}:80", "${var.fleet_game_cache.address}:443"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:admin-client:22", "tag:kid:22"] },
-      { src = "group:members", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:${var.fleet_state_port}", "tag:kid:22"] },
+      { src = "group:members", proto = "tcp", accept = ["${var.fleet_game_cache.address}:80", "${var.fleet_game_cache.address}:443"], deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:${var.fleet_state_port}", "tag:kid:22"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}", "tag:kid:22"] },
       { src = "tag:agent", proto = "tcp", accept = ["bastion:443"], deny = ["tag:server:22", "tag:admin-client:22", "tag:kid:22", "bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}", "bastion:53", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
       { src = "edge", proto = "tcp", accept = ["bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}"], deny = ["bastion:443", "bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
@@ -191,6 +200,16 @@ resource "tailscale_dns_configuration" "fleet" {
     nameservers {
       address            = local.bastion
       use_with_exit_node = true
+    }
+  }
+  dynamic "split_dns" {
+    for_each = toset([for name in var.fleet_game_cache.names : trimprefix(name, "*.")])
+    content {
+      domain = split_dns.value
+      nameservers {
+        address            = local.bastion
+        use_with_exit_node = true
+      }
     }
   }
   depends_on = [tailscale_acl.fleet]

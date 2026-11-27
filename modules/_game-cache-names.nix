@@ -1,0 +1,18 @@
+[
+  "lancache.steamcontent.com"
+  "*.steamcontent.com"
+  "steampipe.akamaized.net"
+  "*.steampipe.akamaized.net"
+  "*.dl.delivery.mp.microsoft.com"
+  "dl.delivery.mp.microsoft.com"
+  "*.do.dsp.mp.microsoft.com"
+  "*.microsoft.com.edgesuite.net"
+  "*.update.microsoft.com"
+  "*.windowsupdate.com"
+  "amupdatedl.microsoft.com"
+  "amupdatedl2.microsoft.com"
+  "amupdatedl3.microsoft.com"
+  "amupdatedl4.microsoft.com"
+  "amupdatedl5.microsoft.com"
+  "officecdn.microsoft.com"
+]
