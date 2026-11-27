@@ -15,7 +15,7 @@ Work the operator wants done. An item leaves this file in the pull request that 
 - **Personal Git instance:** maybe.
 - **Workstation ricing:** a better look on the workstations.
 - **Cleanup:** simplify the code for clarity and reuse.
-- **tack:** evaluate replacing flakes with tack (reopens the decided flake-parts stack in [CLAUDE.md](CLAUDE.md)); a devenv/tack environment with MongoDB.
+- **MongoDB environment:** a devenv/tack environment with MongoDB.
 - **nixos-core:** adopt it, and find Rust alternatives for the current packages.
 - **Distributed builds:** beast joins bastion as a builder ([builder.nix](modules/builder.nix)), and hosts beyond thinkpad use them.
 - **inspiron greeter:** a shutdown button.
