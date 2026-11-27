@@ -23,8 +23,14 @@ therefore holds the whole PIA account, not one tunnel key. nixflix confines them
 [vpn-watch.nix](../../../modules/vpn-watch.nix) restarts the tunnel when it fails or its handshake
 goes stale, and starts the confined apps again each time it comes up. Their web UIs are
 `sonarr.`, `radarr.`, `prowlarr.`, `qbittorrent.` and `sabnzbd.DOMAIN` through the LAN proxy, on
-the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)); the arr apps and SABnzbd log in as
-`marcos` with `arr/password`. The `arr` nftables table drops
+the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)); Sonarr and Radarr sign in through
+Authelia (OIDC, client secrets `arr/{sonarr,radarr}-oidc-client-secret`), letting in only the
+account whose `sub` is `oidcSubject` in the module, since each takes a single user; they reach
+`auth.DOMAIN` out through the tunnel and back through the edge, as the namespace reaches nothing on
+bastion, and trust forwarded headers only from the bridge, where Caddy comes from. Prowlarr and
+SABnzbd log in as `marcos` with `arr/password`, which Sonarr and Radarr keep for recovery: with
+Authelia down, stop the app, set `AuthenticationMethod` to `Forms` in its `config.xml` and start it.
+The `arr` nftables table drops
 anything forwarded through the namespace's bridge and lets only root and Caddy open new
 connections into the namespace, Seerr only to Sonarr and Radarr, and the `exportarr` user only
 to the three arr apps. It also drops every new connection the namespace

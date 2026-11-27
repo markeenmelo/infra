@@ -57,6 +57,8 @@ let
       retention = 4200;
     }
   ];
+  # Authelia's opaque sub for marcos, the one account Radarr and Sonarr let in
+  oidcSubject = "SUB_PENDING";
   storageProfile = "1080p Storage Efficient";
   storageQualities = [
     "WEBDL-1080p"
@@ -284,6 +286,18 @@ let
               username = "marcos";
               password = secret "password";
               authenticationRequired = "enabled";
+            };
+          };
+        }))
+        (lib.genAttrs seerrApps (name: {
+          config.hostConfig = {
+            authenticationMethod = "oidc";
+            trustedNetworks = config.vpnNamespaces.${vpn}.bridgeAddress;
+            oidc = {
+              authority = "https://auth.${domain}";
+              clientId = name;
+              clientSecret = secret "${name}-oidc-client-secret";
+              userIdentifier = oidcSubject;
             };
           };
         }))
@@ -530,7 +544,8 @@ let
         "althub-api-key"
         "qbittorrent-password"
         "qbittorrent-password-hash"
-      ];
+      ]
+      ++ map (name: "${name}-oidc-client-secret") seerrApps;
       awaitProfile =
         name:
         pkgs.writeShellApplication {
@@ -637,6 +652,11 @@ let
           seerr = { inherit (config.nixflix.seerr) port; };
         }
       ];
+      fleet.oidc.clients = lib.genAttrs seerrApps (name: {
+        client_name = lib.toSentenceCase name;
+        token_endpoint_auth_method = "client_secret_post";
+        redirect_uris = [ "https://${name}.${domain}/signin-oidc" ];
+      });
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
       networking.nftables.tables.arr = {
         family = "inet";
