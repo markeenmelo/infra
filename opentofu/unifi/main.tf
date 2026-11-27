@@ -294,9 +294,12 @@ resource "unifi_setting_rsyslogd" "this" {
 }
 
 resource "unifi_setting_mgmt" "this" {
-  ssh_enabled       = false
-  auto_upgrade      = true
-  auto_upgrade_hour = 4
+  ssh_enabled            = false
+  auto_upgrade           = true
+  auto_upgrade_hour      = 4
+  unifi_idp_enabled      = false
+  wifiman_enabled        = false
+  direct_connect_enabled = false
 }
 
 resource "unifi_setting_auto_speedtest" "this" {
@@ -310,6 +313,26 @@ resource "unifi_setting_network_optimization" "this" {
 
 resource "unifi_setting_teleport" "this" {
   enabled = false
+}
+
+resource "unifi_setting_magic_site_to_site_vpn" "this" {
+  enabled = false
+}
+
+resource "unifi_setting_ssl_inspection" "this" {
+  state = "off"
+}
+
+resource "unifi_setting_locale" "this" {
+  timezone = "America/Toronto"
+}
+
+resource "unifi_setting_country" "this" {
+  code = "CA"
+}
+
+resource "unifi_setting_ntp" "this" {
+  mode = "auto"
 }
 
 resource "unifi_setting_dpi" "this" {
