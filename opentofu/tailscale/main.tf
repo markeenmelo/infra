@@ -157,9 +157,8 @@ locals {
     ])
     tests = concat([for host, ports in local.telemetry : { src = host, proto = "tcp", accept = [for port in ports : "bastion:${port}"], deny = [for port in setsubtract(flatten(values(local.telemetry)), ports) : "bastion:${port}"] }], [
       { src = "tag:admin-client", proto = "tcp", accept = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:kid:22"] },
-      { src = "tag:admin-client", proto = "tcp", accept = ["${var.fleet_game_cache.address}:80", "${var.fleet_game_cache.address}:443"] },
       { src = "tag:kid", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = concat(["bastion:22", "bastion:${var.fleet_public_port}", "bastion:${var.fleet_bans_port}", "edge:22", "tag:admin-client:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:443", "bastion:53", "bastion:${var.fleet_state_port}"], [for port in setsubtract(flatten(values(local.telemetry)), flatten([for host, tags in local.enrollment : lookup(local.telemetry, host, []) if contains(tags, "tag:kid")])) : "bastion:${port}"]) },
-      { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}"] },
+      { src = "thinkpad", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}", "bastion:${var.fleet_state_port}", "${var.fleet_game_cache.address}:80", "${var.fleet_game_cache.address}:443"] },
       { src = "tag:server", proto = "tcp", deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "tag:admin-client:22", "tag:kid:22"] },
       { src = "group:members", proto = "tcp", accept = ["${var.fleet_game_cache.address}:80", "${var.fleet_game_cache.address}:443"], deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:${var.fleet_state_port}", "tag:kid:22"] },
       { src = "tag:ci", proto = "tcp", accept = ["bastion:${var.fleet_cache_port}"], deny = ["tag:server:22", "tag:agent:22", "tag:agent:${var.fleet_paseo_port}", "bastion:443", "tag:admin-client:22", "bastion:${var.fleet_state_port}", "tag:kid:22"] },
