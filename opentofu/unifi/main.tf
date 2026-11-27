@@ -41,6 +41,14 @@ variable "wlan_passphrases" {
   }
 }
 
+variable "fleet_game_cache" {
+  description = "Bastion's game cache address and the download names DNS sends to it, from fleet.hosts.bastion.lan.gameCache and modules/_game-cache-names.nix; the tofu app sets it."
+  type = object({
+    address = string
+    names   = list(string)
+  })
+}
+
 variable "fleet_lan" {
   description = "LAN facts per wired fleet host, from fleet.hosts.*.lan; the tofu app sets it."
   type = map(object({
@@ -121,6 +129,8 @@ locals {
       "Allow Home to IoT media and printer"           = { from = "Home", to = "IoT", to_ips = local.role.shared }
       "Allow IoT to Bastion HTTPS"                    = { from = "IoT", from_ips = local.role.player, to = "Homelab", to_ips = [local.bastion.address], protocol = "tcp", port = 443 }
       "Allow Kids to Bastion HTTPS"                   = { from = "Kids", to = "Homelab", to_ips = [local.bastion.address], protocol = "tcp", port = 443 }
+      "Allow Home to game cache"                      = { from = "Home", to = "Homelab", to_ips = [var.fleet_game_cache.address], protocol = "tcp", ports = "Bastion LAN TCP" }
+      "Allow Kids to game cache"                      = { from = "Kids", to = "Homelab", to_ips = [var.fleet_game_cache.address], protocol = "tcp", ports = "Bastion LAN TCP" }
       "Allow Frigate to Tapo C120"                    = { from = "Homelab", from_ips = [local.bastion.address], to = "Cameras", to_ips = [local.clients["Front Yard Camera"].ip], protocol = "tcp", ports = "Camera streams" }
       "Allow Bastion-routed tailnet clients to IoT"   = { from = "Homelab", from_ips = [local.bastion.address], to = "IoT", to_ips = local.role.shared }
       "Allow Bastion-routed tailnet clients to Kids"  = { from = "Homelab", from_ips = [local.bastion.address], to = "Kids" }
@@ -250,6 +260,14 @@ resource "unifi_dns_record" "wildcard" {
   type   = "A"
   record = local.bastion.address
   ttl    = 300
+}
+
+resource "unifi_dns_record" "game_cache" {
+  for_each = toset(var.fleet_game_cache.names)
+  name     = each.value
+  type     = "A"
+  record   = var.fleet_game_cache.address
+  ttl      = 300
 }
 
 resource "unifi_setting_ips" "this" {
