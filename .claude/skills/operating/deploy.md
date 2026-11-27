@@ -26,7 +26,7 @@ A host builds itself unless its `nix.settings.max-jobs` is 0 (bastion, which run
 in [builder.nix](../../../modules/builder.nix), the edge and beast); a host that imports
 `remote-builds` (the thinkpad) or refuses local builds (inspiron) is built on the deploying machine, which from the thinkpad hands the build to beast while it is awake, else bastion. The deploying
 machine receives the whole closure back from the builder; deploy-rs then pushes it with
-`--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
+`--substitute-on-destination`, so the target fetches from the Harmonia cache of whichever builder (bastion or beast) built each path.
 The builders (bastion and beast, `build-host`) trust the admin clients' build keys alone: the edge builds itself, and the tailnet
 policy keeps it off the cache ([opentofu skill](../opentofu/SKILL.md)), so a compromised edge
 cannot reach bastion's store. A build key is a
@@ -34,7 +34,7 @@ trusted user on each builder, and whatever it uploads to bastion is signed and s
 build key is root on both builders without the deploy key's Bitwarden prompt. That is accepted: Nix
 refuses remote builds from an untrusted user (`you are not privileged to build input-addressed
 derivations`), and the key is readable only by root on an admin client.
-`remote-builds` makes bastion's cache each workstation's first substituter, so a cleaned store
+`cache-client` and `remote-builds` make the builders' caches (`build-host`) each workstation's first substituters, so a cleaned store
 refills from bastion instead of rebuilding.
 CI on `main` reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the
 tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds
