@@ -116,7 +116,17 @@ in
         unitConfig.RequiresMountsFor = cache;
         serviceConfig = {
           ReadWritePaths = [ cache ];
-          ExecStartPre = [ "+${pkgs.coreutils}/bin/install -d -o nginx -g nginx -m 0750 ${cache}/data" ];
+          ExecStartPre = [
+            "+${pkgs.coreutils}/bin/install -d -o nginx -g nginx -m 0750 ${cache}/data"
+            (pkgs.writeShellScript "lancache-address" ''
+              for _ in $(${pkgs.coreutils}/bin/seq 100); do
+                ${pkgs.iproute2}/bin/ip -4 -o addr show to ${lan.gameCache} | ${pkgs.gnugrep}/bin/grep -q . && exit 0
+                ${pkgs.coreutils}/bin/sleep 0.2
+              done
+              echo "${lan.gameCache} never came up" >&2
+              exit 1
+            '')
+          ];
         };
       };
     };
