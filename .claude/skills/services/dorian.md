@@ -3,7 +3,7 @@
 [dorian.nix](../../../modules/dorian.nix) runs the Discord slash-command bot
 [Cthulu-Dice-Roller](https://github.com/markeenmelo/Cthulu-Dice-Roller) (`/croll`) as a
 `DynamicUser` unit on bastion. The package is [dorian.pkg.nix](../../../modules/dorian.pkg.nix),
-pinned in [pins.nix](../../../modules/pins.nix) like the other packages, so `just update` bumps it; it builds
+built from the `dorian` tack pin, which `just update` moves to the repository's head; it builds
 py-cord from PyPI.
 
 ## Secrets

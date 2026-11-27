@@ -11,15 +11,8 @@
     let
       pins = {
         caddy = [ "--version=skip" ];
-        caveman = [ "--version=branch" ];
-        decluttarr = [ ];
-        dorian = [ "--version=branch" ];
-        claude-plugins-official = [ "--version=branch" ];
-        trailofbits-skills = [ "--version=branch" ];
-        easynews-indexer = [ "--version=branch" ];
         jellyfin-sso = [ ];
         noctalia-plugins = [ "--version=branch" ];
-        ponytail = [ "--version=branch" ];
       };
       # shortcut: nix 2.35 no longer copies the flake on `nix flake metadata`, the store path nix-update evaluates; drop the override once nix-update copies it itself
       nix-update = pkgs.nix-update.override { nix = pkgs.nixVersions.nix_2_34; };
