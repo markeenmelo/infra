@@ -26,3 +26,10 @@ skill](../opentofu/SKILL.md)), with firewall rules admitting Home and Kids to th
 the tailnet's split DNS sends the workstations to bastion's dnsmasq, which answers the same;
 their traffic to the Homelab subnet runs over the tailnet, where a grant admits the admin
 clients to the cache's ports 80 and 443.
+
+The tailnet's split DNS for these names is tailnet-wide, an operator's choice: every device that
+takes the tailnet's DNS resolves them to the cache wherever it is, so away from home a miss comes
+over the home uplink, the names stop resolving while bastion is down, and a member's device,
+which has no grant to the cache, loses those downloads over the tailnet. The Kids rule to the
+cache holds at all hours, outside the bedtime block, also by choice: a miss during bedtime
+reaches only the allowlisted download hosts.
