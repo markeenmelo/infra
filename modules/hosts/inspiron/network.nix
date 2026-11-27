@@ -1,6 +1,6 @@
 {
   fleet.hosts.inspiron.module =
-    { config, ... }:
+    { config, lib, ... }:
     {
       sops = {
         secrets.kids-wifi-psk.restartUnits = [ "NetworkManager-ensure-profiles.service" ];
@@ -8,7 +8,7 @@
       };
       networking.networkmanager = {
         enable = true;
-        unmanaged = [ "except:type:wifi" ];
+        unmanaged = lib.mkForce [ "except:type:wifi" ];
         ensureProfiles = {
           environmentFiles = [ config.sops.templates."kids-wifi.env".path ];
           profiles.MN-Kids = {
