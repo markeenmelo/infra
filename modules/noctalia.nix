@@ -1,6 +1,12 @@
+{ inputs, ... }:
 {
   flake.modules.nixos.desktop =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       outputs = config.home-manager.users.marcos.programs.umbriel.settings.output;
       placed = lib.filterAttrs (_: output: output ? position) outputs;
@@ -14,6 +20,7 @@
     {
       services = {
         displayManager.noctalia-greeter = {
+          package = inputs.noctalia-greeter.packages.${pkgs.stdenv.hostPlatform.system}.default;
           enable = true;
           settings = {
             session.default = "Umbriel";
@@ -78,6 +85,7 @@
     in
     {
       programs.noctalia = {
+        package = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
         enable = true;
         systemd.enable = true;
         settings = {
