@@ -82,12 +82,10 @@
     "type": "github",
     "owner": "nix-community",
     "repo": "disko",
-    "rev": "de5708739256238fb912c62f03988815db89ec9a",
-    "narHash": "sha256-CNzzBsRhq7gg4BMBuTDObiWDH/rFYHEuDRVOwCcwXw4=",
-    "lastModified": 1768920986,
-    "public": true,
-    "tag": "v1.13.0",
-    "version": "1.13.0"
+    "rev": "44761d4f745b95e037458a0e57133c5700c8e320",
+    "narHash": "sha256-D35n2Q2v1KrlF9LS/pFl8Z3EBMJW6qvPw5q4HMbXXLg=",
+    "lastModified": 1795168368,
+    "public": true
   },
   "dorian": {
     "type": "github",

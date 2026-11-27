@@ -20,7 +20,6 @@ omit_inputs = ["flake-compat"]
 
 [inputs.disko]
 url = "github:nix-community/disko"
-tag = "v{version}"
 follows = { nixpkgs = "nixpkgs" }
 
 [inputs.dorian]
