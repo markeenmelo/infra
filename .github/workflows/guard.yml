@@ -45,7 +45,7 @@ jobs:
             *) fail "pull requests target dev, not $BASE" ;;
           esac
           lines=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$NUMBER/files" |
-            jq -s '[add[] | select(.filename | test("(^|/)flake\\.lock$|\\.lock\\.hcl$") | not) | .additions + .deletions] | add // 0')
+            jq -s '[add[] | select(.filename | test("(^|/)flake\\.lock$|^\\.tack/(pins\\.lock\\.json|default\\.nix)$|\\.lock\\.hcl$") | not) | .additions + .deletions] | add // 0')
           echo "$lines changed lines without lock files (limit $MAX_LINES)"
           [ "$lines" -le "$MAX_LINES" ] ||
             fail "$lines changed lines, over the limit of $MAX_LINES: split it, or the operator merges it"
