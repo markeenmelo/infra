@@ -11,7 +11,7 @@ to be read; nothing here is meant to be reused as is.
 | `bastion` | x86_64-linux | Home server: LAN and public proxy, identity, apps, storage, monitoring, backups, remote builder, Harmonia cache, MicroVMs (agents, hermes) | itself |
 | `edge` | aarch64-linux | Public HTTPS edge (Oracle Cloud instance): passes TLS through to bastion unread; encrypted, unlocked over SSH | itself |
 | `thinkpad` | x86_64-linux | Operator laptop | beast or bastion |
-| `beast` | x86_64-linux | Operator gaming desktop, remote builder | itself |
+| `beast` | x86_64-linux | Operator gaming desktop, remote builder, Harmonia cache | itself |
 | `inspiron` | x86_64-linux | Ian's Minecraft kiosk on the Kids VLAN | the deploying machine |
 
 ## Quick start
@@ -126,7 +126,7 @@ system and check evaluates, the cheap `format`, `secrets` and `links` checks bui
 projects validate. `linux` runs
 only on pull requests into `main` and pushes to `main`: on a push it builds every x86_64 check, on
 a pull request only those whose derivation differs from the base commit's. Only `main`'s run joins
-the tailnet to read bastion's cache. The aarch64-linux host `edge` is evaluated, not built.
+the tailnet to read the builders' caches. The aarch64-linux host `edge` is evaluated, not built.
 
 Changes reach `main` in two steps: agents and the operator open pull requests into `dev`, which
 [guard.yml](.github/workflows/guard.yml), `eval` and the review bot gate, and files in
