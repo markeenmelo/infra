@@ -1,5 +1,6 @@
 [inputs.caveman]
 url = "github:JuliusBrussee/caveman"
+tag = "v{version}"
 type = "fetch"
 
 [inputs.claude-plugins-official]
@@ -19,6 +20,7 @@ omit_inputs = ["flake-compat"]
 
 [inputs.disko]
 url = "github:nix-community/disko"
+tag = "v{version}"
 follows = { nixpkgs = "nixpkgs" }
 
 [inputs.dorian]
@@ -57,6 +59,7 @@ url = "github:Infinidoge/nix-minecraft"
 type = "fetch"
 
 [inputs.nixflix]
+# shortcut: v6.0.0 lacks the arr host config merge fix #302 follows main for, add tag = "v{version}" once a later release carries it
 url = "github:kiriwalawren/nixflix"
 follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["mkdocs-catppuccin", "treefmt-nix"]
@@ -71,6 +74,7 @@ omit_inputs = ["nixpkgs"]
 
 [inputs.ponytail]
 url = "github:DietrichGebert/ponytail"
+tag = "v{version}"
 type = "fetch"
 
 [inputs.preservation]

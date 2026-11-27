@@ -28,14 +28,16 @@
     "type": "github",
     "owner": "JuliusBrussee",
     "repo": "caveman",
-    "rev": "e74a11ccdb38b98d15c9f9545787c907dd15f0ab",
-    "narHash": "sha256-CsrSd7i/6+wkGAIDa29KpkYaaJgzhRhAGNnbEFgJ9Fk=",
-    "lastModified": 1795667356,
+    "rev": "70f4f34e834893ea9af9f4fc6022266bd56d18b1",
+    "narHash": "sha256-hGYcJ7r2O/uEAmAfpox7Owht4LN8Rk2kn1y8BSMWpFk=",
+    "lastModified": 1795329457,
     "archive": {
-      "hash": "sha256-3RtuXH4sb7yM3KyCZtfunc1CSkkrIP1rUazEQfhYRNY=",
-      "outHash": "sha256-r7j0cCyl4bKNwgV3fdu983RIVc87qtPthxH2yov6aQk="
+      "hash": "sha256-gG8QmOr+vjGPC91tgC5wx0u26GtlNrF/pm2xip0aMbI=",
+      "outHash": "sha256-ZWfW1uoruvyQ9gyPFbZP5UNgSDFjBsLC4diIgofToAA="
     },
-    "public": true
+    "public": true,
+    "tag": "v4.2.0",
+    "version": "4.2.0"
   },
   "claude-plugins-official": {
     "type": "github",
@@ -80,10 +82,12 @@
     "type": "github",
     "owner": "nix-community",
     "repo": "disko",
-    "rev": "44761d4f745b95e037458a0e57133c5700c8e320",
-    "narHash": "sha256-D35n2Q2v1KrlF9LS/pFl8Z3EBMJW6qvPw5q4HMbXXLg=",
-    "lastModified": 1795168368,
-    "public": true
+    "rev": "de5708739256238fb912c62f03988815db89ec9a",
+    "narHash": "sha256-CNzzBsRhq7gg4BMBuTDObiWDH/rFYHEuDRVOwCcwXw4=",
+    "lastModified": 1768920986,
+    "public": true,
+    "tag": "v1.13.0",
+    "version": "1.13.0"
   },
   "dorian": {
     "type": "github",
@@ -206,14 +210,16 @@
     "type": "github",
     "owner": "DietrichGebert",
     "repo": "ponytail",
-    "rev": "ebd8654c2c627f721eb8f9c0d1bd4090a29f9e10",
-    "narHash": "sha256-5m6JW3U6EMYUg4YVLh7nRRTWGY3shrFQ0wK0bediVFc=",
-    "lastModified": 1795314718,
+    "rev": "7801d061243d7b753bad0e0b3c057cd250b11755",
+    "narHash": "sha256-CY0EifTY0UVc6/FPGVJjEfYEf/8QLsINQmoYYKZYh98=",
+    "lastModified": 1793243094,
     "archive": {
-      "hash": "sha256-aN3WlyqACriHNbcAy20qoBMdV0LBTQndDVJYjB9K9Y0=",
-      "outHash": "sha256-huSy9MOvhMoeWlwKJex1EEx/OPU6faUwy1ckG5II2BY="
+      "hash": "sha256-kS5pgfs+iDvzP+ihPkr18/+xSBQj/xbzJRyLGB711eE=",
+      "outHash": "sha256-RDucJ/+n+JHa4epVha1jrQ70xElHoMVKYlDZbLc6EpI="
     },
-    "public": true
+    "public": true,
+    "tag": "v5.3.3",
+    "version": "5.3.3"
   },
   "preservation": {
     "type": "github",
