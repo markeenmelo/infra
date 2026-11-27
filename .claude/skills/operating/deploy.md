@@ -37,12 +37,13 @@ derivations`), and the key is readable only by root on an admin client.
 `cache-client` and `remote-builds` make the builders' caches (`build-host`) each workstation's first substituters, so a cleaned store
 refills from bastion instead of rebuilding.
 CI on `main` reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the
-tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds
+tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what the builders hold
 and leaves before it builds, so tailnet minutes stay short and nothing built by CI reaches
 bastion. Pull requests never join ([opentofu skill](../opentofu/SKILL.md)).
-The tailnet policy decides who reaches 5005; bastion's firewall admits it from any tailnet peer.
+The tailnet policy decides who reaches 5005; each builder's firewall admits it from any tailnet peer.
 What bastion built for another host stays until its store runs low on space: bastion collects
-garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).
+garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)). beast keeps the desktop's weekly `nh clean`, so a
+cleaned beast no longer serves what it built and the deploying machine copies those paths instead.
 
 ```sh
 nix run .#deploy -- HOST            # after checks pass on the committed revision
