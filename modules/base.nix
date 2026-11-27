@@ -1,14 +1,28 @@
 let
-  common = {
-    nix.settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      connect-timeout = 5;
-      fallback = true;
+  common =
+    { lib, ... }:
+    {
+      nix.settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+        connect-timeout = 5;
+        fallback = true;
+        substituters = lib.mkAfter [
+          "https://cache.numtide.com?priority=50"
+          "https://nix-community.cachix.org?priority=50"
+          "https://microvm.cachix.org?priority=50"
+          "https://cache.manic.systems?priority=50"
+        ];
+        trusted-public-keys = lib.mkAfter [
+          "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+          "microvm.cachix.org-1:oXnBc6hRE3eX5rSYdRyMYXnfzcCxC7yKPTbZXALsqys="
+          "cache.manic.systems-1:s6OZanN8Us8vRi0jVivP3qlMn0cYHBjBALKrNe5nH8s="
+        ];
+      };
     };
-  };
   nh =
     { lib, ... }:
     {
