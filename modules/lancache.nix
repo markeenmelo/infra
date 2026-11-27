@@ -15,6 +15,25 @@ in
       wild = map (lib.removePrefix "*") (lib.filter (lib.hasPrefix "*.") names);
       exact = lib.filter (name: !lib.hasPrefix "*." name && !lib.elem ".${name}" wild) names;
       allowed = value: lib.concatMapStrings (name: "  ${name} ${value};\n") (wild ++ exact);
+      proxied = ''
+        if ($lancache_allowed = 0) {
+          return 403;
+        }
+        ${resolver}
+        slice 1m;
+        proxy_cache lancache;
+        proxy_cache_key $lancache_id$uri$slice_range;
+        proxy_set_header Range $slice_range;
+        proxy_cache_lock on;
+        proxy_cache_lock_age 2m;
+        proxy_cache_lock_timeout 1h;
+        proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Connection "";
+        proxy_pass http://$host$request_uri;
+        add_header X-LanCache-Status $upstream_cache_status;
+      '';
     in
     {
       systemd.network.networks."10-uplink".addresses = [
@@ -48,10 +67,6 @@ in
             hostnames;
             default 0;
           ${allowed "1"}}
-          map $host $lancache_nocache {
-            default 0;
-            ctldl.windowsupdate.com 1;
-          }
           map "$http_user_agent£££$http_host" $lancache_id {
             default $http_host;
             "~Valve/Steam HTTP Client 1\.0£££.*" steam;
@@ -65,30 +80,18 @@ in
               port = httpPort;
             }
           ];
-          locations."/".extraConfig = ''
-            if ($lancache_allowed = 0) {
-              return 403;
-            }
-            ${resolver}
-            slice 1m;
-            proxy_cache lancache;
-            proxy_no_cache $lancache_nocache;
-            proxy_cache_bypass $lancache_nocache;
-            proxy_cache_key $lancache_id$uri$slice_range;
-            proxy_set_header Range $slice_range;
-            proxy_cache_valid 200 206 3650d;
-            proxy_cache_lock on;
-            proxy_cache_lock_age 2m;
-            proxy_cache_lock_timeout 1h;
-            proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
-            proxy_ignore_headers Expires Cache-Control;
-            proxy_hide_header ETag;
-            proxy_http_version 1.1;
-            proxy_set_header Host $host;
-            proxy_set_header Connection "";
-            proxy_pass http://$host$request_uri;
-            add_header X-LanCache-Status $upstream_cache_status;
-          '';
+          locations = {
+            "/".extraConfig = ''
+              ${proxied}
+              proxy_cache_valid 200 206 1d;
+            '';
+            "~ ^/depot/[0-9]+/".extraConfig = ''
+              ${proxied}
+              proxy_cache_valid 200 206 3650d;
+              proxy_ignore_headers Expires Cache-Control;
+              proxy_hide_header ETag;
+            '';
+          };
         };
         streamConfig = ''
           map $ssl_preread_server_name $lancache_tls {
