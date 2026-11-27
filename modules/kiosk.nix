@@ -68,30 +68,33 @@ in
         import QtQuick.Window
 
         Window {
+          id: root
+          property real tile: Math.min(320, (width - 400) / 4)
           visible: true
           visibility: Window.FullScreen
           color: "#1e2326"
           Row {
             anchors.centerIn: parent
-            spacing: 80
+            spacing: root.tile / 4
             Repeater {
               model: [
                 { label: "Minecraft", icon: "${pkgs.prismlauncher-unwrapped}/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg", code: 10 },
                 { label: "Steam", icon: "${pkgs.steam-unwrapped}/share/icons/hicolor/256x256/apps/steam.png", code: 11 },
-                { label: "Plasma", icon: "${pkgs.kdePackages.breeze-icons}/share/icons/breeze/places/64/start-here-kde-plasma.svg", code: 12 }
+                { label: "Plasma", icon: "${pkgs.kdePackages.breeze-icons}/share/icons/breeze/places/64/start-here-kde-plasma.svg", code: 12 },
+                { label: "Power off", icon: "${pkgs.kdePackages.breeze-icons}/share/icons/breeze/actions/24/system-shutdown.svg", code: 13 }
               ]
               delegate: Column {
                 spacing: 24
                 Rectangle {
-                  width: 320
-                  height: 320
-                  radius: 48
+                  width: root.tile
+                  height: root.tile
+                  radius: root.tile * 0.15
                   color: area.pressed ? "#3d484d" : "#2d353b"
                   Image {
                     anchors.centerIn: parent
-                    width: 220
-                    height: 220
-                    sourceSize: Qt.size(220, 220)
+                    width: root.tile * 0.7
+                    height: root.tile * 0.7
+                    sourceSize: Qt.size(width, height)
                     fillMode: Image.PreserveAspectFit
                     source: "file://" + modelData.icon
                   }
@@ -136,6 +139,7 @@ in
               10) gamescope --fullscreen -- prismlauncher --launch fo || true ;;
               11) gamescope --steam --fullscreen -- steam -gamepadui -steamos3 || true ;;
               12) ${lib.getExe' pkgs.kdePackages.plasma-workspace "startplasma-wayland"} || true ;;
+              13) ${config.systemd.package}/bin/systemctl poweroff || true ;;
               *) sleep 1 ;;
             esac
           done
