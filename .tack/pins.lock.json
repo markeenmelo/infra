@@ -11,9 +11,13 @@
     "hermes-agent": "github:NousResearch/hermes-agent",
     "home-manager": "github:nix-community/home-manager",
     "import-tree": "github:denful/import-tree",
+    "just-lsp": "github:terror/just-lsp",
     "luciole": "github:noctalia-dev/luciole",
+    "mcp-nixos": "github:utensils/mcp-nixos",
     "microvm": "github:microvm-nix/microvm.nix",
+    "nh": "github:nix-community/nh",
     "nix-minecraft": "github:Infinidoge/nix-minecraft",
+    "nix-update": "github:Mic92/nix-update",
     "nixflix": "github:kiriwalawren/nixflix",
     "nixpkgs": "github:NixOS/nixpkgs/nixos-unstable",
     "noctalia": "github:noctalia-dev/noctalia",
@@ -158,6 +162,17 @@
     "tag": "v0.3.0",
     "version": "0.3.0"
   },
+  "just-lsp": {
+    "type": "github",
+    "owner": "terror",
+    "repo": "just-lsp",
+    "rev": "4eb6c075fa31957257570f419681632c1fc4c48b",
+    "narHash": "sha256-0nYjiIrp30p4Rdo9f/Y/ZCOwgd8UsmhiqOZzzQDkHtM=",
+    "lastModified": 1795493505,
+    "public": true,
+    "tag": "0.12.0",
+    "version": "0.12.0"
+  },
   "luciole": {
     "type": "github",
     "owner": "noctalia-dev",
@@ -167,6 +182,17 @@
     "lastModified": 1795796944,
     "public": true
   },
+  "mcp-nixos": {
+    "type": "github",
+    "owner": "utensils",
+    "repo": "mcp-nixos",
+    "rev": "90922b22366c78f8be0aa6625a567f4eb04b2c1d",
+    "narHash": "sha256-duzHgajA/CXSwykgeKvwbHjms611IdyDcgJui4i8rmM=",
+    "lastModified": 1794853830,
+    "public": true,
+    "tag": "v3.1.1",
+    "version": "3.1.1"
+  },
   "microvm": {
     "type": "github",
     "owner": "microvm-nix",
@@ -175,6 +201,17 @@
     "narHash": "sha256-mruPu1cqOVBxPiRwrh6r1tnX1OAzMggy+rDk6YuqhK8=",
     "lastModified": 1795298370,
     "public": true
+  },
+  "nh": {
+    "type": "github",
+    "owner": "nix-community",
+    "repo": "nh",
+    "rev": "82d083f4cb110a3420eb550d370a0c222e2c55cc",
+    "narHash": "sha256-OMbnPuFzKXbkzn4mHXH+ILLHcmerzMC0dKeG4cxbtlE=",
+    "lastModified": 1795797340,
+    "public": true,
+    "tag": "v4.5.1",
+    "version": "4.5.1"
   },
   "nix-minecraft": {
     "type": "github",
@@ -188,6 +225,17 @@
       "outHash": "sha256-4WghN8a8K89aW6WjDCrt1A3EZls8nbGBRHcVswfNrNo="
     },
     "public": true
+  },
+  "nix-update": {
+    "type": "github",
+    "owner": "Mic92",
+    "repo": "nix-update",
+    "rev": "cfd5a600f21407748daa7b38cd5e370d868ce10e",
+    "narHash": "sha256-TCOhUWb53V3nrJRD3JuADly1U9fNi0Z79QMcjhbefHg=",
+    "lastModified": 1795354221,
+    "public": true,
+    "tag": "v1.17.0",
+    "version": "1.17.0"
   },
   "nixflix": {
     "type": "github",
