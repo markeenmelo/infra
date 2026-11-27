@@ -109,8 +109,8 @@ repository's. Comments follow [CLAUDE.md](../../../CLAUDE.md).
 
 ## Package updates
 
-`just update` is the only updater: it runs the `update-pins` app
-([pins.nix](../../../modules/pins.nix)), which starts with `tack update`. nix-update bumps each `NAME.pkg.nix` in `pins` with its
+`just update` is the only updater: it runs `tack update`, then the `update-pins` app
+([pins.nix](../../../modules/pins.nix)). nix-update bumps each `NAME.pkg.nix` in `pins` with its
 hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
 (Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, the release tags of the `hermes-agent`, `paseo`, `import-tree`, `deploy-rs` and `tack` pins, each OpenTofu
 provider's constraint and lock, the SHA-pinned actions through pinact). The operator reads the

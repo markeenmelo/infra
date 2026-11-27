@@ -24,8 +24,6 @@ while read -r name; do
   mv "$dashboards.new" "$dashboards"
 done <<< "$names"
 
-tack update
-
 release() {
   local repo=$1 input=$2 tag
   tag=$(curl -fsS ${github_token:+-H "Authorization: Bearer $github_token"} "https://api.github.com/repos/$repo/releases/latest" | jq -er .tag_name)
