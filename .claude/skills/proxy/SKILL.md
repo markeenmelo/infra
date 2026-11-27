@@ -32,7 +32,8 @@ Everything decided per request lives in `policy` in edge.nix: one `handle` per p
 hostname, forwarding to the app's address and port. Anything else on the wildcard is aborted
 without a response, so scanners learn nothing. The published apps authenticate natively, since
 their mobile clients cannot pass a forward-auth portal, and so do the apps only bastion's LAN
-proxy serves (Grafana through Authelia's OIDC, the arr apps with `arr/password`, Frigate);
+proxy serves (Grafana, Sonarr and Radarr through Authelia's OIDC, Prowlarr and SABnzbd with `arr/password`,
+Frigate);
 nothing sits behind forward-auth. Authelia's portal is still published, because the apps' single
 sign-on redirects there from wherever the user is.
 
@@ -98,7 +99,9 @@ get there through dnsmasq on bastion's tailnet interface, which the tailnet's sp
 for the domain and which answers every name under it with bastion's tailnet address, the game cache's
 download names with the cache address ([services: lancache.md](../services/lancache.md)), and refuses
 everything else; LAN clients through the gateway's wildcard record to bastion's LAN address.
-It serves 443 on the LAN and the tailnet, and the tailnet policy keeps the edge off it. Both
+It serves 443 on the LAN and the tailnet, and the tailnet policy keeps the edge off it. It also
+listens on the arr namespace's bridge, where it aborts every host but `auth.` from the namespace
+([services: arr.md](../services/arr.md)). Both
 listeners share [caddy.nix](../../../modules/caddy.nix): the package, the Porkbun keys, the
 persisted certificates, and the DNS-01 snippet, whose checks ask public resolvers, since
 the LAN's resolver may answer the domain locally. It keeps no access log: app URLs carry
