@@ -31,7 +31,8 @@ just tofu unifi plan  # plan an OpenTofu project
 
 ## Layout
 
-- `flake.nix` holds only inputs and imports every file under [`modules/`](modules/) with
+- `flake.nix` takes its inputs from the [tack](https://docs.manic.systems/tack) pins in
+  [`.tack/pins.toml`](.tack/pins.toml) and imports every file under [`modules/`](modules/) with
   flake-parts and import-tree. Each file is one concern and sets every class it touches: NixOS
   and Home Manager. Importing a module enables it; there are no `enable` options.
 - [`modules/hosts/`](modules/hosts/): each host's facts, hardware, disk layout and the roles it
