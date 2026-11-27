@@ -14,6 +14,7 @@ Work the operator wants done. An item leaves this file in the pull request that 
 - **Automatic server deploys:** servers deploy without the operator running the command.
 - **Personal Git instance:** maybe.
 - **Workstation ricing:** a better look on the workstations.
+- **Secrets:** better handling of secrets, possibly kept in a private repository.
 - **Cleanup:** simplify the code for clarity and reuse.
 - **MongoDB environment:** a devenv/tack environment with MongoDB.
 - **nixos-core:** adopt it, and find Rust alternatives for the current packages.
