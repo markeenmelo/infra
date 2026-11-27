@@ -1,35 +1,13 @@
 { config, lib, ... }:
 let
-  inherit (config.fleet.hosts.bastion) lan;
-  names = config.fleet.gameCacheNames;
+  inherit (config.fleet) hosts;
+  names = import ./_game-cache-names.nix;
 in
 {
-  options.fleet.gameCacheNames = lib.mkOption {
-    type = lib.types.listOf lib.types.str;
-    default = [
-      "lancache.steamcontent.com"
-      "*.steamcontent.com"
-      "steampipe.akamaized.net"
-      "*.steampipe.akamaized.net"
-      "*.dl.delivery.mp.microsoft.com"
-      "dl.delivery.mp.microsoft.com"
-      "*.do.dsp.mp.microsoft.com"
-      "*.microsoft.com.edgesuite.net"
-      "*.update.microsoft.com"
-      "*.windowsupdate.com"
-      "amupdatedl.microsoft.com"
-      "amupdatedl2.microsoft.com"
-      "amupdatedl3.microsoft.com"
-      "amupdatedl4.microsoft.com"
-      "amupdatedl5.microsoft.com"
-      "officecdn.microsoft.com"
-    ];
-    description = "Download hosts the game cache serves, from uklans/cache-domains' steam and windowsupdates lists plus Steam's CDN hosts; a leading `*.` covers the subdomains. The cache refuses every other host, and DNS sends these names to it.";
-  };
-
-  config.flake.modules.nixos.lancache =
-    { pkgs, ... }:
+  flake.modules.nixos.lancache =
+    { config, pkgs, ... }:
     let
+      inherit (hosts.${config.networking.hostName}) lan;
       cache = "/var/cache/lancache";
       httpPort = 3180;
       tlsPort = 3443;
@@ -39,6 +17,7 @@ in
       allowed = value: lib.concatMapStrings (name: "  ${name} ${value};\n") (wild ++ exact);
     in
     {
+      systemd.network.networks."10-uplink".address = [ "${lan.gameCache}/24" ];
       networking.nftables.tables.lancache = {
         family = "ip";
         content = ''

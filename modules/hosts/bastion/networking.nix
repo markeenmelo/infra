@@ -7,7 +7,6 @@
         gateway
         mac
         routes
-        gameCache
         ;
     in
     {
@@ -40,7 +39,7 @@
         };
         networks."10-uplink" = {
           matchConfig.MACAddress = mac;
-          address = [ "${address}/24" ] ++ lib.optional (gameCache != null) "${gameCache}/24";
+          address = [ "${address}/24" ];
           gateway = [ gateway ];
           dns = [ gateway ];
           networkConfig = {
