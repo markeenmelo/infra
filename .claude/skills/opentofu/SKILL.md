@@ -170,8 +170,8 @@ filter still lists it.
   `note` is left to the controller UI: the provider cannot clear one, so an unset note would
   show as a change on every plan.
 - `dhcp_dns` stays unset: any value turns DHCP DNS on.
-- The gateway's timezone, which the bedtime schedule runs on, belongs to UniFi OS: the Network
-  API answers `unifi_setting_locale` with `api.err.NoEdit`.
+- The gateway's timezone belongs to UniFi OS: the Network API answers
+  `unifi_setting_locale` with `api.err.NoEdit`.
 
 Settings no provider writes (DoH resolvers, the country block, UPnP and the NAT helpers off, the
 weekly controller backup) live in [settings.json](../../../opentofu/unifi/settings.json), keyed
