@@ -291,12 +291,10 @@
     "type": "github",
     "owner": "getpaseo",
     "repo": "paseo",
-    "rev": "57bdc689cc2db3b310e3588cf535137114a317d4",
-    "narHash": "sha256-WUJIjIvTIKFgA42ypVdnw4c0p/tQTDVb7m6nIGAX0uk=",
-    "lastModified": 1795799369,
-    "public": true,
-    "tag": "v0.18.1",
-    "version": "0.18.1"
+    "rev": "b15ac514d9d19a530b08cc08e5759fd447db19bb",
+    "narHash": "sha256-kRcqaaKnw5KLXGt6KDxbBwkZZCG1Ug1L5KeVYVd20Og=",
+    "lastModified": 1795821164,
+    "public": true
   },
   "ponytail": {
     "type": "github",

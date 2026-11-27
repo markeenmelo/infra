@@ -66,7 +66,7 @@ Answer each before the module is done; a reviewer will ask otherwise.
 follows the one `nixpkgs`. No overlays unless nixpkgs forces one, no `inputs.self` pass-through,
 no mixed package sets. `with` only for capability imports. Two pins keep the nixpkgs their upstream
 locked: `hermes-agent` ([guests: hermes](../guests/hermes.md)) and `llm-agents`, whose coding-agent
-packages (Claude Code, pi, cursor-agent, rtk, Paseo and its desktop app) come prebuilt from
+packages (Claude Code, pi, cursor-agent, rtk) come prebuilt from
 numtide's cache only as built against its own nixpkgs.
 
 **Merging** — let the module system merge; `//` is shallow and skips priorities, so it appears
@@ -79,7 +79,8 @@ Extend an upstream default list at its priority: `mkDefault (mkAfter …)`.
 `omit_inputs`. Since the flake itself declares no inputs, flake-parts' `inputs'` and `self.inputs`
 are empty: read `inputs`. A package whose upstream flake is ahead of nixpkgs comes from a pin
 following its release tags, built against our nixpkgs, unless no cache serves a build too large to
-repeat (Zed, Ghostty) or upstream says its flake is not for consumers (Tailscale).
+repeat (Zed, Ghostty) or upstream says its flake is not for consumers (Tailscale). Paseo builds from
+its pin anyway, without a cache, because its daemon, clients and module must come from one commit.
 Substituters go in `nix.settings`, never flake `nixConfig`. Every host trusts, after bastion's
 cache and cache.nixos.org, the caches the pins' upstreams publish
 ([base.nix](../../../modules/base.nix)): numtide's for llm-agents, nix-community's, microvm's and

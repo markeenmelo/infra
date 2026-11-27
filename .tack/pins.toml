@@ -105,9 +105,9 @@ tag = "v{version}"
 follows = { nixpkgs = "nixpkgs" }
 
 [inputs.paseo]
+# shortcut: release tags ship the previous release's nix/npm-deps.hash (upstream #3308, #4407), so no tag builds; add tag = "v{version}" once a tag builds
 url = "github:getpaseo/paseo"
-tag = "v{version}"
-omit_inputs = ["nixpkgs"]
+follows = { nixpkgs = "nixpkgs" }
 
 [inputs.ponytail]
 url = "github:DietrichGebert/ponytail"
