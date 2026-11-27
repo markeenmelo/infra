@@ -35,6 +35,10 @@ let
     {
       imports = [ cacheClient ];
       sops.secrets.nix-build-ssh-key = { };
+      programs.ssh.extraConfig = lib.concatMapStrings (name: ''
+        Host ${hosts.${name}.tailnetAddress}
+          ConnectTimeout 5
+      '') (lib.attrNames builders);
       programs.ssh.knownHosts = lib.mapAttrs (name: builder: {
         hostNames = [ hosts.${name}.tailnetAddress ];
         publicKey = builder.hostKey;
