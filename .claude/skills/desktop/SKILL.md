@@ -132,7 +132,8 @@ units, so a shell restart does not take them down; the `desktop-config-HOST` che
 key either program's validator rejects or warns about). Noctalia, its greeter, Umbriel, Umbriel's
 portal and Luciole come from noctalia-dev's own flakes as tack pins, built against our nixpkgs:
 the two that tag releases (noctalia, noctalia-greeter) follow them, the rest their heads; nixpkgs
-provides only the NixOS and Home Manager modules they plug into,
+provides the NixOS and Home Manager modules the first four plug into, while Luciole brings its own
+Home Manager module, so a Luciole bump can change its options too,
 [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Wi-Fi
 profiles are their own `wifi` module ([wifi.nix](../../../modules/wifi.nix)), which a host
