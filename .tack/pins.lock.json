@@ -1,7 +1,12 @@
 {
   "$declared": {
+    "caveman": "github:JuliusBrussee/caveman",
+    "claude-plugins-official": "github:anthropics/claude-plugins-official",
+    "decluttarr": "github:ManiMatter/decluttarr",
     "deploy-rs": "github:serokell/deploy-rs",
     "disko": "github:nix-community/disko",
+    "dorian": "github:markeenmelo/Cthulu-Dice-Roller",
+    "easynews-indexer": "github:Sanket9225/Easynews_as_indexer",
     "flake-parts": "github:hercules-ci/flake-parts",
     "hermes-agent": "github:NousResearch/hermes-agent",
     "home-manager": "github:nix-community/home-manager",
@@ -11,11 +16,54 @@
     "nixflix": "github:kiriwalawren/nixflix",
     "nixpkgs": "github:NixOS/nixpkgs/nixos-unstable",
     "paseo": "github:getpaseo/paseo",
+    "ponytail": "github:DietrichGebert/ponytail",
     "preservation": "github:nix-community/preservation",
     "sops-nix": "github:Mic92/sops-nix",
     "stylix": "github:nix-community/stylix",
     "tack": "github:manic-systems/tack",
+    "trailofbits-skills": "github:trailofbits/skills",
     "zen-browser": "github:0xc000022070/zen-browser-flake"
+  },
+  "caveman": {
+    "type": "github",
+    "owner": "JuliusBrussee",
+    "repo": "caveman",
+    "rev": "e74a11ccdb38b98d15c9f9545787c907dd15f0ab",
+    "narHash": "sha256-CsrSd7i/6+wkGAIDa29KpkYaaJgzhRhAGNnbEFgJ9Fk=",
+    "lastModified": 1795667356,
+    "archive": {
+      "hash": "sha256-3RtuXH4sb7yM3KyCZtfunc1CSkkrIP1rUazEQfhYRNY=",
+      "outHash": "sha256-r7j0cCyl4bKNwgV3fdu983RIVc87qtPthxH2yov6aQk="
+    },
+    "public": true
+  },
+  "claude-plugins-official": {
+    "type": "github",
+    "owner": "anthropics",
+    "repo": "claude-plugins-official",
+    "rev": "0fbfda5a91f4adc311daca25acc99132f40f0b6e",
+    "narHash": "sha256-J9pxacOMDz6wEHJHo5d0JhLfR/95hhJwUz1RmHqRvcI=",
+    "lastModified": 1795647086,
+    "archive": {
+      "hash": "sha256-9s9EZpy2Mc+q13ECeBNtlC2vX40Ft6UDt9Ds3y0p4Y4=",
+      "outHash": "sha256-1pDvAmgGAMrz83FveFJA8oL6g3jH9qMfcBSi2Tb4ApA="
+    },
+    "public": true
+  },
+  "decluttarr": {
+    "type": "github",
+    "owner": "ManiMatter",
+    "repo": "decluttarr",
+    "rev": "193725099875819b48c9a4f6316253b4051944b2",
+    "narHash": "sha256-36XOEnNE5aJg9QkVK2nI8xK3RiugNH3Xjhswt3dhj+s=",
+    "lastModified": 1790800401,
+    "archive": {
+      "hash": "sha256-UDPcX/qvf56Ald3RvVHk45vyu3aYq3QQukKyjEzCcW4=",
+      "outHash": "sha256-HCI5fqMO9mZTElW6P71gkeoGQbiCF6FOAD1dBcBgoAk="
+    },
+    "public": true,
+    "tag": "v2.2.0",
+    "version": "2.2.0"
   },
   "deploy-rs": {
     "type": "github",
@@ -35,6 +83,32 @@
     "rev": "44761d4f745b95e037458a0e57133c5700c8e320",
     "narHash": "sha256-D35n2Q2v1KrlF9LS/pFl8Z3EBMJW6qvPw5q4HMbXXLg=",
     "lastModified": 1795168368,
+    "public": true
+  },
+  "dorian": {
+    "type": "github",
+    "owner": "markeenmelo",
+    "repo": "Cthulu-Dice-Roller",
+    "rev": "970ffcce274857e73743710d7d3ebdc966152c3e",
+    "narHash": "sha256-TjWlhQXNXyRk+u89kdUZGn8zsVIHZH8c0YQPtYhP+lI=",
+    "lastModified": 1795298586,
+    "archive": {
+      "hash": "sha256-LW2e558mGroQZ1dbkJu60Hc3MaierdAvNgqL90x8KfQ=",
+      "outHash": "sha256-ly1G9qC7cqXOskpwi7QIQY07Ewxdyr2pLulAu+uTexQ="
+    },
+    "public": true
+  },
+  "easynews-indexer": {
+    "type": "github",
+    "owner": "Sanket9225",
+    "repo": "Easynews_as_indexer",
+    "rev": "35a8b8641ccd3375c2746a3c5e4145b6dabe3a0a",
+    "narHash": "sha256-R1ah46gV7PAJBr/3D8AmqfHx0smEvpHRii9XcuGsEGQ=",
+    "lastModified": 1778422833,
+    "archive": {
+      "hash": "sha256-xckmRWT/J9wvdzwKJvMHVVfjXPdsHLko5Ku18j3mkEw=",
+      "outHash": "sha256-ayoVB1oMCg8DThuQ2meQjcVY+TyY6zWrpqUUXa43NqE="
+    },
     "public": true
   },
   "flake-parts": {
@@ -128,6 +202,19 @@
     "tag": "v0.18.0",
     "version": "0.18.0"
   },
+  "ponytail": {
+    "type": "github",
+    "owner": "DietrichGebert",
+    "repo": "ponytail",
+    "rev": "ebd8654c2c627f721eb8f9c0d1bd4090a29f9e10",
+    "narHash": "sha256-5m6JW3U6EMYUg4YVLh7nRRTWGY3shrFQ0wK0bediVFc=",
+    "lastModified": 1795314718,
+    "archive": {
+      "hash": "sha256-aN3WlyqACriHNbcAy20qoBMdV0LBTQndDVJYjB9K9Y0=",
+      "outHash": "sha256-huSy9MOvhMoeWlwKJex1EEx/OPU6faUwy1ckG5II2BY="
+    },
+    "public": true
+  },
   "preservation": {
     "type": "github",
     "owner": "nix-community",
@@ -165,6 +252,19 @@
     "public": true,
     "tag": "v2.0.0",
     "version": "2.0.0"
+  },
+  "trailofbits-skills": {
+    "type": "github",
+    "owner": "trailofbits",
+    "repo": "skills",
+    "rev": "149d7b21f4067765b82e67029730b42d228ef4b4",
+    "narHash": "sha256-8NBnk9sFW1IMkd+qmTvLKweh3CkeJaALEZBLs3GaxlM=",
+    "lastModified": 1794505727,
+    "archive": {
+      "hash": "sha256-C5nlzEoXzjDb6/1dC63NRc3v29wJrQishivwgKmLtpw=",
+      "outHash": "sha256-RU2hQtHKL8b9By1vWxZ3uE+yVmX0iELs4B2ovonKqs4="
+    },
+    "public": true
   },
   "zen-browser": {
     "type": "github",

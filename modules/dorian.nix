@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   flake.modules.nixos.dorian =
     {
@@ -27,7 +28,7 @@
         script = ''
           token=$(< "$CREDENTIALS_DIRECTORY/token")
           export DORIAN_TOKEN="$token"
-          exec ${lib.getExe (pkgs.callPackage ./dorian.pkg.nix { })}
+          exec ${lib.getExe (pkgs.callPackage ./dorian.pkg.nix { src = inputs.dorian; })}
         '';
       };
     };

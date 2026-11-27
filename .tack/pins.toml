@@ -1,3 +1,16 @@
+[inputs.caveman]
+url = "github:JuliusBrussee/caveman"
+type = "fetch"
+
+[inputs.claude-plugins-official]
+url = "github:anthropics/claude-plugins-official"
+type = "fetch"
+
+[inputs.decluttarr]
+url = "github:ManiMatter/decluttarr"
+type = "fetch"
+tag = "v{version}"
+
 [inputs.deploy-rs]
 url = "github:serokell/deploy-rs"
 tag = "v{version}"
@@ -7,6 +20,14 @@ omit_inputs = ["flake-compat"]
 [inputs.disko]
 url = "github:nix-community/disko"
 follows = { nixpkgs = "nixpkgs" }
+
+[inputs.dorian]
+url = "github:markeenmelo/Cthulu-Dice-Roller"
+type = "fetch"
+
+[inputs.easynews-indexer]
+url = "github:Sanket9225/Easynews_as_indexer"
+type = "fetch"
 
 [inputs.flake-parts]
 url = "github:hercules-ci/flake-parts"
@@ -48,6 +69,10 @@ url = "github:getpaseo/paseo"
 tag = "v{version}"
 omit_inputs = ["nixpkgs"]
 
+[inputs.ponytail]
+url = "github:DietrichGebert/ponytail"
+type = "fetch"
+
 [inputs.preservation]
 url = "github:nix-community/preservation"
 
@@ -64,6 +89,10 @@ url = "github:manic-systems/tack"
 tag = "v{version}"
 follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["fenix"]
+
+[inputs.trailofbits-skills]
+url = "github:trailofbits/skills"
+type = "fetch"
 
 [inputs.zen-browser]
 url = "github:0xc000022070/zen-browser-flake"

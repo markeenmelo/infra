@@ -356,7 +356,7 @@ let
               '') (decluttarrApps ++ [ "sabnzbd" ])}
               QBITTORRENT_PASSWORD=$(< "$CREDENTIALS_DIRECTORY/QBITTORRENT_PASSWORD")
               export QBITTORRENT_PASSWORD
-              exec ${lib.getExe (pkgs.callPackage ./decluttarr.pkg.nix { })}
+              exec ${lib.getExe (pkgs.callPackage ./decluttarr.pkg.nix { src = inputs.decluttarr; })}
             '';
           };
           sabnzbd-categories = {
@@ -383,7 +383,9 @@ let
               EASYNEWS_PASS=$(< "$CREDENTIALS_DIRECTORY/easynews-password")
               NEWZNAB_APIKEY=$(< "$CREDENTIALS_DIRECTORY/easynews-api-key")
               export EASYNEWS_USER EASYNEWS_PASS NEWZNAB_APIKEY
-              exec ${lib.getExe (pkgs.callPackage ./easynews-indexer.pkg.nix { })} \
+              exec ${
+                lib.getExe (pkgs.callPackage ./easynews-indexer.pkg.nix { src = inputs.easynews-indexer; })
+              } \
                 --bind 127.0.0.1:${toString easynewsPort} --threads 4
             '';
           };
