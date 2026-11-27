@@ -135,7 +135,7 @@ in
             case $(cat "$choice" 2> /dev/null || true) in
               10) gamescope --fullscreen -- prismlauncher --launch fo || true ;;
               11) gamescope --steam --fullscreen -- steam -gamepadui -steamos3 || true ;;
-              12) startplasma-wayland || true ;;
+              12) ${lib.getExe' pkgs.kdePackages.plasma-workspace "startplasma-wayland"} || true ;;
               *) sleep 1 ;;
             esac
           done
