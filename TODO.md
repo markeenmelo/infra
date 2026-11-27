@@ -14,4 +14,10 @@ Work the operator wants done. An item leaves this file in the pull request that 
 - **Automatic server deploys:** servers deploy without the operator running the command.
 - **Personal Git instance:** maybe.
 - **Workstation ricing:** a better look on the workstations.
-- **Cleanup.**
+- **Cleanup:** simplify the code for clarity and reuse.
+- **tack:** replace flakes with tack; a devenv/tack environment with MongoDB.
+- **nixos-core:** adopt it, and find Rust alternatives for the current packages.
+- **Distributed builds:** beast and bastion build for the fleet.
+- **inspiron greeter:** a shutdown button.
+- **circus, evix and cade:** evaluate each.
+- **PII in logs:** check whether any log holds personal data.
