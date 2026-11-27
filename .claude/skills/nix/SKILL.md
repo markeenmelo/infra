@@ -64,10 +64,10 @@ Answer each before the module is done; a reviewer will ask otherwise.
 
 **Arguments** — request only what you use; inner modules take their own `lib`/`pkgs`. Every host
 follows the one `nixpkgs`. No overlays unless nixpkgs forces one, no `inputs.self` pass-through,
-no mixed package sets. `with` only for capability imports. Two pins keep the nixpkgs their upstream
-locked: `hermes-agent` ([guests: hermes](../guests/hermes.md)) and `llm-agents`, whose coding-agent
-packages (Claude Code, pi, cursor-agent, rtk) come prebuilt from
-numtide's cache only as built against its own nixpkgs.
+no mixed package sets. `with` only for capability imports. Some pins keep the nixpkgs their upstream
+locked: `hermes-agent` ([guests: hermes](../guests/hermes.md)); and, because an upstream cache
+holds a package only as built against its own nixpkgs, `llm-agents` (Claude Code, pi,
+cursor-agent, rtk from numtide's cache), noctalia-dev's pins (Noctalia's cache) and `tack`.
 
 **Merging** — let the module system merge; `//` is shallow and skips priorities, so it appears
 nowhere in Nix here: config shared between classes or hosts is a module both import, and a value
@@ -83,8 +83,8 @@ repeat (Zed, Ghostty) or upstream says its flake is not for consumers (Tailscale
 its pin anyway, without a cache, because its daemon, clients and module must come from one commit.
 Substituters go in `nix.settings`, never flake `nixConfig`. Every host trusts, after bastion's
 cache and cache.nixos.org, the caches the pins' upstreams publish
-([base.nix](../../../modules/base.nix)): numtide's for llm-agents, nix-community's, microvm's and
-tack's. A cache serves a pin only where it keeps its own nixpkgs; a pin that follows ours rarely hits it.
+([base.nix](../../../modules/base.nix)): numtide's for llm-agents, nix-community's, microvm's,
+tack's and Noctalia's. A cache serves a pin only where it keeps its own nixpkgs; a pin that follows ours rarely hits it.
 
 **Apps** — every operator task is a flake app built with `writeShellApplication`; switch to
 `writers.writePython3Bin` past ~100 lines or when it parses data. Only workflow YAML, `.envrc` and

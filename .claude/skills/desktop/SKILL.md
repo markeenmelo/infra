@@ -130,8 +130,9 @@ to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists t
 whose output layout is derived from Umbriel's positions; apps it launches run as their own systemd
 units, so a shell restart does not take them down; the `desktop-config-HOST` check fails on any
 key either program's validator rejects or warns about). Noctalia, its greeter, Umbriel, Umbriel's
-portal and Luciole come from noctalia-dev's own flakes as tack pins, built against our nixpkgs:
-the two that tag releases (noctalia, noctalia-greeter) follow them, the rest their heads; nixpkgs
+portal and Luciole come from noctalia-dev's own flakes as tack pins, built against their own nixpkgs so
+`noctalia.cachix.org` serves them: the two that tag releases (noctalia, noctalia-greeter) follow them,
+Umbriel (which brings its portal) and Luciole their `cachix` branch, the newest commit CI cached; nixpkgs
 provides the NixOS and Home Manager modules the first four plug into, while Luciole brings its own
 Home Manager module, so a Luciole bump can change its options too,
 [printing.nix](../../../modules/printing.nix) and

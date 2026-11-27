@@ -34,7 +34,7 @@
       programs.umbriel = {
         enable = true;
         package = inputs.umbriel.packages.${system}.default;
-        portalPackage = inputs.xdg-desktop-portal-umbriel.packages.${system}.default;
+        portalPackage = inputs.umbriel.packages.${system}.xdg-desktop-portal-umbriel;
       };
       environment.sessionVariables.NIXOS_OZONE_WL = "1";
     };
