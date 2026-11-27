@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 let
   grafana = {
     args = [
@@ -67,22 +72,18 @@ let
       extensionToLanguage.".rs" = "rust";
     };
   };
-  agentPlugins =
-    pkgs:
-    [
-      "${(pkgs.callPackage ./ponytail.pkg.nix { }).src}"
-      "${(pkgs.callPackage ./caveman.pkg.nix { }).src}"
-    ]
-    ++ map (plugin: "${(pkgs.callPackage ./trailofbits-skills.pkg.nix { }).src}/plugins/${plugin}") [
-      "insecure-defaults"
-      "sharp-edges"
-    ]
-    ++
-      map (plugin: "${(pkgs.callPackage ./claude-plugins-official.pkg.nix { }).src}/plugins/${plugin}")
-        [
-          "skill-creator"
-          "claude-md-management"
-        ];
+  agentPlugins = [
+    "${inputs.ponytail}"
+    "${inputs.caveman}"
+  ]
+  ++ map (plugin: "${inputs.trailofbits-skills}/plugins/${plugin}") [
+    "insecure-defaults"
+    "sharp-edges"
+  ]
+  ++ map (plugin: "${inputs.claude-plugins-official}/plugins/${plugin}") [
+    "skill-creator"
+    "claude-md-management"
+  ];
   mcpServers = pkgs: {
     nixos = {
       type = "stdio";
@@ -137,7 +138,7 @@ in
               ANTHROPIC_MODEL = "claude-opus-5-5";
               CAVEMAN_DEFAULT_MODE = "ultracave";
               PONYTAIL_DEFAULT_MODE = "ultra";
-              CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" ([ "${plugin}" ] ++ agentPlugins pkgs);
+              CLAUDE_CODE_PLUGIN_DIRS = lib.concatStringsSep ":" ([ "${plugin}" ] ++ agentPlugins);
             };
             hooks.PreToolUse = [ (rtkHook pkgs) ];
           };

@@ -1,18 +1,11 @@
 {
-  fetchFromGitHub,
+  src,
   fetchPypi,
   lib,
   python3,
   writeShellApplication,
 }:
 let
-  version = "0-unstable-2026-11-21";
-  src = fetchFromGitHub {
-    owner = "markeenmelo";
-    repo = "Cthulu-Dice-Roller";
-    rev = "970ffcce274857e73743710d7d3ebdc966152c3e";
-    hash = "sha256-TjWlhQXNXyRk+u89kdUZGn8zsVIHZH8c0YQPtYhP+lI=";
-  };
   py-cord = python3.pkgs.buildPythonPackage rec {
     pname = "py-cord";
     version = "2.8.1";
@@ -59,6 +52,5 @@ let
 in
 writeShellApplication {
   name = "dorian";
-  passthru = { inherit version src; };
   text = ''exec ${python}/bin/python ${src}/dorian.py "$@"'';
 }

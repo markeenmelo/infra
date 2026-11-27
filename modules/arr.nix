@@ -57,6 +57,8 @@ let
       retention = 4200;
     }
   ];
+  # Authelia's opaque sub for marcos, the one account Radarr and Sonarr let in
+  oidcSubject = "fd6defcb-1c72-4ca4-ae37-718835633b2e";
   storageProfile = "1080p Storage Efficient";
   storageQualities = [
     "WEBDL-1080p"
@@ -73,7 +75,12 @@ let
     }:
     let
       vpn = config.nixflix.vpn.namespace;
-      inherit (config.vpnNamespaces.${vpn}) namespaceAddress;
+      inherit (config.vpnNamespaces.${vpn}) namespaceAddress bridgeAddress;
+      authHosts = pkgs.writeText "arr-hosts" ''
+        127.0.0.1 localhost
+        ::1 localhost
+        ${bridgeAddress} auth.${domain}
+      '';
       qbittorrent = config.nixflix.torrentClients.qbittorrent;
       inherit (config.services.qbittorrent) webuiPort;
       sabnzbd = config.nixflix.usenetClients.sabnzbd;
@@ -287,6 +294,18 @@ let
             };
           };
         }))
+        (lib.genAttrs seerrApps (name: {
+          config.hostConfig = {
+            authenticationMethod = "oidc";
+            trustedNetworks = bridgeAddress;
+            oidc = {
+              authority = "https://auth.${domain}";
+              clientId = name;
+              clientSecret = secret "${name}-oidc-client-secret";
+              userIdentifier = oidcSubject;
+            };
+          };
+        }))
       ];
       # the uid bastion allocated to qbittorrent, which owns its state; nixflix forces the whole account, so it is restated
       users.users.qbittorrent = lib.mkOverride 49 {
@@ -311,6 +330,9 @@ let
             ];
           })
         )
+        (lib.genAttrs seerrApps (_: {
+          serviceConfig.BindReadOnlyPaths = [ "${authHosts}:/etc/hosts" ];
+        }))
         {
           prowlarr-indexers = {
             wants = [ "easynews-indexer.service" ];
@@ -356,7 +378,7 @@ let
               '') (decluttarrApps ++ [ "sabnzbd" ])}
               QBITTORRENT_PASSWORD=$(< "$CREDENTIALS_DIRECTORY/QBITTORRENT_PASSWORD")
               export QBITTORRENT_PASSWORD
-              exec ${lib.getExe (pkgs.callPackage ./decluttarr.pkg.nix { })}
+              exec ${lib.getExe (pkgs.callPackage ./decluttarr.pkg.nix { src = inputs.decluttarr; })}
             '';
           };
           sabnzbd-categories = {
@@ -383,7 +405,9 @@ let
               EASYNEWS_PASS=$(< "$CREDENTIALS_DIRECTORY/easynews-password")
               NEWZNAB_APIKEY=$(< "$CREDENTIALS_DIRECTORY/easynews-api-key")
               export EASYNEWS_USER EASYNEWS_PASS NEWZNAB_APIKEY
-              exec ${lib.getExe (pkgs.callPackage ./easynews-indexer.pkg.nix { })} \
+              exec ${
+                lib.getExe (pkgs.callPackage ./easynews-indexer.pkg.nix { src = inputs.easynews-indexer; })
+              } \
                 --bind 127.0.0.1:${toString easynewsPort} --threads 4
             '';
           };
@@ -491,7 +515,7 @@ let
     }:
     let
       vpn = config.nixflix.vpn.namespace;
-      inherit (config.vpnNamespaces.${vpn}) namespaceAddress;
+      inherit (config.vpnNamespaces.${vpn}) namespaceAddress bridgeAddress;
       appPort = name: config.nixflix.${name}.config.hostConfig.port;
       secret = name: config.sops.secrets."arr-${name}".path;
       arrUnits = apps ++ [
@@ -530,7 +554,8 @@ let
         "althub-api-key"
         "qbittorrent-password"
         "qbittorrent-password-hash"
-      ];
+      ]
+      ++ map (name: "${name}-oidc-client-secret") seerrApps;
       awaitProfile =
         name:
         pkgs.writeShellApplication {
@@ -637,6 +662,21 @@ let
           seerr = { inherit (config.nixflix.seerr) port; };
         }
       ];
+      fleet.oidc.clients = lib.genAttrs seerrApps (name: {
+        client_name = lib.toSentenceCase name;
+        token_endpoint_auth_method = "client_secret_post";
+        redirect_uris = [ "https://${name}.${domain}/signin-oidc" ];
+      });
+      vpnNamespaces.${vpn}.allowedEgress = [ bridgeAddress ];
+      services.caddy.virtualHosts."*.${domain}".extraConfig = lib.mkBefore ''
+        @arr-namespace {
+          remote_ip ${namespaceAddress}
+          not host auth.${domain}
+        }
+        handle @arr-namespace {
+          abort
+        }
+      '';
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
       networking.nftables.tables.arr = {
         family = "inet";
@@ -648,6 +688,7 @@ let
           }
           chain input {
             type filter hook input priority -200; policy accept;
+            iifname "${vpn}-br" ip saddr ${namespaceAddress} ip daddr ${bridgeAddress} tcp dport 443 accept
             iifname "${vpn}-br" ct state new drop
           }
           chain output {

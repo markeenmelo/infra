@@ -109,17 +109,21 @@ repository's. Comments follow [CLAUDE.md](../../../CLAUDE.md).
 
 ## Package updates
 
-`just update` is the only updater: it runs `tack update`, then the `update-pins` app
-([pins.nix](../../../modules/pins.nix)). nix-update bumps each `NAME.pkg.nix` in `pins` with its
+`just update` is the only updater: it runs `tack update`, which moves a pin with a `tag` template
+to its newest matching release tag and every other pin to its branch head, then the `update-pins`
+app ([pins.nix](../../../modules/pins.nix)). nix-update bumps each `NAME.pkg.nix` in `pins` with its
 hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
-(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, the release tags of the `hermes-agent`, `paseo`, `import-tree`, `deploy-rs` and `tack` pins, each OpenTofu
+(Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, tack's resolver after a tack bump, each OpenTofu
 provider's constraint and lock, the SHA-pinned actions through pinact). The operator reads the
 diff before committing, above all action, `pins.lock.json` and plugin moves: actions run with secrets,
 the inputs on every host, the Noctalia plugins as `marcos` with the Tailscale operator, and the
 Claude Code plugins as `marcos` in the agent guest ([guests: agents](../guests/agents.md));
 a provider move needs a `tofu plan` with no changes. Updates take the newest release
-at once, with no release-age cool-down: that read is the only gate. A source the fleet
-fetches is a `NAME.pkg.nix` added to `pins`, not a `type = "fetch"` pin. Never hand-edit
+at once, with no release-age cool-down: that read is the only gate. A source tree the fleet
+fetches from a Git forge is a `type = "fetch"` pin, left at the default `fetch_mode`, whose eval
+fetch gives the same store path as `fetchFromGitHub`; a package built from it is a `NAME.pkg.nix`
+that takes `src` from `inputs`. Only what a pin cannot lock stays in `pins` for nix-update: a
+build with its own dependency hash, a sparse checkout, a release asset. Never hand-edit
 `pins.lock.json`: the resolver fetches a locked input by `narHash`, so a revision bump without its
 hash keeps the old tree where cached and fails elsewhere; `nix run .#tack -- update PIN` instead. Each pin keeps its
 own version literal so only that line is rewritten.

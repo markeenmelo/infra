@@ -11,15 +11,8 @@
     let
       pins = {
         caddy = [ "--version=skip" ];
-        caveman = [ "--version=branch" ];
-        decluttarr = [ ];
-        dorian = [ "--version=branch" ];
-        claude-plugins-official = [ "--version=branch" ];
-        trailofbits-skills = [ "--version=branch" ];
-        easynews-indexer = [ "--version=branch" ];
         jellyfin-sso = [ ];
         noctalia-plugins = [ "--version=branch" ];
-        ponytail = [ "--version=branch" ];
       };
       # shortcut: nix 2.35 no longer copies the flake on `nix flake metadata`, the store path nix-update evaluates; drop the override once nix-update copies it itself
       nix-update = pkgs.nix-update.override { nix = pkgs.nixVersions.nix_2_34; };
@@ -48,7 +41,7 @@
         touch $out
       '';
       apps.update-pins = {
-        meta.description = "update-pins: bump every NAME.pkg.nix pin, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit, the hermes-agent, paseo, import-tree, deploy-rs and tack release tags, the GitHub Actions and the OpenTofu providers to the latest upstream, with their hashes";
+        meta.description = "update-pins: bump each NAME.pkg.nix in pins, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit, tack's resolver, the GitHub Actions and the OpenTofu providers to the latest upstream, with their hashes";
         program = pkgs.writeShellApplication {
           name = "update-pins";
           runtimeInputs = [

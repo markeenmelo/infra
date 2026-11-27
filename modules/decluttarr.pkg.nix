@@ -1,16 +1,9 @@
 {
-  fetchFromGitHub,
+  src,
   python3,
   writeShellApplication,
 }:
 let
-  version = "2.2.0";
-  src = fetchFromGitHub {
-    owner = "ManiMatter";
-    repo = "decluttarr";
-    tag = "v${version}";
-    hash = "sha256-36XOEnNE5aJg9QkVK2nI8xK3RiugNH3Xjhswt3dhj+s=";
-  };
   python = python3.withPackages (ps: [
     ps.demjson3
     ps.packaging
@@ -23,6 +16,5 @@ let
 in
 writeShellApplication {
   name = "decluttarr";
-  passthru = { inherit version src; };
   text = ''exec ${python}/bin/python ${src}/main.py "$@"'';
 }

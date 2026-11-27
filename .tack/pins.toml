@@ -1,5 +1,19 @@
+[inputs.caveman]
+url = "github:JuliusBrussee/caveman"
+type = "fetch"
+
+[inputs.claude-plugins-official]
+url = "github:anthropics/claude-plugins-official"
+type = "fetch"
+
+[inputs.decluttarr]
+url = "github:ManiMatter/decluttarr"
+type = "fetch"
+tag = "v{version}"
+
 [inputs.deploy-rs]
-url = "github:serokell/deploy-rs/v1.0.0"
+url = "github:serokell/deploy-rs"
+tag = "v{version}"
 follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["flake-compat"]
 
@@ -7,12 +21,22 @@ omit_inputs = ["flake-compat"]
 url = "github:nix-community/disko"
 follows = { nixpkgs = "nixpkgs" }
 
+[inputs.dorian]
+url = "github:markeenmelo/Cthulu-Dice-Roller"
+type = "fetch"
+
+[inputs.easynews-indexer]
+url = "github:Sanket9225/Easynews_as_indexer"
+type = "fetch"
+
 [inputs.flake-parts]
 url = "github:hercules-ci/flake-parts"
 follows = { nixpkgs-lib = "nixpkgs" }
 
 [inputs.hermes-agent]
-url = "github:NousResearch/hermes-agent/v0.23.4"
+# shortcut: upstream's older v2026.* date tags outrank v0.x under v{version}, widen the template once it releases past 0.x
+url = "github:NousResearch/hermes-agent"
+tag = "v0.{version}"
 follows = { flake-parts = "flake-parts", home-manager = "home-manager" }
 
 [inputs.home-manager]
@@ -20,7 +44,8 @@ url = "github:nix-community/home-manager"
 follows = { nixpkgs = "nixpkgs" }
 
 [inputs.import-tree]
-url = "github:denful/import-tree/v0.3.0"
+url = "github:denful/import-tree"
+tag = "v{version}"
 
 [inputs.microvm]
 url = "github:microvm-nix/microvm.nix"
@@ -40,8 +65,13 @@ omit_inputs = ["mkdocs-catppuccin", "treefmt-nix"]
 url = "github:NixOS/nixpkgs/nixos-unstable"
 
 [inputs.paseo]
-url = "github:getpaseo/paseo/v0.17.5"
+url = "github:getpaseo/paseo"
+tag = "v{version}"
 omit_inputs = ["nixpkgs"]
+
+[inputs.ponytail]
+url = "github:DietrichGebert/ponytail"
+type = "fetch"
 
 [inputs.preservation]
 url = "github:nix-community/preservation"
@@ -55,9 +85,14 @@ url = "github:nix-community/stylix"
 follows = { flake-parts = "flake-parts", nixpkgs = "nixpkgs" }
 
 [inputs.tack]
-url = "github:manic-systems/tack/v2.0.0"
+url = "github:manic-systems/tack"
+tag = "v{version}"
 follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["fenix"]
+
+[inputs.trailofbits-skills]
+url = "github:trailofbits/skills"
+type = "fetch"
 
 [inputs.zen-browser]
 url = "github:0xc000022070/zen-browser-flake"
