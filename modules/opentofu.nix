@@ -89,6 +89,14 @@ in
             export TF_VAR_fleet_telemetry=${lib.escapeShellArg telemetry}
             export TF_VAR_fleet_lan=${lib.escapeShellArg (builtins.toJSON lan)}
             export TF_VAR_fleet_routes=${lib.escapeShellArg (builtins.toJSON routes)}
+            export TF_VAR_fleet_game_cache=${
+              lib.escapeShellArg (
+                builtins.toJSON {
+                  address = config.fleet.hosts.bastion.lan.gameCache;
+                  names = import ./_game-cache-names.nix;
+                }
+              )
+            }
             export TF_VAR_fleet_edge_address=${lib.escapeShellArg edge}
             export TF_VAR_fleet_cache_port=${toString config.fleet.cachePort}
             export TF_VAR_fleet_public_port=${toString config.fleet.publicPort}

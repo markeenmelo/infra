@@ -33,6 +33,9 @@ in
           }
         '';
       };
+      services.dnsmasq.settings.address = map (domain: "/${domain}/${lan.gameCache}") (
+        lib.unique (map (lib.removePrefix "*.") names)
+      );
       networking.firewall.extraInputRules = ''
         ip daddr ${lan.gameCache} tcp dport { ${toString httpPort}, ${toString tlsPort} } ct original proto-dst { 80, 443 } accept
       '';

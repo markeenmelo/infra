@@ -48,7 +48,7 @@ in
           bind-dynamic = true;
           no-resolv = true;
           no-hosts = true;
-          address = "/${domain}/${tailnet}";
+          address = [ "/${domain}/${tailnet}" ];
         };
       };
       systemd.services.certificate-watch = {

@@ -133,7 +133,7 @@ address, and the host is installed again.
 ## UniFi
 
 [main.tf](../../../opentofu/unifi/main.tf) owns the gateway's LAN side: the VLANs, Wi-Fi networks,
-fixed client addresses, the LAN wildcard record that points the domain at bastion, IPS and
+fixed client addresses, the LAN wildcard record that points the domain at bastion, the game cache's download names (services: lancache.md), IPS and
 controller settings, remote syslog to bastion ([services: monitoring](../services/monitoring.md)) and
 the firewall. Bastion's LAN address, MAC, gateway and syslog port come from `fleet.hosts.*.lan`
 as `fleet_lan`. Plan and apply from the LAN or through bastion's subnet route to the gateway;

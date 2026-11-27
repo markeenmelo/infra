@@ -20,5 +20,9 @@ address, not an interface; UniFi's firewall and the tailnet's grants decide who 
 
 The cache lives on the `tank/lancache` dataset (rebuildable, a 1 TB quota, no snapshots, outside
 the backup roots), and nginx requires its mount, so the dataset must exist before bastion's
-deploy or nginx, and with it Frigate's UI, does not start. Clients reach the cache only once
-DNS sends the download names to `gameCache` ([opentofu skill](../opentofu/SKILL.md)).
+deploy or nginx, and with it Frigate's UI, does not start. DNS sends the download names to
+`gameCache` for every client: the gateway answers LAN clients from UniFi records ([opentofu
+skill](../opentofu/SKILL.md)), with firewall rules admitting Home and Kids to the cache, and
+the tailnet's split DNS sends the workstations to bastion's dnsmasq, which answers the same;
+their traffic to the Homelab subnet runs over the tailnet, where a grant admits the admin
+clients to the cache's ports 80 and 443.
