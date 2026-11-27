@@ -203,6 +203,10 @@ in
       programs.gamemode.enable = true;
       services.desktopManager.plasma6.enable = true;
       services.power-profiles-daemon.enable = false;
+      environment.etc."xdg/kdeglobals".text = ''
+        [KDE Action Restrictions][$i]
+        action/lock_screen=false
+      '';
       environment.etc."xdg/kscreenlockerrc".text = ''
         [Daemon][$i]
         Autolock=false
