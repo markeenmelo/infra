@@ -1,20 +1,20 @@
 {
   "$declared": {
-    "deploy-rs": "github:serokell/deploy-rs/v1.0.0",
+    "deploy-rs": "github:serokell/deploy-rs",
     "disko": "github:nix-community/disko",
     "flake-parts": "github:hercules-ci/flake-parts",
-    "hermes-agent": "github:NousResearch/hermes-agent/v0.23.4",
+    "hermes-agent": "github:NousResearch/hermes-agent",
     "home-manager": "github:nix-community/home-manager",
-    "import-tree": "github:denful/import-tree/v0.3.0",
+    "import-tree": "github:denful/import-tree",
     "microvm": "github:microvm-nix/microvm.nix",
     "nix-minecraft": "github:Infinidoge/nix-minecraft",
     "nixflix": "github:kiriwalawren/nixflix",
     "nixpkgs": "github:NixOS/nixpkgs/nixos-unstable",
-    "paseo": "github:getpaseo/paseo/v0.17.5",
+    "paseo": "github:getpaseo/paseo",
     "preservation": "github:nix-community/preservation",
     "sops-nix": "github:Mic92/sops-nix",
     "stylix": "github:nix-community/stylix",
-    "tack": "github:manic-systems/tack/v2.0.0",
+    "tack": "github:manic-systems/tack",
     "zen-browser": "github:0xc000022070/zen-browser-flake"
   },
   "deploy-rs": {
@@ -24,7 +24,9 @@
     "rev": "26e0f241b1b7c6b1717fc7babc4852192886bbc0",
     "narHash": "sha256-i5dTwfPglZYE1zpg2IvBq+n0wDxMdrLwgHuRxZmO6Tw=",
     "lastModified": 1792420374,
-    "public": true
+    "public": true,
+    "tag": "v1.0.0",
+    "version": "1.0.0"
   },
   "disko": {
     "type": "github",
@@ -51,7 +53,9 @@
     "rev": "8fc0374447313e276f6b9a2764bfc750190c966a",
     "narHash": "sha256-XAglpTjtcXz3N8flS3+9b9Duk636wEXcQEna21E6aZQ=",
     "lastModified": 1795503854,
-    "public": true
+    "public": true,
+    "tag": "v0.23.4",
+    "version": "0.23.4"
   },
   "home-manager": {
     "type": "github",
@@ -69,7 +73,9 @@
     "rev": "eb1b52eaecc57f7c136d07ae8a93e724dfecac46",
     "narHash": "sha256-ljEMTXP/rH0tOvDzc9gzwww6KcHRPRnEHzd9lK48V7s=",
     "lastModified": 1788467110,
-    "public": true
+    "public": true,
+    "tag": "v0.3.0",
+    "version": "0.3.0"
   },
   "microvm": {
     "type": "github",
@@ -115,10 +121,12 @@
     "type": "github",
     "owner": "getpaseo",
     "repo": "paseo",
-    "rev": "713b6dbbfe3ea5d395da569dca08fd31b2f8a0f8",
-    "narHash": "sha256-JnfKWg/ti8Jyfbh0SQUTqFXhLI7A9T9NUyEkRAkPe9k=",
-    "lastModified": 1795675327,
-    "public": true
+    "rev": "5369967b4ddbfb1f5c04a7a36b1b223fb32c4a1c",
+    "narHash": "sha256-40fx9z1QYaMHlRgQcg1W9/2oNl3uiL4gn7WdP3AJPfs=",
+    "lastModified": 1795768981,
+    "public": true,
+    "tag": "v0.18.0",
+    "version": "0.18.0"
   },
   "preservation": {
     "type": "github",
@@ -154,7 +162,9 @@
     "rev": "393ed432b3321a44a87e8a588552b51d5dad8f6e",
     "narHash": "sha256-CUECELH3ty3Imlmbt88IC+ZkUxHPyd3FHuN9WWG4P+c=",
     "lastModified": 1795730888,
-    "public": true
+    "public": true,
+    "tag": "v2.0.0",
+    "version": "2.0.0"
   },
   "zen-browser": {
     "type": "github",
