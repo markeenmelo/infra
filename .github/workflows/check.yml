@@ -87,14 +87,14 @@ jobs:
           audience: ${{ vars.TS_CI_AUDIENCE }}
           tags: tag:ci
           log-mode: quiet
-      - name: Fetch what bastion's Harmonia cache holds
+      - name: Fetch what the builders' Harmonia caches hold
         if: steps.tailnet.outcome == 'success'
         timeout-minutes: 10
         continue-on-error: true
         run: |
           settings=$(nix eval --json .#nixosConfigurations.thinkpad.config.nix.settings \
             --apply 's: { inherit (s) substituters trusted-public-keys; }')
-          xargs -r -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 \
+          xargs -r -a "$RUNNER_TEMP/checks" nix build --no-link --keep-going --max-jobs 0 --option connect-timeout 5 \
             --option substituters "$(jq -r '.substituters | join(" ")' <<< "$settings")" \
             --option trusted-public-keys "$(jq -r '."trusted-public-keys" | join(" ")' <<< "$settings")" || true
       - name: Leave the tailnet before building
