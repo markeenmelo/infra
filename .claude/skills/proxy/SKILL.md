@@ -95,7 +95,8 @@ persisted files keep their owner across reboots.
 [lan-proxy.nix](../../../modules/lan-proxy.nix) is bastion's Caddy for the same wildcard name,
 so LAN and tailnet clients reach the apps without crossing the WAN or the edge. Tailnet clients
 get there through dnsmasq on bastion's tailnet interface, which the tailnet's split DNS queries
-for the domain and which answers every name under it with bastion's tailnet address and refuses
+for the domain and which answers every name under it with bastion's tailnet address, the game cache's
+download names with the cache address ([services: lancache.md](../services/lancache.md)), and refuses
 everything else; LAN clients through the gateway's wildcard record to bastion's LAN address.
 It serves 443 on the LAN and the tailnet, and the tailnet policy keeps the edge off it. Both
 listeners share [caddy.nix](../../../modules/caddy.nix): the package, the Porkbun keys, the
