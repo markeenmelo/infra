@@ -2,6 +2,7 @@
 {
   perSystem =
     {
+      config,
       lib,
       pkgs,
       system,
@@ -38,6 +39,7 @@
     in
     {
       legacyPackages = lib.mapAttrs (name: _: pkgs.callPackage ./${name}.pkg.nix { }) pins;
+      packages.tack = inputs.tack.packages.${system}.tack;
       checks.tack-resolver = pkgs.runCommand "tack-resolver" { } ''
         cmp ${inputs.tack}/.tack/default.nix ${../.tack/default.nix} || {
           echo ".tack/default.nix differs from the resolver of the tack pin: run tack init --resolver" >&2
@@ -59,7 +61,7 @@
             pkgs.opentofu
             pkgs.pinact
             nix-update
-            inputs.tack.packages.${system}.tack
+            config.packages.tack
           ];
           text = lib.concatLines (
             [ (builtins.readFile ./update-pins.sh) ]

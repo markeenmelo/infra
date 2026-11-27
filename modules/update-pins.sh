@@ -39,6 +39,7 @@ release getpaseo/paseo paseo
 release denful/import-tree import-tree
 release serokell/deploy-rs deploy-rs
 release manic-systems/tack tack
+nix run .#tack -- init --resolver
 
 GITHUB_TOKEN=$github_token pinact run --update
 
