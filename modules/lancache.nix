@@ -17,7 +17,12 @@ in
       allowed = value: lib.concatMapStrings (name: "  ${name} ${value};\n") (wild ++ exact);
     in
     {
-      systemd.network.networks."10-uplink".address = [ "${lan.gameCache}/24" ];
+      systemd.network.networks."10-uplink".addresses = [
+        {
+          Address = "${lan.gameCache}/24";
+          PreferredLifetime = 0;
+        }
+      ];
       networking.nftables.tables.lancache = {
         family = "ip";
         content = ''
