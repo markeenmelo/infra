@@ -12,6 +12,7 @@
       desktop
       wifi
       remote-builds
+      github-token
       gaming
       telemetry
       fwupd
