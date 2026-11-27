@@ -24,7 +24,7 @@ nixpkgs' package, taken from the binary cache; the input supplies only its libra
 
 A host builds itself unless its `nix.settings.max-jobs` is 0 (bastion, which runs the builder
 in [builder.nix](../../../modules/builder.nix), the edge and beast); a host that imports
-`remote-builds` (the thinkpad) or refuses local builds (inspiron) is built on the deploying machine, which from the thinkpad hands the build to beast while it is awake, else bastion. The deploying
+`remote-builds` (the thinkpad) or refuses local builds (inspiron) is built on the deploying machine, which from the thinkpad spreads the build over beast (while awake) and bastion by load and speed factor. The deploying
 machine receives the whole closure back from the builder; deploy-rs then pushes it with
 `--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
 The builders (bastion and beast, `build-host`) trust the admin clients' build keys alone: the edge builds itself, and the tailnet
