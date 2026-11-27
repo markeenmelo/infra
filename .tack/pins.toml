@@ -18,8 +18,8 @@ follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["flake-compat"]
 
 [inputs.disko]
+# shortcut: v1.13.0, the latest release, hangs the disko VM tests against current nixos-unstable, add tag = "v{version}" once a newer release passes the storage checks
 url = "github:nix-community/disko"
-tag = "v{version}"
 follows = { nixpkgs = "nixpkgs" }
 
 [inputs.dorian]
