@@ -8,7 +8,7 @@ change needs [approval](../../../CLAUDE.md#autonomy); **never** touch `tank`, `a
 
 ## Pools
 
-`tank` (Immich, OpenCloud, media), `apps` (`/srv`, PostgreSQL, nixflix state,
+`tank` (Immich, OpenCloud, media, and the game download cache, which is rebuildable and outside the backups), `apps` (`/srv`, PostgreSQL, nixflix state,
 the agent guest's disks) and `scratch` (Frigate, rebuildable) are encrypted with key files under `/persist/zfs`,
 which the install carries and backups exclude; the password-manager copy beside the LUKS
 passphrase is the only other one. Topology, quotas and key locations are not declared: the

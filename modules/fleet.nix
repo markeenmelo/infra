@@ -53,6 +53,11 @@ in
                     type = lib.types.strMatching "([0-9a-f]{2}:){5}[0-9a-f]{2}";
                     description = "MAC address of the uplink, which the gateway fixes `address` to.";
                   };
+                  gameCache = lib.mkOption {
+                    type = lib.types.nullOr ipv4;
+                    default = null;
+                    description = "Second address on the same LAN where the host's game download cache answers; DNS points the cached download names at it.";
+                  };
                   syslogPort = lib.mkOption {
                     type = lib.types.port;
                     description = "UDP port on `address` that takes the gateway's syslog.";
