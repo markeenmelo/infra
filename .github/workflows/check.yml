@@ -34,8 +34,9 @@ jobs:
         run: nix build --no-link --print-build-logs .#checks.x86_64-linux.format .#checks.x86_64-linux.secrets .#checks.x86_64-linux.links
       - name: Validate the OpenTofu projects against their locked providers
         run: |
+          nixpkgs=$(nix eval --raw .#nixosConfigurations.bastion.pkgs.path)
           for project in opentofu/*/; do
-            nix shell --inputs-from . nixpkgs#opentofu --command sh -c \
+            nix shell "path:$nixpkgs#opentofu" --command sh -c \
               'tofu -chdir="$1" init -backend=false -input=false -lockfile=readonly && tofu -chdir="$1" validate' _ "$project"
           done
 
