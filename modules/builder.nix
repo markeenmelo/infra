@@ -38,6 +38,8 @@ let
       programs.ssh.extraConfig = lib.concatMapStrings (name: ''
         Host ${hosts.${name}.tailnetAddress}
           ConnectTimeout 5
+          ServerAliveInterval 15
+          ServerAliveCountMax 4
       '') (lib.attrNames builders);
       programs.ssh.knownHosts = lib.mapAttrs (name: builder: {
         hostNames = [ hosts.${name}.tailnetAddress ];
