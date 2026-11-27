@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 {
   flake.checks =
     import ./_host-checks.nix { inherit config lib; } "desktop-config"
@@ -20,10 +25,19 @@
         ''
       );
 
-  flake.modules.nixos.desktop = {
-    programs.umbriel.enable = true;
-    environment.sessionVariables.NIXOS_OZONE_WL = "1";
-  };
+  flake.modules.nixos.desktop =
+    { pkgs, ... }:
+    let
+      inherit (pkgs.stdenv.hostPlatform) system;
+    in
+    {
+      programs.umbriel = {
+        enable = true;
+        package = inputs.umbriel.packages.${system}.default;
+        portalPackage = inputs.xdg-desktop-portal-umbriel.packages.${system}.default;
+      };
+      environment.sessionVariables.NIXOS_OZONE_WL = "1";
+    };
 
   flake.modules.homeManager.desktop =
     {
@@ -41,7 +55,7 @@
       color = name: "#${config.lib.stylix.colors.${name}}ff";
       translucent = [
         "^com\\.mitchellh\\.ghostty$"
-        "^org\\.gnome\\.Nautilus$"
+        "^dev\\.noctalia\\.luciole$"
       ];
     in
     {
@@ -164,7 +178,7 @@
                 repeat = false;
               };
               "Mod+B" = spawn config.programs.zen-browser.package;
-              "Mod+E" = spawn pkgs.nautilus;
+              "Mod+E" = spawn config.programs.luciole.package;
               "Mod+Escape" = noctalia "panel-toggle session";
               "Mod+Slash" = "cheatsheet-toggle";
               "Mod+Space" = noctalia "panel-toggle launcher";

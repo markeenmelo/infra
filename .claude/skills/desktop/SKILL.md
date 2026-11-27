@@ -121,14 +121,18 @@ No other families. Glyph icons come from the Nerd Font, never from a second icon
 
 The role is one file per concern, each setting its NixOS and Home Manager halves: the base in
 [desktop.nix](../../../modules/desktop.nix) (Home Manager as a NixOS module, NetworkManager,
-Bluetooth, PipeWire, UPower, power-profiles-daemon for the bar's power profiles, the apps), [umbriel.nix](../../../modules/umbriel.nix)
+Bluetooth, PipeWire, UPower, power-profiles-daemon for the bar's power profiles, the apps, Luciole
+as the file manager), [umbriel.nix](../../../modules/umbriel.nix)
 (the compositor session from nixpkgs' module, and `programs.umbriel.settings`, a config layered
 over Umbriel's packaged `config.toml`: tables merge by key and the last file wins, so only changes
 to stock are written; hosts and odyssey.nix add their outputs; `Mod + /` lists the keybinds),
 [noctalia.nix](../../../modules/noctalia.nix) (bar, launcher, notifications, lock, idle, the polkit agent, the greeter,
 whose output layout is derived from Umbriel's positions; apps it launches run as their own systemd
 units, so a shell restart does not take them down; the `desktop-config-HOST` check fails on any
-key either program's validator rejects or warns about),
+key either program's validator rejects or warns about). Noctalia, its greeter, Umbriel, Umbriel's
+portal and Luciole come from noctalia-dev's own flakes as tack pins, built against our nixpkgs:
+the two that tag releases (noctalia, noctalia-greeter) follow them, the rest their heads; nixpkgs
+provides only the NixOS and Home Manager modules they plug into,
 [printing.nix](../../../modules/printing.nix) and
 [odyssey.nix](../../../modules/odyssey.nix) (the desk monitor's mode and DDC brightness). Wi-Fi
 profiles are their own `wifi` module ([wifi.nix](../../../modules/wifi.nix)), which a host
