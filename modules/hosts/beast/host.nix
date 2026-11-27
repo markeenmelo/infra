@@ -12,6 +12,7 @@
       desktop
       gaming
       cache-client
+      github-token
       telemetry
       fwupd
       secure-boot

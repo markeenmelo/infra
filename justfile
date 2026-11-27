@@ -67,5 +67,5 @@ install host target root:
 
 [doc("Update every tack pin, NAME.pkg.nix pin, GitHub Action and OpenTofu provider")]
 update:
-    nix run .#tack -- update
+    TACK_NIX_CONF_TOKENS=1 nix run .#tack -- update
     nix run .#update-pins
