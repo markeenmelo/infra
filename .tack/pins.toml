@@ -19,6 +19,7 @@ follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["flake-compat"]
 
 [inputs.disko]
+# shortcut: v1.13.0 hangs the disko VM tests against nixos-unstable, add tag = "v{version}" once a newer release passes the storage checks
 url = "github:nix-community/disko"
 follows = { nixpkgs = "nixpkgs" }
 
@@ -48,17 +49,41 @@ follows = { nixpkgs = "nixpkgs" }
 url = "github:denful/import-tree"
 tag = "v{version}"
 
+[inputs.just-lsp]
+url = "github:terror/just-lsp"
+tag = "{version}"
+follows = { nixpkgs = "nixpkgs" }
+
 [inputs.llm-agents]
 url = "github:numtide/llm-agents.nix"
+
+[inputs.luciole]
+url = "github:noctalia-dev/luciole"
+follows = { nixpkgs = "nixpkgs" }
+
+[inputs.mcp-nixos]
+url = "github:utensils/mcp-nixos"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs", flake-parts = "flake-parts" }
 
 [inputs.microvm]
 url = "github:microvm-nix/microvm.nix"
 follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["spectrum"]
 
+[inputs.nh]
+url = "github:nix-community/nh"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
+
 [inputs.nix-minecraft]
 url = "github:Infinidoge/nix-minecraft"
 type = "fetch"
+
+[inputs.nix-update]
+url = "github:Mic92/nix-update"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
 
 [inputs.nixflix]
 # shortcut: v6.0.0 lacks the arr host config merge fix #302 follows main for, add tag = "v{version}" once a later release carries it
@@ -68,6 +93,16 @@ omit_inputs = ["mkdocs-catppuccin", "treefmt-nix"]
 
 [inputs.nixpkgs]
 url = "github:NixOS/nixpkgs/nixos-unstable"
+
+[inputs.noctalia-greeter]
+url = "github:noctalia-dev/noctalia-greeter"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
+
+[inputs.noctalia]
+url = "github:noctalia-dev/noctalia"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
 
 [inputs.paseo]
 url = "github:getpaseo/paseo"
@@ -99,6 +134,14 @@ omit_inputs = ["fenix"]
 [inputs.trailofbits-skills]
 url = "github:trailofbits/skills"
 type = "fetch"
+
+[inputs.umbriel]
+url = "github:noctalia-dev/umbriel"
+follows = { nixpkgs = "nixpkgs", xdg-desktop-portal-umbriel = "xdg-desktop-portal-umbriel" }
+
+[inputs.xdg-desktop-portal-umbriel]
+url = "github:noctalia-dev/xdg-desktop-portal-umbriel"
+follows = { nixpkgs = "nixpkgs" }
 
 [inputs.zen-browser]
 url = "github:0xc000022070/zen-browser-flake"

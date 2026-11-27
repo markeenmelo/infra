@@ -87,7 +87,7 @@ let
   mcpServers = pkgs: {
     nixos = {
       type = "stdio";
-      command = lib.getExe pkgs.mcp-nixos;
+      command = lib.getExe (inputs.mcp-nixos.lib.mkMcpNixos { inherit pkgs; });
     };
     grafana = {
       type = "stdio";

@@ -125,8 +125,8 @@ in
   flake.modules.homeManager.desktop =
     { lib, pkgs, ... }:
     {
+      imports = [ inputs.luciole.homeModules.default ];
       home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [
-        pkgs.nautilus
         pkgs.file-roller
         pkgs.loupe
         pkgs.papers
@@ -138,6 +138,7 @@ in
         pkgs.wl-clipboard
       ];
       programs = {
+        luciole.enable = true;
         vesktop.enable = true;
       };
       xdg = {
