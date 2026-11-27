@@ -139,7 +139,6 @@ locals {
       "Block IoT to external DNS"                     = { from = "IoT", to = "External", protocol = "tcp_udp", ports = "DNS", block = true }
       "Allow IoT cloud devices to internet"           = { from = "IoT", from_ips = local.role.cloud, to = "External" }
       "Block IoT to internet"                         = { from = "IoT", to = "External", block = true }
-      "Block Kids internet at bedtime"                = { from = "Kids", to = "External", block = true, schedule = { mode = "EVERY_DAY", time_from = "21:00", time_to = "09:00" } }
       "Block Kids to external DNS"                    = { from = "Kids", to = "External", protocol = "tcp_udp", ports = "DNS", block = true }
     },
     [for vlan in keys(local.vlans) : {
@@ -361,7 +360,6 @@ resource "unifi_firewall_zone_policy" "this" {
   protocol                  = try(each.value.protocol, "all")
   ip_version                = try(each.value.protocol, "all") == "icmp" ? "IPV4" : null
   auto_allow_return_traffic = !try(each.value.block, false) && !contains(["Gateway", "External"], each.value.to) && try(each.value.protocol, "all") != "icmp" ? true : null
-  schedule                  = try(each.value.schedule, null)
   source = {
     zone_id = local.zone[each.value.from]
     ips     = try(each.value.from_ips, null)
@@ -374,7 +372,7 @@ resource "unifi_firewall_zone_policy" "this" {
   }
   lifecycle {
     precondition {
-      condition     = length(setsubtract(keys(each.value), ["from", "to", "from_ips", "to_ips", "protocol", "port", "ports", "block", "schedule"])) == 0 && startswith(each.key, "Block ") == try(each.value.block, false)
+      condition     = length(setsubtract(keys(each.value), ["from", "to", "from_ips", "to_ips", "protocol", "port", "ports", "block"])) == 0 && startswith(each.key, "Block ") == try(each.value.block, false)
       error_message = "Policy \"${each.key}\" has a key the resource does not read, or its name and `block` disagree."
     }
   }

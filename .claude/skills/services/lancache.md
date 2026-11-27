@@ -35,5 +35,4 @@ The tailnet's split DNS for these names is tailnet-wide, an operator's choice: e
 takes the tailnet's DNS resolves them to the cache wherever it is, so away from home a miss
 comes over the home uplink, the names stop resolving while bastion is down; members' devices
 hold the same grant as the admin clients, since macOS and Windows clients take bastion's subnet
-routes even at home. The Kids rule to the cache holds at all hours, outside the bedtime block,
-also by choice: a miss during bedtime reaches only the allowlisted download hosts.
+routes even at home.
