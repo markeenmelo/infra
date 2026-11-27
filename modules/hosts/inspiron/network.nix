@@ -8,6 +8,7 @@
       };
       networking.networkmanager = {
         enable = true;
+        unmanaged = [ "except:type:wifi" ];
         ensureProfiles = {
           environmentFiles = [ config.sops.templates."kids-wifi.env".path ];
           profiles.MN-Kids = {
