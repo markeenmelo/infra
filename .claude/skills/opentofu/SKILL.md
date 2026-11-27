@@ -160,9 +160,9 @@ not filtered: an accepted gap.
 - Ad blocking and the content filter are rules in the Network app's v2 content filtering, which
   the provider does not reach: its `ad_blocked_networks` and `dns_filters` write fields of the
   `ips` setting that this controller no longer has.
-- The WAN, ad blocking and per-network mDNS stay in the controller UI: the provider rewrites a
-  whole network from its schema, which drops the WAN's PPPoE VLAN tag, discards the ad-blocking
-  networks, and fails in-place updates of `multicast_dns` and the Default network's IPv6 flags.
+- The WAN and per-network mDNS stay in the controller UI: the provider rewrites a whole network
+  from its schema, which drops the WAN's PPPoE VLAN tag and fails in-place updates of
+  `multicast_dns` and the Default network's IPv6 flags.
 - A policy takes one `port`; several ports go through a port group, since a comma list reads
   back as null.
 - `unifi_setting_ips` takes only the categories the Network UI lists; others are dropped and the
