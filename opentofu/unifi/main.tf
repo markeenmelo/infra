@@ -323,10 +323,6 @@ resource "unifi_setting_ssl_inspection" "this" {
   state = "off"
 }
 
-resource "unifi_setting_locale" "this" {
-  timezone = "America/Toronto"
-}
-
 resource "unifi_setting_country" "this" {
   code = "CA"
 }
