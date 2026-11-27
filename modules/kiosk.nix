@@ -81,7 +81,7 @@ in
                 { label: "Minecraft", icon: "${pkgs.prismlauncher-unwrapped}/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg", code: 10 },
                 { label: "Steam", icon: "${pkgs.steam-unwrapped}/share/icons/hicolor/256x256/apps/steam.png", code: 11 },
                 { label: "Plasma", icon: "${pkgs.kdePackages.breeze-icons}/share/icons/breeze/places/64/start-here-kde-plasma.svg", code: 12 },
-                { label: "Power off", icon: "${pkgs.kdePackages.breeze-icons}/share/icons/breeze/actions/24/system-shutdown.svg", code: 13 }
+                { label: "Power off", icon: "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/actions/24/system-shutdown.svg", code: 13 }
               ]
               delegate: Column {
                 spacing: 24
