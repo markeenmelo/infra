@@ -69,7 +69,7 @@ in
 
         Window {
           id: root
-          property real tile: Math.min(320, (width - 400) / 4)
+          property real tile: Math.min(320, width / 5)
           visible: true
           visibility: Window.FullScreen
           color: "#1e2326"
