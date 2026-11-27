@@ -75,7 +75,12 @@ let
     }:
     let
       vpn = config.nixflix.vpn.namespace;
-      inherit (config.vpnNamespaces.${vpn}) namespaceAddress;
+      inherit (config.vpnNamespaces.${vpn}) namespaceAddress bridgeAddress;
+      authHosts = pkgs.writeText "arr-hosts" ''
+        127.0.0.1 localhost
+        ::1 localhost
+        ${bridgeAddress} auth.${domain}
+      '';
       qbittorrent = config.nixflix.torrentClients.qbittorrent;
       inherit (config.services.qbittorrent) webuiPort;
       sabnzbd = config.nixflix.usenetClients.sabnzbd;
@@ -292,7 +297,7 @@ let
         (lib.genAttrs seerrApps (name: {
           config.hostConfig = {
             authenticationMethod = "oidc";
-            trustedNetworks = config.vpnNamespaces.${vpn}.bridgeAddress;
+            trustedNetworks = bridgeAddress;
             oidc = {
               authority = "https://auth.${domain}";
               clientId = name;
@@ -325,6 +330,9 @@ let
             ];
           })
         )
+        (lib.genAttrs seerrApps (_: {
+          serviceConfig.BindReadOnlyPaths = [ "${authHosts}:/etc/hosts" ];
+        }))
         {
           prowlarr-indexers = {
             wants = [ "easynews-indexer.service" ];
@@ -505,7 +513,7 @@ let
     }:
     let
       vpn = config.nixflix.vpn.namespace;
-      inherit (config.vpnNamespaces.${vpn}) namespaceAddress;
+      inherit (config.vpnNamespaces.${vpn}) namespaceAddress bridgeAddress;
       appPort = name: config.nixflix.${name}.config.hostConfig.port;
       secret = name: config.sops.secrets."arr-${name}".path;
       arrUnits = apps ++ [
@@ -657,6 +665,15 @@ let
         token_endpoint_auth_method = "client_secret_post";
         redirect_uris = [ "https://${name}.${domain}/signin-oidc" ];
       });
+      services.caddy.virtualHosts."*.${domain}".extraConfig = lib.mkBefore ''
+        @arr-namespace {
+          remote_ip ${namespaceAddress}
+          not host auth.${domain}
+        }
+        handle @arr-namespace {
+          abort
+        }
+      '';
       nixpkgs.config.allowUnfreePackages = [ "unrar" ];
       networking.nftables.tables.arr = {
         family = "inet";
@@ -668,6 +685,7 @@ let
           }
           chain input {
             type filter hook input priority -200; policy accept;
+            iifname "${vpn}-br" ip saddr ${namespaceAddress} ip daddr ${bridgeAddress} tcp dport 443 accept
             iifname "${vpn}-br" ct state new drop
           }
           chain output {

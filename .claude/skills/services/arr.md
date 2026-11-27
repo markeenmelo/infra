@@ -26,15 +26,17 @@ goes stale, and starts the confined apps again each time it comes up. Their web 
 the LAN and the tailnet ([proxy skill](../proxy/SKILL.md)); Sonarr and Radarr sign in through
 Authelia (OIDC, client secrets `arr/{sonarr,radarr}-oidc-client-secret`), letting in only the
 account whose `sub` is `oidcSubject` in the module, since each takes a single user; they reach
-`auth.DOMAIN` out through the tunnel and back through the edge, as the namespace reaches nothing on
-bastion, and trust forwarded headers only from the bridge, where Caddy comes from. Prowlarr and
+`auth.DOMAIN` at Caddy on the bridge address, which their own `/etc/hosts` names, and trust
+forwarded headers only from the bridge, where Caddy comes from. The public path would leave through
+PIA and reach the edge from a hosting ASN it aborts and CrowdSec bans. Prowlarr and
 SABnzbd log in as `marcos` with `arr/password`, which Sonarr and Radarr keep for recovery: with
 Authelia down, stop the app, set `AuthenticationMethod` to `Forms` in its `config.xml` and start it.
 The `arr` nftables table drops
 anything forwarded through the namespace's bridge and lets only root and Caddy open new
 connections into the namespace, Seerr only to Sonarr and Radarr, and the `exportarr` user only
 to the three arr apps. It also drops every new connection the namespace
-opens towards bastion itself, so the apps reach none of bastion's listeners; replies to bastion's
+opens towards bastion itself except to Caddy on the bridge address, where the LAN proxy aborts any
+host but `auth.` from the namespace, so the apps reach no other listener on bastion; replies to bastion's
 own connections pass. One exportarr exporter per app publishes its
 health checks (indexers, download clients, root folders, remote path mappings), which the `Arr
 health issue` alert reports after an hour; a single failed import is a queue item, which
