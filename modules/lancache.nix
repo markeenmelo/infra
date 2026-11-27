@@ -48,6 +48,10 @@ in
             hostnames;
             default 0;
           ${allowed "1"}}
+          map $host $lancache_nocache {
+            default 0;
+            ctldl.windowsupdate.com 1;
+          }
           map "$http_user_agent£££$http_host" $lancache_id {
             default $http_host;
             "~Valve/Steam HTTP Client 1\.0£££.*" steam;
@@ -68,6 +72,8 @@ in
             ${resolver}
             slice 1m;
             proxy_cache lancache;
+            proxy_no_cache $lancache_nocache;
+            proxy_cache_bypass $lancache_nocache;
             proxy_cache_key $lancache_id$uri$slice_range;
             proxy_set_header Range $slice_range;
             proxy_cache_valid 200 206 3650d;
