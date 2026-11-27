@@ -18,6 +18,4 @@ Work the operator wants done. An item leaves this file in the pull request that 
 - **MongoDB environment:** a devenv/tack environment with MongoDB.
 - **nixos-core:** adopt it, and find Rust alternatives for the current packages.
 - **Distributed builds:** beast joins bastion as a builder ([builder.nix](modules/builder.nix)), and hosts beyond thinkpad use them.
-- **inspiron greeter:** a shutdown button.
 - **circus, evix, cade and ncro:** evaluate each.
-- **PII in logs:** check whether any log holds personal data.
