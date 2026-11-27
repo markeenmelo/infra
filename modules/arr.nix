@@ -58,7 +58,7 @@ let
     }
   ];
   # Authelia's opaque sub for marcos, the one account Radarr and Sonarr let in
-  oidcSubject = "SUB_PENDING";
+  oidcSubject = "fd6defcb-1c72-4ca4-ae37-718835633b2e";
   storageProfile = "1080p Storage Efficient";
   storageQualities = [
     "WEBDL-1080p"
