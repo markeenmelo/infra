@@ -82,6 +82,7 @@
     let
       onBattery = "${lib.getExe' osConfig.systemd.package "systemd-ac-power"} ||";
       umbriel = lib.getExe osConfig.programs.umbriel.package;
+      building = "${lib.getExe' pkgs.procps "pgrep"} -G nixbld >/dev/null ||";
     in
     {
       programs.noctalia = {
@@ -210,7 +211,8 @@
             };
             suspend = {
               timeout = 900;
-              action = lib.mkDefault "lock_and_suspend";
+              action = "command";
+              command = "${building} ${lib.getExe config.programs.noctalia.package} msg session lock-and-suspend";
             };
             battery-screen-off = {
               timeout = 180;
