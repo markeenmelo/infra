@@ -110,9 +110,8 @@ repository's. Comments follow [CLAUDE.md](../../../CLAUDE.md).
 ## Package updates
 
 `just update` is the only updater: it runs `tack update`, which moves a pin with a `tag` template
-to its newest matching release tag and every other pin to its branch head, with
-`TACK_NIX_CONF_TOKENS=1` so tack authenticates to GitHub with the token in `marcos`'s nix.conf
-([secrets](../operating/secrets.md)), then the `update-pins`
+to its newest matching release tag and every other pin to its branch head (on a host with the
+GitHub token, tack authenticates with it: [secrets](../operating/secrets.md)), then the `update-pins`
 app ([pins.nix](../../../modules/pins.nix)). nix-update bumps each `NAME.pkg.nix` in `pins` with its
 hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
 (Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, tack's resolver after a tack bump, each OpenTofu
