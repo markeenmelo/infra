@@ -13,7 +13,7 @@
     "import-tree": "github:denful/import-tree",
     "just-lsp": "github:terror/just-lsp",
     "llm-agents": "github:numtide/llm-agents.nix",
-    "luciole": "github:noctalia-dev/luciole",
+    "luciole": "github:noctalia-dev/luciole/cachix",
     "mcp-nixos": "github:utensils/mcp-nixos",
     "microvm": "github:microvm-nix/microvm.nix",
     "nh": "github:nix-community/nh",
@@ -30,8 +30,7 @@
     "stylix": "github:nix-community/stylix",
     "tack": "github:manic-systems/tack",
     "trailofbits-skills": "github:trailofbits/skills",
-    "umbriel": "github:noctalia-dev/umbriel",
-    "xdg-desktop-portal-umbriel": "github:noctalia-dev/xdg-desktop-portal-umbriel",
+    "umbriel": "github:noctalia-dev/umbriel/cachix",
     "zen-browser": "github:0xc000022070/zen-browser-flake"
   },
   "caveman": {
@@ -366,18 +365,9 @@
     "type": "github",
     "owner": "noctalia-dev",
     "repo": "umbriel",
-    "rev": "2bd1da5e24f71239ad49e374d389332756093f6e",
-    "narHash": "sha256-IPsffvsOJAFYdhkCSVfEnu2rluGKgbhl5pO/ZDoWjUE=",
-    "lastModified": 1795808916,
-    "public": true
-  },
-  "xdg-desktop-portal-umbriel": {
-    "type": "github",
-    "owner": "noctalia-dev",
-    "repo": "xdg-desktop-portal-umbriel",
-    "rev": "da68a4376cd69595ac2fe439ec8c773e3bed0204",
-    "narHash": "sha256-f6lqJHXjhoQ4jb8SnRnNMxXCorFX/76CzUsp0bkhSXA=",
-    "lastModified": 1795737507,
+    "rev": "13d97a28a26e3a077a032319c5183e48c55bc9cb",
+    "narHash": "sha256-cccjg5XKY1E5J81s0LxYGDU0W0hqYdNzi380s79Jfuc=",
+    "lastModified": 1795820248,
     "public": true
   },
   "zen-browser": {

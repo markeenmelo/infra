@@ -58,8 +58,7 @@ follows = { nixpkgs = "nixpkgs" }
 url = "github:numtide/llm-agents.nix"
 
 [inputs.luciole]
-url = "github:noctalia-dev/luciole"
-follows = { nixpkgs = "nixpkgs" }
+url = "github:noctalia-dev/luciole/cachix"
 
 [inputs.mcp-nixos]
 url = "github:utensils/mcp-nixos"
@@ -97,12 +96,10 @@ url = "github:NixOS/nixpkgs/nixos-unstable"
 [inputs.noctalia-greeter]
 url = "github:noctalia-dev/noctalia-greeter"
 tag = "v{version}"
-follows = { nixpkgs = "nixpkgs" }
 
 [inputs.noctalia]
 url = "github:noctalia-dev/noctalia"
 tag = "v{version}"
-follows = { nixpkgs = "nixpkgs" }
 
 [inputs.paseo]
 # shortcut: release tags ship the previous release's nix/npm-deps.hash (upstream #3308, #4407), so no tag builds; add tag = "v{version}" once a tag builds
@@ -128,7 +125,6 @@ follows = { flake-parts = "flake-parts", nixpkgs = "nixpkgs" }
 [inputs.tack]
 url = "github:manic-systems/tack"
 tag = "v{version}"
-follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["fenix"]
 
 [inputs.trailofbits-skills]
@@ -136,12 +132,7 @@ url = "github:trailofbits/skills"
 type = "fetch"
 
 [inputs.umbriel]
-url = "github:noctalia-dev/umbriel"
-follows = { nixpkgs = "nixpkgs", xdg-desktop-portal-umbriel = "xdg-desktop-portal-umbriel" }
-
-[inputs.xdg-desktop-portal-umbriel]
-url = "github:noctalia-dev/xdg-desktop-portal-umbriel"
-follows = { nixpkgs = "nixpkgs" }
+url = "github:noctalia-dev/umbriel/cachix"
 
 [inputs.zen-browser]
 url = "github:0xc000022070/zen-browser-flake"
