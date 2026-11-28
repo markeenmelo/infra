@@ -71,15 +71,10 @@ in
         ${config.fleet.hosts.bastion.system}.deploy-sudo =
           let
             pkgs = inputs.nixpkgs.legacyPackages.${config.fleet.hosts.bastion.system};
-            activate = pkgs.writeTextFile {
-              name = "probe";
-              destination = "/activate-rs";
-              executable = true;
-              text = ''
-                #!/bin/sh
-                id -u
-              '';
-            };
+            activate = pkgs.runCommand "probe" { } ''
+              mkdir $out
+              ln -s ${pkgs.writeShellScript "activate" "id -u"} $out/activate-rs
+            '';
           in
           pkgs.testers.runNixOSTest {
             name = "deploy-sudo";
