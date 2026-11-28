@@ -10,7 +10,7 @@ let
   ) hosts;
   watched = lib.filterAttrs (_: host: host.alwaysOn) senders;
   awake = "instance!~\"${lib.concatStringsSep "|" (lib.attrNames asleep)}\"";
-  redact = ''(?i)[?&#;][a-z0-9_.-]*(?:token|secret|key|password|passwd)=([^&;#\s"]+)'';
+  redact = ''(?i)[?&#;][a-z0-9_.\[\]-]*(?:token|secret|key|password|passwd|pass|pwd|sig|signature|auth|jwt|credential|code|session)\]?=([^&;#\s"]+)'';
   senderPorts = telemetry: [
     telemetry.metrics
     telemetry.logs
@@ -112,11 +112,16 @@ in
         conn ?password=hunter2xx&user=alice
         GET /api?t=search&apikey=EEEE5555&cat=2000
         wss://vault/hub?access_token=FFFF6666
+        https://bucket.s3/obj?X-Amz-Credential=GGGG7777&X-Amz-Signature=HHHH8888
+        https://acct.blob/c?sv=2024&sig=IIII9999
+        /oauth/callback?code=JJJJ0000&state=xyz
+        form ?user[password]=KKKK1111&pwd=LLLL2222&jwt=MMMM3333&auth=NNNN4444&session=OOOO5555
         Loaded assembly X, PublicKeyToken=null
         plain line monkey=banana and key: value
         EOF
         rg --only-matching --replace '$1' -- ${lib.escapeShellArg redact} lines > got
-        printf '%s\n' AAAA1111 BBBB2222 CCCC3333 DDDD4444 hunter2xx EEEE5555 FFFF6666 > want
+        printf '%s\n' AAAA1111 BBBB2222 CCCC3333 DDDD4444 hunter2xx EEEE5555 FFFF6666 GGGG7777 HHHH8888 IIII9999 JJJJ0000 > want
+        printf '%s\n' KKKK1111 LLLL2222 MMMM3333 NNNN4444 OOOO5555 >> want
         diff want got
         touch $out
       '';
