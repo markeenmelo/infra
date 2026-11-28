@@ -53,9 +53,10 @@
           cursorTheme = { inherit (config.stylix.cursor) package name; };
           passwordlessSyncUsers = [ "marcos" ];
         };
-        gnome.gnome-keyring.enable = true;
+        oo7.enable = true;
         tailscale.extraSetFlags = [ "--operator=marcos" ];
       };
+      security.pam.services.greetd.oo7.enable = true;
       systemd.services.accounts-daemon.serviceConfig.StateDirectoryMode = "0700";
       preservation.preserveAt."/persist".directories = [
         {
