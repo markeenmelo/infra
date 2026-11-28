@@ -9,6 +9,9 @@
           pkgs.unzip
           pkgs.dnsutils
           pkgs.glow
+          pkgs.dust
+          pkgs.procs
+          pkgs.sd
         ];
       };
   };

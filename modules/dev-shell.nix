@@ -9,8 +9,8 @@
     {
       formatter = pkgs.nixfmt-tree.override {
         runtimeInputs = [
+          pkgs.biome
           pkgs.opentofu
-          pkgs.prettier
           pkgs.shfmt
           pkgs.stylua
           pkgs.taplo
@@ -46,9 +46,13 @@
               options = [ "format" ];
               includes = [ "*.toml" ];
             };
-            prettier = {
-              command = "prettier";
-              options = [ "--write" ];
+            biome = {
+              command = "biome";
+              options = [
+                "format"
+                "--write"
+                "--indent-style=space"
+              ];
               includes = [
                 "*.json"
                 "*.yaml"
@@ -82,7 +86,9 @@
               ];
             }
             ''
-              cd ${../.}
+              cp -r ${../.} tree
+              chmod -R u+w tree
+              cd tree
               treefmt --ci --tree-root .
               just --fmt --check
               touch $out
