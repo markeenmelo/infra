@@ -85,7 +85,7 @@ let
             image = storeImage;
             label = "store";
             mountPoint = config.microvm.writableStoreOverlay;
-            size = 32 * 1024;
+            size = 64 * 1024;
           }
           {
             image = "state.img";
