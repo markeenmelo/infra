@@ -17,6 +17,6 @@ Work the operator wants done. An item leaves this file in the pull request that 
 - **Secrets:** better handling of secrets, possibly kept in a private repository.
 - **Cleanup:** simplify the code for clarity and reuse.
 - **MongoDB environment:** a devenv/tack environment with MongoDB.
-- **nixos-core:** adopt it, and find Rust alternatives for the current packages.
-- **Distributed builds:** beast joins bastion as a builder ([builder.nix](modules/builder.nix)), and hosts beyond thinkpad use them.
+- **nixos-core:** re-evaluate adopting it; it cannot run beside the etc overlay and userborn.
+- **rustic:** replace restic once nixpkgs has a module ([NixOS/nixpkgs#373042](https://github.com/NixOS/nixpkgs/pull/373042)); upstream ships no flake.
 - **circus, evix, cade and ncro:** evaluate each.
