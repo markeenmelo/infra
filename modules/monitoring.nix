@@ -41,7 +41,7 @@ let
     loki.process "redact" {
       forward_to = [${forward}]
       stage.replace {
-        expression = "(?i)[?&](?:access_token|api_?key|token)=([^&\\s\"]+)"
+        expression = "(?i)[?&#;][a-z0-9_.-]*(?:token|secret|key|password|passwd)=([^&;#\\s\"]+)"
         replace    = "<redacted>"
       }
     }
@@ -909,7 +909,7 @@ in
               syslog_format = "raw"
               labels        = { host = "gateway" }
             }
-            forward_to = [loki.write.local.receiver]
+            forward_to = [loki.process.redact.receiver]
           }
         '';
       networking.firewall.extraInputRules =
