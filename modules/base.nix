@@ -108,6 +108,7 @@ in
         LLMNR = false;
         MulticastDNS = false;
       };
+      services.ntpd-rs.enable = true;
       services.journald.settings.Journal = {
         Storage = lib.mkDefault "persistent";
         SystemMaxUse = "256M";
