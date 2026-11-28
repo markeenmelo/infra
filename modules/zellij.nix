@@ -22,7 +22,9 @@
         };
         extraConfig = ''
           keybinds {
-            unbind "Ctrl b"
+            unbind "Ctrl b" "Ctrl g" "Ctrl h" "Ctrl n" "Ctrl o" "Ctrl p" "Ctrl q" "Ctrl s" "Ctrl t"
+            unbind "Alt f" "Alt n" "Alt i" "Alt o" "Alt h" "Alt j" "Alt k" "Alt l" "Alt p" "Alt Shift p"
+            unbind "Alt Left" "Alt Right" "Alt Up" "Alt Down" "Alt =" "Alt +" "Alt -" "Alt [" "Alt ]"
             shared_except "tmux" "locked" {
               bind "Ctrl a" { SwitchToMode "Tmux"; }
             }
