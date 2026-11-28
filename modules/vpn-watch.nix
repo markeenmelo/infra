@@ -36,9 +36,10 @@
             namespace: region:
             pkgs.writeShellApplication {
               name = "${namespace}-pia";
+              excludeShellChecks = [ "SC2016" ];
               runtimeInputs = [
                 pkgs.curl
-                pkgs.jq
+                pkgs.jaq
                 pkgs.wireguard-tools
               ];
               text = ''
@@ -47,16 +48,16 @@
                 get() { curl -fsS --retry 3 --max-time 30 "$@"; }
                 list=$(get https://serverlist.piaservers.net/vpninfo/servers/v6)
                 server=$(head -n1 <<< "$list" |
-                  jq -ce --arg region ${region} --argjson pick "$RANDOM" '.regions[] | select(.id == $region) | .servers.wg | .[$pick % length]')
-                cn=$(jq -r .cn <<< "$server")
+                  jaq -ce --arg region ${region} --argjson pick "$RANDOM" '.regions[] | select(.id == $region) | .servers.wg | .[$pick % length]')
+                cn=$(jaq -r .cn <<< "$server")
                 get --form "username=<$CREDENTIALS_DIRECTORY/username" --form "password=<$CREDENTIALS_DIRECTORY/password" \
-                  https://www.privateinternetaccess.com/api/client/v2/token | jq -je .token > token
+                  https://www.privateinternetaccess.com/api/client/v2/token | jaq -je .token > token
                 wg genkey > key
-                reply=$(get -G --connect-to "$cn::$(jq -r .ip <<< "$server"):" --cacert ${./pia.crt} \
+                reply=$(get -G --connect-to "$cn::$(jaq -r .ip <<< "$server"):" --cacert ${./pia.crt} \
                   --data-urlencode pt@token --data-urlencode "pubkey=$(wg pubkey < key)" "https://$cn:1337/addKey")
-                jq -e '.status == "OK"' <<< "$reply" > /dev/null
-                jq -n --arg cn "$cn" --argjson reply "$reply" '{ $cn, gateway: $reply.server_ip }' > server.json
-                jq -r --rawfile key key '[
+                jaq -e '.status == "OK"' <<< "$reply" > /dev/null
+                jaq -n --arg cn "$cn" --argjson reply "$reply" '{ $cn, gateway: $reply.server_ip }' > server.json
+                jaq -r --rawfile key key '[
                   "[Interface]",
                   "PrivateKey = \($key | rtrimstr("\n"))",
                   "Address = \(.peer_ip)",

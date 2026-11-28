@@ -24,7 +24,7 @@ deploys.
 
 ```sh
 read -rs pw && printf %s "$pw" |
-  nix run nixpkgs#libargon2 -- "$(openssl rand -hex 16)" -id -t 3 -m 16 -p 4 -l 32 -e | jq -R . |
+  nix run nixpkgs#libargon2 -- "$(openssl rand -hex 16)" -id -t 3 -m 16 -p 4 -l 32 -e | jaq -R . |
   sops set --value-stdin secrets/hosts/bastion.yaml '["authelia"]["USER-password-hash"]'; unset pw
 ```
 

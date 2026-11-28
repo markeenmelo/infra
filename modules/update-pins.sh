@@ -3,7 +3,7 @@ github_token=${GITHUB_TOKEN:-$(gh auth token 2> /dev/null || true)}
 caddy=modules/caddy.pkg.nix
 modules=$(grep -o 'github\.com/[^@"]*' "$caddy")
 while read -r module; do
-  latest=$(curl -fsS "https://proxy.golang.org/$module/@latest" | jq -er .Version)
+  latest=$(curl -fsS "https://proxy.golang.org/$module/@latest" | jaq -er .Version)
   sed -i "s|\"$module@[^\"]*\"|\"$module@$latest\"|" "$caddy"
   grep -qF "\"$module@$latest\"" "$caddy"
 done <<< "$modules"
@@ -14,13 +14,13 @@ sed -i "s/hub_branch = \"[0-9a-f]*\"/hub_branch = \"$hub\"/" modules/crowdsec.ni
 grep -qF "hub_branch = \"$hub\"" modules/crowdsec.nix
 
 dashboards=modules/grafana-dashboards.json
-names=$(jq -er 'keys[]' "$dashboards")
+names=$(jaq -er 'keys[]' "$dashboards")
 while read -r name; do
-  id=$(jq -r --arg n "$name" '.[$n].id' "$dashboards")
-  revision=$(curl -fsS "https://grafana.com/api/dashboards/$id" | jq -er '.revision | numbers')
-  [ "$revision" = "$(jq -r --arg n "$name" '.[$n].revision' "$dashboards")" ] && continue
-  hash=$(nix store prefetch-file --json "https://grafana.com/api/dashboards/$id/revisions/$revision/download" < /dev/null | jq -er .hash)
-  jq --arg n "$name" --argjson r "$revision" --arg h "$hash" '.[$n] += { revision: $r, hash: $h }' "$dashboards" > "$dashboards.new"
+  id=$(jaq -r --arg n "$name" '.[$n].id' "$dashboards")
+  revision=$(curl -fsS "https://grafana.com/api/dashboards/$id" | jaq -er '.revision | numbers')
+  [ "$revision" = "$(jaq -r --arg n "$name" '.[$n].revision' "$dashboards")" ] && continue
+  hash=$(nix store prefetch-file --json "https://grafana.com/api/dashboards/$id/revisions/$revision/download" < /dev/null | jaq -er .hash)
+  jaq --arg n "$name" --argjson r "$revision" --arg h "$hash" '.[$n] += { revision: $r, hash: $h }' "$dashboards" > "$dashboards.new"
   mv "$dashboards.new" "$dashboards"
 done <<< "$names"
 
@@ -40,7 +40,7 @@ update_providers() {
     sources=$(grep -oP '^\s*source\s*=\s*"\K[^"]+' "$main")
     while read -r source; do
       latest=$(curl -fsS "https://registry.opentofu.org/v1/providers/$source/versions" |
-        jq -er '[.versions[].version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))] | sort_by(split(".") | map(tonumber)) | last')
+        jaq -er '[.versions[].version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))] | sort_by(split(".") | map(tonumber)) | last')
       sed -i "\|source *= \"$source\"|{n;s|version *= \"~> [^\"]*\"|version = \"~> $latest\"|}" "$main"
       grep -qF "version = \"~> $latest\"" "$main"
     done <<< "$sources"

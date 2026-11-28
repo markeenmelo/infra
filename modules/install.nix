@@ -21,10 +21,11 @@ in
         meta.description = "enroll HOST: before a new host's first install, make its identity on this machine: an SSH host key, an initrd SSH host key and a tailnet login under its name, in a private directory beside the operator's sops key that an install takes as extra files; prints the age recipient, the tailnet address and the initrd host key its facts need";
         program = pkgs.writeShellApplication {
           name = "enroll";
+          excludeShellChecks = [ "SC2016" ];
           runtimeInputs = [
             pkgs.coreutils
             pkgs.git
-            pkgs.jq
+            pkgs.jaq
             pkgs.openssh
             pkgs.ssh-to-age
             pkgs.tailscale
@@ -47,7 +48,7 @@ in
             ssh-keygen -q -t ed25519 -N "" -C "$host" -f "$persist/etc/ssh/ssh_host_ed25519_key"
             ssh-keygen -q -t ed25519 -N "" -C "$host-initrd" -f "$persist/etc/secrets/initrd/ssh_host_ed25519_key"
             chmod 644 "$persist/etc/ssh/ssh_host_ed25519_key.pub"
-            ${config.apps.tofu.program} tailscale output -json enrollment_keys | jq -er --arg host "$host" '.[$host]' > "$run/key"
+            ${config.apps.tofu.program} tailscale output -json enrollment_keys | jaq -er --arg host "$host" '.[$host]' > "$run/key"
             tailscaled --tun=userspace-networking --statedir="$persist/var/lib/tailscale" --socket="$run/tailscaled.sock" 2> "$run/log" &
             daemon=$!
             for _ in $(seq 100); do

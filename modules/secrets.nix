@@ -42,10 +42,10 @@
         while IFS= read -r -d "" f; do
           case $f in *.yaml) ;; *) echo "secrets/ holds only sops yaml: $f" >&2; exit 1 ;; esac
           grep -q '^    mac: ENC\[' "$f" || { echo "not sops ciphertext: $f" >&2; exit 1; }
-          leaves=$(${lib.getExe pkgs.yq-go} 'del(.sops) | .. | select(tag != "!!map" and tag != "!!seq")' "$f")
+          leaves=$(${lib.getExe pkgs.jaq} --from yaml -r 'del(.sops) | .. | scalars' "$f")
           printf '%s' "$leaves" | grep -qvE '^ENC\[' && { echo "plaintext value in $f" >&2; exit 1; }
-          want=$(f=$f ${lib.getExe pkgs.yq-go} 'explode(.) | [.creation_rules[] | select(.path_regex as $r | strenv(f) | test($r))][0].key_groups[].age[]' .sops.yaml | sort)
-          have=$(${lib.getExe pkgs.yq-go} '.sops.age[].recipient' "$f" | sort)
+          want=$(${lib.getExe pkgs.jaq} --from yaml -r --arg f "$f" '[.creation_rules[] | select(.path_regex as $r | $f | test($r))][0].key_groups[].age[]' .sops.yaml | sort)
+          have=$(${lib.getExe pkgs.jaq} --from yaml -r '.sops.age[].recipient' "$f" | sort)
           [ -n "$want" ] && [ "$want" = "$have" ] || { echo "recipients of $f differ from its .sops.yaml rule; run sops updatekeys" >&2; exit 1; }
         done < <(find secrets ! -type d ! -path secrets/README.md -print0)
         status=0

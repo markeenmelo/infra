@@ -137,7 +137,7 @@ in
             wants = [ "tailscaled-${country}.service" ];
             after = [ "tailscaled-${country}.service" ];
             wantedBy = [ "tailscaled-${country}.service" ];
-            path = [ pkgs.jq ];
+            path = [ pkgs.jaq ];
             enableStrictShellChecks = true;
             startLimitIntervalSec = 0;
             serviceConfig = {
@@ -155,7 +155,7 @@ in
                 --accept-routes=false
                 --ssh=false
               )
-              while state=$(ts status --json --peers=false | jq -r .BackendState); [[ $state == NoState || $state == Starting ]]; do
+              while state=$(ts status --json --peers=false | jaq -r .BackendState); [[ $state == NoState || $state == Starting ]]; do
                 sleep 1
               done
               if [[ $state == NeedsLogin || $state == NeedsMachineAuth || $state == Stopped ]]; then

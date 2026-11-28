@@ -70,7 +70,7 @@ in
           HOME=$TMPDIR XDG_DATA_HOME=$TMPDIR XDG_CONFIG_HOME=$TMPDIR \
             ${caddy.package}/bin/caddy validate --config Caddyfile --adapter caddyfile
           ${caddy.package}/bin/caddy adapt --config Caddyfile --adapter caddyfile > config.json
-          ${lib.getExe nixos.pkgs.jq} -e --argjson expected '${builtins.toJSON identityHeaders}' '
+          ${lib.getExe nixos.pkgs.jaq} -e --argjson expected '${builtins.toJSON identityHeaders}' '
             [ .apps.http.servers[].routes[]
               | [ .handle[]? | if .handler == "subroute"
                     then .routes[] | has("match") as $matched | .handle[] | { $matched, handler: . }
