@@ -10,7 +10,7 @@ let
   ) hosts;
   watched = lib.filterAttrs (_: host: host.alwaysOn) senders;
   awake = "instance!~\"${lib.concatStringsSep "|" (lib.attrNames asleep)}\"";
-  redact = ''(?i)[?&#;][a-z0-9_.\[\]-]*(?:token|secret|key|password|passwd|pass|pwd|sig|signature|auth|jwt|credential|code|session)\]?=([^&;#\s"]+)'';
+  redact = ''(?i)[?&#;](?:[a-z0-9_.\[\]-]*(?:token|secret|key|password|passwd|signature|credential|session|jwt)|(?:[a-z0-9_.\[\]-]*[_.\[-])?(?:code|pass|pwd|sig|auth))\]?=([^&;#\s"]+)'';
   senderPorts = telemetry: [
     telemetry.metrics
     telemetry.logs
@@ -116,12 +116,14 @@ in
         https://acct.blob/c?sv=2024&sig=IIII9999
         /oauth/callback?code=JJJJ0000&state=xyz
         form ?user[password]=KKKK1111&pwd=LLLL2222&jwt=MMMM3333&auth=NNNN4444&session=OOOO5555
+        GET /x?statuscode=500&errorcode=7&zipcode=10001&bypass=1&page=2
+        /cb?oauth_code=PPPP6666&X-Auth=QQQQ7777
         Loaded assembly X, PublicKeyToken=null
         plain line monkey=banana and key: value
         EOF
         rg --only-matching --replace '$1' -- ${lib.escapeShellArg redact} lines > got
         printf '%s\n' AAAA1111 BBBB2222 CCCC3333 DDDD4444 hunter2xx EEEE5555 FFFF6666 GGGG7777 HHHH8888 IIII9999 JJJJ0000 > want
-        printf '%s\n' KKKK1111 LLLL2222 MMMM3333 NNNN4444 OOOO5555 >> want
+        printf '%s\n' KKKK1111 LLLL2222 MMMM3333 NNNN4444 OOOO5555 PPPP6666 QQQQ7777 >> want
         diff want got
         touch $out
       '';
