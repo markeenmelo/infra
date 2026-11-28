@@ -143,7 +143,9 @@ imports beside the role, so a wired desktop holds no Wi-Fi secrets; Steam with P
 so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
 advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
 through bastion. Bitwarden's desktop app is the SSH agent
-(`~/.bitwarden-ssh-agent.sock`), started at login ([bitwarden.nix](../../../modules/bitwarden.nix)).
+(`~/.bitwarden-ssh-agent.sock`), started at login ([bitwarden.nix](../../../modules/bitwarden.nix)). oo7 serves the Secret Service that apps keep their passwords in, unlocked
+with the login password at the greeter (`pam_oo7` on greetd, [noctalia.nix](../../../modules/noctalia.nix)); it moves gnome-keyring's keyrings
+into `~/.local/share/keyrings/v1` on its first start.
 
 Idle locks, turns the screen off and suspends on the timers in
 [noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
