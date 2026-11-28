@@ -16,7 +16,14 @@
         fwupd
         telemetry
       ];
-      system.stateVersion = "26.11";
+      system = {
+        stateVersion = "26.11";
+        etc.overlay.enable = true;
+      };
+      services.userborn = {
+        enable = true;
+        passwordFilesLocation = "/var/lib/nixos";
+      };
     };
   };
 }
