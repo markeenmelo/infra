@@ -17,8 +17,16 @@ in
         init.defaultBranch = "main";
         pull.rebase = true;
         push.autoSetupRemote = true;
+        difftool.prompt = false;
       };
     };
     gh.enable = true;
+    difftastic = {
+      enable = true;
+      git = {
+        enable = true;
+        mode = "difftool";
+      };
+    };
   };
 }
