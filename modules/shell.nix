@@ -6,7 +6,12 @@
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
       defaultKeymap = "emacs";
-      shellAliases.cat = "bat -pp";
+      shellAliases = {
+        cat = "bat -pp";
+        btop = "btm";
+        du = "dust";
+        ps = "procs";
+      };
       history = {
         size = 50000;
         save = 50000;
@@ -74,7 +79,8 @@
       icons = "auto";
     };
     bat.enable = true;
-    btop.enable = true;
+    bottom.enable = true;
+    tealdeer.enable = true;
     lazygit.enable = true;
     fd.enable = true;
     ripgrep.enable = true;
