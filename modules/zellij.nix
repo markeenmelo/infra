@@ -7,6 +7,7 @@
     {
       programs.zellij = {
         enable = true;
+        enableZshIntegration = false;
         settings = {
           default_layout = "compact";
           pane_frames = false;
