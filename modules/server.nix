@@ -66,7 +66,7 @@
         bash.completion.enable = false;
         ssh.systemd-ssh-proxy.enable = false;
       };
-      security.sudo.execWheelOnly = true;
+      security.sudo-rs.execWheelOnly = true;
       users.users.deploy.extraGroups = [ "wheel" ];
       security.wrappers =
         lib.genAttrs

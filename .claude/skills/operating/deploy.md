@@ -2,14 +2,14 @@
 
 [deploy.nix](../../../modules/deploy.nix) turns every `fleet.hosts` entry into a deploy-rs node
 reached by its MagicDNS name as the `deploy` account. That account is root-equivalent: it is a
-Nix trusted user so unsigned closures can be copied in, and sudo lets it run any store path's
-`activate-rs`, remove the rollback canary, run `clean-generations`, reboot and power off. Its key is therefore a root key on every host and is not the
+Nix trusted user so unsigned closures can be copied in, and sudo (sudo-rs, on every host) lets it run any store path's
+`activate-rs`, run `rm` on any path (sudo-rs takes no pattern in an argument, so the rollback canary's rule cannot be narrower), run `clean-generations`, reboot and power off; the `deploy-sudo` VM test in deploy.nix runs the canary removal and an `activate-rs` as the account and checks that other commands are refused. Its key is therefore a root key on every host and is not the
 operator's login key ([_operator-key.nix](../../../modules/_operator-key.nix)): its private half lives only in the operator's
 Bitwarden SSH agent, which asks before each use. The other path to root is `marcos`, who logs in
 on bastion and the workstations with the login key (`operator-login` in [access.nix](../../../modules/access.nix)) and runs sudo with the
 shared password, so root there needs either the deploy key with its Bitwarden prompt or the login key plus the
 password. Edge has no `marcos`: `deploy` is the only account it admits.
-[server.nix](../../../modules/server.nix) sets `security.sudo.execWheelOnly`, so no service account can run
+[server.nix](../../../modules/server.nix) sets `security.sudo-rs.execWheelOnly`, so no service account can run
 sudo on a server; `deploy` is in `wheel` there only to run the wrapper, and since `wheel`'s own rule asks for a
 password `deploy` does not have, it still runs only the commands listed below. IPv6 stays on host-wide, also for the
 sake of deploys: MagicDNS answers with each node's tailnet IPv6 address, and a peer that tries it first
