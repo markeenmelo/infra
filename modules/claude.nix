@@ -32,8 +32,8 @@ let
       };
     };
     python = {
-      command = lib.getExe' pkgs.basedpyright "basedpyright-langserver";
-      args = [ "--stdio" ];
+      command = lib.getExe pkgs.ty;
+      args = [ "server" ];
       extensionToLanguage.".py" = "python";
     };
     typescript = {
