@@ -166,6 +166,15 @@ in
           "gamemode"
         ];
       };
+      preservation.preserveAt."/persist".directories = [
+        {
+          directory = "/home/ian";
+          user = "ian";
+          group = "users";
+          mode = "0700";
+        }
+        "/var/lib/bluetooth"
+      ];
       systemd.services.minecraft-instance = {
         description = "Lay the declared Minecraft instance into Ian's Prism Launcher";
         wantedBy = [

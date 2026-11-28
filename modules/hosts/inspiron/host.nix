@@ -9,14 +9,21 @@
     };
     module = {
       imports = with config.flake.modules.nixos; [
-        plain-storage
+        storage
         kiosk
         cache-client
         secure-boot
         fwupd
         telemetry
       ];
-      system.stateVersion = "26.11";
+      system = {
+        stateVersion = "26.11";
+        etc.overlay.enable = true;
+      };
+      services.userborn = {
+        enable = true;
+        passwordFilesLocation = "/var/lib/nixos";
+      };
     };
   };
 }

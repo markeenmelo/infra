@@ -20,17 +20,22 @@ hand, and the tokens Prism keeps in `accounts.json` stay out of Nix.
 
 ## Disk and boot
 
-`plain-storage`: an ext4 root on LUKS, never rolled back, so everything Ian keeps stays. Limine is
+`storage`: a btrfs root on LUKS rolled back at every boot; Ian's home (his worlds, Prism's accounts, Steam,
+Plasma's settings) and the paired Bluetooth devices persist under `/persist` ([kiosk.nix](../../../modules/kiosk.nix)).
+Activation runs no Perl: `/etc` is an overlay and userborn writes the accounts, their files under
+`/var/lib/nixos` ([host.nix](../../../modules/hosts/inspiron/host.nix)), as on the edge ([edge](edge.md)). Limine is
 signed with inspiron's own keys (the `secure-boot` module), and LUKS opens with a TPM2 token sealed
 to PCR 7 without a PIN, the passphrase kept as fallback, on the same terms as beast's: Microsoft's
 CA stays enrolled so the firmware's own signed drivers still load, which also lets a stolen laptop
 unseal the key under a Microsoft-signed loader; accepted, since a PIN would stop Ian's boot.
 
-With no Preservation the keys live at sbctl's own path, so they are made there and the first deploy
-signs Limine with no bind mount. Dell's firmware calls setup mode Expert Key Management, under
+The keys sit under `/persist/var/lib/sbctl` and a reinstall carries them, so the firmware keeps
+trusting the new install and only the TPM is sealed again, with the last command below. Made the
+first time, they are bound in by hand before the first deploy that signs, as on beast ([beast](beast.md)). Dell's firmware calls setup mode Expert Key Management, under
 Secure Boot:
 
 ```sh
+sudo mkdir -p /persist/var/lib/sbctl /var/lib/sbctl && sudo mount --bind /persist/var/lib/sbctl /var/lib/sbctl
 sudo nix shell nixpkgs#sbctl -c sbctl create-keys
 just deploy inspiron                      # from the operator's machine
 sudo sbctl verify                         # BOOTX64.EFI signed; kernels are checked by hash instead
