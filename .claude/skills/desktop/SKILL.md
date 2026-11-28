@@ -24,9 +24,10 @@ the rest.
 Only Neovim does (`everforest`, background `medium`, in [neovim.nix](../../../modules/neovim.nix));
 Zed and bat, which ship no Everforest, take Stylix's.
 
-Terminals and desktop chrome stay on Stylix. [tmux.nix](../../../modules/tmux.nix) draws its status
-line and pane borders from the same palette (prefix `C-a`, vi keys, sessions restored by
-resurrect and continuum), and Ghostty attaches to its session `main`. Zed's settings file is
+Terminals and desktop chrome stay on Stylix. [zellij.nix](../../../modules/zellij.nix) takes Stylix's zellij theme with the
+focused pane's border and the selected tab forced to `base0D` (`ribbon_selected.background`,
+`frame_selected.base`), runs the compact layout without pane frames, keeps tmux mode on `C-a` (`v` and
+`-` split), and Ghostty attaches to its session `main`, which zellij resurrects after a reboot. Zed's settings file is
 immutable; its extensions, language servers and keymaps are declared in zed.nix.
 
 ## Rules

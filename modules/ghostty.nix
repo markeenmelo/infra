@@ -7,7 +7,7 @@
       programs.ghostty = {
         enable = true;
         settings = {
-          command = "${lib.getExe config.programs.tmux.package} new-session -A -s main";
+          command = "${lib.getExe config.programs.zellij.package} attach --create main";
           confirm-close-surface = false;
           window-padding-x = 10;
           window-padding-y = 8;
