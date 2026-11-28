@@ -1,5 +1,6 @@
 [inputs.caveman]
 url = "github:JuliusBrussee/caveman"
+tag = "v{version}"
 type = "fetch"
 
 [inputs.claude-plugins-official]
@@ -18,6 +19,7 @@ follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["flake-compat"]
 
 [inputs.disko]
+# shortcut: v1.13.0 hangs the disko VM tests against nixos-unstable, add tag = "v{version}" once a newer release passes the storage checks
 url = "github:nix-community/disko"
 follows = { nixpkgs = "nixpkgs" }
 
@@ -47,16 +49,43 @@ follows = { nixpkgs = "nixpkgs" }
 url = "github:denful/import-tree"
 tag = "v{version}"
 
+[inputs.just-lsp]
+url = "github:terror/just-lsp"
+tag = "{version}"
+follows = { nixpkgs = "nixpkgs" }
+
+[inputs.llm-agents]
+url = "github:numtide/llm-agents.nix"
+
+[inputs.luciole]
+url = "github:noctalia-dev/luciole/cachix"
+
+[inputs.mcp-nixos]
+url = "github:utensils/mcp-nixos"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs", flake-parts = "flake-parts" }
+
 [inputs.microvm]
 url = "github:microvm-nix/microvm.nix"
 follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["spectrum"]
 
+[inputs.nh]
+url = "github:nix-community/nh"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
+
 [inputs.nix-minecraft]
 url = "github:Infinidoge/nix-minecraft"
 type = "fetch"
 
+[inputs.nix-update]
+url = "github:Mic92/nix-update"
+tag = "v{version}"
+follows = { nixpkgs = "nixpkgs" }
+
 [inputs.nixflix]
+# shortcut: v6.0.0 lacks the arr host config merge fix #302 follows main for, add tag = "v{version}" once a later release carries it
 url = "github:kiriwalawren/nixflix"
 follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["mkdocs-catppuccin", "treefmt-nix"]
@@ -64,13 +93,22 @@ omit_inputs = ["mkdocs-catppuccin", "treefmt-nix"]
 [inputs.nixpkgs]
 url = "github:NixOS/nixpkgs/nixos-unstable"
 
-[inputs.paseo]
-url = "github:getpaseo/paseo"
+[inputs.noctalia-greeter]
+url = "github:noctalia-dev/noctalia-greeter"
 tag = "v{version}"
-omit_inputs = ["nixpkgs"]
+
+[inputs.noctalia]
+url = "github:noctalia-dev/noctalia"
+tag = "v{version}"
+
+[inputs.paseo]
+# shortcut: release tags ship the previous release's nix/npm-deps.hash (upstream #3308, #4407), so no tag builds; add tag = "v{version}" once a tag builds
+url = "github:getpaseo/paseo"
+follows = { nixpkgs = "nixpkgs" }
 
 [inputs.ponytail]
 url = "github:DietrichGebert/ponytail"
+tag = "v{version}"
 type = "fetch"
 
 [inputs.preservation]
@@ -87,12 +125,14 @@ follows = { flake-parts = "flake-parts", nixpkgs = "nixpkgs" }
 [inputs.tack]
 url = "github:manic-systems/tack"
 tag = "v{version}"
-follows = { nixpkgs = "nixpkgs" }
 omit_inputs = ["fenix"]
 
 [inputs.trailofbits-skills]
 url = "github:trailofbits/skills"
 type = "fetch"
+
+[inputs.umbriel]
+url = "github:noctalia-dev/umbriel/cachix"
 
 [inputs.zen-browser]
 url = "github:0xc000022070/zen-browser-flake"

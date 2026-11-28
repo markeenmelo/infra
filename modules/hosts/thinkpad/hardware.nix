@@ -33,7 +33,7 @@
              CHARGE_LIMIT=85,90
           '';
           extraRules = ''
-            ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
+            ACTION=="add", SUBSYSTEM=="pci", ATTR{class}!="0x020000", ATTR{power/control}="auto"
             ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="0033", ATTR{power/wakeup}="enabled"
             ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1532", ATTR{idProduct}=="0083", ATTR{power/control}="auto"
             ACTION=="change", SUBSYSTEM=="power_supply", KERNEL=="AC", RUN+="${lib.getExe' config.systemd.package "systemctl"} restart --no-block power-profile-ac.service"

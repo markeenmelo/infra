@@ -10,6 +10,7 @@ let
   ) hosts;
   watched = lib.filterAttrs (_: host: host.alwaysOn) senders;
   awake = "instance!~\"${lib.concatStringsSep "|" (lib.attrNames asleep)}\"";
+  redact = ''(?i)[?&#;](?:[a-z0-9_.\[\]-]*(?:token|secret|key|password|passwd|signature|credential|session|jwt)|(?:[a-z0-9_.\[\]-]*[_.\[-])?(?:code|pass|pwd|sig|auth))\]?=([^&;#\s"]+)'';
   senderPorts = telemetry: [
     telemetry.metrics
     telemetry.logs
@@ -35,7 +36,15 @@ let
       max_age       = "12h"
       relabel_rules = loki.relabel.journal.rules
       labels        = ${labels}
-      forward_to    = [${forward}]
+      forward_to    = [loki.process.redact.receiver]
+    }
+
+    loki.process "redact" {
+      forward_to = [${forward}]
+      stage.replace {
+        expression = ${builtins.toJSON redact}
+        replace    = "<redacted>"
+      }
     }
   '';
   httpsProbe =
@@ -92,6 +101,34 @@ let
   };
 in
 {
+  perSystem =
+    { pkgs, ... }:
+    {
+      checks.log-redaction = pkgs.runCommand "log-redaction" { nativeBuildInputs = [ pkgs.ripgrep ]; } ''
+        cat > lines <<'EOF'
+        GET /cb?state=x&refresh_token=AAAA1111&id_token=BBBB2222 HTTP/1.1
+        redirect https://app/cb#access_token=CCCC3333&expires=3600
+        url?client_secret=DDDD4444;foo=bar
+        conn ?password=hunter2xx&user=alice
+        GET /api?t=search&apikey=EEEE5555&cat=2000
+        wss://vault/hub?access_token=FFFF6666
+        https://bucket.s3/obj?X-Amz-Credential=GGGG7777&X-Amz-Signature=HHHH8888
+        https://acct.blob/c?sv=2024&sig=IIII9999
+        /oauth/callback?code=JJJJ0000&state=xyz
+        form ?user[password]=KKKK1111&pwd=LLLL2222&jwt=MMMM3333&auth=NNNN4444&session=OOOO5555
+        GET /x?statuscode=500&errorcode=7&zipcode=10001&bypass=1&page=2
+        /cb?oauth_code=PPPP6666&X-Auth=QQQQ7777
+        Loaded assembly X, PublicKeyToken=null
+        plain line monkey=banana and key: value
+        EOF
+        rg --only-matching --replace '$1' -- ${lib.escapeShellArg redact} lines > got
+        printf '%s\n' AAAA1111 BBBB2222 CCCC3333 DDDD4444 hunter2xx EEEE5555 FFFF6666 GGGG7777 HHHH8888 IIII9999 JJJJ0000 > want
+        printf '%s\n' KKKK1111 LLLL2222 MMMM3333 NNNN4444 OOOO5555 PPPP6666 QQQQ7777 >> want
+        diff want got
+        touch $out
+      '';
+    };
+
   flake.checks =
     import ./_host-checks.nix { inherit config lib; } "alloy"
       (nixos: nixos.config.services.alloy.enable)
@@ -901,7 +938,7 @@ in
               syslog_format = "raw"
               labels        = { host = "gateway" }
             }
-            forward_to = [loki.write.local.receiver]
+            forward_to = [loki.process.redact.receiver]
           }
         '';
       networking.firewall.extraInputRules =

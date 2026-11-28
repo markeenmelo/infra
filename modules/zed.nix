@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   flake.modules.homeManager.base =
     { lib, pkgs, ... }:
@@ -81,7 +82,7 @@
             terraform-ls = server pkgs.terraform-ls [ "serve" ];
             lua-language-server = server pkgs.lua-language-server [ ];
             marksman = server pkgs.marksman [ "server" ];
-            just-lsp = server pkgs.just-lsp [ ];
+            just-lsp = server inputs.just-lsp.packages.${pkgs.stdenv.hostPlatform.system}.default [ ];
           };
           languages.Nix.language_servers = [
             "nixd"

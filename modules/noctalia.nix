@@ -1,6 +1,12 @@
+{ inputs, ... }:
 {
   flake.modules.nixos.desktop =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       outputs = config.home-manager.users.marcos.programs.umbriel.settings.output;
       placed = lib.filterAttrs (_: output: output ? position) outputs;
@@ -14,6 +20,7 @@
     {
       services = {
         displayManager.noctalia-greeter = {
+          package = inputs.noctalia-greeter.packages.${pkgs.stdenv.hostPlatform.system}.default;
           enable = true;
           settings = {
             session.default = "Umbriel";
@@ -75,9 +82,11 @@
     let
       onBattery = "${lib.getExe' osConfig.systemd.package "systemd-ac-power"} ||";
       umbriel = lib.getExe osConfig.programs.umbriel.package;
+      building = "${lib.getExe' pkgs.procps "pgrep"} -G nixbld >/dev/null ||";
     in
     {
       programs.noctalia = {
+        package = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
         enable = true;
         systemd.enable = true;
         settings = {
@@ -202,7 +211,8 @@
             };
             suspend = {
               timeout = 900;
-              action = lib.mkDefault "lock_and_suspend";
+              action = "command";
+              command = "${building} ${lib.getExe config.programs.noctalia.package} msg session lock-and-suspend";
             };
             battery-screen-off = {
               timeout = 180;

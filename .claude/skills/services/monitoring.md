@@ -36,7 +36,10 @@ A host that imports `telemetry` runs Alloy, which scrapes its node metrics and e
 `fleet.scrapeTargets` endpoint, probes every `fleet.probes` URL (the
 public hostnames, which the edge resolves to loopback so its own probes skip the country
 rule and CrowdSec; they test the passthrough, the tunnel, bastion's public listener and the apps, not reachability from outside), and
-ships the journal. Caddy serves its metrics on a loopback port of their own; its admin API on 2019,
+ships the journal, with the value of any URL parameter whose name ends in a credential word, after
+`?`, `&`, `#` or `;`, replaced by `<redacted>` (the Bitwarden desktop app logs its vault token in its
+notification-hub URL); bastion's gateway syslog takes the same stage. The words and the cases they
+must catch are `redact` and `checks.log-redaction` in [monitoring.nix](../../../modules/monitoring.nix). Caddy serves its metrics on a loopback port of their own; its admin API on 2019,
 which can rewrite its config and expose the Porkbun keys it holds, admits only root and Caddy on
 every host ([caddy.nix](../../../modules/caddy.nix)). It pushes to the port pair in its
 `fleet.hosts.HOST.telemetry`; bastion's Alloy listens on that pair, stamps `host=HOST` and forwards

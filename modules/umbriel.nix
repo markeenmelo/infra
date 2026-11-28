@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 {
   flake.checks =
     import ./_host-checks.nix { inherit config lib; } "desktop-config"
@@ -7,8 +12,15 @@
         host: nixos:
         let
           home = nixos.config.home-manager.users.marcos;
+          umbrielMesa =
+            inputs.umbriel.inputs.nixpkgs.legacyPackages.${nixos.pkgs.stdenv.hostPlatform.system}.mesa.version;
+          driverMesa = nixos.config.hardware.graphics.package.version;
         in
         nixos.pkgs.runCommand "desktop-config-${host}" { } ''
+          [ "${umbrielMesa}" = "${driverMesa}" ] || {
+            echo "Umbriel links mesa ${umbrielMesa}, the drivers are mesa ${driverMesa}: its libgbm would load a mismatched dri_gbm" >&2
+            exit 1
+          }
           ${lib.getExe nixos.config.programs.umbriel.package} config validate -c ${
             home.xdg.configFile."umbriel/config.toml".source
           }
@@ -20,10 +32,19 @@
         ''
       );
 
-  flake.modules.nixos.desktop = {
-    programs.umbriel.enable = true;
-    environment.sessionVariables.NIXOS_OZONE_WL = "1";
-  };
+  flake.modules.nixos.desktop =
+    { pkgs, ... }:
+    let
+      inherit (pkgs.stdenv.hostPlatform) system;
+    in
+    {
+      programs.umbriel = {
+        enable = true;
+        package = inputs.umbriel.packages.${system}.default;
+        portalPackage = inputs.umbriel.packages.${system}.xdg-desktop-portal-umbriel;
+      };
+      environment.sessionVariables.NIXOS_OZONE_WL = "1";
+    };
 
   flake.modules.homeManager.desktop =
     {
@@ -41,7 +62,7 @@
       color = name: "#${config.lib.stylix.colors.${name}}ff";
       translucent = [
         "^com\\.mitchellh\\.ghostty$"
-        "^org\\.gnome\\.Nautilus$"
+        "^dev\\.noctalia\\.luciole$"
       ];
     in
     {
@@ -164,7 +185,7 @@
                 repeat = false;
               };
               "Mod+B" = spawn config.programs.zen-browser.package;
-              "Mod+E" = spawn pkgs.nautilus;
+              "Mod+E" = spawn config.programs.luciole.package;
               "Mod+Escape" = noctalia "panel-toggle session";
               "Mod+Slash" = "cheatsheet-toggle";
               "Mod+Space" = noctalia "panel-toggle launcher";

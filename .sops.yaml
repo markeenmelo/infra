@@ -39,6 +39,12 @@ creation_rules:
           - *bastion
           - *thinkpad
           - *beast
+  - path_regex: ^secrets/shared/github\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *thinkpad
+          - *beast
   - path_regex: ^secrets/shared/crowdsec\.yaml$
     key_groups:
       - age:

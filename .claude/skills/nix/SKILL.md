@@ -64,7 +64,10 @@ Answer each before the module is done; a reviewer will ask otherwise.
 
 **Arguments** — request only what you use; inner modules take their own `lib`/`pkgs`. Every host
 follows the one `nixpkgs`. No overlays unless nixpkgs forces one, no `inputs.self` pass-through,
-no mixed package sets. `with` only for capability imports.
+no mixed package sets. `with` only for capability imports. Some pins keep the nixpkgs their upstream
+locked: `hermes-agent` ([guests: hermes](../guests/hermes.md)); and, because an upstream cache
+holds a package only as built against its own nixpkgs, `llm-agents` (Claude Code, pi,
+cursor-agent, rtk from numtide's cache), noctalia-dev's pins (Noctalia's cache) and `tack`.
 
 **Merging** — let the module system merge; `//` is shallow and skips priorities, so it appears
 nowhere in Nix here: config shared between classes or hosts is a module both import, and a value
@@ -74,8 +77,16 @@ Extend an upstream default list at its priority: `mkDefault (mkAfter …)`.
 
 **Inputs** — an input is a tack pin; a new one lists the transitive inputs it never uses in
 `omit_inputs`. Since the flake itself declares no inputs, flake-parts' `inputs'` and `self.inputs`
-are empty: read `inputs`.
-Substituters go in `nix.settings`, never flake `nixConfig`.
+are empty: read `inputs`. A package whose upstream flake is ahead of nixpkgs comes from a pin
+following its release tags. Where upstream publishes a binary cache, the pin keeps upstream's
+nixpkgs, and tracks the branch upstream's CI caches when that is not a tag, so the cache serves it;
+otherwise it is built against our nixpkgs, unless that build is too large to repeat (Zed, Ghostty)
+or upstream says its flake is not for consumers (Tailscale). Paseo builds from
+its pin anyway, without a cache, because its daemon, clients and module must come from one commit.
+Substituters go in `nix.settings`, never flake `nixConfig`. Every host trusts, after bastion's
+cache and cache.nixos.org, the caches the pins' upstreams publish
+([base.nix](../../../modules/base.nix)): numtide's for llm-agents, nix-community's, microvm's,
+tack's and Noctalia's. A cache serves a pin only where it keeps its own nixpkgs; a pin that follows ours rarely hits it.
 
 **Apps** — every operator task is a flake app built with `writeShellApplication`; switch to
 `writers.writePython3Bin` past ~100 lines or when it parses data. Only workflow YAML, `.envrc` and
@@ -110,7 +121,8 @@ repository's. Comments follow [CLAUDE.md](../../../CLAUDE.md).
 ## Package updates
 
 `just update` is the only updater: it runs `tack update`, which moves a pin with a `tag` template
-to its newest matching release tag and every other pin to its branch head, then the `update-pins`
+to its newest matching release tag and every other pin to its branch head (on a host with the
+GitHub token, tack authenticates with it: [secrets](../operating/secrets.md)), then the `update-pins`
 app ([pins.nix](../../../modules/pins.nix)). nix-update bumps each `NAME.pkg.nix` in `pins` with its
 hashes, and [update-pins.sh](../../../modules/update-pins.sh) bumps what nix-update cannot see
 (Caddy plugin versions, Grafana dashboard revisions, the CrowdSec hub commit, tack's resolver after a tack bump, each OpenTofu

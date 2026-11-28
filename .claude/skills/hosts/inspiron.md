@@ -2,7 +2,7 @@
 
 [modules/hosts/inspiron/](../../../modules/hosts/inspiron/) is Ian's Dell Inspiron 14 2-in-1 (AMD
 Ryzen 5000, Barcelo graphics, AX210 Wi-Fi), used for Minecraft and mostly on AC. It runs the
-`kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)), which powers it off at 13:00 and 20:00 every day, and on waking from a suspend that spanned either time: greetd logs `ian` straight into a full-screen chooser (Qt Quick in cage) with three large touch buttons: Minecraft (Prism in gamescope), Steam Big Picture (in gamescope, whose "switch to desktop" quits Steam through a `steamos-session-select` stub) and KDE Plasma. Leaving any of them returns to the chooser. A polkit rule refuses every NetworkManager action to `ian`, so Plasma cannot join another network or change its connection, and NetworkManager manages only Wi-Fi, so a USB Ethernet dongle or a phone's USB tethering never comes up as an uplink around the Kids VLAN. That does not keep Plasma inside the Kids VLAN's content filter: the gateway blocks only plain DNS, so a browser or tool Ian downloads into his home and runs with DNS-over-HTTPS gets past it, a risk the operator accepted; and power-profiles-daemon, which Plasma would turn on, stays off so the governor holds. Plasma never locks the screen, by timer, on resume or by hand, since `ian` has no password to unlock it. Otherwise Plasma gives `ian` what any local desktop user gets: pairing Bluetooth devices, mounting USB drives and a terminal, all as `ian`, without root; `ian` has no sudo, `marcos` and
+`kiosk` role ([kiosk.nix](../../../modules/kiosk.nix)), which powers it off at 13:00 and 20:00 every day, and on waking from a suspend that spanned either time: greetd logs `ian` straight into a full-screen chooser (Qt Quick in cage) with four large touch buttons: Minecraft (Prism in gamescope), Steam Big Picture (in gamescope, whose "switch to desktop" quits Steam through a `steamos-session-select` stub), KDE Plasma and Power off, which logind allows to the active local session without a password. Leaving any of the first three returns to the chooser. A polkit rule refuses every NetworkManager action to `ian`, so Plasma cannot join another network or change its connection, and NetworkManager manages only Wi-Fi, so a USB Ethernet dongle or a phone's USB tethering never comes up as an uplink around the Kids VLAN. That does not keep Plasma inside the Kids VLAN's content filter: the gateway blocks only plain DNS, so a browser or tool Ian downloads into his home and runs with DNS-over-HTTPS gets past it, a risk the operator accepted; and power-profiles-daemon, which Plasma would turn on, stays off so the governor holds. Plasma never locks the screen, by timer, on resume or by hand, since `ian` has no password to unlock it. Otherwise Plasma gives `ian` what any local desktop user gets: pairing Bluetooth devices, mounting USB drives and a terminal, all as `ian`, without root; `ian` has no sudo, `marcos` and
 `deploy` are the fleet's accounts, the CPU governor stays on `performance`, and Bluetooth is on for a mouse or controller, paired from Plasma or from an SSH session with `sudo bluetoothctl`.
 
 ## Minecraft
@@ -47,9 +47,9 @@ A firmware update changes PCR 7; reseal with the last command plus `--wipe-slot=
 
 It joins MN-Kids on the Kids VLAN with its permanent MAC, which the UniFi project fixes to
 192.168.20.2 as the client `Dino`, with the passphrase from `kids-wifi-psk`. Its tailnet tag,
-`tag:kid`, admits SSH from the admin clients and reaches only bastion's cache and its own telemetry ports. It takes neither the
+`tag:kid`, admits SSH from the admin clients and reaches only the builders' caches (bastion's and beast's) and its own telemetry ports. It takes neither the
 tailnet's DNS (`--accept-dns=false`) nor an exit node, since the tailnet's resolvers would bypass
-the Kids VLAN's content filter and bedtime rule.
+the Kids VLAN's content filter.
 
 ## Builds
 

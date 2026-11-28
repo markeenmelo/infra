@@ -14,6 +14,8 @@ let
   telemetry = builtins.toJSON (lib.mapAttrs (_: host: host.telemetry) config.fleet.hosts);
   settings = ../opentofu/unifi/settings.json;
   program = ../opentofu/unifi/settings.jq;
+  filterRules = ../opentofu/unifi/content-filter.json;
+  filterProgram = ../opentofu/unifi/content-filter.jq;
   inherit (config.flake.modules.nixos) postgresql;
   statePort = config.flake.nixosConfigurations.bastion.config.services.postgresql.settings.port;
   oracle = config.flake.nixosConfigurations.edge.config;
@@ -117,7 +119,7 @@ in
         };
       };
       apps.unifi-settings = {
-        meta.description = "unifi-settings check|apply: compare the gateway settings no provider writes with opentofu/unifi/settings.json, or merge them in";
+        meta.description = "unifi-settings check|apply: compare the gateway settings no provider writes with opentofu/unifi/settings.json, or merge them in, and check the content filter against opentofu/unifi/content-filter.json";
         program = pkgs.writeShellApplication {
           name = "unifi-settings";
           runtimeInputs = [
@@ -152,13 +154,16 @@ in
               api https://${gateway}/proxy/network/api/s/default/get/setting |
                 jq --slurpfile want ${settings} -f ${program}
             }
+            rules=$(api https://${gateway}/proxy/network/v2/api/site/default/content-filtering)
+            networks=$(api https://${gateway}/proxy/network/api/s/default/rest/networkconf)
+            filters=$(jq -n --argjson rules "$rules" --argjson networks "$networks" --slurpfile want ${filterRules} \
+              -f ${filterProgram})
             changes=$(drift)
             jq -r '.[] | "setting \(.key):", "  \(.changes[])"' <<< "$changes"
-            if jq -e 'length == 0' <<< "$changes" > /dev/null; then
-              exit 0
-            fi
+            jq -r '.[]' <<< "$filters"
             if [ "$1" = check ]; then
-              exit 1
+              jq -e 'length == 0' <<< "$changes" > /dev/null && jq -e 'length == 0' <<< "$filters" > /dev/null
+              exit
             fi
             jq -c '.[]' <<< "$changes" | while read -r change; do
               jq .body <<< "$change" |
@@ -167,6 +172,10 @@ in
             done
             if ! drift | jq -e 'length == 0' > /dev/null; then
               echo "still drifting after apply" >&2
+              exit 1
+            fi
+            if jq -e 'length > 0' <<< "$filters" > /dev/null; then
+              echo "the content filter is only checked: change it in the Network UI" >&2
               exit 1
             fi
           '';
@@ -180,6 +189,13 @@ in
           and .[0].changes == ["upnp_enabled: true -> false"]
           and .[0].body == {key: "usg", upnp_enabled: false, kept: 1}
           and .[1].body == {key: "usg_geo", ip_filtering: {enabled: true}}'
+        networks='{"meta": {"rc": "ok"}, "data": [{"_id": "h", "name": "Home"}, {"_id": "k", "name": "Kids"}]}'
+        rule='{"name": "AdBlock", "enabled": true, "categories": ["FAMILY", "ADVERTISEMENT"], "safe_search": [], "network_ids": ["k", "h"], "client_macs": [], "allow_list": [], "block_list": [], "schedule": {"mode": "ALWAYS"}}'
+        jq -n '[{name: "AdBlock", enabled: true, categories: ["ADVERTISEMENT", "FAMILY"], safe_search: [], networks: ["Home", "Kids"], client_macs: [], allow_list: [], block_list: [], schedule: {mode: "ALWAYS"}}]' > rules.json
+        jq -n --argjson rules "[$rule]" --argjson networks "$networks" --slurpfile want rules.json -f ${filterProgram} | jq -e '. == []'
+        jq -n --argjson rules "$(jq -c '[.network_ids = ["k"]]' <<< "$rule")" --argjson networks "$networks" --slurpfile want rules.json -f ${filterProgram} |
+          jq -e 'length == 2 and (.[0] | startswith("content filter AdBlock: want")) and (.[1] | test("\"networks\":\\[\"Kids\"\\]"))'
+        jq -n --argjson rules '[]' --argjson networks "$networks" --slurpfile want ${filterRules} -f ${filterProgram} > /dev/null
         jq --slurpfile want ${settings} -f ${program} have.json > /dev/null
         touch $out
       '';

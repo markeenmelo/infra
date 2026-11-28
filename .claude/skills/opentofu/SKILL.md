@@ -67,7 +67,7 @@ read-only for all of these; `acls_externally_managed_on` says so.
   bumped inputs' evaluation on the tailnet, so pull requests fetch from cache.nixos.org only. Agents merge into `dev`, whose
   push run never joins; `main` takes only the operator's merge of `dev`, and
   [CODEOWNERS](../../../.github/CODEOWNERS) holds workflows, the flake's inputs and pins, and this project for the
-  operator's review on the way. Any other Nix that reaches `main` is still evaluated on that run, which the policy lets reach bastion's cache port
+  operator's review on the way. Any other Nix that reaches `main` is still evaluated on that run, which the policy lets reach the builders' cache port
   and nothing else. Like the OAuth client, it is a trust credential made in the admin console, since the OAuth
   client lacks the scope to create one: issuer GitHub, subject
   `repo:markeenmelo@8158196/infra@1445093287:*` (GitHub puts the owner's and repository's ids in
@@ -142,7 +142,7 @@ apply a network or Wi-Fi change from a wired client, since it can cut the route 
 **Who reaches what.** Each VLAN is its own firewall zone. The controller lets a custom zone out
 to the gateway and the internet and keeps it from the other zones, so `local.policies` lists
 only the exceptions, one row each: `from` and `to` zones, optional `from_ips`, `to_ips`,
-`protocol`, one `port` or a `ports` group, `block`, and a `schedule` (the Kids' bedtime block). An allow towards another VLAN gets its
+`protocol`, one `port` or a `ports` group, and `block`. An allow towards another VLAN gets its
 return policy from the controller; one towards the gateway or the internet must not ask for it,
 and an ICMP policy is IPv4 only, both of which the resource derives. `local.orders` lists the
 zone pairs where order decides, first match first. A client's flags in `local.clients` put it in
@@ -152,16 +152,17 @@ HTTPS). Tailnet clients routed through bastion arrive as bastion's address, so t
 "Bastion-routed" rows decide what they reach, behind the tailnet grants.
 
 Kids resolve through the gateway like every other VLAN, so they get the LAN wildcard record and
-reach bastion directly instead of through the edge. Filtering is the gateway's content filter
-(Family) applied to the Kids network in the controller UI, which the provider cannot write, and
-a Kids row blocks every external resolver on 53 and 853. A Kids device set to DoH on 443 is not
-filtered: an accepted gap. After an apply that touches the Kids network, check in the UI that the
-filter still lists it.
+reach bastion directly instead of through the edge. Filtering is the gateway's content filter,
+and a Kids row blocks every external resolver on 53 and 853. A Kids device set to DoH on 443 is
+not filtered: an accepted gap.
 
 **Provider limits** (filipowm/unifi):
-- The WAN, ad blocking and per-network mDNS stay in the controller UI: the provider rewrites a
-  whole network from its schema, which drops the WAN's PPPoE VLAN tag, discards the ad-blocking
-  networks, and fails in-place updates of `multicast_dns` and the Default network's IPv6 flags.
+- Ad blocking and the content filter are rules in the Network app's v2 content filtering, which
+  the provider does not reach: its `ad_blocked_networks` and `dns_filters` write fields of the
+  `ips` setting that this controller no longer has.
+- The WAN and per-network mDNS stay in the controller UI: the provider rewrites a whole network
+  from its schema, which drops the WAN's PPPoE VLAN tag and fails in-place updates of
+  `multicast_dns` and the Default network's IPv6 flags.
 - A policy takes one `port`; several ports go through a port group, since a comma list reads
   back as null.
 - `unifi_setting_ips` takes only the categories the Network UI lists; others are dropped and the
@@ -170,9 +171,13 @@ filter still lists it.
   `note` is left to the controller UI: the provider cannot clear one, so an unset note would
   show as a change on every plan.
 - `dhcp_dns` stays unset: any value turns DHCP DNS on.
+- The gateway's timezone belongs to UniFi OS: the Network API answers
+  `unifi_setting_locale` with `api.err.NoEdit`.
 
 Settings no provider writes (DoH resolvers, the country block, UPnP and the NAT helpers off, the
 weekly controller backup) live in [settings.json](../../../opentofu/unifi/settings.json), keyed
 by the controller's setting name. `nix run .#unifi-settings -- check` exits 1 and lists the
 drift; `apply`, which needs the same approval as an OpenTofu apply, merges the file into each
-setting and leaves every other field alone.
+setting and leaves every other field alone. The same app compares the content-filter rules with
+[content-filter.json](../../../opentofu/unifi/content-filter.json), networks by name, and only
+reports: a rule that drifts is changed in the Network UI, and `apply` exits 1 while one does.

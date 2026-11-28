@@ -24,25 +24,26 @@ nixpkgs' package, taken from the binary cache; the input supplies only its libra
 
 A host builds itself unless its `nix.settings.max-jobs` is 0 (bastion, which runs the builder
 in [builder.nix](../../../modules/builder.nix), the edge and beast); a host that imports
-`remote-builds` (the thinkpad) or refuses local builds (inspiron) is built on the deploying machine, which from the thinkpad hands the build to bastion. The deploying
-machine receives the whole closure back from bastion; deploy-rs then pushes it with
-`--substitute-on-destination`, so the target fetches what bastion holds from its Harmonia cache.
-Bastion trusts the admin clients' build keys alone: the edge builds itself, and the tailnet
+`remote-builds` (the thinkpad) or refuses local builds (inspiron) is built on the deploying machine, which from the thinkpad spreads the build over beast (while awake) and bastion by load and speed factor. The deploying
+machine receives the whole closure back from the builder; deploy-rs then pushes it with
+`--substitute-on-destination`, so the target fetches from the Harmonia cache of whichever builder (bastion or beast) built each path.
+The builders (bastion and beast, `build-host`) trust the admin clients' build keys alone: the edge builds itself, and the tailnet
 policy keeps it off the cache ([opentofu skill](../opentofu/SKILL.md)), so a compromised edge
 cannot reach bastion's store. A build key is a
-trusted user on bastion and whatever it uploads is signed and served to every workstation, so a stolen
-build key is root on bastion without the deploy key's Bitwarden prompt. That is accepted: Nix
+trusted user on each builder, and whatever it uploads to bastion is signed and served to every workstation, so a stolen
+build key is root on both builders without the deploy key's Bitwarden prompt. That is accepted: Nix
 refuses remote builds from an untrusted user (`you are not privileged to build input-addressed
 derivations`), and the key is readable only by root on an admin client.
-`remote-builds` makes bastion's cache each workstation's first substituter, so a cleaned store
+`cache-client` and `remote-builds` make the builders' caches (`build-host`) each workstation's first substituters, so a cleaned store
 refills from bastion instead of rebuilding.
 CI on `main` reads the cache too: [check.yml](../../../.github/workflows/check.yml) joins the
-tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what bastion holds
+tailnet as an ephemeral `tag:ci` node, whose only grant is port 5005, fetches what the builders hold
 and leaves before it builds, so tailnet minutes stay short and nothing built by CI reaches
 bastion. Pull requests never join ([opentofu skill](../opentofu/SKILL.md)).
-The tailnet policy decides who reaches 5005; bastion's firewall admits it from any tailnet peer.
+The tailnet policy decides who reaches 5005; each builder's firewall admits it from any tailnet peer.
 What bastion built for another host stays until its store runs low on space: bastion collects
-garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)).
+garbage only then, not weekly ([builder.nix](../../../modules/builder.nix)). beast keeps the desktop's weekly `nh clean`, so a
+cleaned beast no longer serves what it built and the deploying machine copies those paths instead.
 
 ```sh
 nix run .#deploy -- HOST            # after checks pass on the committed revision

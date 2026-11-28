@@ -180,11 +180,10 @@ let
       environment.systemPackages = [
         gh
         pkgs.ripgrep
-        pkgs.cursor-cli
+        inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.cursor-agent
       ];
       services.paseo = {
         enable = true;
-        package = pkgs.paseo;
         user = "marcos";
         group = "users";
         relay.enable = false;
@@ -347,11 +346,6 @@ in
 
       users.users.marcos.uid = agentUid;
 
-      nixpkgs.config.allowUnfreePackages = [
-        "claude-code"
-        "cursor-cli"
-        "rtk"
-      ];
       microvm.vms.agents = {
         config = guest;
         restartIfChanged = false;
