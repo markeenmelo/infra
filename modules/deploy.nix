@@ -20,6 +20,30 @@ let
         };
       })
     ]).deploy-rs.lib;
+  sudo = {
+    security.sudo-rs = {
+      enable = true;
+      extraRules = [
+        {
+          users = [ "deploy" ];
+          runAs = "root";
+          commands =
+            map
+              (command: {
+                inherit command;
+                options = [ "NOPASSWD" ];
+              })
+              [
+                "/nix/store/*/activate-rs *"
+                "/run/current-system/sw/bin/rm *"
+                "/run/current-system/sw/bin/systemctl reboot"
+                "/run/current-system/sw/bin/systemctl poweroff"
+                ''${clean} ""''
+              ];
+        }
+      ];
+    };
+  };
 in
 {
   flake = {
@@ -34,18 +58,69 @@ in
       };
     }) hosts;
 
-    checks = lib.genAttrs systems (
-      system:
-      (deployLib system).deployChecks {
-        nodes = lib.filterAttrs (
-          name: _: config.fleet.hosts.${name}.system == system
-        ) config.flake.deploy.nodes;
+    checks = lib.mkMerge [
+      (lib.genAttrs systems (
+        system:
+        (deployLib system).deployChecks {
+          nodes = lib.filterAttrs (
+            name: _: config.fleet.hosts.${name}.system == system
+          ) config.flake.deploy.nodes;
+        }
+      ))
+      {
+        ${config.fleet.hosts.bastion.system}.deploy-sudo =
+          let
+            pkgs = inputs.nixpkgs.legacyPackages.${config.fleet.hosts.bastion.system};
+            activate = pkgs.runCommand "probe" { } ''
+              mkdir $out
+              ln -s ${pkgs.writeShellScript "activate" "id -u"} $out/activate-rs
+            '';
+          in
+          pkgs.testers.runNixOSTest {
+            name = "deploy-sudo";
+            nodes.machine = {
+              imports = [ sudo ];
+              users = {
+                users.deploy = {
+                  isSystemUser = true;
+                  group = "deploy";
+                  extraGroups = [ "wheel" ];
+                };
+                groups.deploy = { };
+              };
+              system.extraDependencies = [ activate ];
+              environment.systemPackages = [ (pkgs.writeShellScriptBin "clean-generations" "echo cleaned") ];
+              security.sudo-rs.execWheelOnly = true;
+            };
+            testScript = ''
+              def deploy(command):
+                  return f"runuser -u deploy -- sudo -n -u root {command}"
+
+              def allowed(command):
+                  return f"runuser -u deploy -- sudo -n -l -u root {command}"
+
+              machine.wait_for_unit("multi-user.target")
+              canary = "/tmp/deploy-rs-canary-" + "a1" * 16
+              machine.succeed(f"touch {canary}")
+              machine.succeed(deploy(f"rm {canary}"))
+              machine.fail(f"test -e {canary}")
+              assert machine.succeed(deploy("${activate}/activate-rs activate x")).strip() == "0"
+              machine.fail(deploy("/run/current-system/sw/bin/systemctl status"))
+              assert machine.succeed(deploy("${clean}")).strip() == "cleaned"
+              machine.fail(deploy("${clean} now"))
+              machine.succeed(allowed("/run/current-system/sw/bin/systemctl reboot"))
+              machine.succeed(allowed("/run/current-system/sw/bin/systemctl poweroff"))
+              machine.fail(allowed("/run/current-system/sw/bin/systemctl reboot now"))
+              machine.fail(deploy("id"))
+            '';
+          };
       }
-    );
+    ];
 
     modules.nixos.base =
       { config, pkgs, ... }:
       {
+        imports = [ sudo ];
         environment.systemPackages = [
           (pkgs.writeShellApplication {
             name = "clean-generations";
@@ -80,34 +155,6 @@ in
         };
         services.openssh.settings.AllowUsers = [ "deploy" ];
         nix.settings.trusted-users = [ "deploy" ];
-        security.sudo.extraRules = [
-          {
-            users = [ "deploy" ];
-            runAs = "root";
-            commands = [
-              {
-                command = "/nix/store/*/activate-rs *";
-                options = [ "NOPASSWD" ];
-              }
-              {
-                command = "/run/current-system/sw/bin/rm ^/tmp/deploy-rs-canary-[a-z0-9]{32}$";
-                options = [ "NOPASSWD" ];
-              }
-              {
-                command = "/run/current-system/sw/bin/systemctl reboot";
-                options = [ "NOPASSWD" ];
-              }
-              {
-                command = "/run/current-system/sw/bin/systemctl poweroff";
-                options = [ "NOPASSWD" ];
-              }
-              {
-                command = ''${clean} ""'';
-                options = [ "NOPASSWD" ];
-              }
-            ];
-          }
-        ];
       };
   };
 
