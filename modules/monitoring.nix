@@ -10,6 +10,7 @@ let
   ) hosts;
   watched = lib.filterAttrs (_: host: host.alwaysOn) senders;
   awake = "instance!~\"${lib.concatStringsSep "|" (lib.attrNames asleep)}\"";
+  redact = ''(?i)[?&#;][a-z0-9_.-]*(?:token|secret|key|password|passwd)=([^&;#\s"]+)'';
   senderPorts = telemetry: [
     telemetry.metrics
     telemetry.logs
@@ -41,7 +42,7 @@ let
     loki.process "redact" {
       forward_to = [${forward}]
       stage.replace {
-        expression = "(?i)[?&#;][a-z0-9_.-]*(?:token|secret|key|password|passwd)=([^&;#\\s\"]+)"
+        expression = ${builtins.toJSON redact}
         replace    = "<redacted>"
       }
     }
@@ -100,6 +101,27 @@ let
   };
 in
 {
+  perSystem =
+    { pkgs, ... }:
+    {
+      checks.log-redaction = pkgs.runCommand "log-redaction" { nativeBuildInputs = [ pkgs.ripgrep ]; } ''
+        cat > lines <<'EOF'
+        GET /cb?state=x&refresh_token=AAAA1111&id_token=BBBB2222 HTTP/1.1
+        redirect https://app/cb#access_token=CCCC3333&expires=3600
+        url?client_secret=DDDD4444;foo=bar
+        conn ?password=hunter2xx&user=alice
+        GET /api?t=search&apikey=EEEE5555&cat=2000
+        wss://vault/hub?access_token=FFFF6666
+        Loaded assembly X, PublicKeyToken=null
+        plain line monkey=banana and key: value
+        EOF
+        rg --only-matching --replace '$1' -- ${lib.escapeShellArg redact} lines > got
+        printf '%s\n' AAAA1111 BBBB2222 CCCC3333 DDDD4444 hunter2xx EEEE5555 FFFF6666 > want
+        diff want got
+        touch $out
+      '';
+    };
+
   flake.checks =
     import ./_host-checks.nix { inherit config lib; } "alloy"
       (nixos: nixos.config.services.alloy.enable)
