@@ -24,9 +24,10 @@ the rest.
 Only Neovim does (`everforest`, background `medium`, in [neovim.nix](../../../modules/neovim.nix));
 Zed and bat, which ship no Everforest, take Stylix's.
 
-Terminals and desktop chrome stay on Stylix. [tmux.nix](../../../modules/tmux.nix) draws its status
-line and pane borders from the same palette (prefix `C-a`, vi keys, sessions restored by
-resurrect and continuum), and Ghostty attaches to its session `main`. Zed's settings file is
+Terminals and desktop chrome stay on Stylix. [zellij.nix](../../../modules/zellij.nix) takes Stylix's zellij theme with the
+focused pane's border and the selected tab forced to `base0D` (`ribbon_selected.background`,
+`frame_selected.base`), runs the compact layout without pane frames, keeps tmux mode on `C-a` (`v` and
+`-` split, `H` `J` `K` `L` resize, `P`, `t`, `r`, `m` and `s` open the pane, tab, resize, move and session modes) and unbinds the stock Ctrl and Alt keys, so the shell and Neovim keep them, and Ghostty attaches to its session `main`, which zellij resurrects after a reboot. Zed's settings file is
 immutable; its extensions, language servers and keymaps are declared in zed.nix.
 
 ## Rules
@@ -142,7 +143,9 @@ imports beside the role, so a wired desktop holds no Wi-Fi secrets; Steam with P
 so the LANs stay reachable away from home; at home MN-Home is the Home LAN, which bastion does not
 advertise, so the laptop's own LAN stays on-link and only the printer, on the IoT LAN, goes
 through bastion. Bitwarden's desktop app is the SSH agent
-(`~/.bitwarden-ssh-agent.sock`), started at login ([bitwarden.nix](../../../modules/bitwarden.nix)).
+(`~/.bitwarden-ssh-agent.sock`), started at login ([bitwarden.nix](../../../modules/bitwarden.nix)). oo7 serves the Secret Service that apps keep their passwords in, unlocked
+with the login password at the greeter (`pam_oo7` on greetd, [noctalia.nix](../../../modules/noctalia.nix)); it moves gnome-keyring's keyrings
+into `~/.local/share/keyrings/v1` on its first start.
 
 Idle locks, turns the screen off and suspends on the timers in
 [noctalia.nix](../../../modules/noctalia.nix), unless an app holds an idle inhibitor, as a browser
