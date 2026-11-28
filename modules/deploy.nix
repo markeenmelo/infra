@@ -93,10 +93,14 @@ in
                 groups.deploy = { };
               };
               system.extraDependencies = [ activate ];
+              environment.systemPackages = [ (pkgs.writeShellScriptBin "clean-generations" "echo cleaned") ];
             };
             testScript = ''
               def deploy(command):
                   return f"runuser -u deploy -- sudo -n -u root {command}"
+
+              def allowed(command):
+                  return f"runuser -u deploy -- sudo -n -l -u root {command}"
 
               machine.wait_for_unit("multi-user.target")
               canary = "/tmp/deploy-rs-canary-" + "a1" * 16
@@ -105,7 +109,11 @@ in
               machine.fail(f"test -e {canary}")
               assert machine.succeed(deploy("${activate}/activate-rs activate x")).strip() == "0"
               machine.fail(deploy("/run/current-system/sw/bin/systemctl status"))
+              assert machine.succeed(deploy("${clean}")).strip() == "cleaned"
               machine.fail(deploy("${clean} now"))
+              machine.succeed(allowed("/run/current-system/sw/bin/systemctl reboot"))
+              machine.succeed(allowed("/run/current-system/sw/bin/systemctl poweroff"))
+              machine.fail(allowed("/run/current-system/sw/bin/systemctl reboot now"))
               machine.fail(deploy("id"))
             '';
           };
