@@ -84,11 +84,13 @@ in
                 users.deploy = {
                   isSystemUser = true;
                   group = "deploy";
+                  extraGroups = [ "wheel" ];
                 };
                 groups.deploy = { };
               };
               system.extraDependencies = [ activate ];
               environment.systemPackages = [ (pkgs.writeShellScriptBin "clean-generations" "echo cleaned") ];
+              security.sudo-rs.execWheelOnly = true;
             };
             testScript = ''
               def deploy(command):
