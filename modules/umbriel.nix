@@ -12,8 +12,15 @@
         host: nixos:
         let
           home = nixos.config.home-manager.users.marcos;
+          umbrielMesa =
+            inputs.umbriel.inputs.nixpkgs.legacyPackages.${nixos.pkgs.stdenv.hostPlatform.system}.mesa.version;
+          driverMesa = nixos.config.hardware.graphics.package.version;
         in
         nixos.pkgs.runCommand "desktop-config-${host}" { } ''
+          [ "${umbrielMesa}" = "${driverMesa}" ] || {
+            echo "Umbriel links mesa ${umbrielMesa}, the drivers are mesa ${driverMesa}: its libgbm would load a mismatched dri_gbm" >&2
+            exit 1
+          }
           ${lib.getExe nixos.config.programs.umbriel.package} config validate -c ${
             home.xdg.configFile."umbriel/config.toml".source
           }
