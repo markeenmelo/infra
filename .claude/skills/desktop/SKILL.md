@@ -27,7 +27,7 @@ Zed and bat, which ship no Everforest, take Stylix's.
 Terminals and desktop chrome stay on Stylix. [zellij.nix](../../../modules/zellij.nix) takes Stylix's zellij theme with the
 focused pane's border and the selected tab forced to `base0D` (`ribbon_selected.background`,
 `frame_selected.base`), runs the compact layout without pane frames, keeps tmux mode on `C-a` (`v` and
-`-` split) and unbinds the stock Ctrl and Alt keys, so the shell and Neovim keep them, and Ghostty attaches to its session `main`, which zellij resurrects after a reboot. Zed's settings file is
+`-` split, `H` `J` `K` `L` resize, `P`, `t`, `r`, `m` and `s` open the pane, tab, resize, move and session modes) and unbinds the stock Ctrl and Alt keys, so the shell and Neovim keep them, and Ghostty attaches to its session `main`, which zellij resurrects after a reboot. Zed's settings file is
 immutable; its extensions, language servers and keymaps are declared in zed.nix.
 
 ## Rules

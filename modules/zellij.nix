@@ -32,6 +32,15 @@
               bind "Ctrl a" { Write 1; SwitchToMode "Normal"; }
               bind "v" { NewPane "Right"; SwitchToMode "Normal"; }
               bind "-" { NewPane "Down"; SwitchToMode "Normal"; }
+              bind "H" { Resize "Increase Left"; }
+              bind "J" { Resize "Increase Down"; }
+              bind "K" { Resize "Increase Up"; }
+              bind "L" { Resize "Increase Right"; }
+              bind "P" { SwitchToMode "Pane"; }
+              bind "t" { SwitchToMode "Tab"; }
+              bind "r" { SwitchToMode "Resize"; }
+              bind "m" { SwitchToMode "Move"; }
+              bind "s" { SwitchToMode "Session"; }
             }
           }
         '';
