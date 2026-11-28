@@ -43,13 +43,14 @@
         meta.description = "update-pins: bump each NAME.pkg.nix in pins, every Caddy plugin, Grafana dashboard, the CrowdSec hub commit, tack's resolver, the GitHub Actions and the OpenTofu providers to the latest upstream, with their hashes";
         program = pkgs.writeShellApplication {
           name = "update-pins";
+          excludeShellChecks = [ "SC2016" ];
           runtimeInputs = [
             pkgs.curl
             pkgs.git
             pkgs.gh
             pkgs.gnugrep
             pkgs.gnused
-            pkgs.jq
+            pkgs.jaq
             pkgs.opentofu
             pkgs.pinact
             nix-update

@@ -125,7 +125,7 @@ in
           runtimeInputs = [
             pkgs.curl
             pkgs.git
-            pkgs.jq
+            pkgs.jaq
             pkgs.sops
           ];
           text = ''
@@ -152,51 +152,51 @@ in
             }
             drift() {
               api https://${gateway}/proxy/network/api/s/default/get/setting |
-                jq --slurpfile want ${settings} -f ${program}
+                jaq --slurpfile want ${settings} -f ${program}
             }
             rules=$(api https://${gateway}/proxy/network/v2/api/site/default/content-filtering)
             networks=$(api https://${gateway}/proxy/network/api/s/default/rest/networkconf)
-            filters=$(jq -n --argjson rules "$rules" --argjson networks "$networks" --slurpfile want ${filterRules} \
+            filters=$(jaq -n --argjson rules "$rules" --argjson networks "$networks" --slurpfile want ${filterRules} \
               -f ${filterProgram})
             changes=$(drift)
-            jq -r '.[] | "setting \(.key):", "  \(.changes[])"' <<< "$changes"
-            jq -r '.[]' <<< "$filters"
+            jaq -r '.[] | "setting \(.key):", "  \(.changes[])"' <<< "$changes"
+            jaq -r '.[]' <<< "$filters"
             if [ "$1" = check ]; then
-              jq -e 'length == 0' <<< "$changes" > /dev/null && jq -e 'length == 0' <<< "$filters" > /dev/null
+              jaq -e 'length == 0' <<< "$changes" > /dev/null && jaq -e 'length == 0' <<< "$filters" > /dev/null
               exit
             fi
-            jq -c '.[]' <<< "$changes" | while read -r change; do
-              jq .body <<< "$change" |
-                api -X PUT --data-binary @- "https://${gateway}/proxy/network/api/s/default/set/setting/$(jq -r .key <<< "$change")" |
-                jq -e '(.meta.rc // "ok") == "ok"' > /dev/null
+            jaq -c '.[]' <<< "$changes" | while read -r change; do
+              jaq .body <<< "$change" |
+                api -X PUT --data-binary @- "https://${gateway}/proxy/network/api/s/default/set/setting/$(jaq -r .key <<< "$change")" |
+                jaq -e '(.meta.rc // "ok") == "ok"' > /dev/null
             done
-            if ! drift | jq -e 'length == 0' > /dev/null; then
+            if ! drift | jaq -e 'length == 0' > /dev/null; then
               echo "still drifting after apply" >&2
               exit 1
             fi
-            if jq -e 'length > 0' <<< "$filters" > /dev/null; then
+            if jaq -e 'length > 0' <<< "$filters" > /dev/null; then
               echo "the content filter is only checked: change it in the Network UI" >&2
               exit 1
             fi
           '';
         };
       };
-      checks.unifi-settings = pkgs.runCommand "unifi-settings" { nativeBuildInputs = [ pkgs.jq ]; } ''
-        jq -n '{meta: {rc: "ok"}, data: [{key: "usg", upnp_enabled: true, kept: 1}, {key: "doh", state: "manual"}]}' > have.json
-        jq -n '{usg: {upnp_enabled: false}, doh: {state: "manual"}, usg_geo: {ip_filtering: {enabled: true}}}' > want.json
-        jq --slurpfile want want.json -f ${program} have.json | jq -e '
+      checks.unifi-settings = pkgs.runCommand "unifi-settings" { nativeBuildInputs = [ pkgs.jaq ]; } ''
+        jaq -n '{meta: {rc: "ok"}, data: [{key: "usg", upnp_enabled: true, kept: 1}, {key: "doh", state: "manual"}]}' > have.json
+        jaq -n '{usg: {upnp_enabled: false}, doh: {state: "manual"}, usg_geo: {ip_filtering: {enabled: true}}}' > want.json
+        jaq --slurpfile want want.json -f ${program} have.json | jaq -e '
           map(.key) == ["usg", "usg_geo"]
           and .[0].changes == ["upnp_enabled: true -> false"]
           and .[0].body == {key: "usg", upnp_enabled: false, kept: 1}
           and .[1].body == {key: "usg_geo", ip_filtering: {enabled: true}}'
         networks='{"meta": {"rc": "ok"}, "data": [{"_id": "h", "name": "Home"}, {"_id": "k", "name": "Kids"}]}'
         rule='{"name": "AdBlock", "enabled": true, "categories": ["FAMILY", "ADVERTISEMENT"], "safe_search": [], "network_ids": ["k", "h"], "client_macs": [], "allow_list": [], "block_list": [], "schedule": {"mode": "ALWAYS"}}'
-        jq -n '[{name: "AdBlock", enabled: true, categories: ["ADVERTISEMENT", "FAMILY"], safe_search: [], networks: ["Home", "Kids"], client_macs: [], allow_list: [], block_list: [], schedule: {mode: "ALWAYS"}}]' > rules.json
-        jq -n --argjson rules "[$rule]" --argjson networks "$networks" --slurpfile want rules.json -f ${filterProgram} | jq -e '. == []'
-        jq -n --argjson rules "$(jq -c '[.network_ids = ["k"]]' <<< "$rule")" --argjson networks "$networks" --slurpfile want rules.json -f ${filterProgram} |
-          jq -e 'length == 2 and (.[0] | startswith("content filter AdBlock: want")) and (.[1] | test("\"networks\":\\[\"Kids\"\\]"))'
-        jq -n --argjson rules '[]' --argjson networks "$networks" --slurpfile want ${filterRules} -f ${filterProgram} > /dev/null
-        jq --slurpfile want ${settings} -f ${program} have.json > /dev/null
+        jaq -n '[{name: "AdBlock", enabled: true, categories: ["ADVERTISEMENT", "FAMILY"], safe_search: [], networks: ["Home", "Kids"], client_macs: [], allow_list: [], block_list: [], schedule: {mode: "ALWAYS"}}]' > rules.json
+        jaq -n --argjson rules "[$rule]" --argjson networks "$networks" --slurpfile want rules.json -f ${filterProgram} | jaq -e '. == []'
+        jaq -n --argjson rules "$(jaq -c '[.network_ids = ["k"]]' <<< "$rule")" --argjson networks "$networks" --slurpfile want rules.json -f ${filterProgram} |
+          jaq -e 'length == 2 and (.[0] | startswith("content filter AdBlock: want")) and (.[1] | test("\"networks\":\\[\"Kids\"\\]"))'
+        jaq -n --argjson rules '[]' --argjson networks "$networks" --slurpfile want ${filterRules} -f ${filterProgram} > /dev/null
+        jaq --slurpfile want ${settings} -f ${program} have.json > /dev/null
         touch $out
       '';
     };

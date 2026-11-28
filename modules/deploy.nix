@@ -148,7 +148,7 @@ in
           name = "deploy";
           runtimeInputs = [
             pkgs.git
-            pkgs.jq
+            pkgs.jaq
           ];
           text = ''
             target=''${1-}
@@ -165,7 +165,7 @@ in
             ${deployCases}  servers | workstations | all) ;;
               *) echo "deploy: name a host or a group (servers, workstations, all), not '$target'" >&2; exit 1 ;;
             esac
-            online=$(tailscale status --json | jq -r '[.Self] + [.Peer[]?] | .[] | select(.Online) | .TailscaleIPs[]?')
+            online=$(tailscale status --json | jaq -r '[.Self] + [.Peer[]?] | .[] | select(.Online) | .TailscaleIPs[]?')
             targets=()
             while read -r host address groups; do
               [ "$target" = all ] || [[ " $groups " == *" $target "* ]] || continue

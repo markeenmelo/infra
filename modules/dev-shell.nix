@@ -61,7 +61,7 @@
       devShells.default = pkgs.mkShellNoCC {
         packages = [
           config.formatter
-          pkgs.jq
+          pkgs.jaq
           pkgs.just
           pkgs.mkpasswd
           pkgs.openssl

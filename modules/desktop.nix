@@ -59,14 +59,14 @@ in
           wants = [ "tailscaled-set.service" ];
           path = [
             config.services.tailscale.package
-            pkgs.jq
+            pkgs.jaq
           ];
           enableStrictShellChecks = true;
           restartIfChanged = false;
           script = ''
             for _ in $(seq 30); do
               if tailscale set --exit-node=vpn-ca; then
-                tailscale status --json | jq -e '.ExitNodeStatus.Online' > /dev/null && exit 0
+                tailscale status --json | jaq -e '.ExitNodeStatus.Online' > /dev/null && exit 0
                 echo "tailscale-exit-node: the node named vpn-ca is offline; internet is down until another exit node is picked" >&2
                 exit 1
               fi

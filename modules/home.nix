@@ -4,7 +4,7 @@
       { pkgs, ... }:
       {
         home.packages = [
-          pkgs.jq
+          pkgs.jaq
           pkgs.rsync
           pkgs.unzip
           pkgs.dnsutils

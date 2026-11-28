@@ -12,7 +12,7 @@ host and recreates it on apply once expired. The operator moves it into the host
 through a terminal that echoes it:
 
 ```sh
-nix run .#tofu -- tailscale output -json enrollment_keys | jq .HOST |
+nix run .#tofu -- tailscale output -json enrollment_keys | jaq .HOST |
   sops set --value-stdin secrets/hosts/HOST.yaml '["tailscale-auth-key"]'
 ```
 

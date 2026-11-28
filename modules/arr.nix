@@ -449,7 +449,7 @@ let
               pkgs.curl
               pkgs.iproute2
               pkgs.iptables
-              pkgs.jq
+              pkgs.jaq
             ];
             enableStrictShellChecks = true;
             serviceConfig = {
@@ -471,18 +471,18 @@ let
               api=http://${namespaceAddress}:${toString webuiPort}/api/v2
               server=${dirOf config.vpnNamespaces.${vpn}.wireguardConfigFile}/server.json
               cd "$RUNTIME_DIRECTORY"
-              cn=$(jq -r .cn "$server")
+              cn=$(jaq -r .cn "$server")
               tunnel() { ip netns exec ${vpn} curl -fsS --retry 3 --max-time 30 "$@"; }
-              pf() { tunnel -G --connect-to "$cn::$(jq -r .gateway "$server"):" --cacert ${./pia.crt} "$@"; }
+              pf() { tunnel -G --connect-to "$cn::$(jaq -r .gateway "$server"):" --cacert ${./pia.crt} "$@"; }
               fw() { ip netns exec ${vpn} iptables "$@"; }
               tunnel --form "username=<$CREDENTIALS_DIRECTORY/pia-username" --form "password=<$CREDENTIALS_DIRECTORY/pia-password" \
-                https://www.privateinternetaccess.com/api/client/v2/token | jq -je .token > token
+                https://www.privateinternetaccess.com/api/client/v2/token | jaq -je .token > token
               pf --data-urlencode token@token "https://$cn:19999/getSignature" > signature.json
-              jq -e '.status == "OK"' signature.json > /dev/null
-              jq -j .payload signature.json > payload
-              jq -j .signature signature.json > signature
-              port=$(base64 -d payload | jq -er .port)
-              bind() { pf --data-urlencode payload@payload --data-urlencode signature@signature "https://$cn:19999/bindPort" | jq -e '.status == "OK"' > /dev/null; }
+              jaq -e '.status == "OK"' signature.json > /dev/null
+              jaq -j .payload signature.json > payload
+              jaq -j .signature signature.json > signature
+              port=$(base64 -d payload | jaq -er .port)
+              bind() { pf --data-urlencode payload@payload --data-urlencode signature@signature "https://$cn:19999/bindPort" | jaq -e '.status == "OK"' > /dev/null; }
               bind
               fw -N qbittorrent-port 2>/dev/null || true
               fw -C INPUT -j qbittorrent-port 2>/dev/null || fw -I INPUT -j qbittorrent-port
@@ -560,15 +560,16 @@ let
         name:
         pkgs.writeShellApplication {
           name = "await-${name}-profile";
+          excludeShellChecks = [ "SC2016" ];
           runtimeInputs = [
             pkgs.curl
-            pkgs.jq
+            pkgs.jaq
           ];
           text = ''
             while (( SECONDS < 180 )); do
               if curl -fsS --max-time 5 -H @<(printf 'X-Api-Key: %s' "$(< ${secret "${name}-api-key"})") \
                 http://${namespaceAddress}:${toString (appPort name)}/api/v3/qualityprofile |
-                jq -e --arg profile ${lib.escapeShellArg storageProfile} 'any(.[]; .name == $profile)' > /dev/null; then
+                jaq -e --arg profile ${lib.escapeShellArg storageProfile} 'any(.[]; .name == $profile)' > /dev/null; then
                 exit 0
               fi
               sleep 5

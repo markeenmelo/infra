@@ -64,7 +64,7 @@ in
         path = [
           pkgs.coreutils
           pkgs.curl
-          pkgs.jq
+          pkgs.jaq
           pkgs.openssl
         ];
         serviceConfig = {
@@ -85,10 +85,10 @@ in
           while :; do
             page=$(curl --fail --silent --show-error --max-time 60 --retry 3 \
               "https://api.certspotter.com/v1/issuances?domain=${domain}&include_subdomains=true&after=$after") || exit 0
-            last=$(jq --raw-output '.[-1].id // empty' <<< "$page") || exit 0
+            last=$(jaq --raw-output '.[-1].id // empty' <<< "$page") || exit 0
             [ -n "$last" ] || break
-            count=$(jq --arg held "$held" --arg since "$since" \
-              '[.[] | select(.not_before >= $since and .pubkey_sha256 != $held)] | length' <<< "$page") || exit 0
+            count=$(held=$held since=$since jaq \
+              '[.[] | select(.not_before >= env.since and .pubkey_sha256 != env.held)] | length' <<< "$page") || exit 0
             unexpected=$((unexpected + count))
             after=$last
           done
