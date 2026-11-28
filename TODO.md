@@ -18,6 +18,6 @@ Work the operator wants done. An item leaves this file in the pull request that 
 - **Cleanup:** simplify the code for clarity and reuse.
 - **MongoDB environment:** a devenv/tack environment with MongoDB.
 - **nixos-core:** re-evaluate adopting it; it cannot run beside the etc overlay and userborn.
-- **Rust replacements:** perlless and nixos-init on every host and jaq.
+- **Rust replacements:** perlless and nixos-init on every host.
 - **rustic:** evaluate replacing restic once a NixOS module for it exists ([NixOS/nixpkgs#373042](https://github.com/NixOS/nixpkgs/pull/373042)); it is no drop-in package for `services.restic` (no `unlock`, `--files-from`, `--exclude-file` or `--retry-lock`, and it reads `RUSTIC_*`, not `RESTIC_*`), and upstream ships no flake.
 - **circus, evix, cade and ncro:** evaluate each.
